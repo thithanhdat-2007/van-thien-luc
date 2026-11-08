@@ -1,0 +1,748 @@
+/* ============================================================================
+   VẠN CỔ TU TIÊN — MAIN SCREEN UI (GIAO DIỆN MÀN HÌNH DỌC TIÊN HIỆP)
+   Styles & Keyframe Animations
+   ============================================================================ */
+
+/* Root Variables */
+:root {
+    --bg-fairy-primary: #0a141d;
+    --bg-fairy-gradient: linear-gradient(180deg, #dcfce7 0%, #ccfbf1 35%, #e0f2fe 70%, #f0fdf4 100%);
+    --aura-gold: #f59e0b;
+    --aura-cyan: #06b6d4;
+    --aura-purple: #9333ea;
+    --glass-bg: rgba(255, 255, 255, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --font-serif: "Cinzel", "Noto Serif", "Georgia", serif;
+}
+
+/* Base Reset & Full Height Container */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #030712;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    color: #1e293b;
+}
+
+/* ============================================================================
+   PHẦN 1: BỐ CỤC TỔNG THỂ & BACKGROUND BỒNG LAI TIÊN CẢNH
+   ============================================================================ */
+.idle-app-viewport {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    background: #0f172a;
+}
+
+/* Background Bối Cảnh Non Nước Mây Khói */
+.fairy-background {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    background: linear-gradient(180deg, 
+        #d1fae5 0%, 
+        #cffafe 28%, 
+        #e0f2fe 60%, 
+        #e2e8f0 100%
+    );
+}
+
+/* Lớp div chờ sẵn để chèn ảnh đồi núi sương mù phía sau */
+.scenery-layer {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.85) 0%, transparent 60%),
+        linear-gradient(to top, rgba(204, 251, 241, 0.75) 0%, transparent 50%),
+        url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center bottom;
+    filter: brightness(1.05) contrast(0.95) saturate(1.1);
+    opacity: 0.65;
+    mix-blend-mode: multiply;
+}
+
+/* Lớp sương mù trôi lững lờ */
+.mist-layer {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.55) 0%, rgba(204, 251, 241, 0.3) 50%, transparent 80%);
+    mix-blend-mode: screen;
+    pointer-events-none;
+    animation: mistDrift 14s ease-in-out infinite alternate;
+}
+
+/* Đỉnh Thanh Tiêu Sơn mờ ảo */
+.mountain-peaks-silhouette {
+    position: absolute;
+    bottom: 22%;
+    left: 0;
+    right: 0;
+    height: 220px;
+    background: radial-gradient(ellipse at 50% 100%, rgba(13, 148, 136, 0.25) 0%, transparent 70%);
+    filter: blur(12px);
+    pointer-events-none;
+}
+
+/* ============================================================================
+   TOP BAR MINI (THÔNG TIN TỌA ĐỘ TIÊN CẢNH)
+   ============================================================================ */
+.fairy-header {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 10px;
+}
+
+.sect-location-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #0f766e;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}
+
+.sect-location-badge i {
+    color: #059669;
+}
+
+.resource-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #b45309;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+}
+
+/* ============================================================================
+   PHẦN 2: KHU VỰC TRUNG TÂM (NHÂN VẬT & NÚT TRÔI NỔI FLOATING ORBS)
+   ============================================================================ */
+.cultivator-stage {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: -20px;
+}
+
+/* Vùng bao quanh nhân vật & bệ đỡ tọa */
+.character-float-wrapper {
+    position: relative;
+    width: 260px;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bệ Sen Đả Tọa Phát Hào Quang */
+.lotus-pedestal-glow {
+    position: absolute;
+    bottom: 24px;
+    width: 220px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(45, 212, 191, 0.6) 0%, rgba(20, 184, 166, 0.25) 50%, transparent 80%);
+    filter: blur(10px);
+    animation: lotusPulse 3s ease-in-out infinite alternate;
+}
+
+/* Thẻ IMG Nhân vật ngồi thiền với Animation Floating nhấp nhô mượt mà */
+.cultivator-img-container {
+    position: relative;
+    width: 210px;
+    height: 270px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: characterFloating 3.6s ease-in-out infinite;
+    filter: drop-shadow(0 15px 25px rgba(15, 118, 110, 0.35));
+}
+
+.cultivator-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 80%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 80%, transparent 100%);
+}
+
+/* Hào quang (Aura) Đan Điền hình tròn phát sáng và xoay chậm ở giữa bụng */
+.dantian-aura-orb {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Vòng xoay chậm */
+.dantian-rotator {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px dashed rgba(6, 182, 212, 0.85);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.8), inset 0 0 14px rgba(34, 211, 238, 0.6);
+    animation: dantianSpin 6s linear infinite;
+}
+
+/* Lõi Đan Điền đập nhịp */
+.dantian-core-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 10%, #67e8f9 50%, #0284c7 90%);
+    box-shadow: 0 0 16px #38bdf8, 0 0 32px #0284c7;
+    animation: dantianBeat 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   NÚT TÍNH NĂNG TRÔI NỔI (FLOATING ORBS Ở HAI BÊN VAI)
+   ============================================================================ */
+.floating-orb {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.25s ease, filter 0.25s ease;
+    z-index: 15;
+}
+
+.floating-orb:active {
+    transform: scale(0.92) !important;
+}
+
+/* NÚT TRÁI: ĐỘ KIẾP (Màu Cam / Vàng Lửa) */
+.orb-left-tribulation {
+    left: -12px;
+    top: 40px;
+    animation: orbFloatLeft 3.8s ease-in-out infinite;
+    animation-delay: -1.2s; /* Lệch pha so với nhân vật */
+}
+
+.orb-left-tribulation .orb-circle {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fef08a 0%, #f59e0b 55%, #b45309 100%);
+    border: 2px solid #fef3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #451a03;
+    font-size: 1.4rem;
+    box-shadow: 
+        0 0 24px rgba(245, 158, 11, 0.75),
+        0 0 45px rgba(251, 191, 36, 0.45),
+        inset 0 0 14px rgba(255, 255, 255, 0.7);
+    animation: tribulationGlow 2.4s ease-in-out infinite alternate;
+}
+
+.orb-left-tribulation .orb-label-main {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #92400e;
+    margin-top: 6px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.orb-left-tribulation .orb-subtext {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #b45309;
+    line-height: 1.25;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    margin-top: 2px;
+    backdrop-filter: blur(4px);
+}
+
+/* NÚT PHẢI: TÂM MA (Màu Xanh Dương / Tím) */
+.orb-right-demon {
+    right: -12px;
+    top: 40px;
+    animation: orbFloatRight 4.2s ease-in-out infinite;
+    animation-delay: -2.2s; /* Lệch pha so với nhân vật và nút trái */
+}
+
+.orb-right-demon .orb-circle {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e9d5ff 0%, #9333ea 50%, #3b82f6 100%);
+    border: 2px solid #f3e8ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.4rem;
+    box-shadow: 
+        0 0 24px rgba(147, 51, 234, 0.75),
+        0 0 45px rgba(59, 130, 246, 0.45),
+        inset 0 0 14px rgba(255, 255, 255, 0.6);
+    animation: demonGlow 2.4s ease-in-out infinite alternate;
+}
+
+.orb-right-demon .orb-label-main {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #581c87;
+    margin-top: 6px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.orb-right-demon .orb-subtext {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #6b21a8;
+    line-height: 1.25;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid rgba(147, 51, 234, 0.35);
+    margin-top: 2px;
+    backdrop-filter: blur(4px);
+}
+
+/* ============================================================================
+   PHẦN 3: KHU VỰC THÔNG SỐ & TU LUYỆN (BOTTOM INFO DƯỚI CHÂN NHÂN VẬT)
+   ============================================================================ */
+.cultivation-control-panel {
+    position: relative;
+    z-index: 25;
+    padding: 0 20px 84px; /* Padding dưới để không bị thanh Nav che */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+/* 1. Khung hiển thị thông số */
+.cultivation-stats-card {
+    width: 100%;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    padding: 10px 16px;
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-line-breakthrough {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0e7490; /* Xanh ngọc / Cyan */
+}
+
+.stat-line-breakthrough .stat-highlight {
+    color: #0891b2;
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.35);
+}
+
+/* Thanh Tiến Độ Mini Ngay Trong Khung */
+.mini-progress-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(6, 182, 212, 0.18);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.mini-progress-fill {
+    width: 18.5%; /* 111 / 600 */
+    height: 100%;
+    background: linear-gradient(90deg, #06b6d4, #22d3ee);
+    border-radius: 9999px;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+    transition: width 0.3s ease;
+}
+
+.stat-line-rate {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #047857; /* Ngọc bích */
+}
+
+.stat-line-rate .rate-badge {
+    color: #065f46;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 2. Cụm Nút Thao Tác: Menu Hình Thoi + Nút Oval Tu Luyện */
+.action-buttons-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Nút Phụ Hình Thoi / Góc Cạnh (Linh Căn & Công Pháp) */
+.rhombus-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.rhombus-btn-wrap:hover {
+    transform: translateY(-2px);
+}
+
+.rhombus-btn-wrap:active {
+    transform: scale(0.92);
+}
+
+.rhombus-shape {
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(204, 251, 241, 0.85) 100%);
+    border: 1.5px solid #2dd4bf;
+    transform: rotate(45deg);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(13, 148, 136, 0.25), inset 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+.rhombus-content {
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f766e;
+    font-size: 1.15rem;
+}
+
+.rhombus-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #0f766e;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* NÚT CHÍNH: "TU LUYỆN" (OVAL VÀNG KIM NỔI BẬT Ở CHÍNH GIỮA) */
+.cultivate-main-btn {
+    position: relative;
+    width: 154px;
+    height: 54px;
+    border-radius: 9999px; /* Oval Shape */
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 45%, #d97706 100%);
+    border: 2px solid #fef3c7;
+    box-shadow: 
+        0 6px 20px rgba(217, 119, 6, 0.5),
+        0 0 35px rgba(251, 191, 36, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.65),
+        inset 0 -2px 4px rgba(180, 83, 9, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #451a03;
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: cultivatePulse 2.2s infinite ease-in-out;
+}
+
+.cultivate-main-btn:hover {
+    filter: brightness(1.12);
+    transform: scale(1.04);
+}
+
+.cultivate-main-btn:active {
+    transform: scale(0.94);
+    box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4);
+}
+
+.cultivate-main-btn i {
+    font-size: 1.2rem;
+    color: #78350f;
+    animation: yinYangSpin 8s linear infinite;
+}
+
+/* ============================================================================
+   PHẦN 4: THANH ĐIỀU HƯỚNG DƯỚI CÙNG (BOTTOM NAV BAR GLASSMORPHISM)
+   ============================================================================ */
+.bottom-nav-glass {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 50;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    padding: 6px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.nav-item i {
+    font-size: 1.25rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-item:hover, .nav-item.active {
+    color: #0f766e;
+}
+
+.nav-item:hover i, .nav-item.active i {
+    color: #0d9488;
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: rgba(204, 251, 241, 0.5);
+}
+
+/* ============================================================================
+   KEYFRAME ANIMATIONS (HIỆU ỨNG NHẸ NHÀNG, MƯỢT MÀ VÀ LỆCH PHA)
+   ============================================================================ */
+
+/* 1. Lơ lửng nhân vật chính */
+@keyframes characterFloating {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* 2. Bệ sen đả tọa phát sáng đồng bộ */
+@keyframes lotusPulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.08);
+        opacity: 0.85;
+    }
+}
+
+/* 3. Xoay tròn hào quang Đan Điền */
+@keyframes dantianSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 4. Nhịp đập hạch tâm Đan Điền */
+@keyframes dantianBeat {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(0.9);
+        box-shadow: 0 0 12px #38bdf8, 0 0 24px #0284c7;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+        box-shadow: 0 0 22px #67e8f9, 0 0 38px #0ea5e9;
+    }
+}
+
+/* 5. Nút bay lượn bên Trái (Độ Kiếp - Lệch pha) */
+@keyframes orbFloatLeft {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(-1.5deg);
+    }
+}
+
+/* 6. Nút bay lượn bên Phải (Tâm Ma - Lệch pha) */
+@keyframes orbFloatRight {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-9px) rotate(1.5deg);
+    }
+}
+
+/* 7. Hào quang lửa Độ Kiếp */
+@keyframes tribulationGlow {
+    0% {
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 32px rgba(245, 158, 11, 0.9), 0 0 50px rgba(251, 191, 36, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.9);
+    }
+}
+
+/* 8. Hào quang u uất Tâm Ma */
+@keyframes demonGlow {
+    0% {
+        box-shadow: 0 0 16px rgba(147, 51, 234, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 32px rgba(147, 51, 234, 0.9), 0 0 50px rgba(59, 130, 246, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.8);
+    }
+}
+
+/* 9. Nhịp thở Nút Tu Luyện */
+@keyframes cultivatePulse {
+    0%, 100% {
+        box-shadow: 
+            0 6px 20px rgba(217, 119, 6, 0.45),
+            0 0 20px rgba(251, 191, 36, 0.35);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 
+            0 8px 28px rgba(217, 119, 6, 0.7),
+            0 0 40px rgba(251, 191, 36, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+/* 10. Xoay Thái Cực Bát Quái */
+@keyframes yinYangSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 11. Sương mù trôi dạt */
+@keyframes mistDrift {
+    0% {
+        transform: scale(1) translateX(-20px);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.1) translateX(20px);
+        opacity: 0.75;
+    }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN CHO CÁC KÍCH THƯỚC MÀN HÌNH
+   ============================================================================ */
+@media (max-width: 480px) {
+    .idle-app-viewport {
+        max-width: 100%;
+        box-shadow: none;
+    }
+    .cultivator-portrait {
+        max-height: 240px;
+    }
+    .orb-left-tribulation {
+        left: 2px;
+    }
+    .orb-right-demon {
+        right: 2px;
+    }
+}
+
+@media (min-height: 850px) {
+    .character-float-wrapper {
+        margin-top: 20px;
+    }
+    .cultivation-control-panel {
+        gap: 20px;
+        padding-bottom: 96px;
+    }
+}

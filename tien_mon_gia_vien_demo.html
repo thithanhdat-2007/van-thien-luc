@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tiên Môn Gia Viên • Động Phủ — Vạn Cổ Tu Tiên</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. RESET & BIẾN MÀU SẮC ĐỘNG PHỦ GIA VIÊN (DARK XIANXIA GLASSMORPHISM)
+           ========================================================================== */
+        :root {
+            --bg-deep: #06090e;
+            --bg-panel: rgba(13, 20, 32, 0.78);
+            --bg-card: rgba(18, 28, 45, 0.75);
+            --border-glass: rgba(56, 189, 248, 0.22);
+            --border-gold: rgba(234, 179, 8, 0.35);
+            --gold-light: #fef08a;
+            --gold-base: #eab308;
+            --cyan-glow: #38bdf8;
+            --emerald-glow: #10b981;
+            --purple-glow: #a855f7;
+            --rose-glow: #f43f5e;
+            --amber-glow: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(234, 179, 8, 0.04) 0%, transparent 60%),
+                linear-gradient(180deg, #06090e 0%, #0b1320 100%);
+            color: #f1f5f9;
+            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Thanh cuộn tiên phong */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 16, 26, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.35); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.6); }
+
+        /* ==========================================================================
+           HEADER THANH TÀI NGUYÊN GIA VIÊN
+           ========================================================================== */
+        .estate-header-bar {
+            background: rgba(11, 19, 32, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .estate-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .estate-brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(16, 185, 129, 0.25));
+            border: 1.5px solid var(--cyan-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #bae6fd;
+            font-size: 1.4rem;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+        }
+
+        .estate-brand-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .estate-brand-sub {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: 'Noto Serif', serif;
+            letter-spacing: normal;
+        }
+
+        /* Hộp hiển thị tài sản bản thân */
+        .player-vault-shelf {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .vault-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .vault-pill--gold { border-color: rgba(234, 179, 8, 0.35); color: #fef08a; }
+        .vault-pill--tuvi { border-color: rgba(56, 189, 248, 0.35); color: #bae6fd; }
+        .vault-pill--herb { border-color: rgba(16, 185, 129, 0.35); color: #a7f3d0; }
+        .vault-pill--ore { border-color: rgba(168, 85, 247, 0.35); color: #e9d5ff; }
+
+        /* ==========================================================================
+           BỐ CỤC CHÍNH (MAIN VIEWPORT & CSS GRID 4 NODES)
+           ========================================================================== */
+        .estate-viewport {
+            flex: 1;
+            max-width: 1360px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Banner dẫn nhập tiên gia */
+        .estate-lore-banner {
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.12) 0%, rgba(16, 185, 129, 0.1) 50%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .lore-banner-text {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        .lore-banner-text b { color: #fef08a; }
+
+        .auto-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+            white-space: nowrap;
+        }
+        .auto-status-indicator.is-disabled {
+            background: rgba(100, 116, 139, 0.15);
+            border-color: rgba(100, 116, 139, 0.3);
+            color: #94a3b8;
+        }
+
+        /* GRID CÁC LINH TRẬN (NODES) */
+        .estate-nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+
+        @media (min-width: 1200px) {
+            .estate-nodes-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* ==========================================================================
+           THIẾT KẾ CARD NODE SANG TRỌNG (NODE CARD)
+           ========================================================================== */
+        .node-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .node-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .node-card.is-full {
+            border-color: rgba(244, 63, 94, 0.6);
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
+        }
+
+        /* Header Card */
+        .node-card-header {
+            padding: 1rem 1.25rem 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            z-index: 2;
+        }
+
+        .node-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .node-icon-frame {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            position: relative;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+        }
+        .node-icon-frame--tuvi {
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1.5px solid var(--cyan-glow);
+            color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+        }
+        .node-icon-frame--herb {
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1.5px solid var(--emerald-glow);
+            color: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+        }
+        .node-icon-frame--ore {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1.5px solid var(--purple-glow);
+            color: #c084fc;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.35);
+        }
+        .node-icon-frame--gold {
+            background: radial-gradient(circle, rgba(234, 179, 8, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1.5px solid var(--gold-base);
+            color: #facc15;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.35);
+        }
+
+        .node-title-group h3 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #f8fafc;
+            font-family: 'Cinzel', serif;
+            line-height: 1.2;
+        }
+        .node-title-group span {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .node-level-badge {
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            background: rgba(234, 179, 8, 0.15);
+            border: 1px solid rgba(234, 179, 8, 0.4);
+            color: #fef08a;
+        }
+
+        /* Body Card */
+        .node-card-body {
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Khu vực hiển thị Sức Chứa (Storage) & Tiến Độ */
+        .storage-status-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .storage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.75rem;
+        }
+        .storage-label {
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .storage-numbers {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .storage-numbers.is-maxed {
+            color: #fb7185;
+            animation: pulseText 1.5s infinite alternate;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.75; }
+            100% { opacity: 1; filter: drop-shadow(0 0 6px #f43f5e); }
+        }
+
+        .storage-track {
+            width: 100%;
+            height: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .storage-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+            position: relative;
+        }
+        .storage-fill--tuvi { background: linear-gradient(90deg, #0284c7, #38bdf8); box-shadow: 0 0 10px #38bdf8; }
+        .storage-fill--herb { background: linear-gradient(90deg, #059669, #10b981); box-shadow: 0 0 10px #10b981; }
+        .storage-fill--ore { background: linear-gradient(90deg, #7c3aed, #a855f7); box-shadow: 0 0 10px #a855f7; }
+        .storage-fill--gold { background: linear-gradient(90deg, #ca8a04, #facc15); box-shadow: 0 0 10px #facc15; }
+        .storage-fill.is-maxed { background: linear-gradient(90deg, #e11d48, #f43f5e) !important; box-shadow: 0 0 12px #f43f5e !important; }
+
+        /* Tốc độ sản xuất & Tình trạng Phái Cử */
+        .rate-and-dispatch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+        }
+
+        .production-rate-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .rate-title {
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+        .rate-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .rate-bonus-tag {
+            font-size: 0.65rem;
+            color: #facc15;
+            background: rgba(234, 179, 8, 0.15);
+            padding: 0.05rem 0.3rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* KHU VỰC PHÁI CỬ (DISPATCH SLOT) */
+        .dispatch-slot-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.3rem 0.5rem;
+            border-radius: 10px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px dashed rgba(56, 189, 248, 0.3);
+            transition: all 0.2s;
+        }
+        .dispatch-slot-box:hover {
+            background: rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.6);
+        }
+
+        .dispatch-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1.5px solid rgba(234, 179, 8, 0.5);
+        }
+
+        .dispatch-placeholder {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px dashed rgba(148, 163, 184, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .dispatch-label-col {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .dispatch-label-col span:first-child {
+            font-size: 0.65rem;
+            color: #94a3b8;
+        }
+        .dispatch-label-col span:last-child {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            max-width: 90px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Nút Tương tác Card: Thu Thập & Nâng Cấp */
+        .node-card-footer {
+            padding: 0.85rem 1.25rem 1.25rem 1.25rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-node-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.55rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            font-family: inherit;
+        }
+
+        .btn-claim {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.6));
+            border-color: rgba(16, 185, 129, 0.6);
+            color: #ecfdf5;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        .btn-claim:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(5, 150, 105, 0.8));
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+        .btn-claim:disabled {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(71, 85, 105, 0.3);
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-upgrade {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(234, 179, 8, 0.35);
+            color: #fef08a;
+        }
+        .btn-upgrade:hover:not(:disabled) {
+            background: rgba(234, 179, 8, 0.18);
+            border-color: rgba(234, 179, 8, 0.7);
+            color: #ffffff;
+            transform: translateY(-1.5px);
+        }
+        .btn-upgrade:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ==========================================================================
+           FOOTER BẬC CAO: NÚT THU THẬP TẤT CẢ (CLAIM ALL BAR)
+           ========================================================================== */
+        .estate-bottom-control-bar {
+            background: rgba(11, 19, 32, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.25rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .control-summary-text {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .control-summary-text b { color: #f8fafc; }
+
+        .btn-claim-all-huge {
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #06b6d4 100%);
+            border: 1px solid rgba(167, 243, 208, 0.6);
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            font-weight: 800;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-claim-all-huge:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.65), 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-claim-all-huge:disabled {
+            background: #1e293b;
+            border-color: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ==========================================================================
+           MODAL CHỌN ĐẠO LỮ PHÁI CỬ (DISPATCH MODAL)
+           ========================================================================== */
+        .dispatch-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .dispatch-modal-backdrop.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dispatch-modal-dialog {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--border-gold);
+            border-radius: 1.25rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dispatch-modal-backdrop.is-open .dispatch-modal-dialog {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: #fef08a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-close-modal {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .btn-close-modal:hover { color: #f8fafc; }
+
+        .companions-select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .companion-select-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.65rem 0.85rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .companion-select-item:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+        .companion-select-item.is-selected {
+            border-color: #facc15;
+            background: rgba(234, 179, 8, 0.15);
+        }
+
+        /* TOAST FLOATING ALERT */
+        .toast-bubble {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #10b981;
+            color: #ecfdf5;
+            padding: 0.75rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+        }
+        .toast-bubble.is-active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================
+         HEADER BAR GIA VIÊN & KHO TÀI SẢN BẢN THÂN
+         ======================================================================== -->
+    <header class="estate-header-bar">
+        <div class="estate-brand">
+            <div class="estate-brand-icon">
+                <i class="fa-solid fa-mountain-sun"></i>
+            </div>
+            <div>
+                <h1 class="estate-brand-title">Tiên Môn Gia Viên</h1>
+                <p class="estate-brand-sub">Hấp Thu Tinh Hoa Địa Mạch • Động Phủ Tự Động Sản Sinh</p>
+            </div>
+        </div>
+
+        <!-- Kho báu người chơi -->
+        <div class="player-vault-shelf">
+            <div class="vault-pill vault-pill--gold">
+                <i class="fa-solid fa-coins"></i>
+                <span>Linh Thạch:</span>
+                <b id="player-linh-thach">25,000</b>
+            </div>
+            <div class="vault-pill vault-pill--tuvi">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Tu Vi:</span>
+                <b id="player-tu-vi">128,500</b>
+            </div>
+            <div class="vault-pill vault-pill--herb">
+                <i class="fa-solid fa-seedling"></i>
+                <span>Linh Thảo:</span>
+                <b id="player-herbs">14</b>
+            </div>
+            <div class="vault-pill vault-pill--ore">
+                <i class="fa-solid fa-gem"></i>
+                <span>Khoáng Thạch:</span>
+                <b id="player-ores">8</b>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- ========================================================================
+         MAIN CONTENT: VIEWPORT GIA VIÊN
+         ======================================================================== -->
+    <main class="estate-viewport">
+
+        <!-- Dẫn nhập tiên gia & Trạng thái Auto -->
+        <section class="estate-lore-banner">
+            <div class="lore-banner-text">
+                <i class="fa-solid fa-circle-info text-cyan-400 mr-1.5"></i>
+                <b>Động Phủ Tự Tại:</b> Rút ngầm địa mạch tiên thiên tích lũy tài nguyên theo thời gian. Phái cử Đạo Lữ cai quản giúp tăng <b>+50% sản lượng</b> mỗi giờ.
+            </div>
+            <div class="auto-status-indicator" id="auto-claim-indicator">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span id="auto-claim-text">Liễu Như Yên: Chưa đạt Hảo Cảm Cấp 5</span>
+            </div>
+        </section>
+
+        <!-- CSS GRID 4 NODES LINH TRẬN TÀI NGUYÊN -->
+        <section class="estate-nodes-grid" id="estate-nodes-container">
+            <!-- 4 Cards sẽ được render bằng JavaScript -->
+        </section>
+
+        <!-- FOOTER: THANH THU THẬP TẤT CẢ TẬP TRUNG -->
+        <footer class="estate-bottom-control-bar">
+            <div class="control-summary-text">
+                <i class="fa-solid fa-cubes-stacked text-amber-400 text-lg"></i>
+                <div>
+                    <div>Tổng sản lượng đang chờ thu hoạch: <b id="total-pending-count" class="text-emerald-400 font-mono">0 món</b></div>
+                    <span class="text-xs text-slate-400">Các bồn chứa đạt 100% sẽ ngừng tích lũy cho đến khi được thu nạp.</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button type="button" class="btn-claim-all-huge" id="btn-claim-all" onclick="claimAllEstateResources()">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    THU THẬP TẤT CẢ
+                </button>
+            </div>
+        </footer>
+
+    </main>
+
+
+    <!-- ========================================================================
+         MODAL PHÁI CỬ ĐẠO LỮ (DISPATCH MODAL)
+         ======================================================================== -->
+    <div class="dispatch-modal-backdrop" id="dispatch-modal" onclick="closeDispatchModal(event)">
+        <div class="dispatch-modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title" id="dispatch-modal-title">
+                    <i class="fa-solid fa-user-shield text-amber-300"></i> Phái Cử Người Cai Quản
+                </h3>
+                <button type="button" class="btn-close-modal" onclick="closeDispatchModal()">&times;</button>
+            </div>
+
+            <p class="text-xs text-slate-300">
+                Lựa chọn Đạo Lữ hoặc Linh Thú tọa trấn Linh Trận này. Người cai quản sẽ dùng tiên lực ôn dưỡng trận pháp, gia tăng <b class="text-amber-300">+50% tốc độ sản xuất</b>.
+            </p>
+
+            <div class="companions-select-list" id="dispatch-companions-list">
+                <!-- Danh sách Đạo Lữ render từ JS -->
+            </div>
+
+            <div class="flex justify-end gap-2 mt-2">
+                <button type="button" class="px-4 py-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-200 text-xs font-bold transition" onclick="unassignCompanionFromActiveNode()">
+                    Gỡ Bỏ Cai Quản
+                </button>
+                <button type="button" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition" onclick="closeDispatchModal()">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST POPUP -->
+    <div class="toast-bubble" id="toast-bubble">Thông báo</div>
+
+
+    <!-- ========================================================================
+         PHẦN 2 & 3: LOGIC JAVASCRIPT & VÒNG LẶP IDLE
+         ======================================================================== -->
+    <script>
+        // ====================================================================
+        // 1. DATA KHỞI TẠO: ESTATE_NODES & ĐẠO LỮ
+        // ====================================================================
+        const ESTATE_NODES = [
+            {
+                id: "node_spirit_tree",
+                name: "Linh Căn Mộc",
+                subTitle: "Tụ Linh Trận",
+                icon: "fa-solid fa-tree",
+                theme: "tuvi",
+                level: 1,
+                baseProductionRate: 120, // 120 Tu Vi / phút (= 2 Tu Vi / giây)
+                capacity: 500,
+                currentAmount: 180,
+                resourceType: "tuvi",
+                resourceName: "Tu Vi",
+                resourceUnit: "điểm",
+                upgradeBaseCost: 1500,
+                assignedCompanionId: "companion_1", // Mặc định Liễu Như Yên cai quản
+                description: "Hấp thu thiên địa thanh khí ngưng đọng thành nguyên khí tu vi thuần khiết."
+            },
+            {
+                id: "node_herb_spring",
+                name: "Dược Tuyền",
+                subTitle: "Suối Linh Dịch",
+                icon: "fa-solid fa-faucet-drip",
+                theme: "herb",
+                level: 1,
+                baseProductionRate: 6, // 6 Linh Thảo / phút (= 0.1 Linh Thảo / giây)
+                capacity: 40,
+                currentAmount: 12,
+                resourceType: "herb",
+                resourceName: "Linh Thảo",
+                resourceUnit: "bó",
+                upgradeBaseCost: 1200,
+                assignedCompanionId: null,
+                description: "Mạch ngầm tụ dưỡng ngọc lộ linh tuyền, giúp dược thảo phát triển thần tốc."
+            },
+            {
+                id: "node_mineral_cavern",
+                name: "Khoáng Động",
+                subTitle: "Địa Mạch Thần Khoáng",
+                icon: "fa-solid fa-mountain",
+                theme: "ore",
+                level: 1,
+                baseProductionRate: 6, // 6 Khoáng Thạch / phút (= 0.1 Khoáng Thạch / giây)
+                capacity: 40,
+                currentAmount: 8,
+                resourceType: "ore",
+                resourceName: "Khoáng Thạch",
+                resourceUnit: "khối",
+                upgradeBaseCost: 1200,
+                assignedCompanionId: null,
+                description: "Địa mạch cửu u kết tụ huyền thiết thạch anh, nguyên liệu cốt lõi rèn pháp khí."
+            },
+            {
+                id: "node_money_treasury",
+                name: "Tiền Trang",
+                subTitle: "Tụ Tài Trận",
+                icon: "fa-solid fa-vault",
+                theme: "gold",
+                level: 1,
+                baseProductionRate: 60, // 60 Linh Thạch / phút (= 1 Linh Thạch / giây)
+                capacity: 600,
+                currentAmount: 240,
+                resourceType: "gold",
+                resourceName: "Linh Thạch",
+                resourceUnit: "viên",
+                upgradeBaseCost: 2000,
+                assignedCompanionId: null,
+                description: "Vận chuyển thiên địa bảo khí quy tụ bốn phương tài lộc về Động Phủ."
+            }
+        ];
+
+        // Danh sách Đạo Lữ có thể Phái Cử
+        const COMPANIONS_LIST = [
+            {
+                id: "companion_1",
+                name: "Liễu Như Yên",
+                title: "Tiểu Sư Muội",
+                avatar: "./assets/images/pet_fox.jpg",
+                affectionLevel: 5, // Đạt Cấp 5 Sinh Tử Giao -> Kích hoạt Auto Claim!
+                bonusDesc: "+50% Tốc độ & Tự động thu thập khi đầy bồn"
+            },
+            {
+                id: "companion_2",
+                name: "Lãnh Nguyệt",
+                title: "Ma Tông Thánh Nữ",
+                avatar: "./assets/images/avatar_heart_demon.jpg",
+                affectionLevel: 2,
+                bonusDesc: "+50% Tốc độ sản xuất tài nguyên"
+            },
+            {
+                id: "companion_3",
+                name: "Hồ Mị Nhi",
+                title: "Yêu Tộc Công Chúa",
+                avatar: "./assets/images/char_cultivator.jpg",
+                affectionLevel: 3,
+                bonusDesc: "+50% Tốc độ sản xuất tài nguyên"
+            }
+        ];
+
+        // State người chơi
+        const playerState = {
+            linhThach: 25000,
+            tuVi: 128500,
+            herbs: 14,
+            ores: 8
+        };
+
+        let currentActiveDispatchNodeId = null;
+
+        // ====================================================================
+        // 2. LOGIC VÒNG LẶP IDLE (IDLE GENERATION LOOP)
+        // ====================================================================
+        // Chạy mỗi giây (1 tick = 1 giây = 1/60 phút)
+        const TICK_INTERVAL_MS = 1000;
+
+        function runIdleProductionTick() {
+            let hasAnyFull = false;
+            let autoClaimTriggered = false;
+
+            // Kiểm tra Liễu Như Yên đạt Cấp 5
+            const lieuNhuYen = COMPANIONS_LIST.find(c => c.id === 'companion_1');
+            const hasAutoClaimPerk = lieuNhuYen && lieuNhuYen.affectionLevel >= 5;
+
+            ESTATE_NODES.forEach(node => {
+                // Kiểm tra có người cai quản không
+                const hasCompanion = Boolean(node.assignedCompanionId);
+                const multiplier = hasCompanion ? 1.5 : 1.0;
+
+                // Tốc độ mỗi giây
+                const ratePerSecond = (node.baseProductionRate / 60) * multiplier;
+
+                if (node.currentAmount < node.capacity) {
+                    node.currentAmount = Math.min(node.capacity, node.currentAmount + ratePerSecond);
+                }
+
+                if (node.currentAmount >= node.capacity) {
+                    hasAnyFull = true;
+                }
+            });
+
+            // Tự động Thu Thập nếu Liễu Như Yên đạt Cấp 5 và có bồn đầy
+            if (hasAutoClaimPerk && hasAnyFull) {
+                claimAllEstateResources(true);
+                autoClaimTriggered = true;
+            }
+
+            // Cập nhật giao diện
+            updateEstateUI();
+        }
+
+        // Bắt đầu vòng lặp Idle
+        const idleInterval = setInterval(runIdleProductionTick, TICK_INTERVAL_MS);
+
+        // ====================================================================
+        // 3. LOGIC NÂNG CẤP NODE (UPGRADE NODE)
+        // ====================================================================
+        function getUpgradeCost(node) {
+            return Math.round(node.upgradeBaseCost * Math.pow(1.65, node.level - 1));
+        }
+
+        function upgradeNode(nodeId) {
+            const node = ESTATE_NODES.find(n => n.id === nodeId);
+            if (!node) return;
+
+            const cost = getUpgradeCost(node);
+            if (playerState.linhThach < cost) {
+                showToast(`⚠️ Không đủ Linh Thạch! Cần ${cost.toLocaleString()} Linh Thạch để nâng cấp.`);
+                return;
+            }
+
+            // Trừ tiền & Nâng cấp
+            playerState.linhThach -= cost;
+            node.level += 1;
+            node.baseProductionRate = Math.round(node.baseProductionRate * 1.45);
+            node.capacity = Math.round(node.capacity * 1.5);
+
+            showToast(`✨ Chúc mừng! Đã nâng cấp [${node.name}] lên Cấp ${node.level}!`);
+            updateEstateUI();
+        }
+
+        // ====================================================================
+        // 4. LOGIC THU HOẠCH TÀI NGUYÊN (CLAIM & CLAIM ALL)
+        // ====================================================================
+        function claimSingleNode(nodeId) {
+            const node = ESTATE_NODES.find(n => n.id === nodeId);
+            if (!node) return;
+
+            const amountToClaim = Math.floor(node.currentAmount);
+            if (amountToClaim <= 0) {
+                showToast(`Bồn chứa [${node.name}] chưa có đủ tài nguyên để thu thập!`);
+                return;
+            }
+
+            // Chuyển tài nguyên vào túi người chơi
+            addResourceToPlayer(node.resourceType, amountToClaim);
+            node.currentAmount -= amountToClaim;
+
+            showToast(`💎 Đã thu nạp +${amountToClaim.toLocaleString()} ${node.resourceName}!`);
+            updateEstateUI();
+        }
+
+        function claimAllEstateResources(isAuto = false) {
+            let totalClaimed = 0;
+            const summary = [];
+
+            ESTATE_NODES.forEach(node => {
+                const amount = Math.floor(node.currentAmount);
+                if (amount > 0) {
+                    addResourceToPlayer(node.resourceType, amount);
+                    node.currentAmount -= amount;
+                    totalClaimed += amount;
+                    summary.push(`+${amount.toLocaleString()} ${node.resourceName}`);
+                }
+            });
+
+            if (totalClaimed <= 0) {
+                if (!isAuto) showToast(`Không có tài nguyên nào tích lũy để thu thập!`);
+                return;
+            }
+
+            if (isAuto) {
+                showToast(`🌸 [Liễu Như Yên Tự Động Thu Hoạch]: ${summary.join(', ')}!`);
+            } else {
+                showToast(`✨ Thu thập tất cả thành công: ${summary.join(', ')}!`);
+            }
+
+            updateEstateUI();
+        }
+
+        function addResourceToPlayer(type, amount) {
+            switch(type) {
+                case 'tuvi':
+                    playerState.tuVi += amount;
+                    break;
+                case 'herb':
+                    playerState.herbs += amount;
+                    break;
+                case 'ore':
+                    playerState.ores += amount;
+                    break;
+                case 'gold':
+                    playerState.linhThach += amount;
+                    break;
+            }
+        }
+
+        // ====================================================================
+        // 5. PHÁI CỬ ĐẠO LỮ (DISPATCH COMPANIONS)
+        // ====================================================================
+        function openDispatchModal(nodeId) {
+            currentActiveDispatchNodeId = nodeId;
+            const node = ESTATE_NODES.find(n => n.id === nodeId);
+            document.getElementById('dispatch-modal-title').innerHTML = `
+                <i class="fa-solid fa-user-shield text-amber-300"></i> Phái Cử: ${node.name}
+            `;
+
+            const listContainer = document.getElementById('dispatch-companions-list');
+            listContainer.innerHTML = COMPANIONS_LIST.map(comp => {
+                // Kiểm tra xem Đạo Lữ này đang cai quản node nào
+                const assignedNode = ESTATE_NODES.find(n => n.assignedCompanionId === comp.id);
+                const isCurrentNode = node.assignedCompanionId === comp.id;
+
+                return `
+                    <div class="companion-select-item ${isCurrentNode ? 'is-selected' : ''}" onclick="assignCompanionToNode('${comp.id}')">
+                        <div class="flex items-center gap-3">
+                            <img src="${comp.avatar}" class="w-10 h-10 rounded-lg object-cover border border-pink-400">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-100 flex items-center gap-2">
+                                    ${comp.name}
+                                    ${isCurrentNode ? '<span class="text-[10px] text-amber-300 font-mono">[Đang Cai Quản]</span>' : ''}
+                                </h4>
+                                <span class="text-[11px] text-pink-300">${comp.title} • Hảo Cảm Cấp ${comp.affectionLevel}</span>
+                                <span class="text-[10px] text-emerald-400 block">${comp.bonusDesc}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="px-3 py-1 rounded bg-sky-900/60 text-sky-200 border border-sky-500/40 text-xs font-bold">
+                            ${isCurrentNode ? 'Giữ Nguyên' : (assignedNode ? 'Chuyển Sang' : 'Bổ Nhiệm')}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('dispatch-modal').classList.add('is-open');
+        }
+
+        function closeDispatchModal(e) {
+            document.getElementById('dispatch-modal').classList.remove('is-open');
+        }
+
+        function assignCompanionToNode(companionId) {
+            if (!currentActiveDispatchNodeId) return;
+
+            // Nếu Đạo Lữ này đang ở node khác -> gỡ khỏi node đó
+            ESTATE_NODES.forEach(n => {
+                if (n.assignedCompanionId === companionId) {
+                    n.assignedCompanionId = null;
+                }
+            });
+
+            // Gán vào node hiện tại
+            const node = ESTATE_NODES.find(n => n.id === currentActiveDispatchNodeId);
+            if (node) {
+                node.assignedCompanionId = companionId;
+                const comp = COMPANIONS_LIST.find(c => c.id === companionId);
+                showToast(`👤 Đã bổ nhiệm [${comp.name}] cai quản [${node.name}] (+50% tốc độ)!`);
+            }
+
+            closeDispatchModal();
+            updateEstateUI();
+        }
+
+        function unassignCompanionFromActiveNode() {
+            if (!currentActiveDispatchNodeId) return;
+            const node = ESTATE_NODES.find(n => n.id === currentActiveDispatchNodeId);
+            if (node) {
+                node.assignedCompanionId = null;
+                showToast(`Đã thu hồi lệnh cai quản tại [${node.name}].`);
+            }
+            closeDispatchModal();
+            updateEstateUI();
+        }
+
+        // ====================================================================
+        // 6. RENDER GIAO DIỆN CHÍNH (RENDER UI)
+        // ====================================================================
+        function updateEstateUI() {
+            // Cập nhật tài nguyên cá nhân
+            document.getElementById('player-linh-thach').textContent = playerState.linhThach.toLocaleString();
+            document.getElementById('player-tu-vi').textContent = playerState.tuVi.toLocaleString();
+            document.getElementById('player-herbs').textContent = playerState.herbs.toLocaleString();
+            document.getElementById('player-ores').textContent = playerState.ores.toLocaleString();
+
+            // Cập nhật trạng thái Auto của Liễu Như Yên
+            const lieuNhuYen = COMPANIONS_LIST.find(c => c.id === 'companion_1');
+            const autoInd = document.getElementById('auto-claim-indicator');
+            const autoText = document.getElementById('auto-claim-text');
+            if (lieuNhuYen && lieuNhuYen.affectionLevel >= 5) {
+                autoInd.classList.remove('is-disabled');
+                autoText.innerHTML = `🌸 <b>Liễu Như Yên:</b> Đang tự động thu thập khi đầy bồn`;
+            } else {
+                autoInd.classList.add('is-disabled');
+                autoText.textContent = `Liễu Như Yên: Cần Hảo Cảm Cấp 5 để mở Auto`;
+            }
+
+            // Render 4 Node Cards
+            const container = document.getElementById('estate-nodes-container');
+            let totalPending = 0;
+
+            container.innerHTML = ESTATE_NODES.map(node => {
+                const isFull = node.currentAmount >= node.capacity;
+                const pct = Math.min(100, Math.round((node.currentAmount / node.capacity) * 100));
+                const upgradeCost = getUpgradeCost(node);
+                const canUpgrade = playerState.linhThach >= upgradeCost;
+                const canClaim = Math.floor(node.currentAmount) > 0;
+                totalPending += Math.floor(node.currentAmount);
+
+                // Thông tin Đạo Lữ cai quản
+                const assignedComp = COMPANIONS_LIST.find(c => c.id === node.assignedCompanionId);
+                const hasCompanion = Boolean(assignedComp);
+                const multiplier = hasCompanion ? 1.5 : 1.0;
+                const effectiveRate = Math.round(node.baseProductionRate * multiplier);
+
+                return `
+                    <article class="node-card ${isFull ? 'is-full' : ''}">
+                        <!-- Header -->
+                        <div class="node-card-header">
+                            <div class="node-meta">
+                                <div class="node-icon-frame node-icon-frame--${node.theme}">
+                                    <i class="${node.icon}"></i>
+                                </div>
+                                <div class="node-title-group">
+                                    <h3>${node.name}</h3>
+                                    <span>${node.subTitle}</span>
+                                </div>
+                            </div>
+                            <span class="node-level-badge">Cấp ${node.level}</span>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="node-card-body">
+                            <!-- Bồn chứa & Tiến độ -->
+                            <div class="storage-status-block">
+                                <div class="storage-header">
+                                    <span class="storage-label">
+                                        <i class="fa-solid fa-box-archive"></i> Bồn Chứa:
+                                    </span>
+                                    <span class="storage-numbers ${isFull ? 'is-maxed' : ''}">
+                                        ${Math.floor(node.currentAmount).toLocaleString()} / ${node.capacity.toLocaleString()} ${node.resourceUnit}
+                                        ${isFull ? '(ĐẦY)' : ''}
+                                    </span>
+                                </div>
+                                <div class="storage-track">
+                                    <div class="storage-fill storage-fill--${node.theme} ${isFull ? 'is-maxed' : ''}" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Tốc độ sản xuất & Ô Phái Cử -->
+                            <div class="rate-and-dispatch-row">
+                                <div class="production-rate-info">
+                                    <span class="rate-title">Sản lượng:</span>
+                                    <span class="rate-value">
+                                        +${effectiveRate} / phút
+                                        ${hasCompanion ? '<span class="rate-bonus-tag">+50%</span>' : ''}
+                                    </span>
+                                </div>
+
+                                <!-- Ô vuông Phái Cử Đạo Lữ -->
+                                <div class="dispatch-slot-box" onclick="openDispatchModal('${node.id}')" title="Bấm để cử Đạo Lữ tọa trấn">
+                                    ${hasCompanion 
+                                        ? `<img src="${assignedComp.avatar}" alt="${assignedComp.name}" class="dispatch-avatar">`
+                                        : `<div class="dispatch-placeholder"><i class="fa-solid fa-plus"></i></div>`
+                                    }
+                                    <div class="dispatch-label-col">
+                                        <span>Phái cử</span>
+                                        <span>${hasCompanion ? assignedComp.name : 'Trống (+50%)'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="node-card-footer">
+                            <button type="button" class="btn-node-action btn-claim" ${canClaim ? '' : 'disabled'} onclick="claimSingleNode('${node.id}')">
+                                <i class="fa-solid fa-hand-holding"></i> Thu Nạp
+                            </button>
+                            <button type="button" class="btn-node-action btn-upgrade" ${canUpgrade ? '' : 'disabled'} onclick="upgradeNode('${node.id}')" title="Cần ${upgradeCost.toLocaleString()} Linh Thạch">
+                                <i class="fa-solid fa-arrow-up-right-dots"></i> Cấp ${node.level + 1} (${upgradeCost.toLocaleString()})
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            // Cập nhật tổng sản lượng chờ thu thập
+            document.getElementById('total-pending-count').textContent = `${totalPending.toLocaleString()} món tài nguyên`;
+            document.getElementById('btn-claim-all').disabled = totalPending <= 0;
+        }
+
+        // ====================================================================
+        // 7. TOAST THÔNG BÁO NHANH
+        // ====================================================================
+        let toastTimeout = null;
+        function showToast(msg) {
+            const toast = document.getElementById('toast-bubble');
+            toast.textContent = msg;
+            toast.classList.add('is-active');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('is-active');
+            }, 2600);
+        }
+
+        // Khởi động
+        window.addEventListener('DOMContentLoaded', () => {
+            updateEstateUI();
+        });
+    </script>
+</body>
+</html>

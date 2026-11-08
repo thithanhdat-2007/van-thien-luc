@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vạn Cổ Tu Tiên — Dark Xianxia UI Template</title>
+    <!-- Google Fonts: Cinzel, Playfair Display, Roboto Mono, Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Dark Xianxia Theme Stylesheet -->
+    <link rel="stylesheet" href="./css/dark-xianxia-theme.css">
+
+    <style>
+        /* BASE & RESET */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--xianxia-bg-root);
+            color: var(--xianxia-text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* NỀN TIÊN CẢNH HẮC ÁM & CÁC LỚP SƯƠNG MÙ */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.08) 0%, rgba(5, 5, 8, 0.95) 70%),
+                        linear-gradient(180deg, #050508 0%, #0b0f14 50%, #050508 100%);
+        }
+
+        .ambient-stars {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                              radial-gradient(1px 1px at 40px 70px, rgba(253, 224, 71, 0.8), rgba(0,0,0,0)),
+                              radial-gradient(1.5px 1.5px at 90px 40px, rgba(56, 189, 248, 0.9), rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.25;
+        }
+
+        /* HEADER TOP HUD */
+        .top-hud-bar {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: rgba(11, 13, 18, 0.85);
+            backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--glass-border-gold);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .hud-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hud-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(16, 185, 129, 0.2));
+            border: 1.5px solid var(--xianxia-gold-bright);
+            box-shadow: 0 0 12px var(--xianxia-gold-glow);
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--xianxia-gold-bright);
+        }
+
+        .hud-resource-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .resource-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(18, 22, 31, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        /* BỐ CỤC 3 CỘT (MAIN CONTAINER) */
+        .layout-container {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1680px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+        }
+
+        @media (min-width: 1024px) {
+            .layout-container {
+                grid-template-columns: 320px 1fr 340px;
+                height: calc(100vh - 60px);
+                overflow: hidden;
+            }
+        }
+
+        /* THẺ PANEL TRONG CỘT */
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--xianxia-gold-bright);
+            letter-spacing: 0.06em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CỘT GIỮA: HOẠT CẢNH VÀ TRUNG TÂM TU LUYỆN */
+        .center-stage-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .taichi-magic-array {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .array-circle-outer {
+            position: absolute;
+            inset: 0;
+            border: 1.5px dashed rgba(245, 158, 11, 0.4);
+            border-radius: 50%;
+            animation: spin 30s linear infinite;
+        }
+
+        .array-circle-inner {
+            position: absolute;
+            inset: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.45);
+            border-radius: 50%;
+            animation: spin-reverse 20s linear infinite;
+        }
+
+        .avatar-cultivator {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(4, 6, 9, 0.8) 70%);
+            border: 2px solid var(--xianxia-jade);
+            box-shadow: 0 0 35px var(--xianxia-jade-glow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            animation: pulse-aura 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+        @keyframes pulse-aura {
+            0% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); transform: scale(0.98); }
+            100% { box-shadow: 0 0 45px rgba(245, 158, 11, 0.5); transform: scale(1.02); }
+        }
+
+        /* KHUNG CHAT NHẬT KÝ TU TIÊN */
+        .log-box-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+            font-size: 12px;
+            line-height: 1.7;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry--gold { border-left-color: var(--xianxia-gold); }
+        .log-entry--jade { border-left-color: var(--xianxia-jade); }
+        .log-entry--crimson { border-left-color: var(--xianxia-crimson); }
+    </style>
+</head>
+<body>
+
+    <!-- LỚP NỀN HẮC ÁM & PARTICLE -->
+    <div class="ambient-bg">
+        <div class="ambient-stars"></div>
+    </div>
+
+    <!-- 1. TOP HEADER HUD (BAR THÔNG TIN ĐẠO HỮU) -->
+    <header class="top-hud-bar">
+        <div class="hud-profile">
+            <div class="hud-avatar">ĐẠO</div>
+            <div>
+                <div class="font-xianxia-title" style="font-size: 15px; color: #f8fafc;">Tiêu Dao Tử</div>
+                <div style="font-size: 11px; color: var(--xianxia-gold-bright);" class="font-xianxia-mono">Trúc Cơ Kỳ • Sơ Kỳ</div>
+            </div>
+        </div>
+
+        <div class="hud-resource-row">
+            <div class="resource-pill">
+                <i class="fa-regular fa-gem" style="color: var(--xianxia-jade);"></i>
+                <span style="color: var(--xianxia-text-muted);">Linh Thạch:</span>
+                <strong class="font-xianxia-mono" style="color: #6ee7b7;">128.450</strong>
+            </div>
+            <div class="resource-pill">
+                <i class="fa-solid fa-diamond" style="color: #c084fc;"></i>
+                <span style="color: var(--xianxia-text-muted);">Tiên Ngọc:</span>
+                <strong class="font-xianxia-mono" style="color: #f0abfc;">350</strong>
+            </div>
+            <div class="resource-pill">
+                <i class="fa-solid fa-shield-halved" style="color: var(--xianxia-crimson-bright);"></i>
+                <span style="color: var(--xianxia-text-muted);">Lực Chiến:</span>
+                <strong class="font-xianxia-mono" style="color: #fde047;">48.290</strong>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. BỐ CỤC 3 CỘT (DESKTOP GRID / MOBILE STACK) -->
+    <main class="layout-container">
+
+        <!-- ==========================================
+             CỘT TRÁI: BẢNG THÔNG TIN NHÂN VẬT & SINH TỒN
+        =========================================== -->
+        <aside class="xianxia-glass-card p-4 flex flex-col gap-4 overflow-y-auto" style="padding: 18px;">
+            <div class="card-header-bar">
+                <span class="card-title"><i class="fa-solid fa-user-ninja"></i> Trạng Thái Nhân Vật</span>
+                <span class="font-xianxia-mono text-xs text-slate-400">Thọ: 24/250 năm</span>
+            </div>
+
+            <!-- THANH TIẾN TRÌNH TU VI (PROGRESS BAR WITH SHIMMER SWEEP) -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                    <span style="color: var(--xianxia-gold-bright); font-weight: 600;">Tu Vi Tích Lũy</span>
+                    <span class="font-xianxia-mono" style="color: #fef08a;">18.500 / 25.000 (74%)</span>
+                </div>
+                <div class="xianxia-progress-track" style="height: 10px;">
+                    <div class="xianxia-progress-fill fill-exp-gold" style="width: 74%;"></div>
+                </div>
+            </div>
+
+            <!-- THANH KHÍ HUYẾT (HP) -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                    <span style="color: var(--xianxia-crimson-bright); font-weight: 600;">Khí Huyết (HP)</span>
+                    <span class="font-xianxia-mono" style="color: #fda4af;">18.000 / 18.000</span>
+                </div>
+                <div class="xianxia-progress-track" style="height: 8px;">
+                    <div class="xianxia-progress-fill fill-hp-crimson" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- THANH LINH LỰC (MP) -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                    <span style="color: var(--xianxia-cyan); font-weight: 600;">Linh Lực (MP)</span>
+                    <span class="font-xianxia-mono" style="color: #7dd3fc;">3.200 / 3.600</span>
+                </div>
+                <div class="xianxia-progress-track" style="height: 8px;">
+                    <div class="xianxia-progress-fill fill-mp-cyan" style="width: 88%;"></div>
+                </div>
+            </div>
+
+            <!-- CHỈ SỐ CƠ BẢN (ATTRIBUTES GRID) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                <div style="background: var(--xianxia-bg-inner); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--xianxia-text-muted);">Công Kích</div>
+                    <div class="font-xianxia-mono" style="font-size: 16px; font-weight: 700; color: #f8fafc;">1.800</div>
+                </div>
+                <div style="background: var(--xianxia-bg-inner); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--xianxia-text-muted);">Phòng Ngự</div>
+                    <div class="font-xianxia-mono" style="font-size: 16px; font-weight: 700; color: #f8fafc;">580</div>
+                </div>
+                <div style="background: var(--xianxia-bg-inner); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--xianxia-text-muted);">Tốc Độ Hấp Thu</div>
+                    <div class="font-xianxia-mono" style="font-size: 16px; font-weight: 700; color: #34d399;">+35/s</div>
+                </div>
+                <div style="background: var(--xianxia-bg-inner); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--xianxia-text-muted);">Hệ Số Cảnh Giới</div>
+                    <div class="font-xianxia-mono" style="font-size: 16px; font-weight: 700; color: #fbbf24;">x5 (Trúc Cơ)</div>
+                </div>
+            </div>
+
+            <!-- PHẨM CẤP TRANG BỊ NHANH -->
+            <div style="margin-top: 6px;">
+                <div style="font-size: 11px; color: var(--xianxia-text-muted); margin-bottom: 6px;">Pháp Bảo & Trang Bị</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                    <div style="height: 52px; background: rgba(0,0,0,0.5); border: 1px solid var(--xianxia-rarity-rare); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px;" class="rarity-rare">
+                        <i class="fa-solid fa-khanda"></i><span>Phi Kiếm</span>
+                    </div>
+                    <div style="height: 52px; background: rgba(0,0,0,0.5); border: 1px solid var(--xianxia-rarity-epic); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px;" class="rarity-epic">
+                        <i class="fa-solid fa-shield-halved"></i><span>Hộ Kính</span>
+                    </div>
+                    <div style="height: 52px; background: rgba(0,0,0,0.5); border: 1px solid var(--xianxia-rarity-legend); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px;" class="rarity-legend">
+                        <i class="fa-solid fa-ring"></i><span>Nhẫn Cổ</span>
+                    </div>
+                    <div style="height: 52px; background: rgba(0,0,0,0.5); border: 1px dashed rgba(255,255,255,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #475569;">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==========================================
+             CỘT GIỮA: SÂN KHẤU HOẠT CẢNH & TÍNH NĂNG TƯƠNG TÁC
+        =========================================== -->
+        <section class="xianxia-glass-card center-stage-container">
+            <!-- VÙNG TIÊU ĐỀ KHU VỰC HIỆN TẠI -->
+            <div style="text-align: center;">
+                <div class="font-xianxia-title" style="font-size: 18px; color: #fef08a;">
+                    <i class="fa-solid fa-mountain-sun mr-2"></i> Thanh Vân Động Phủ
+                </div>
+                <p style="font-size: 12px; color: var(--xianxia-text-muted); font-style: italic; margin-top: 4px;">
+                    "Linh dịch hóa tuyền, chu thiên không dứt, đạo cơ trường tồn."
+                </p>
+            </div>
+
+            <!-- PHÁP TRẬN BÁT QUÁI & AVATAR ĐẢ TỌA -->
+            <div class="taichi-magic-array">
+                <div class="array-circle-outer"></div>
+                <div class="array-circle-inner"></div>
+                <div class="avatar-cultivator">
+                    <i class="fa-solid fa-yin-yang" style="font-size: 38px; color: #fef08a; animation: spin 16s linear infinite;"></i>
+                    <span class="font-xianxia-mono" style="font-size: 11px; margin-top: 6px; color: #a7f3d0; font-weight: 700;">Đang Vận Công</span>
+                </div>
+            </div>
+
+            <!-- CỤM NÚT THAO TÁC CHÍNH -->
+            <div style="display: flex; gap: 12px; width: 100%; max-width: 480px; justify-content: center; flex-wrap: wrap;">
+                <button class="xianxia-btn xianxia-btn-gold" style="flex: 1; min-width: 150px; padding: 12px 20px;">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Chu Thiên Vận Công</span>
+                </button>
+                <button class="xianxia-btn xianxia-btn-crimson" style="flex: 1; min-width: 150px; padding: 12px 20px;">
+                    <i class="fa-solid fa-dungeon"></i>
+                    <span>Trấn Yêu Tháp</span>
+                </button>
+                <button class="xianxia-btn xianxia-btn-jade" style="flex: 1; min-width: 140px; padding: 12px 20px;">
+                    <i class="fa-solid fa-seedling"></i>
+                    <span>Linh Điền</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             CỘT PHẢI: THIÊN CƠ NHẬT KÝ & TRỢ LÝ TỰ ĐỘNG
+        =========================================== -->
+        <aside class="col-right-sidebar">
+
+            <!-- 1. HỘP THOẠI THIÊN CƠ NHẬT KÝ -->
+            <div class="xianxia-glass-card" style="padding: 16px; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="card-header-bar">
+                    <span class="card-title"><i class="fa-solid fa-scroll"></i> Thiên Cơ Nhật Ký</span>
+                    <span style="font-size: 11px; color: var(--xianxia-jade);"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Trực tuyến</span>
+                </div>
+
+                <!-- DÒNG LOG CUỘN MƯỢT -->
+                <div class="log-box-stream">
+                    <div class="log-entry log-entry--gold">
+                        <span class="font-xianxia-mono" style="color: #94a3b8; margin-right: 4px;">[12:00]</span>
+                        <span>Đột phá thành công <strong style="color: #fde047;">Trúc Cơ Kỳ Sơ Kỳ</strong>! Thực lực tăng vọt x5.</span>
+                    </div>
+                    <div class="log-entry log-entry--jade">
+                        <span class="font-xianxia-mono" style="color: #94a3b8; margin-right: 4px;">[12:01]</span>
+                        <span>Thu hoạch <strong style="color: #34d399;">5 Ngân Hoa Thảo</strong> từ Linh Điền.</span>
+                    </div>
+                    <div class="log-entry log-entry--crimson">
+                        <span class="font-xianxia-mono" style="color: #94a3b8; margin-right: 4px;">[12:02]</span>
+                        <span>Trấn Yêu Tháp: Đại phá <strong style="color: #fb7185;">Tầng 12</strong>, trảm sát Yêu Lang Thủ Lĩnh!</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="font-xianxia-mono" style="color: #94a3b8; margin-right: 4px;">[12:03]</span>
+                        <span>Chu thiên vận hành thông suốt, hấp thu <strong style="color: #38bdf8;">+350 Tu Vi</strong>.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. BẢNG ĐIỀU KHIỂN TRỢ LÝ TỰ ĐỘNG (AUTOMATION SWITCHES) -->
+            <div class="xianxia-glass-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="card-header-bar" style="margin-bottom: 8px;">
+                    <span class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Trợ Lý Tự Động</span>
+                    <i class="fa-solid fa-gears" style="color: var(--xianxia-gold-bright);"></i>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fde047; font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span>Auto Tổng</span>
+                        <input type="checkbox" checked style="accent-color: var(--xianxia-gold-bright); width: 16px; height: 16px;">
+                    </label>
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #cbd5e1;">
+                        <span>Tự động nuốt Tụ Khí Đan</span>
+                        <input type="checkbox" checked style="accent-color: var(--xianxia-jade); width: 14px; height: 14px;">
+                    </label>
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #cbd5e1;">
+                        <span>Tự động thu hoạch Linh Điền</span>
+                        <input type="checkbox" checked style="accent-color: var(--xianxia-jade); width: 14px; height: 14px;">
+                    </label>
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #cbd5e1;">
+                        <span>Tự động khai Lò Đan</span>
+                        <input type="checkbox" checked style="accent-color: var(--xianxia-purple); width: 14px; height: 14px;">
+                    </label>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,232 @@
+/* ==========================================================================
+   HỆ THỐNG TẠO TÀI KHOẢN & CHỈNH SỬA BẢN THỂ (ACCOUNT & PROFILE SYSTEM)
+   Tác quyền: Vấn Thiên Lục - Dark Xianxia Glassmorphism UI
+   ========================================================================== */
+
+#profile-login-modal,
+#profile-account-modal,
+.profile-account-overlay {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important; /* Phải cao nhất để đè lên mọi thứ */
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(0, 0, 0, 0.8) !important; /* Nền đen mờ */
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+}
+
+/* Panel Hộp Thần Bí */
+.profile-panel-card {
+    background: radial-gradient(circle at top, rgba(32, 22, 16, 0.96), rgba(8, 10, 18, 0.98));
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), inset 0 0 25px rgba(251, 191, 36, 0.08);
+    border-radius: 1.25rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 1.5rem;
+    margin: auto;
+    box-sizing: border-box;
+}
+
+/* Nút Đóng Modal */
+.profile-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.625rem;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+.profile-close-btn:hover {
+    background: rgba(225, 29, 72, 0.8);
+    border-color: rgba(244, 63, 94, 0.6);
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+/* Nút Đăng Nhập Google (Liên Kết Thiên Đạo) */
+.btn-google-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.875rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(254, 243, 199, 0.94));
+    border: 1px solid rgba(251, 191, 36, 0.85);
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
+    color: #1e1b4b;
+    font-family: var(--font-serif, serif);
+    font-weight: 800;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-google-login:hover {
+    background: #ffffff;
+    box-shadow: 0 0 35px rgba(251, 191, 36, 0.8), 0 4px 15px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+    color: #0f172a;
+}
+
+.btn-google-login:active {
+    transform: translateY(1px);
+}
+
+.google-icon-svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Dải Phân Cách Hoặc */
+.profile-auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.25rem 0;
+    color: rgba(251, 191, 36, 0.6);
+    font-size: 0.6875rem;
+    font-family: var(--font-serif, serif);
+    letter-spacing: 0.1em;
+}
+
+.profile-auth-divider::before,
+.profile-auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.profile-auth-divider:not(:empty)::before {
+    margin-right: 0.75rem;
+}
+
+.profile-auth-divider:not(:empty)::after {
+    margin-left: 0.75rem;
+}
+
+/* Nút Đăng Xuất Tách Hồn */
+.btn-logout-cloud {
+    background: rgba(88, 28, 135, 0.75);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    color: #e9d5ff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-logout-cloud:hover {
+    background: rgba(126, 34, 206, 0.95);
+    border-color: rgba(192, 132, 252, 0.8);
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+}
+
+/* Thẻ Input Phong Cách Tiên Hiệp Hắc Ám */
+.profile-xianxia-input {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 215, 0, 0.4) !important;
+    color: #ffd700 !important;
+    outline: none !important;
+    transition: all 0.25s ease;
+}
+
+.profile-xianxia-input:focus {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.45) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+}
+
+.profile-xianxia-input::placeholder {
+    color: rgba(251, 191, 36, 0.4);
+}
+
+/* Radio Card Giới Tính */
+.gender-radio-card input:checked + .gender-card-inner {
+    border-color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+/* Radio Card Linh Căn */
+.linhcan-option input:checked + .linhcan-box {
+    border-color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Nút Bước Vào Luân Hồi */
+.btn-create-profile {
+    background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24);
+    color: #050811;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.45);
+    border: 1px solid rgba(254, 240, 138, 0.5);
+}
+
+.btn-create-profile:hover {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24, #fef08a);
+    box-shadow: 0 0 35px rgba(251, 191, 36, 0.7);
+    transform: translateY(-1px);
+}
+
+.btn-create-profile:active {
+    transform: translateY(1px);
+}
+
+/* Nút Lưu Chuyển Hóa */
+.btn-save-profile {
+    background: linear-gradient(135deg, #059669, #10b981, #34d399);
+    color: #022c22;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+    border: 1px solid rgba(110, 231, 183, 0.4);
+}
+
+.btn-save-profile:hover {
+    background: linear-gradient(135deg, #10b981, #34d399, #6ee7b7);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+}
+
+/* Hover tương tác trên Topbar Avatar */
+.dao-avatar {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dao-avatar:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 18px rgba(251, 191, 36, 0.85) !important;
+}
+
+.dao-avatar:active {
+    transform: scale(0.96);
+}

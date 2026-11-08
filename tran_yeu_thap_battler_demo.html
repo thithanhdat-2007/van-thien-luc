@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Trấn Yêu Tháp • Auto-Battler — Vạn Cổ Tu Tiên</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. RESET & BIẾN MÀU TRẤN YÊU THÁP (DARK CRIMSON & JADE GLASSMORPHISM)
+           ========================================================================== */
+        :root {
+            --bg-deep: #070307;
+            --bg-arena: rgba(18, 10, 22, 0.85);
+            --border-crimson: rgba(225, 29, 72, 0.45);
+            --border-emerald: rgba(16, 185, 129, 0.45);
+            --border-gold: rgba(234, 179, 8, 0.4);
+            --rose-glow: #f43f5e;
+            --emerald-glow: #10b981;
+            --amber-glow: #f59e0b;
+            --purple-mystic: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(225, 29, 72, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 60%),
+                linear-gradient(180deg, #070307 0%, #150614 100%);
+            color: #fce7f3;
+            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Thanh cuộn đỏ tiên ma */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(20, 8, 22, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(225, 29, 72, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(225, 29, 72, 0.7); }
+
+        /* ==========================================================================
+           HEADER BAR TRẤN YÊU THÁP
+           ========================================================================== */
+        .tower-header-bar {
+            background: rgba(18, 8, 22, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-crimson);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .tower-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .tower-brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(225, 29, 72, 0.3), rgba(168, 85, 247, 0.3));
+            border: 1.5px solid var(--rose-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fda4af;
+            font-size: 1.3rem;
+            box-shadow: 0 0 15px rgba(225, 29, 72, 0.4);
+        }
+
+        .tower-brand-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff1f2;
+            letter-spacing: 0.5px;
+        }
+
+        .tower-brand-sub {
+            font-size: 0.72rem;
+            color: #fda4af;
+            font-family: 'Noto Serif', serif;
+        }
+
+        .tower-vault-shelf {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .vault-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 10px;
+            background: rgba(28, 12, 32, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .vault-pill--gold { border-color: rgba(234, 179, 8, 0.35); color: #fef08a; }
+        .vault-pill--tuvi { border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
+
+        /* ==========================================================================
+           BỐ CỤC CHÍNH (ARENA STAGE: 3 CỘT PC / STACK TRÊN MOBILE)
+           ========================================================================== */
+        .tower-viewport {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: relative;
+        }
+
+        .arena-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (min-width: 1024px) {
+            .arena-container {
+                grid-template-columns: 29% 42% 29%;
+                align-items: stretch;
+            }
+        }
+
+        .fighter-card {
+            background: var(--bg-arena);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .fighter-card--player {
+            border: 1.5px solid var(--border-emerald);
+            background: linear-gradient(180deg, rgba(6, 78, 59, 0.2) 0%, rgba(18, 10, 22, 0.9) 100%);
+        }
+
+        .fighter-card--boss {
+            border: 1.5px solid var(--border-crimson);
+            background: linear-gradient(180deg, rgba(136, 19, 55, 0.2) 0%, rgba(18, 10, 22, 0.9) 100%);
+        }
+
+        .fighter-card--arena {
+            border: 1.5px solid rgba(225, 29, 72, 0.3);
+            background: rgba(15, 6, 18, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Avatar Fighter & Dynamic HP Bar */
+        .fighter-avatar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .avatar-frame {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            border: 2px solid transparent;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        .avatar-frame--player { border-color: var(--emerald-glow); box-shadow: 0 0 20px rgba(16, 185, 129, 0.35); }
+        .avatar-frame--boss { border-color: var(--rose-glow); box-shadow: 0 0 20px rgba(225, 29, 72, 0.45); }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Hiệu ứng chớp đỏ khi nhận sát thương */
+        .avatar-frame.hit-flash {
+            animation: hitRedFlash 0.3s ease-out;
+        }
+        @keyframes hitRedFlash {
+            0% { filter: brightness(2) drop-shadow(0 0 20px #e11d48); transform: scale(0.96); }
+            50% { filter: contrast(2) invert(0.2) drop-shadow(0 0 30px #e11d48); transform: scale(1.04); }
+            100% { filter: none; transform: scale(1); }
+        }
+
+        .fighter-name-title {
+            margin-top: 0.6rem;
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+        .fighter-name-title--player { color: #6ee7b7; }
+        .fighter-name-title--boss { color: #fda4af; }
+
+        .fighter-sub-rank {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .fighter-cp-badge {
+            margin-top: 0.4rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+        .fighter-cp-badge--player { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #a7f3d0; }
+        .fighter-cp-badge--boss { background: rgba(225, 29, 72, 0.2); border: 1px solid rgba(225, 29, 72, 0.5); color: #fecdd3; }
+
+        /* THANH MÁU ĐỘNG (DYNAMIC HP BARS) */
+        .dynamic-hp-block {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            margin-top: 0.75rem;
+        }
+
+        .hp-numbers-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hp-track {
+            width: 100%;
+            height: 14px;
+            border-radius: 999px;
+            background: rgba(10, 4, 12, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .hp-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .hp-fill--player {
+            background: linear-gradient(90deg, #059669, #10b981, #34d399);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }
+        .hp-fill--boss {
+            background: linear-gradient(90deg, #9f1239, #e11d48, #fb7185);
+            box-shadow: 0 0 12px rgba(225, 29, 72, 0.6);
+        }
+
+        /* Bảng chỉ số tóm tắt */
+        .fighter-stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(10, 4, 12, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.75rem;
+            border-radius: 10px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat-label { color: #94a3b8; }
+        .stat-val { font-weight: 700; color: #f1f5f9; }
+
+        /* ==========================================================================
+           CỘT GIỮA: SÀN ĐẤU, NHẬT KÝ CHIẾN ĐẤU & CONTROLS
+           ========================================================================== */
+        .floor-badge-header {
+            text-align: center;
+            border-bottom: 1px solid rgba(225, 29, 72, 0.25);
+            padding-bottom: 0.6rem;
+        }
+        .floor-level-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #fb7185;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(225, 29, 72, 0.6);
+        }
+
+        /* KHUNG NHẬT KÝ CHIẾN ĐẤU (COMBAT LOG BOX) */
+        .combat-log-container {
+            flex: 1;
+            min-height: 240px;
+            max-height: 320px;
+            background: rgba(8, 3, 10, 0.85);
+            border: 1px solid rgba(225, 29, 72, 0.3);
+            border-radius: 12px;
+            padding: 0.85rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            margin: 0.75rem 0;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .log-entry {
+            padding: 0.35rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid transparent;
+            animation: fadeInLog 0.25s ease-out;
+        }
+        @keyframes fadeInLog {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-entry--round {
+            border-left-color: #facc15;
+            background: rgba(234, 179, 8, 0.08);
+            color: #fef08a;
+            font-weight: 700;
+        }
+        .log-entry--player {
+            border-left-color: #10b981;
+            color: #a7f3d0;
+        }
+        .log-entry--boss {
+            border-left-color: #f43f5e;
+            color: #fecdd3;
+        }
+        .log-entry--skill {
+            border-left-color: #f97316;
+            background: rgba(249, 115, 22, 0.15);
+            color: #fed7aa;
+            font-weight: 700;
+        }
+        .log-entry--crit {
+            border-left-color: #e11d48;
+            background: rgba(225, 29, 72, 0.2);
+            color: #fda4af;
+            font-weight: 700;
+        }
+        .log-entry--dodge {
+            border-left-color: #38bdf8;
+            color: #7dd3fc;
+            font-style: italic;
+        }
+        .log-entry--victory {
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.25);
+            color: #6ee7b7;
+            font-weight: 800;
+            text-align: center;
+        }
+        .log-entry--defeat {
+            border-left-color: #e11d48;
+            background: rgba(225, 29, 72, 0.25);
+            color: #fca5a5;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        /* HIỆU ỨNG HÌNH ẢNH (VISUAL EFFECTS: CRIT SHAKE & FLOATING NUMBERS) */
+        .screen-shake {
+            animation: critScreenShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        @keyframes critScreenShake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        /* Floating Damage Text Container */
+        .floating-vfx-anchor {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .vfx-pop {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 900;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: floatUpFade 1.2s ease-out forwards;
+        }
+        .vfx-pop--crit {
+            font-size: 1.6rem;
+            color: #f43f5e;
+            text-shadow: 0 0 15px rgba(225, 29, 72, 0.9), 0 0 30px #e11d48;
+        }
+        .vfx-pop--dodge {
+            font-size: 1.2rem;
+            color: #38bdf8;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            font-style: italic;
+        }
+        .vfx-pop--skill {
+            font-size: 1.3rem;
+            color: #f59e0b;
+            text-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
+        }
+
+        @keyframes floatUpFade {
+            0% { opacity: 0; transform: translateY(15px) scale(0.7); }
+            20% { opacity: 1; transform: translateY(0) scale(1.15); }
+            60% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-55px) scale(0.9); }
+        }
+
+        /* ==========================================================================
+           CONTROLS: NÚT KHIÊU CHIẾN & TOGGLE AUTO-CLIMB (QOL)
+           ========================================================================== */
+        .arena-action-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .auto-climb-toggle-card {
+            background: rgba(28, 12, 32, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 0.5rem 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .auto-climb-toggle-card.is-qualified {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .toggle-switch-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .switch-input {
+            width: 38px;
+            height: 20px;
+            appearance: none;
+            -webkit-appearance: none;
+            background: #334155;
+            outline: none;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.25s;
+        }
+        .switch-input:checked {
+            background: #10b981;
+        }
+        .switch-input::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            background: #ffffff;
+            transition: transform 0.25s;
+        }
+        .switch-input:checked::before {
+            transform: translateX(18px);
+        }
+        .switch-input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-challenge-tower {
+            background: linear-gradient(135deg, #be123c 0%, #e11d48 50%, #9f1239 100%);
+            border: 1px solid rgba(253, 164, 175, 0.5);
+            color: #ffffff;
+            padding: 0.85rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 800;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(225, 29, 72, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.25s;
+        }
+        .btn-challenge-tower:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 35px rgba(225, 29, 72, 0.7);
+        }
+        .btn-challenge-tower:disabled {
+            background: #334155;
+            border-color: #475569;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Hộp banner thông báo khiêu chiến */
+        .battle-result-banner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .battle-result-banner.is-active {
+            display: flex;
+        }
+
+        .result-dialog-box {
+            background: rgba(18, 8, 22, 0.95);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================
+         HEADER BAR TRẤN YÊU THÁP & TÀI SẢN
+         ======================================================================== -->
+    <header class="tower-header-bar">
+        <div class="tower-brand">
+            <div class="tower-brand-icon">
+                <i class="fa-solid fa-dungeon"></i>
+            </div>
+            <div>
+                <h1 class="tower-brand-title">Trấn Yêu Tháp</h1>
+                <p class="tower-brand-sub">Hầm Ngục Vô Tận • Auto-Battler Theo Hiệp</p>
+            </div>
+        </div>
+
+        <div class="tower-vault-shelf">
+            <div class="vault-pill vault-pill--gold">
+                <i class="fa-solid fa-coins"></i>
+                <span>Linh Thạch:</span>
+                <b id="player-stones-badge">12,500</b>
+            </div>
+            <div class="vault-pill vault-pill--tuvi">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Tu Vi:</span>
+                <b id="player-tuvi-badge">85,000</b>
+            </div>
+            <button type="button" class="vault-pill" onclick="fullHealPlayer()" style="cursor: pointer; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color:#a7f3d0;">
+                <i class="fa-solid fa-heart-pulse"></i> Vận Công Hồi Máu
+            </button>
+        </div>
+    </header>
+
+
+    <!-- ========================================================================
+         MAIN ARENA: AUTO-BATTLER VIEWPORT (3 CỘT)
+         ======================================================================== -->
+    <main class="tower-viewport" id="tower-arena-wrapper">
+
+        <!-- SÀN ĐẤU CHÍNH -->
+        <section class="arena-container">
+
+            <!-- ================= CỘT TRÁI: NGƯỜI CHƠI (PLAYER) ================= -->
+            <article class="fighter-card fighter-card--player">
+                <div class="fighter-avatar-wrapper">
+                    <div class="avatar-frame avatar-frame--player" id="player-avatar-frame">
+                        <img src="./assets/images/pet_fox.jpg" alt="Tiêu Dao Tử" class="avatar-img" onerror="this.src='./assets/images/char_cultivator.jpg'">
+                    </div>
+                    <h2 class="fighter-name-title fighter-name-title--player" id="player-name-text">Tiêu Dao Tử</h2>
+                    <span class="fighter-sub-rank" id="player-realm-text">Kim Đan Sơ Kỳ</span>
+                    <div class="fighter-cp-badge fighter-cp-badge--player">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span id="player-cp-text">450,000 CP</span>
+                    </div>
+                </div>
+
+                <!-- THANH MÁU ĐỘNG NGƯỜI CHƠI -->
+                <div class="dynamic-hp-block">
+                    <div class="hp-numbers-row">
+                        <span style="color: #6ee7b7;"><i class="fa-solid fa-heart mr-1"></i>Khí Huyết:</span>
+                        <strong id="player-hp-text" class="font-bold">120,000 / 120,000</strong>
+                    </div>
+                    <div class="hp-track">
+                        <div class="hp-fill hp-fill--player" id="player-hp-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- BẢNG CHỈ SỐ NGƯỜI CHƠI -->
+                <div class="fighter-stats-list">
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Công Kích:</span>
+                        <span class="stat-val text-amber-300" id="player-atk-text">18,500</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-shield text-sky-400 mr-1.5"></i>Phòng Ngự:</span>
+                        <span class="stat-val text-sky-300" id="player-def-text">8,200</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-crosshairs text-rose-400 mr-1.5"></i>Bạo Kích:</span>
+                        <span class="stat-val text-rose-300" id="player-crit-text">25% (x2.0 dmg)</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-wind text-teal-400 mr-1.5"></i>Né Tránh:</span>
+                        <span class="stat-val text-teal-300" id="player-dodge-text">15%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-fire-flame-curved text-orange-400 mr-1.5"></i>Vũ Kỹ:</span>
+                        <span class="stat-val text-orange-400" id="player-skill-text">Hỏa Cầu Thuật (25%)</span>
+                    </div>
+                </div>
+            </article>
+
+
+            <!-- ================= CỘT GIỮA: SÀN ĐẤU & COMBAT LOG BOX ================= -->
+            <article class="fighter-card fighter-card--arena" id="arena-center-card">
+                <!-- Anchor cho Floating Damage VFX -->
+                <div class="floating-vfx-anchor" id="vfx-anchor"></div>
+
+                <!-- Header Tầng Tháp -->
+                <div class="floor-badge-header">
+                    <span class="text-[10px] uppercase font-mono tracking-widest text-slate-400">Phong Ấn Cửu U • Tầng Tháp</span>
+                    <h2 class="floor-level-title" id="arena-floor-title">TẦNG 15</h2>
+                    <span class="text-xs text-rose-300 font-mono" id="matchup-cp-ratio">Tỷ lệ Lực Chiến: Đè Bẹp (x3.6 Lực Chiến Boss)</span>
+                </div>
+
+                <!-- KHUNG NHẬT KÝ CHIẾN ĐẤU (COMBAT LOG BOX) -->
+                <div class="combat-log-container" id="combat-log-box">
+                    <div class="log-entry log-entry--round">
+                        ⚔️ Chuẩn bị nghênh chiến... Bấm "Khiêu Chiến" để bắt đầu lượt đấu tự động!
+                    </div>
+                </div>
+
+                <!-- THANH ĐIỀU KHIỂN & AUTO-CLIMB TOGGLE -->
+                <div class="arena-action-controls">
+                    <!-- Toggle Cày Cuốc Nhàn Rỗi (Auto-Climb) -->
+                    <div class="auto-climb-toggle-card" id="auto-climb-card">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-forward-step text-emerald-400"></i>
+                            <div>
+                                <b class="text-xs text-slate-100 block">Tự Động Leo Tháp (Auto-Climb)</b>
+                                <span class="text-[10px] text-slate-400 block" id="auto-climb-req-hint">
+                                    Đủ điều kiện (LC Ta >= 3x LC Boss)
+                                </span>
+                            </div>
+                        </div>
+
+                        <label class="toggle-switch-label">
+                            <input type="checkbox" id="auto-climb-switch" class="switch-input" onchange="toggleAutoClimb(this.checked)">
+                        </label>
+                    </div>
+
+                    <!-- Nút Khiêu Chiến Lớn -->
+                    <button type="button" class="btn-challenge-tower" id="btn-challenge-tower" onclick="handleChallengeClick()">
+                        <i class="fa-solid fa-khanda text-xl"></i>
+                        <span id="btn-challenge-text">KHIÊU CHIẾN TẦNG 15</span>
+                    </button>
+                </div>
+            </article>
+
+
+            <!-- ================= CỘT PHẢI: BOSS / QUÁI VẬT ================= -->
+            <article class="fighter-card fighter-card--boss">
+                <div class="fighter-avatar-wrapper">
+                    <div class="avatar-frame avatar-frame--boss" id="boss-avatar-frame">
+                        <img src="./assets/images/avatar_heart_demon.jpg" alt="Boss" class="avatar-img" onerror="this.src='./assets/images/boss_ancient_demon.jpg'">
+                    </div>
+                    <h2 class="fighter-name-title fighter-name-title--boss" id="boss-name-text">Huyết Dực Bọ Hung</h2>
+                    <span class="fighter-sub-rank" id="boss-realm-text">Trúc Cơ Hậu Kỳ</span>
+                    <div class="fighter-cp-badge fighter-cp-badge--boss">
+                        <i class="fa-solid fa-crosshairs"></i>
+                        <span id="boss-cp-text">125,000 CP</span>
+                    </div>
+                </div>
+
+                <!-- THANH MÁU ĐỘNG BOSS -->
+                <div class="dynamic-hp-block">
+                    <div class="hp-numbers-row">
+                        <span style="color: #fda4af;"><i class="fa-solid fa-heart-pulse mr-1"></i>Khí Huyết:</span>
+                        <strong id="boss-hp-text" class="font-bold">85,000 / 85,000</strong>
+                    </div>
+                    <div class="hp-track">
+                        <div class="hp-fill hp-fill--boss" id="boss-hp-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- BẢNG CHỈ SỐ BOSS -->
+                <div class="fighter-stats-list">
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Công Kích:</span>
+                        <span class="stat-val text-amber-300" id="boss-atk-text">7,200</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-shield text-sky-400 mr-1.5"></i>Phòng Ngự:</span>
+                        <span class="stat-val text-sky-300" id="boss-def-text">4,800</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-crosshairs text-rose-400 mr-1.5"></i>Bạo Kích:</span>
+                        <span class="stat-val text-rose-300" id="boss-crit-text">10% (x1.5 dmg)</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-wind text-teal-400 mr-1.5"></i>Né Tránh:</span>
+                        <span class="stat-val text-teal-300" id="boss-dodge-text">5%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fa-solid fa-gift text-amber-400 mr-1.5"></i>Thưởng:</span>
+                        <span class="stat-val text-amber-300" id="boss-reward-text">+150 LT, +525 Tu Vi</span>
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+    </main>
+
+
+    <!-- ========================================================================
+         MODAL THÔNG BÁO THẮNG / THUA
+         ======================================================================== -->
+    <div class="battle-result-banner" id="battle-result-modal">
+        <div class="result-dialog-box" id="result-dialog-box">
+            <h2 class="text-2xl font-bold font-serif" id="result-title">CHIẾN THẮNG HUY HOÀNG!</h2>
+            <p class="text-xs text-slate-300" id="result-desc">
+                Đạo hữu đã trảm sát yêu thú, phá giải cấm chế Trấn Yêu Tháp!
+            </p>
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-700 font-mono text-xs text-amber-300" id="result-rewards">
+                +150 Linh Thạch • +525 Tu Vi
+            </div>
+            <button type="button" class="btn-challenge-tower" onclick="closeResultModal()">
+                Tiếp Tục Tu Luyện
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================
+         PHẦN 2 & 3: LOGIC JAVASCRIPT CHIẾN ĐẤU THEO HIỆP (TURN-BASED ENGINE)
+         ======================================================================== -->
+    <script>
+        // ====================================================================
+        // 1. DỮ LIỆU NGƯỜI CHƠI & DATABASE BOSS CÁC TẦNG
+        // ====================================================================
+        const player = {
+            name: "Tiêu Dao Tử",
+            realm: "Kim Đan Sơ Kỳ",
+            maxHp: 120000,
+            hp: 120000,
+            atk: 18500,
+            def: 8200,
+            critRate: 0.25,      // 25% Bạo kích
+            critMultiplier: 2.0, // x2.0 Sát thương khi Crit
+            dodgeRate: 0.15,     // 15% Né tránh
+            cp: 450000,
+            stones: 12500,
+            tuvi: 85000,
+            equippedSkill: {
+                name: "Hỏa Cầu Thuật",
+                triggerChance: 0.25, // 25% tỷ lệ tung chiêu mỗi hiệp
+                damageMultiplier: 2.2, // x2.2 sát thương
+                icon: "🔥"
+            }
+        };
+
+        let currentFloor = 15;
+        let isCombatRunning = false;
+        let combatInterval = null;
+        let isAutoClimbActive = false;
+
+        function generateBossForFloor(floor) {
+            const baseHp = 25000 + (floor * 4000);
+            const baseAtk = 2500 + (floor * 320);
+            const baseDef = 1500 + (floor * 220);
+            const cp = Math.round((baseAtk * 2) + (baseDef * 1.5) + (baseHp * 0.1));
+
+            const names = [
+                "Huyết Dực Bọ Hung", "U Minh Hắc Hổ", "Cửu U Độc Chu", 
+                "Bạch Cốt Dạ Xoa", "Xích Diễm Cự Mãng", "Hư Không Thú Vương"
+            ];
+            const titles = ["Sơ Kỳ", "Trung Kỳ", "Hậu Kỳ", "Đỉnh Phong"];
+            const bossName = names[(floor - 1) % names.length];
+            const bossTitle = `${bossName} (${titles[(floor - 1) % 4]})`;
+
+            return {
+                floor: floor,
+                name: bossName,
+                displayTitle: bossTitle,
+                realm: `Tầng ${floor} • Yêu Quái`,
+                maxHp: baseHp,
+                hp: baseHp,
+                atk: baseAtk,
+                def: baseDef,
+                critRate: 0.10,
+                critMultiplier: 1.5,
+                dodgeRate: 0.05,
+                cp: cp,
+                rewardStones: floor * 10,
+                rewardTuvi: floor * 35
+            };
+        }
+
+        let currentBoss = generateBossForFloor(currentFloor);
+
+        // ====================================================================
+        // 2. LOGIC CHIẾN ĐẤU THEO HIỆP (TURN-BASED COMBAT ENGINE)
+        // ====================================================================
+        function handleChallengeClick() {
+            if (isCombatRunning) return;
+            if (player.hp <= 0) {
+                alert("⚠️ Đạo hữu đang trọng thương! Hãy bấm 'Vận Công Hồi Máu' trước khi khiêu chiến.");
+                return;
+            }
+
+            // Nếu bật Auto-Climb -> Chạy chế độ tính toán tức thời liên tục
+            if (isAutoClimbActive) {
+                runAutoClimbLoop();
+            } else {
+                // Chế độ Auto-Battler từng hiệp trực quan
+                startTowerCombat(player, currentBoss);
+            }
+        }
+
+        function startTowerCombat(playerObj, bossObj) {
+            isCombatRunning = true;
+            document.getElementById('btn-challenge-tower').disabled = true;
+            document.getElementById('btn-challenge-text').textContent = "ĐANG GIAO TRANH...";
+
+            // Reset HP Boss về đầy
+            bossObj.hp = bossObj.maxHp;
+            updateHPBars();
+
+            // Clear Log Box
+            const logBox = document.getElementById('combat-log-box');
+            logBox.innerHTML = '';
+            appendLog(`⚔️ <b>Trận chiến Tầng ${bossObj.floor} bắt đầu!</b> [${playerObj.name}] VS [${bossObj.displayTitle}]`, 'log-entry--round');
+
+            let turn = 1;
+            const maxTurns = 50;
+
+            combatInterval = setInterval(() => {
+                if (turn > maxTurns || playerObj.hp <= 0 || bossObj.hp <= 0) {
+                    endCombat(playerObj, bossObj);
+                    return;
+                }
+
+                appendLog(`--- [Hiệp ${turn}] ---`, 'log-entry--round');
+
+                // 1. LƯỢT CỦA NGƯỜI CHƠI TẤN CÔNG
+                executeAttack(playerObj, bossObj, true);
+
+                // Nếu Boss chết ngay sau đòn của người chơi -> Dừng luôn
+                if (bossObj.hp <= 0) {
+                    endCombat(playerObj, bossObj);
+                    return;
+                }
+
+                // 2. LƯỢT CỦA BOSS PHẢN CÔNG
+                setTimeout(() => {
+                    if (bossObj.hp > 0 && playerObj.hp > 0) {
+                        executeAttack(bossObj, playerObj, false);
+                        if (playerObj.hp <= 0) {
+                            endCombat(playerObj, bossObj);
+                        }
+                    }
+                }, 500);
+
+                turn++;
+            }, 1300); // 1.3 giây mỗi hiệp để người chơi dễ đọc
+        }
+
+        function executeAttack(attacker, defender, isPlayerAttacking) {
+            // Check Né Tránh
+            const isDodged = Math.random() < defender.dodgeRate;
+            if (isDodged) {
+                appendLog(`💨 [Né Tránh] ${defender.name} thân pháp phiêu dật, tránh né toàn bộ đòn công của ${attacker.name}!`, 'log-entry--dodge');
+                triggerVFX('Né Tránh!', 'vfx-pop--dodge');
+                return;
+            }
+
+            // Check Kỹ Năng (Vũ Kỹ) của người chơi
+            let skillTriggered = false;
+            let skillBonus = 1.0;
+            if (isPlayerAttacking && attacker.equippedSkill) {
+                if (Math.random() < attacker.equippedSkill.triggerChance) {
+                    skillTriggered = true;
+                    skillBonus = attacker.equippedSkill.damageMultiplier;
+                    appendLog(`🔥 [Vũ Kỹ] ${attacker.name} kết ấn thi triển <b>[${attacker.equippedSkill.name}]</b>! Uy lực bùng nổ!`, 'log-entry--skill');
+                    triggerVFX(`Kỹ Năng: ${attacker.equippedSkill.name}!`, 'vfx-pop--skill');
+                }
+            }
+
+            // Tính Sát Thương Cơ Bản
+            let baseDamage = Math.max(100, (attacker.atk - defender.def));
+            baseDamage *= skillBonus;
+
+            // Check Bạo Kích
+            const isCrit = Math.random() < attacker.critRate;
+            let finalDamage = Math.round(baseDamage * (isCrit ? attacker.critMultiplier : 1.0));
+
+            // Trừ HP
+            defender.hp = Math.max(0, defender.hp - finalDamage);
+
+            // Cập nhật Thanh Máu Động & Hiệu Ứng Chớp Đỏ
+            updateHPBars();
+            triggerHitFlash(isPlayerAttacking ? 'boss' : 'player');
+
+            // Hiệu ứng Bạo Kích
+            if (isCrit) {
+                triggerScreenShake();
+                triggerVFX(`CRIT! -${finalDamage.toLocaleString()}`, 'vfx-pop--crit');
+                appendLog(`💥 [Bạo Kích] ${attacker.name} đánh trúng tử huyệt, gây ra sát thương kinh hoàng: <b>${finalDamage.toLocaleString()}</b> điểm!`, 'log-entry--crit');
+            } else {
+                appendLog(`⚔️ ${attacker.name} xuất chiêu, gây <b>${finalDamage.toLocaleString()}</b> sát thương lên ${defender.name}.`, isPlayerAttacking ? 'log-entry--player' : 'log-entry--boss');
+            }
+        }
+
+        function endCombat(playerObj, bossObj) {
+            clearInterval(combatInterval);
+            isCombatRunning = false;
+            document.getElementById('btn-challenge-tower').disabled = false;
+            document.getElementById('btn-challenge-text').textContent = `KHIÊU CHIẾN TẦNG ${currentFloor}`;
+
+            if (bossObj.hp <= 0) {
+                // CHIẾN THẮNG
+                player.stones += bossObj.rewardStones;
+                player.tuvi += bossObj.rewardTuvi;
+                appendLog(`🎉 <b>CHIẾN THẮNG TẦNG ${bossObj.floor}!</b> Thu hoạch +${bossObj.rewardStones} Linh Thạch, +${bossObj.rewardTuvi} Tu Vi!`, 'log-entry--victory');
+
+                showResultModal(true, bossObj);
+
+                // Tăng tầng
+                currentFloor++;
+                currentBoss = generateBossForFloor(currentFloor);
+                updateArenaUI();
+            } else {
+                // THẤT BẠI
+                appendLog(`🩸 <b>THẤT BẠI!</b> [${playerObj.name}] kiệt sức trước hung uy của ${bossObj.name}, trọng thương tháo chạy!`, 'log-entry--defeat');
+                showResultModal(false, bossObj);
+            }
+        }
+
+        // ====================================================================
+        // 3. TÍNH NĂNG "CÀY CUỐC NHÀN RỖI" (QOL: AUTO-CLIMB TỨC THỜI)
+        // ====================================================================
+        function toggleAutoClimb(checked) {
+            const isQualified = player.cp >= (currentBoss.cp * 3);
+            if (checked && !isQualified) {
+                alert(`🔒 ĐIỀU KIỆN CHƯA ĐỦ!\nCần Lực Chiến gấp 3 lần Boss (Hiện tại: ${(player.cp / currentBoss.cp).toFixed(1)}x).\nHãy nâng cấp cảnh giới hoặc rèn thêm pháp bảo!`);
+                document.getElementById('auto-climb-switch').checked = false;
+                isAutoClimbActive = false;
+                return;
+            }
+            isAutoClimbActive = checked;
+        }
+
+        function runAutoClimbLoop() {
+            let climbedFloors = 0;
+            let totalStones = 0;
+            let totalTuvi = 0;
+
+            while (player.hp > 0 && player.cp >= (currentBoss.cp * 3)) {
+                // Tính nhanh kết quả (Người chơi đè bẹp đối thủ)
+                climbedFloors++;
+                totalStones += currentBoss.rewardStones;
+                totalTuvi += currentBoss.rewardTuvi;
+
+                // Mất chút máu tượng trưng (1% max HP)
+                player.hp = Math.max(1, player.hp - Math.round(player.maxHp * 0.01));
+
+                currentFloor++;
+                currentBoss = generateBossForFloor(currentFloor);
+            }
+
+            player.stones += totalStones;
+            player.tuvi += totalTuvi;
+
+            updateArenaUI();
+            appendLog(`⚡ [Auto-Climb] Đã đè bẹp vượt nhanh ${climbedFloors} Tầng Tháp! Nhận +${totalStones.toLocaleString()} Linh Thạch, +${totalTuvi.toLocaleString()} Tu Vi.`, 'log-entry--victory');
+            alert(`⚡ AUTO-CLIMB HOÀN TẤT!\nĐã tự động càn quét thành công ${climbedFloors} tầng!\nNhận: +${totalStones.toLocaleString()} Linh Thạch, +${totalTuvi.toLocaleString()} Tu Vi.\nDừng lại tại Tầng ${currentFloor} do Boss quá mạnh.`);
+        }
+
+        // ====================================================================
+        // 4. HIỆU ỨNG HÌNH ẢNH (VFX: FLOATING TEXT, HIT FLASH, SCREEN SHAKE)
+        // ====================================================================
+        function triggerVFX(text, cssClass) {
+            const anchor = document.getElementById('vfx-anchor');
+            const pop = document.createElement('div');
+            pop.className = `vfx-pop ${cssClass}`;
+            pop.textContent = text;
+            anchor.appendChild(pop);
+            setTimeout(() => pop.remove(), 1200);
+        }
+
+        function triggerHitFlash(target) {
+            const frame = document.getElementById(target === 'player' ? 'player-avatar-frame' : 'boss-avatar-frame');
+            frame.classList.add('hit-flash');
+            setTimeout(() => frame.classList.remove('hit-flash'), 300);
+        }
+
+        function triggerScreenShake() {
+            const arena = document.getElementById('tower-arena-wrapper');
+            arena.classList.add('screen-shake');
+            setTimeout(() => arena.classList.remove('screen-shake'), 350);
+        }
+
+        function appendLog(html, className) {
+            const logBox = document.getElementById('combat-log-box');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${className || ''}`;
+            entry.innerHTML = html;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // ====================================================================
+        // 5. CẬP NHẬT UI & MODAL
+        // ====================================================================
+        function updateHPBars() {
+            // Player HP
+            const pPct = Math.max(0, Math.min(100, Math.round((player.hp / player.maxHp) * 100)));
+            document.getElementById('player-hp-bar').style.width = `${pPct}%`;
+            document.getElementById('player-hp-text').textContent = `${player.hp.toLocaleString()} / ${player.maxHp.toLocaleString()}`;
+
+            // Boss HP
+            const bPct = Math.max(0, Math.min(100, Math.round((currentBoss.hp / currentBoss.maxHp) * 100)));
+            document.getElementById('boss-hp-bar').style.width = `${bPct}%`;
+            document.getElementById('boss-hp-text').textContent = `${currentBoss.hp.toLocaleString()} / ${currentBoss.maxHp.toLocaleString()}`;
+        }
+
+        function updateArenaUI() {
+            // Vault
+            document.getElementById('player-stones-badge').textContent = player.stones.toLocaleString();
+            document.getElementById('player-tuvi-badge').textContent = player.tuvi.toLocaleString();
+
+            // Floor & Matchup
+            document.getElementById('arena-floor-title').textContent = `TẦNG ${currentFloor}`;
+            document.getElementById('btn-challenge-text').textContent = `KHIÊU CHIẾN TẦNG ${currentFloor}`;
+
+            const ratio = (player.cp / currentBoss.cp).toFixed(1);
+            const isQualified = player.cp >= (currentBoss.cp * 3);
+            const autoCard = document.getElementById('auto-climb-card');
+            const autoHint = document.getElementById('auto-climb-req-hint');
+            const switchEl = document.getElementById('auto-climb-switch');
+
+            document.getElementById('matchup-cp-ratio').textContent = `Tỷ lệ Lực Chiến: ${ratio}x (${isQualified ? 'Đè bẹp đối thủ' : 'Cần cẩn trọng'})`;
+
+            if (isQualified) {
+                autoCard.classList.add('is-qualified');
+                autoHint.textContent = `Đủ điều kiện (LC Ta >= 3x LC Boss)`;
+                switchEl.disabled = false;
+            } else {
+                autoCard.classList.remove('is-qualified');
+                autoHint.textContent = `Chưa đủ (Cần >= 3.0x, hiện có ${ratio}x)`;
+                switchEl.checked = false;
+                isAutoClimbActive = false;
+            }
+
+            // Boss Info
+            document.getElementById('boss-name-text').textContent = currentBoss.name;
+            document.getElementById('boss-realm-text').textContent = currentBoss.realm;
+            document.getElementById('boss-cp-text').textContent = `${currentBoss.cp.toLocaleString()} CP`;
+            document.getElementById('boss-atk-text').textContent = currentBoss.atk.toLocaleString();
+            document.getElementById('boss-def-text').textContent = currentBoss.def.toLocaleString();
+            document.getElementById('boss-reward-text').textContent = `+${currentBoss.rewardStones} LT, +${currentBoss.rewardTuvi} Tu Vi`;
+
+            updateHPBars();
+        }
+
+        function fullHealPlayer() {
+            player.hp = player.maxHp;
+            updateHPBars();
+            appendLog(`💚 [Vận Công] ${player.name} hấp thu thiên địa linh khí, hồi phục toàn bộ Khí Huyết!`, 'log-entry--round');
+        }
+
+        function showResultModal(isWin, bossObj) {
+            const modal = document.getElementById('battle-result-modal');
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const rewards = document.getElementById('result-rewards');
+
+            if (isWin) {
+                title.textContent = "CHIẾN THẮNG HUY HOÀNG!";
+                title.style.color = "#6ee7b7";
+                desc.textContent = `Đạo hữu đã xuất sắc trảm sát [${bossObj.displayTitle}], phong ấn thành công Tầng ${bossObj.floor}!`;
+                rewards.textContent = `+${bossObj.rewardStones} Linh Thạch • +${bossObj.rewardTuvi} Tu Vi`;
+            } else {
+                title.textContent = "KHIÊU CHIẾN THẤT BẠI!";
+                title.style.color = "#fb7185";
+                desc.textContent = `Hung uy của [${bossObj.name}] quá lớn! Đạo hữu bị trọng thương và buộc phải lui về đả tọa.`;
+                rewards.textContent = "Không nhận được phần thưởng";
+            }
+            modal.classList.add('is-active');
+        }
+
+        function closeResultModal() {
+            document.getElementById('battle-result-modal').classList.remove('is-active');
+        }
+
+        // Khởi động
+        window.addEventListener('DOMContentLoaded', () => {
+            updateArenaUI();
+        });
+    </script>
+</body>
+</html>

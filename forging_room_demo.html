@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Luyện Khí Thất • Động Phủ — Vạn Cổ Tu Tiên</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. RESET & CSS BIẾN TOÀN CỤC (DARK XIANXIA FORGING THEME)
+           ========================================================================== */
+        :root {
+            --bg-deep: #05070d;
+            --bg-panel: rgba(13, 19, 33, 0.88);
+            --bg-card: rgba(18, 26, 44, 0.75);
+            --border-gold: rgba(212, 175, 55, 0.3);
+            --border-glow: rgba(245, 158, 11, 0.4);
+            --gold-primary: #d4af37;
+            --gold-light: #fef08a;
+            --fire-red: #ef4444;
+            --fire-orange: #f97316;
+            --fire-yellow: #fbbf24;
+            --emerald-gem: #10b981;
+            --sky-epic: #38bdf8;
+            --purple-mythic: #c084fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(180, 83, 9, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(225, 29, 72, 0.08) 0%, transparent 60%),
+                linear-gradient(180deg, #020408 0%, #080c16 100%);
+            color: #f1f5f9;
+            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Thanh cuộn phong cách Tiên Hiệp */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(10, 15, 26, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.35);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
+        }
+
+        /* ==========================================================================
+           2. HEADER THANH ĐIỀU HƯỚNG & TÀI NGUYÊN (TOP BAR)
+           ========================================================================== */
+        .forging-top-bar {
+            background: rgba(8, 12, 22, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-gold);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .forging-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .forging-brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(239, 68, 68, 0.35));
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-light);
+            font-size: 1.15rem;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .forging-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fef3c7;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .forging-subtitle {
+            font-size: 0.72rem;
+            color: #94a3b8;
+        }
+
+        /* Thanh tài nguyên farm được */
+        .resources-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .res-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #e2e8f0;
+            transition: all 0.2s;
+        }
+        .res-pill:hover {
+            border-color: var(--gold-primary);
+        }
+        .res-pill i {
+            font-size: 0.85rem;
+        }
+
+        .quick-add-btn {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fef08a;
+            border-radius: 4px;
+            padding: 0.1rem 0.35rem;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-add-btn:hover {
+            background: rgba(245, 158, 11, 0.35);
+            transform: scale(1.05);
+        }
+
+        /* ==========================================================================
+           3. BỐ CỤC CHÍNH 2 CỘT (MAIN SPA LAYOUT)
+           ========================================================================== */
+        .forging-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            padding: 1.25rem;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .forging-container {
+                grid-template-columns: 46% 54%;
+                align-items: stretch;
+                height: calc(100vh - 65px);
+                overflow: hidden;
+            }
+        }
+
+        /* Cột Trái & Cột Phải */
+        .forging-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-gold);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ==========================================================================
+           4. KHỐI BÊN TRÁI: LUYỆN KHÍ ĐỈNH & HIỆU ỨNG LỬA CHÁY
+           ========================================================================== */
+        .furnace-panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 16, 28, 0.5);
+        }
+
+        .furnace-status-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.3s;
+        }
+        .status--idle {
+            background: rgba(100, 116, 139, 0.15);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
+        }
+        .status--crafting {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            animation: pulseCrafting 1.5s infinite;
+        }
+        @keyframes pulseCrafting {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+        }
+
+        /* Buồng Lò Rèn (Furnace Chamber) */
+        .furnace-chamber {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 1.5rem;
+            min-height: 380px;
+            overflow: hidden;
+            background: radial-gradient(circle at center 65%, rgba(245, 158, 11, 0.08) 0%, rgba(2, 6, 15, 0.95) 75%);
+        }
+
+        /* Hộp Tiến Độ Đang Rèn (Nằm trên đỉnh lò) */
+        .crafting-progress-box {
+            width: 90%;
+            max-width: 380px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(245, 158, 11, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .crafting-progress-box.is-active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .crafting-item-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fef08a;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .crafting-timer-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f87171;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .crafting-progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 9999px;
+            background: rgba(2, 6, 23, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .crafting-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f97316, #ef4444, #fbbf24);
+            border-radius: 9999px;
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.8);
+            transition: width 0.1s linear;
+            position: relative;
+        }
+        .crafting-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: progressShimmer 1.5s infinite;
+        }
+        @keyframes progressShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Đỉnh Lò Rèn (Cauldron Illustration) */
+        .furnace-body-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            transition: transform 0.3s;
+        }
+        .is-forging .furnace-body-wrapper {
+            animation: furnaceRumble 0.18s infinite ease-in-out alternate;
+        }
+        @keyframes furnaceRumble {
+            0% { transform: translate(-1px, 0.5px) rotate(-0.5deg); }
+            100% { transform: translate(1px, -0.5px) rotate(0.5deg); }
+        }
+
+        .furnace-cauldron-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.9));
+        }
+
+        /* HIỆU ỨNG LỬA CHÁY ĐA TẦNG (LAYERED FLAME EFFECTS) */
+        .furnace-flame-system {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 90px;
+            pointer-events: none;
+            z-index: 4;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        /* Lớp quầng nhiệt phát sáng */
+        .flame-glow-halo {
+            position: absolute;
+            width: 180px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center bottom, rgba(239, 68, 68, 0.5) 0%, rgba(245, 158, 11, 0.3) 40%, transparent 75%);
+            filter: blur(14px);
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            animation: flameHaloBreathe 3s ease-in-out infinite alternate;
+        }
+        @keyframes flameHaloBreathe {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* Các lưỡi lửa animated */
+        .flame-tongue {
+            position: absolute;
+            bottom: 0;
+            border-radius: 50% 50% 20% 20% / 60% 60% 40% 40%;
+            transform-origin: bottom center;
+            mix-blend-mode: screen;
+        }
+
+        .flame-outer-red {
+            width: 90px;
+            height: 75px;
+            background: linear-gradient(to top, rgba(239, 68, 68, 0.9), rgba(249, 115, 22, 0.7), transparent);
+            animation: flameFlickerOuter 1.2s infinite alternate ease-in-out;
+            filter: blur(2px);
+        }
+
+        .flame-mid-orange {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(to top, rgba(249, 115, 22, 0.95), rgba(251, 191, 36, 0.85), transparent);
+            animation: flameFlickerMid 0.8s infinite alternate ease-in-out;
+            filter: blur(1px);
+        }
+
+        .flame-core-gold {
+            width: 32px;
+            height: 42px;
+            background: linear-gradient(to top, #ffffff, #fef08a, #f59e0b);
+            animation: flameFlickerCore 0.5s infinite alternate ease-in-out;
+            box-shadow: 0 0 15px rgba(254, 240, 138, 0.9);
+        }
+
+        @keyframes flameFlickerOuter {
+            0% { transform: scaleX(0.9) scaleY(0.95) rotate(-2deg); }
+            50% { transform: scaleX(1.05) scaleY(1.08) rotate(3deg); }
+            100% { transform: scaleX(0.95) scaleY(1.0) rotate(-1deg); }
+        }
+        @keyframes flameFlickerMid {
+            0% { transform: scaleX(1.05) scaleY(0.92) rotate(2deg); }
+            100% { transform: scaleX(0.92) scaleY(1.12) rotate(-2deg); }
+        }
+        @keyframes flameFlickerCore {
+            0% { transform: scaleX(0.95) scaleY(0.9) translateY(2px); }
+            100% { transform: scaleX(1.1) scaleY(1.15) translateY(-2px); }
+        }
+
+        /* KHI ĐANG RÈN: LỬA BÙNG LÊN DỮ DỘI (IS-FORGING MODIFIERS) */
+        .is-forging .flame-glow-halo {
+            background: radial-gradient(ellipse at center bottom, rgba(239, 68, 68, 0.85) 0%, rgba(245, 158, 11, 0.6) 45%, transparent 75%);
+            filter: blur(20px);
+            transform: scale(1.4) !important;
+            opacity: 1 !important;
+        }
+        .is-forging .flame-outer-red {
+            width: 130px;
+            height: 110px;
+            filter: blur(3px);
+            animation-duration: 0.4s;
+        }
+        .is-forging .flame-mid-orange {
+            width: 90px;
+            height: 90px;
+            animation-duration: 0.3s;
+        }
+        .is-forging .flame-core-gold {
+            width: 50px;
+            height: 65px;
+            animation-duration: 0.2s;
+            box-shadow: 0 0 25px rgba(254, 240, 138, 1);
+        }
+
+        /* Đốm tàn lửa bay lên (Sparks & Embers) */
+        .spark-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #fef08a;
+            box-shadow: 0 0 6px #f59e0b;
+            pointer-events: none;
+            opacity: 0;
+            animation: sparkFly 2.2s infinite ease-out;
+        }
+        @keyframes sparkFly {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            50% { opacity: 0.8; transform: translate(var(--dx), -40px) scale(1.2); }
+            100% { opacity: 0; transform: translate(var(--dx2), -90px) scale(0.3); }
+        }
+
+        /* Trận Pháp Vòng Tròn Dưới Đáy Lò */
+        .runic-forge-circle {
+            position: absolute;
+            bottom: -5px;
+            width: 240px;
+            height: 50px;
+            border-radius: 50%;
+            border: 1px dashed rgba(245, 158, 11, 0.35);
+            background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.2) 0%, transparent 70%);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+            animation: runicSpin 20s linear infinite;
+        }
+        @keyframes runicSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Panel Thông Tin Tỷ Lệ Phẩm Chất (RNG Card) */
+        .rng-info-card {
+            padding: 0.85rem 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(10, 16, 28, 0.6);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.65rem;
+            text-align: center;
+        }
+        .rng-tier-pill {
+            padding: 0.4rem 0.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .rng-tier-pill.tier-white {
+            background: rgba(148, 163, 184, 0.1);
+            border-color: rgba(148, 163, 184, 0.25);
+        }
+        .rng-tier-pill.tier-green {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .rng-tier-pill.tier-blue {
+            background: rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+        }
+
+        /* ==========================================================================
+           5. KHỐI BÊN PHẢI: ĐỒ PHỔ & NGUYÊN LIỆU (BLUEPRINTS & MATERIALS)
+           ========================================================================== */
+        .blueprints-panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 16, 28, 0.5);
+        }
+
+        .blueprints-list {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Thẻ Công Thức Đúc Trang Bị (Recipe Card) */
+        .recipe-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1rem 1.15rem;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .recipe-card:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        .recipe-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gold-primary);
+            opacity: 0.6;
+        }
+
+        .recipe-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .recipe-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .recipe-item-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: var(--gold-light);
+            flex-shrink: 0;
+        }
+
+        .recipe-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #f8fafc;
+            font-family: 'Cinzel', serif;
+        }
+
+        .recipe-type-tag {
+            font-size: 0.68rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .recipe-req-badge {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+        .req--met {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+        .req--unmet {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        .recipe-meta-stats {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 0.75rem;
+            background: rgba(10, 15, 26, 0.5);
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+        }
+        .stat-highlight {
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* Danh Sách Nguyên Liệu Cần Thiết */
+        .materials-container {
+            margin-bottom: 0.85rem;
+        }
+        .materials-title {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .materials-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .material-pill {
+            font-size: 0.72rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .mat--enough {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #a7f3d0;
+        }
+        .mat--missing {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        /* Nút Luyện Khí */
+        .btn-forge {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Noto Serif', serif;
+        }
+        .btn-forge:not(:disabled) {
+            background: linear-gradient(135deg, #b45309, #d97706, #f59e0b);
+            border: 1px solid #fef08a;
+            color: #fffbeb;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+        }
+        .btn-forge:not(:disabled):hover {
+            background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55);
+            transform: translateY(-1px);
+        }
+        .btn-forge:not(:disabled):active {
+            transform: scale(0.98);
+        }
+        .btn-forge:disabled {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            color: #64748b;
+            cursor: not-allowed;
+            filter: grayscale(80%);
+            opacity: 0.65;
+        }
+
+        /* ==========================================================================
+           6. MODAL KẾT QUẢ RÈN ĐÚC (RESULT CONGRATULATION POPUP)
+           ========================================================================== */
+        .crafting-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 1.25rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .crafting-modal-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .crafting-result-card {
+            width: 100%;
+            max-width: 440px;
+            background: radial-gradient(circle at center top, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 2px solid var(--gold-primary);
+            border-radius: 1.5rem;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+        .crafting-modal-overlay.is-open .crafting-result-card {
+            transform: scale(1);
+        }
+
+        .result-rays {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+            animation: raysSpin 15s linear infinite;
+        }
+        @keyframes raysSpin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .result-badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 0.25rem 0.85rem;
+            border-radius: 9999px;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .result-item-icon-circle {
+            width: 76px;
+            height: 76px;
+            border-radius: 18px;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.25rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .result-item-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 0.35rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .result-stats-box {
+            background: rgba(10, 15, 26, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin: 1.25rem 0;
+            text-align: left;
+            position: relative;
+            z-index: 2;
+            font-size: 0.85rem;
+        }
+
+        .result-substat-tag {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            color: #6ee7b7;
+            font-weight: 600;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .btn-claim {
+            width: 100%;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #b45309, #d97706);
+            border: 1px solid #fef08a;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            transition: all 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+        .btn-claim:hover {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            transform: scale(1.02);
+        }
+
+        /* Phẩm chất styling */
+        .quality--ha-pham {
+            color: #f1f5f9;
+            border-color: #64748b;
+        }
+        .quality--trung-pham {
+            color: #4ade80;
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+        .quality--thuong-pham {
+            color: #38bdf8;
+            border-color: #0284c7;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
+            animation: skyGlow 2s infinite alternate;
+        }
+        @keyframes skyGlow {
+            0% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+            100% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.9); }
+        }
+
+        /* Kho trang bị vừa rèn */
+        .recent-crafted-shelf {
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(10, 16, 28, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            overflow-x: auto;
+        }
+        .shelf-item-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            white-space: nowrap;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================
+         PHẦN 1: THANH ĐIỀU HƯỚNG & TÀI NGUYÊN (STICKY TOP BAR)
+         ======================================================================== -->
+    <header class="forging-top-bar">
+        <div class="forging-brand">
+            <div class="forging-brand-icon">
+                <i class="fa-solid fa-fire-burner"></i>
+            </div>
+            <div>
+                <h1 class="forging-title">Luyện Khí Thất <span class="text-xs text-amber-400 font-mono">[Động Phủ]</span></h1>
+                <p class="forging-subtitle">Thiên Địa Lò Rèn • Tôi Luyện Binh Khí & Hộ Giáp Bảo Thân</p>
+            </div>
+        </div>
+
+        <!-- Căn cơ & Bộ điều khiển test cảnh giới nhanh -->
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">Cảnh giới:</label>
+            <select id="player-realm-select" onchange="changeTestRealm(this.value)" class="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs rounded-lg px-2 py-1 outline-none font-mono">
+                <option value="0">Luyện Khí Tầng 1</option>
+                <option value="2" selected>Luyện Khí Tầng 3 (Mở đúc Kiếm)</option>
+                <option value="4">Luyện Khí Tầng 5 (Mở đúc Đạo Bào)</option>
+                <option value="10">Trúc Cơ - Sơ Kỳ (Mở đúc Ngọc Bội)</option>
+            </select>
+        </div>
+
+        <!-- Tài nguyên farm được & Nút nhận nhanh để test -->
+        <div class="resources-bar">
+            <div class="res-pill" title="Linh Thạch">
+                <i class="fa-solid fa-gem text-amber-400"></i>
+                <span id="display-stones">2,500</span> LT
+                <button type="button" class="quick-add-btn" onclick="addTestResource('stones', 1000)" title="Cộng 1,000 LT">+1k</button>
+            </div>
+
+            <div class="res-pill" title="Huyền Thiết Khoáng">
+                <i class="fa-solid fa-cubes text-cyan-400"></i>
+                <span id="display-huyen-thiet">15</span> Quặng
+                <button type="button" class="quick-add-btn" onclick="addTestResource('stone_ore', 10)" title="Cộng 10 Quặng">+10</button>
+            </div>
+
+            <div class="res-pill" title="Tử Linh Chi">
+                <i class="fa-solid fa-leaf text-emerald-400"></i>
+                <span id="display-linh-chi">5</span> Chi
+                <button type="button" class="quick-add-btn" onclick="addTestResource('herb_spirit', 5)" title="Cộng 5 Chi">+5</button>
+            </div>
+
+            <div class="res-pill" title="Huyết Ngọc Sâm">
+                <i class="fa-solid fa-seedling text-rose-400"></i>
+                <span id="display-ngoc-sam">3</span> Sâm
+                <button type="button" class="quick-add-btn" onclick="addTestResource('herb_blood', 3)" title="Cộng 3 Sâm">+3</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================================
+         PHẦN 2: BỐ CỤC 2 CỘT CHO SPA LAYOUT (FORGING WORKSPACE)
+         ======================================================================== -->
+    <main class="forging-container">
+
+        <!-- ====================================================================
+             KHỐI BÊN TRÁI: LUYỆN KHÍ ĐỈNH & LỬA CHÁY
+             ==================================================================== -->
+        <section class="forging-panel" id="furnace-panel">
+            <header class="furnace-panel-header">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-volcano text-amber-400"></i>
+                    <h2 class="text-sm font-bold text-slate-100 font-serif">Địa Hỏa Luyện Khí Đỉnh</h2>
+                </div>
+                <div class="furnace-status-badge status--idle" id="furnace-status-badge">
+                    <i class="fa-solid fa-fire text-slate-400" id="furnace-status-icon"></i>
+                    <span id="furnace-status-text">Chờ mồi lửa (Nhàn rỗi)</span>
+                </div>
+            </header>
+
+            <!-- Buồng lò rèn trung tâm -->
+            <div class="furnace-chamber" id="furnace-chamber">
+
+                <!-- Hộp Đếm Ngược & Thanh Tiến Độ (Chỉ hiện khi đang rèn) -->
+                <div class="crafting-progress-box" id="crafting-progress-box">
+                    <div class="progress-header">
+                        <span class="crafting-item-name" id="crafting-active-name">
+                            <i class="fa-solid fa-hammer text-amber-400 animate-bounce"></i> Đang rèn: Thanh Trúc Kiếm
+                        </span>
+                        <span class="crafting-timer-text" id="crafting-timer-text">
+                            <i class="fa-regular fa-clock"></i> 00:10s
+                        </span>
+                    </div>
+                    <div class="crafting-progress-track">
+                        <div class="crafting-progress-fill" id="crafting-progress-fill"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1 font-mono">
+                        <span>Hỏa hầu: Cực Thịnh</span>
+                        <span id="crafting-percent-text">0%</span>
+                    </div>
+                </div>
+
+                <!-- Thân Đỉnh Lò Rèn Thần Bí (SVG Cauldron) -->
+                <div class="furnace-body-wrapper" id="furnace-body-wrapper">
+                    <svg class="furnace-cauldron-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#b45309" />
+                                <stop offset="40%" stop-color="#78350f" />
+                                <stop offset="80%" stop-color="#451a03" />
+                                <stop offset="100%" stop-color="#260f03" />
+                            </linearGradient>
+                            <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#fef08a" />
+                                <stop offset="50%" stop-color="#d4af37" />
+                                <stop offset="100%" stop-color="#92400e" />
+                            </linearGradient>
+                            <radialGradient id="innerFireGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9" />
+                                <stop offset="40%" stop-color="#f97316" stop-opacity="0.7" />
+                                <stop offset="100%" stop-color="#ef4444" stop-opacity="0" />
+                            </radialGradient>
+                        </defs>
+
+                        <!-- Tai Đỉnh Hai Bên (Dragon Handles) -->
+                        <path d="M 28 85 C 10 80, 5 110, 30 118 C 32 105, 30 92, 28 85 Z" fill="url(#bronzeGrad)" stroke="url(#goldRim)" stroke-width="2" />
+                        <path d="M 172 85 C 190 80, 195 110, 170 118 C 168 105, 170 92, 172 85 Z" fill="url(#bronzeGrad)" stroke="url(#goldRim)" stroke-width="2" />
+
+                        <!-- Ba Chân Vạc (Tripod Legs) -->
+                        <path d="M 45 150 L 30 185 L 50 180 L 60 155 Z" fill="url(#bronzeGrad)" stroke="#78350f" stroke-width="1.5" />
+                        <path d="M 155 150 L 170 185 L 150 180 L 140 155 Z" fill="url(#bronzeGrad)" stroke="#78350f" stroke-width="1.5" />
+                        <path d="M 92 160 L 100 190 L 108 190 L 108 160 Z" fill="url(#bronzeGrad)" stroke="#78350f" stroke-width="1.5" />
+
+                        <!-- Thân Đỉnh Lò Bầu Dưới (Cauldron Belly) -->
+                        <path d="M 32 75 C 25 140, 175 140, 168 75 C 160 55, 40 55, 32 75 Z" fill="url(#bronzeGrad)" stroke="url(#goldRim)" stroke-width="3" />
+
+                        <!-- Vành Miệng Đỉnh (Furnace Rim) -->
+                        <ellipse cx="100" cy="65" rx="68" ry="14" fill="#1e1b18" stroke="url(#goldRim)" stroke-width="3.5" />
+
+                        <!-- Tâm Lò Rực Cháy Nhìn Từ Miệng (Molten Core Inside) -->
+                        <ellipse cx="100" cy="65" rx="55" ry="9" fill="url(#innerFireGlow)" />
+
+                        <!-- Khắc Phù Văn Cổ Trên Thân Đỉnh (Ancient Xianxia Runes) -->
+                        <path d="M 75 105 Q 100 120 125 105" stroke="url(#goldRim)" stroke-width="2" fill="none" stroke-linecap="round" />
+                        <circle cx="100" cy="100" r="10" stroke="url(#goldRim)" stroke-width="2" fill="none" />
+                        <line x1="100" y1="85" x2="100" y2="115" stroke="url(#goldRim)" stroke-width="1.5" />
+                        <line x1="85" y1="100" x2="115" y2="100" stroke="url(#goldRim)" stroke-width="1.5" />
+                    </svg>
+
+                    <!-- HỆ THỐNG LỬA CHÁY ĐA TẦNG DƯỚI ĐÁY LÒ -->
+                    <div class="furnace-flame-system" id="furnace-flame-system">
+                        <div class="flame-glow-halo"></div>
+                        <div class="flame-tongue flame-outer-red"></div>
+                        <div class="flame-tongue flame-mid-orange"></div>
+                        <div class="flame-tongue flame-core-gold"></div>
+
+                        <!-- Các đốm tàn lửa bay lơ lửng -->
+                        <div class="spark-particle" style="--dx: -25px; --dx2: -45px; left: 40%; animation-delay: 0s;"></div>
+                        <div class="spark-particle" style="--dx: 15px; --dx2: 30px; left: 55%; animation-delay: 0.7s;"></div>
+                        <div class="spark-particle" style="--dx: -10px; --dx2: 20px; left: 48%; animation-delay: 1.4s;"></div>
+                    </div>
+                </div>
+
+                <!-- Vòng Tròn Phù Trận Dưới Đáy Lò -->
+                <div class="runic-forge-circle"></div>
+            </div>
+
+            <!-- Panel Thông Số Tỷ Lệ Phẩm Chất RNG -->
+            <footer class="rng-info-card">
+                <div class="rng-tier-pill tier-white">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">Hạ Phẩm (70%)</span>
+                    <b class="text-xs text-slate-200">Chỉ số x1.0</b>
+                </div>
+                <div class="rng-tier-pill tier-green">
+                    <span class="text-[10px] text-emerald-400 uppercase font-bold">Trung Phẩm (25%)</span>
+                    <b class="text-xs text-emerald-300">Chỉ số x1.5 • Tốc +5%</b>
+                </div>
+                <div class="rng-tier-pill tier-blue">
+                    <span class="text-[10px] text-sky-400 uppercase font-bold">Thượng Phẩm (5%)</span>
+                    <b class="text-xs text-sky-300">Chỉ số x2.5 • Bạo +8%</b>
+                </div>
+            </footer>
+        </section>
+
+
+        <!-- ====================================================================
+             KHỐI BÊN PHẢI: ĐỒ PHỔ & NGUYÊN LIỆU (BLUEPRINTS & MATERIALS)
+             ==================================================================== -->
+        <section class="forging-panel" id="blueprints-panel">
+            <header class="blueprints-panel-header">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-scroll text-amber-400"></i>
+                    <h2 class="text-sm font-bold text-slate-100 font-serif">Đồ Phổ Đúc Khí (3 Công Thức)</h2>
+                </div>
+                <span class="text-xs text-slate-400 font-mono" id="blueprint-count-badge">Sẵn sàng rèn đúc</span>
+            </header>
+
+            <!-- Danh sách công thức cuộn dọc -->
+            <div class="blueprints-list" id="blueprints-list">
+                <!-- Sẽ được Render động từ CRAFTING_RECIPES qua JS -->
+            </div>
+
+            <!-- Kệ trang bị vừa đúc xong -->
+            <footer class="recent-crafted-shelf" id="recent-crafted-shelf">
+                <span class="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-box-archive text-amber-400"></i> Đã đúc:
+                </span>
+                <div class="flex items-center gap-1.5 overflow-x-auto" id="recent-items-container">
+                    <span class="text-[11px] text-slate-500 italic">Chưa có trang bị nào được đúc trong phiên này.</span>
+                </div>
+            </footer>
+        </section>
+
+    </main>
+
+    <!-- ========================================================================
+         MODAL CHÚC MỪNG ĐÚC THÀNH CÔNG (CRAFTING SUCCESS POPUP)
+         ======================================================================== -->
+    <div class="crafting-modal-overlay" id="crafting-modal-overlay">
+        <div class="crafting-result-card" id="crafting-result-card">
+            <div class="result-rays"></div>
+
+            <span class="result-badge" id="modal-quality-badge">TRUNG PHẨM</span>
+
+            <div class="result-item-icon-circle" id="modal-item-icon-box">
+                <i class="fa-solid fa-khanda" id="modal-item-icon"></i>
+            </div>
+
+            <h3 class="result-item-name" id="modal-item-name">Thanh Trúc Kiếm</h3>
+            <p class="text-xs text-slate-400" id="modal-item-desc">Phi kiếm đúc từ thanh trúc kết hợp Huyền Thiết, chém sắt như bùn.</p>
+
+            <div class="result-stats-box">
+                <div class="flex justify-between items-center text-xs font-mono text-slate-300">
+                    <span>Phẩm chất đạt được:</span>
+                    <strong id="modal-stat-quality" class="text-emerald-400 font-bold">Trung Phẩm (x1.5)</strong>
+                </div>
+                <div class="flex justify-between items-center text-xs font-mono text-slate-300 mt-1.5" id="modal-stat-row-1">
+                    <span>Công Kích:</span>
+                    <strong class="text-sky-300 font-bold" id="modal-stat-val-1">+225 ATK</strong>
+                </div>
+                <div class="result-substat-tag" id="modal-substat-container">
+                    <i class="fa-solid fa-sparkles text-amber-400"></i>
+                    <span id="modal-substat-text">Dòng phụ: Tốc đánh +5%</span>
+                </div>
+            </div>
+
+            <button type="button" class="btn-claim" onclick="closeCraftingModal()">
+                <i class="fa-solid fa-hand-holding-hand mr-1.5"></i> Thu Vào Túi Trữ Vật
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================
+         PHẦN 3: LOGIC JAVASCRIPT ĐIỀU KHIỂN & RNG XÁC SUẤT
+         ======================================================================== -->
+    <script>
+        // ====================================================================
+        // 1. DATA STATE CỦA NGƯỜI CHƠI (PLAYER STATE)
+        // ====================================================================
+        const playerState = {
+            realmIndex: 2, // Mặc định: Luyện Khí Tầng 3 (Index 2)
+            stones: 2500,  // Linh Thạch
+            inventory: {
+                stone_ore: 15,   // Huyền Thiết Khoáng
+                herb_spirit: 5,  // Tử Linh Chi
+                herb_blood: 3    // Huyết Ngọc Sâm
+            },
+            craftedBag: [] // Túi lưu các món đồ đã đúc thành công
+        };
+
+        const REALM_LABELS = {
+            0: "Luyện Khí Tầng 1",
+            2: "Luyện Khí Tầng 3",
+            4: "Luyện Khí Tầng 5",
+            10: "Trúc Cơ - Sơ Kỳ"
+        };
+
+        // ====================================================================
+        // 2. CẤU TRÚC DỮ LIỆU CÔNG THỨC (CRAFTING_RECIPES)
+        // ====================================================================
+        const CRAFTING_RECIPES = [
+            {
+                id: "wp_thanh_truc_kiem",
+                name: "Thanh Trúc Kiếm",
+                type: "Vũ Khí",
+                slot: "weapon",
+                icon: "fa-khanda",
+                reqRealmName: "Luyện Khí Tầng 3",
+                reqRealmIndex: 2,
+                materials: [
+                    { key: "stone_ore", name: "Huyền Thiết", qty: 5, icon: "fa-cubes" },
+                    { key: "stones", name: "Linh Thạch", qty: 200, icon: "fa-gem" }
+                ],
+                baseStats: { atk: 150 },
+                craftTime: 8, // Thời gian rèn: 8 giây (để test mượt mà)
+                desc: "Phi kiếm đúc từ thanh trúc kết hợp Huyền Thiết khoáng, chém sắt như bùn."
+            },
+            {
+                id: "ar_thanh_van_dao_bao",
+                name: "Thanh Vân Đạo Bào",
+                type: "Pháp Y",
+                slot: "armor",
+                icon: "fa-shirt",
+                reqRealmName: "Luyện Khí Tầng 5",
+                reqRealmIndex: 4,
+                materials: [
+                    { key: "stone_ore", name: "Huyền Thiết", qty: 4, icon: "fa-cubes" },
+                    { key: "herb_spirit", name: "Tử Linh Chi", qty: 2, icon: "fa-leaf" },
+                    { key: "stones", name: "Linh Thạch", qty: 250, icon: "fa-gem" }
+                ],
+                baseStats: { def: 120, hp: 600 },
+                craftTime: 12,
+                desc: "Đạo bào ngưng tụ thanh vân linh khí, gia tăng thể phách và phòng ngự."
+            },
+            {
+                id: "ac_ho_than_ngoc_boi",
+                name: "Hộ Thân Ngọc Bội",
+                type: "Trang Sức",
+                slot: "talisman",
+                icon: "fa-gem",
+                reqRealmName: "Trúc Cơ - Sơ Kỳ",
+                reqRealmIndex: 10,
+                materials: [
+                    { key: "stone_ore", name: "Huyền Thiết", qty: 8, icon: "fa-cubes" },
+                    { key: "herb_blood", name: "Huyết Ngọc Sâm", qty: 1, icon: "fa-seedling" },
+                    { key: "stones", name: "Linh Thạch", qty: 400, icon: "fa-gem" }
+                ],
+                baseStats: { def: 90, atk: 70 },
+                craftTime: 15,
+                desc: "Ngọc bội viễn cổ hộ trì tâm mạch, công thủ toàn diện."
+            }
+        ];
+
+        // ====================================================================
+        // 3. CƠ CHẾ XÁC SUẤT PHẨM CHẤT (RNG QUALITIES)
+        // ====================================================================
+        const CRAFTING_QUALITIES = {
+            HAPHAP: {
+                id: "ha_pham",
+                name: "Hạ Phẩm",
+                multiplier: 1.0,
+                colorText: "text-slate-200",
+                badgeBg: "bg-slate-800 text-slate-300 border-slate-600",
+                borderStyle: "border-slate-500",
+                boxStyle: "quality--ha-pham",
+                subStat: null
+            },
+            TRUNGPHAM: {
+                id: "trung_pham",
+                name: "Trung Phẩm",
+                multiplier: 1.5,
+                colorText: "text-emerald-400",
+                badgeBg: "bg-emerald-950/80 text-emerald-300 border-emerald-500/50",
+                borderStyle: "border-emerald-500",
+                boxStyle: "quality--trung-pham",
+                subStat: { label: "Dòng Phụ", text: "Tốc đánh +5%" }
+            },
+            THUONGPHAM: {
+                id: "thuong_pham",
+                name: "Thượng Phẩm",
+                multiplier: 2.5,
+                colorText: "text-sky-400",
+                badgeBg: "bg-sky-950/90 text-sky-300 border-sky-400",
+                borderStyle: "border-sky-400",
+                boxStyle: "quality--thuong-pham",
+                subStat: { label: "Cực Phẩm Đặc Hiệu", text: "Tốc đánh +10% • Bạo kích +8%" }
+            }
+        };
+
+        /**
+         * Quay số ngẫu nhiên phẩm chất:
+         * 70% Hạ Phẩm, 25% Trung Phẩm, 5% Thượng Phẩm
+         */
+        function rollCraftingQuality() {
+            const rand = Math.random(); // 0 -> 1
+            if (rand < 0.05) {
+                return CRAFTING_QUALITIES.THUONGPHAM; // 5%
+            } else if (rand < 0.30) {
+                return CRAFTING_QUALITIES.TRUNGPHAM;  // 25% (0.05 đến 0.30)
+            } else {
+                return CRAFTING_QUALITIES.HAPHAP;     // 70% (0.30 đến 1.00)
+            }
+        }
+
+        // ====================================================================
+        // 4. TRẠNG THÁI LÒ RÈN & TIMER ĐẾM NGƯỢC
+        // ====================================================================
+        const furnaceState = {
+            isCrafting: false,
+            activeRecipeId: null,
+            timerInterval: null,
+            totalTime: 0,
+            elapsedTime: 0
+        };
+
+        // ====================================================================
+        // 5. SYNTHETIC SOUND EFFECTS (WEB AUDIO API - ZERO ASSET DEPENDENCY)
+        // ====================================================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSoundFx(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                if (type === 'forge_start') {
+                    // Tiếng búa gõ đe kim loại dứt khoát
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.35);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'forge_success') {
+                    // Hợp âm ngũ cung tiên hiệp ngân vang
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                        gain.gain.setValueAtTime(0.25, now + idx * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.8);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.09);
+                        osc.stop(now + idx * 0.09 + 0.85);
+                    });
+                }
+            } catch (e) {
+                // Ignore audio context error if disabled
+            }
+        }
+
+        // ====================================================================
+        // 6. RENDER GIAO DIỆN & CẬP NHẬT HUD
+        // ====================================================================
+        function updateTopBarUI() {
+            document.getElementById('display-stones').textContent = playerState.stones.toLocaleString('vi-VN');
+            document.getElementById('display-huyen-thiet').textContent = playerState.inventory.stone_ore;
+            document.getElementById('display-linh-chi').textContent = playerState.inventory.herb_spirit;
+            document.getElementById('display-ngoc-sam').textContent = playerState.inventory.herb_blood;
+        }
+
+        function renderBlueprints() {
+            const container = document.getElementById('blueprints-list');
+            container.innerHTML = '';
+
+            CRAFTING_RECIPES.forEach(recipe => {
+                const realmMet = playerState.realmIndex >= recipe.reqRealmIndex;
+                let matsMet = true;
+
+                // Kiểm tra từng nguyên liệu
+                const matsHtml = recipe.materials.map(mat => {
+                    let owned = 0;
+                    if (mat.key === 'stones') owned = playerState.stones;
+                    else owned = playerState.inventory[mat.key] || 0;
+
+                    const isEnough = owned >= mat.qty;
+                    if (!isEnough) matsMet = false;
+
+                    return `
+                        <div class="material-pill ${isEnough ? 'mat--enough' : 'mat--missing'}">
+                            <i class="fa-solid ${mat.icon}"></i>
+                            <span>${mat.name}: <b>${owned}/${mat.qty}</b></span>
+                        </div>
+                    `;
+                }).join('');
+
+                // Điều kiện kích hoạt nút Luyện Khí
+                const canCraft = realmMet && matsMet && !furnaceState.isCrafting;
+                let btnLabel = "Khởi Lò Luyện Khí";
+                let btnIcon = "fa-hammer";
+
+                if (furnaceState.isCrafting) {
+                    btnLabel = "Lò Đang Tôi Luyện...";
+                    btnIcon = "fa-spinner fa-spin";
+                } else if (!realmMet) {
+                    btnLabel = `Yêu Cầu ${recipe.reqRealmName}`;
+                    btnIcon = "fa-lock";
+                } else if (!matsMet) {
+                    btnLabel = "Thiếu Nguyên Liệu";
+                    btnIcon = "fa-triangle-exclamation";
+                }
+
+                // Render Base Stats
+                const statsArr = [];
+                if (recipe.baseStats.atk) statsArr.push(`Công: <b class="stat-highlight">+${recipe.baseStats.atk} ATK</b>`);
+                if (recipe.baseStats.def) statsArr.push(`Thủ: <b class="stat-highlight">+${recipe.baseStats.def} DEF</b>`);
+                if (recipe.baseStats.hp) statsArr.push(`Huyết: <b class="stat-highlight">+${recipe.baseStats.hp} HP</b>`);
+
+                const card = document.createElement('article');
+                card.className = 'recipe-card';
+                card.innerHTML = `
+                    <div class="recipe-header">
+                        <div class="recipe-title-group">
+                            <div class="recipe-item-avatar">
+                                <i class="fa-solid ${recipe.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="recipe-name">${recipe.name}</h3>
+                                    <span class="recipe-type-tag">${recipe.type}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-0.5">${recipe.desc}</p>
+                            </div>
+                        </div>
+                        <span class="recipe-req-badge ${realmMet ? 'req--met' : 'req--unmet'}">
+                            <i class="fa-solid ${realmMet ? 'fa-check' : 'fa-lock'}"></i> ${recipe.reqRealmName}
+                        </span>
+                    </div>
+
+                    <div class="recipe-meta-stats">
+                        <div class="flex items-center gap-2">
+                            <span>Chỉ số gốc:</span>
+                            ${statsArr.join(' • ')}
+                        </div>
+                        <div class="ml-auto font-mono text-[11px] text-amber-300">
+                            <i class="fa-regular fa-hourglass-half"></i> ${recipe.craftTime}s
+                        </div>
+                    </div>
+
+                    <div class="materials-container">
+                        <div class="materials-title">
+                            <i class="fa-solid fa-boxes-stacked"></i> Nguyên Liệu Tiêu Hao:
+                        </div>
+                        <div class="materials-list">
+                            ${matsHtml}
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-forge" onclick="startCrafting('${recipe.id}')" ${canCraft ? '' : 'disabled'}>
+                        <i class="fa-solid ${btnIcon}"></i> ${btnLabel}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ====================================================================
+        // 7. HÀM START CRAFTING (KHỞI ĐỘNG RÈN ĐÚC)
+        // ====================================================================
+        function startCrafting(recipeId) {
+            if (furnaceState.isCrafting) return;
+
+            const recipe = CRAFTING_RECIPES.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            // Kiểm tra cảnh giới
+            if (playerState.realmIndex < recipe.reqRealmIndex) {
+                alert(`Cảnh giới chưa đủ! Cần đạt ${recipe.reqRealmName} để đúc trang bị này.`);
+                return;
+            }
+
+            // Kiểm tra nguyên liệu
+            for (const mat of recipe.materials) {
+                if (mat.key === 'stones') {
+                    if (playerState.stones < mat.qty) {
+                        alert("Không đủ Linh Thạch!");
+                        return;
+                    }
+                } else {
+                    if ((playerState.inventory[mat.key] || 0) < mat.qty) {
+                        alert(`Không đủ nguyên liệu: ${mat.name}!`);
+                        return;
+                    }
+                }
+            }
+
+            // 1. Khấu trừ nguyên liệu trong túi đồ
+            recipe.materials.forEach(mat => {
+                if (mat.key === 'stones') {
+                    playerState.stones -= mat.qty;
+                } else {
+                    playerState.inventory[mat.key] -= mat.qty;
+                }
+            });
+
+            // 2. Kích hoạt trạng thái lò rèn
+            furnaceState.isCrafting = true;
+            furnaceState.activeRecipeId = recipeId;
+            furnaceState.totalTime = recipe.craftTime;
+            furnaceState.elapsedTime = 0;
+
+            // Phát âm thanh búa rèn
+            playSoundFx('forge_start');
+
+            // Cập nhật giao diện lò rèn: Lửa bùng cháy dữ dội!
+            const furnacePanel = document.getElementById('furnace-panel');
+            furnacePanel.classList.add('is-forging');
+
+            const statusBadge = document.getElementById('furnace-status-badge');
+            statusBadge.className = 'furnace-status-badge status--crafting';
+            document.getElementById('furnace-status-icon').className = 'fa-solid fa-fire-flame-curved text-rose-400';
+            document.getElementById('furnace-status-text').textContent = 'Đang tôi luyện đúc khí...';
+
+            // Kích hoạt hộp tiến độ & timer
+            const progressBox = document.getElementById('crafting-progress-box');
+            progressBox.classList.add('is-active');
+            document.getElementById('crafting-active-name').innerHTML = `
+                <i class="fa-solid fa-hammer text-amber-400 animate-bounce"></i> Đang rèn: ${recipe.name}
+            `;
+
+            updateTopBarUI();
+            renderBlueprints();
+
+            // 3. Khởi động Timer đếm ngược (Mỗi 100ms)
+            const tickRateMs = 100;
+            furnaceState.timerInterval = setInterval(() => {
+                furnaceState.elapsedTime += (tickRateMs / 1000);
+                const remaining = Math.max(0, furnaceState.totalTime - furnaceState.elapsedTime);
+                const progressPct = Math.min(100, (furnaceState.elapsedTime / furnaceState.totalTime) * 100);
+
+                // Cập nhật thanh tiến độ và text đếm ngược
+                document.getElementById('crafting-progress-fill').style.width = `${progressPct}%`;
+                document.getElementById('crafting-percent-text').textContent = `${Math.round(progressPct)}%`;
+                document.getElementById('crafting-timer-text').innerHTML = `
+                    <i class="fa-regular fa-clock"></i> ${remaining.toFixed(1)}s
+                `;
+
+                // Khi hết giờ: Hoàn thành rèn đúc!
+                if (furnaceState.elapsedTime >= furnaceState.totalTime) {
+                    clearInterval(furnaceState.timerInterval);
+                    finishCrafting(recipeId);
+                }
+            }, tickRateMs);
+        }
+
+        // ====================================================================
+        // 8. HÀM FINISH CRAFTING (QUAY RNG, HIỂN THỊ POPUP & ADD TÚI ĐỒ)
+        // ====================================================================
+        function finishCrafting(recipeId) {
+            const recipe = CRAFTING_RECIPES.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            // 1. Quay random phẩm chất (RNG)
+            const quality = rollCraftingQuality();
+
+            // 2. Tính toán chỉ số nhân theo hệ số phẩm chất
+            const multipliedStats = {};
+            for (const [key, val] of Object.entries(recipe.baseStats)) {
+                multipliedStats[key] = Math.round(val * quality.multiplier);
+            }
+
+            // 3. Tạo vật phẩm hoàn chỉnh
+            const craftedItem = {
+                id: `${recipe.id}_${Date.now()}`,
+                name: `${recipe.name} (${quality.name})`,
+                baseName: recipe.name,
+                type: recipe.type,
+                slot: recipe.slot,
+                icon: recipe.icon,
+                quality: quality.name,
+                qualityId: quality.id,
+                stats: multipliedStats,
+                subStat: quality.subStat ? quality.subStat.text : null,
+                timeCreated: new Date().toLocaleTimeString('vi-VN')
+            };
+
+            // Đưa vào kho trang bị người chơi
+            playerState.craftedBag.unshift(craftedItem);
+
+            // 4. Reset trạng thái lò rèn về bình thường
+            furnaceState.isCrafting = false;
+            furnaceState.activeRecipeId = null;
+
+            const furnacePanel = document.getElementById('furnace-panel');
+            furnacePanel.classList.remove('is-forging');
+
+            const statusBadge = document.getElementById('furnace-status-badge');
+            statusBadge.className = 'furnace-status-badge status--idle';
+            document.getElementById('furnace-status-icon').className = 'fa-solid fa-fire text-slate-400';
+            document.getElementById('furnace-status-text').textContent = 'Chờ mồi lửa (Nhàn rỗi)';
+
+            const progressBox = document.getElementById('crafting-progress-box');
+            progressBox.classList.remove('is-active');
+            document.getElementById('crafting-progress-fill').style.width = '0%';
+
+            // Âm thanh chúc mừng vang dội
+            playSoundFx('forge_success');
+
+            // 5. Hiển thị Popup chúc mừng
+            openCraftingResultModal(craftedItem, quality);
+
+            // Cập nhật lại UI kệ đồ và danh sách công thức
+            renderRecentItemsShelf();
+            renderBlueprints();
+        }
+
+        // ====================================================================
+        // 9. MODAL KẾT QUẢ & KỆ TRANG BỊ
+        // ====================================================================
+        function openCraftingResultModal(item, quality) {
+            const overlay = document.getElementById('crafting-modal-overlay');
+            const resultCard = document.getElementById('crafting-result-card');
+
+            // Reset class chất lượng
+            resultCard.className = `crafting-result-card ${quality.boxStyle}`;
+
+            // Badge
+            const badge = document.getElementById('modal-quality-badge');
+            badge.className = `result-badge ${quality.badgeBg}`;
+            badge.textContent = `PHẨM CHẤT: ${quality.name.toUpperCase()}`;
+
+            // Icon
+            const iconBox = document.getElementById('modal-item-icon-box');
+            iconBox.className = `result-item-icon-circle ${quality.badgeBg} border ${quality.borderStyle}`;
+            document.getElementById('modal-item-icon').className = `fa-solid ${item.icon} ${quality.colorText}`;
+
+            // Tên & mô tả
+            document.getElementById('modal-item-name').className = `result-item-name ${quality.colorText}`;
+            document.getElementById('modal-item-name').textContent = item.name;
+
+            // Stats
+            document.getElementById('modal-stat-quality').textContent = `${quality.name} (Hệ số x${quality.multiplier})`;
+            document.getElementById('modal-stat-quality').className = `${quality.colorText} font-bold`;
+
+            const statLines = [];
+            if (item.stats.atk) statLines.push(`Công Kích: <strong class="${quality.colorText}">+${item.stats.atk} ATK</strong>`);
+            if (item.stats.def) statLines.push(`Phòng Ngự: <strong class="${quality.colorText}">+${item.stats.def} DEF</strong>`);
+            if (item.stats.hp) statLines.push(`Khí Huyết: <strong class="${quality.colorText}">+${item.stats.hp} HP</strong>`);
+            document.getElementById('modal-stat-row-1').innerHTML = statLines.join(' | ');
+
+            // Substat
+            const substatContainer = document.getElementById('modal-substat-container');
+            if (item.subStat) {
+                substatContainer.style.display = 'flex';
+                document.getElementById('modal-substat-text').textContent = `Dòng Phụ: ${item.subStat}`;
+            } else {
+                substatContainer.style.display = 'none';
+            }
+
+            overlay.classList.add('is-open');
+        }
+
+        function closeCraftingModal() {
+            document.getElementById('crafting-modal-overlay').classList.remove('is-open');
+        }
+
+        function renderRecentItemsShelf() {
+            const container = document.getElementById('recent-items-container');
+            if (!playerState.craftedBag.length) {
+                container.innerHTML = '<span class="text-[11px] text-slate-500 italic">Chưa có trang bị nào được đúc trong phiên này.</span>';
+                return;
+            }
+            container.innerHTML = playerState.craftedBag.slice(0, 6).map(it => {
+                let badgeCol = "text-slate-300 border-slate-600";
+                if (it.qualityId === 'trung_pham') badgeCol = "text-emerald-300 border-emerald-500/60 bg-emerald-950/40";
+                if (it.qualityId === 'thuong_pham') badgeCol = "text-sky-300 border-sky-400 bg-sky-950/50 shadow-[0_0_8px_rgba(56,189,248,0.5)]";
+
+                return `
+                    <div class="shelf-item-badge ${badgeCol}" title="${it.name} - ${it.subStat || ''}">
+                        <i class="fa-solid ${it.icon}"></i>
+                        <span>${it.name}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ====================================================================
+        // 10. HÀM HỖ TRỢ TEST & TƯƠNG TÁC NHANH
+        // ====================================================================
+        function addTestResource(type, amount) {
+            if (type === 'stones') {
+                playerState.stones += amount;
+            } else {
+                playerState.inventory[type] = (playerState.inventory[type] || 0) + amount;
+            }
+            updateTopBarUI();
+            renderBlueprints();
+        }
+
+        function changeTestRealm(realmIdx) {
+            playerState.realmIndex = parseInt(realmIdx, 10);
+            renderBlueprints();
+        }
+
+        // ====================================================================
+        // KHỞI CHẠY LẦN ĐẦU
+        // ====================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            updateTopBarUI();
+            renderBlueprints();
+            renderRecentItemsShelf();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "van-thien-luc-idle-rpg",
+  "version": "1.0.0",
+  "description": "Vấn Thiên Lục - Càn Khôn Tịch Diệt (Dark Xianxia 2D Idle RPG)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "tu-tien",
+    "idle-rpg",
+    "game-2d",
+    "canvas",
+    "web-audio"
+  ],
+  "author": "Antigravity & Gemini",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

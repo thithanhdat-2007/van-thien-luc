@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" width="900" height="1600">
+  <defs>
+    <radialGradient id="skyGlow" cx="50%" cy="15%" r="75%">
+      <stop offset="0%" stop-color="#581c87" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#1e1b4b" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="impactGlow" cx="50%" cy="92%" r="40%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#c084fc" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="purpleGlow" x="-30%" y="-10%" width="160%" height="120%">
+      <feGaussianBlur stdDeviation="18" result="blur1"/>
+      <feGaussianBlur stdDeviation="6" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="goldCoreGlow" x="-20%" y="-10%" width="140%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Stormy Sky Background -->
+  <rect width="900" height="1600" fill="url(#skyGlow)"/>
+
+  <!-- Thunderclouds at top -->
+  <ellipse cx="260" cy="90" rx="340" ry="130" fill="#090514" opacity="0.85"/>
+  <ellipse cx="640" cy="110" rx="360" ry="140" fill="#090514" opacity="0.85"/>
+  <ellipse cx="450" cy="60" rx="290" ry="110" fill="#3b0764" opacity="0.55" filter="url(#purpleGlow)"/>
+
+  <!-- Ground Impact Flash -->
+  <ellipse cx="450" cy="1480" rx="380" ry="120" fill="url(#impactGlow)"/>
+
+  <!-- Outer Purple Plasma Halo -->
+  <g filter="url(#purpleGlow)" stroke="#a855f7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Main Trunk -->
+    <path d="M 460 0 L 420 190 L 495 330 L 390 540 L 485 720 L 370 960 L 470 1150 L 415 1330 L 450 1480" stroke-width="26" opacity="0.85"/>
+    <!-- Left Branches -->
+    <path d="M 420 190 L 310 310 L 240 460 L 140 580" stroke-width="14" opacity="0.75"/>
+    <path d="M 310 310 L 210 350 L 130 420" stroke-width="8" opacity="0.65"/>
+    <path d="M 390 540 L 260 690 L 180 860 L 95 980" stroke-width="15" opacity="0.75"/>
+    <path d="M 260 690 L 150 730" stroke-width="7" opacity="0.6"/>
+    <path d="M 370 960 L 240 1120 L 160 1290" stroke-width="12" opacity="0.7"/>
+    <!-- Right Branches -->
+    <path d="M 495 330 L 630 470 L 720 640 L 810 760" stroke-width="15" opacity="0.75"/>
+    <path d="M 630 470 L 740 500" stroke-width="8" opacity="0.6"/>
+    <path d="M 485 720 L 620 880 L 710 1080 L 790 1220" stroke-width="14" opacity="0.75"/>
+    <path d="M 620 880 L 735 930" stroke-width="7" opacity="0.6"/>
+    <path d="M 470 1150 L 590 1310 L 675 1440" stroke-width="11" opacity="0.7"/>
+  </g>
+
+  <!-- Inner Golden-White Celestial Lightning Core -->
+  <g filter="url(#goldCoreGlow)" stroke="#fef08a" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 460 0 L 420 190 L 495 330 L 390 540 L 485 720 L 370 960 L 470 1150 L 415 1330 L 450 1480" stroke-width="9"/>
+    <path d="M 420 190 L 310 310 L 240 460 L 140 580" stroke-width="4.5"/>
+    <path d="M 390 540 L 260 690 L 180 860 L 95 980" stroke-width="5"/>
+    <path d="M 370 960 L 240 1120 L 160 1290" stroke-width="4"/>
+    <path d="M 495 330 L 630 470 L 720 640 L 810 760" stroke-width="5"/>
+    <path d="M 485 720 L 620 880 L 710 1080 L 790 1220" stroke-width="4.5"/>
+    <path d="M 470 1150 L 590 1310 L 675 1440" stroke-width="3.5"/>
+  </g>
+
+  <!-- Ground Shockwave Arcs -->
+  <g filter="url(#goldCoreGlow)" stroke="#facc15" stroke-width="4" fill="none" opacity="0.9">
+    <path d="M 450 1480 L 310 1510 L 180 1490"/>
+    <path d="M 450 1480 L 590 1515 L 730 1495"/>
+    <path d="M 450 1480 L 390 1545 L 280 1565"/>
+    <path d="M 450 1480 L 520 1540 L 640 1560"/>
+  </g>
+</svg>

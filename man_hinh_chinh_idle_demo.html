@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Đại Thiên Thế Giới • Màn Hình Nhàn Rỗi — Vạn Cổ Tu Tiên</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. RESET & CẤU TRÚC FULL-VIEWPORT (100vw x 100vh)
+           ========================================================================== */
+        :root {
+            --gold-glow: #fef08a;
+            --gold-base: #eab308;
+            --gold-dark: #854d0e;
+            --jade-glow: #34d399;
+            --jade-base: #10b981;
+            --cyan-glow: #38bdf8;
+            --purple-mystic: #a855f7;
+            --rose-crimson: #f43f5e;
+            --bg-glass: rgba(12, 18, 30, 0.72);
+            --border-glass: rgba(234, 179, 8, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #04060a;
+            color: #f1f5f9;
+            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            position: relative;
+        }
+
+        /* ==========================================================================
+           PHẦN 1: BỐ CỤC KHÔNG GIAN (PARALLAX BACKGROUND & FOG LAYERS)
+           ========================================================================== */
+        #world-environment {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 1;
+            perspective: 1000px;
+        }
+
+        /* Lớp 1: Bầu trời sâu thẳm & Núi non mờ ảo xa xôi */
+        .parallax-layer--sky {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.12) 0%, transparent 60%),
+                radial-gradient(circle at 15% 70%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+                linear-gradient(180deg, #04060a 0%, #0a1120 40%, #060a12 100%);
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+        }
+
+        /* Ảnh dãy núi mờ sương tiên hiệp */
+        .parallax-layer--mountains {
+            position: absolute;
+            inset: 0;
+            background-image: url('./assets/images/bg_tu_tieu_peak.jpg');
+            background-size: cover;
+            background-position: center bottom;
+            opacity: 0.38;
+            filter: contrast(1.1) brightness(0.85);
+            z-index: 2;
+            transform: scale(1.05);
+            transition: transform 0.5s ease-out;
+        }
+
+        /* Lớp 2: Sương mù trôi lững lờ ngang màn hình (Clouds/Fog) */
+        .fog-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            overflow: hidden;
+        }
+
+        .fog-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 250vw;
+            height: 100%;
+            background: radial-gradient(ellipse at 30% 60%, rgba(255, 255, 255, 0.07) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 40%, rgba(56, 189, 248, 0.05) 0%, transparent 50%),
+                        linear-gradient(180deg, transparent 20%, rgba(15, 23, 42, 0.25) 70%, transparent 100%);
+            opacity: 0.8;
+        }
+
+        .fog-layer--1 {
+            animation: driftFog 55s linear infinite;
+        }
+
+        .fog-layer--2 {
+            top: 20%;
+            opacity: 0.5;
+            background: radial-gradient(ellipse at 60% 50%, rgba(254, 240, 138, 0.04) 0%, transparent 55%);
+            animation: driftFogReverse 75s linear infinite;
+        }
+
+        @keyframes driftFog {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50vw); }
+        }
+
+        @keyframes driftFogReverse {
+            0% { transform: translateX(-40vw); }
+            100% { transform: translateX(10vw); }
+        }
+
+        /* Lớp 3: Bảng Tên Map (World Name Banner Cổ Trang Sang Trọng) */
+        .world-name-banner {
+            position: absolute;
+            top: 1.25rem;
+            left: 1.5rem;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(24, 16, 32, 0.85) 100%);
+            border: 1.5px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 0.65rem 1.2rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(234, 179, 8, 0.2);
+            transition: all 0.3s;
+        }
+
+        .world-name-banner:hover {
+            border-color: rgba(234, 179, 8, 0.7);
+            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.8), 0 0 25px rgba(234, 179, 8, 0.4);
+        }
+
+        .map-emblem-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: radial-gradient(circle, rgba(234, 179, 8, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid var(--gold-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-glow);
+            font-size: 1.25rem;
+            box-shadow: inset 0 0 10px rgba(234, 179, 8, 0.4);
+        }
+
+        .map-title-text {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: #fef08a;
+            text-shadow: 0 0 12px rgba(234, 179, 8, 0.6);
+            line-height: 1.2;
+        }
+
+        .map-sub-text {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Top Sticky Resource Bar */
+        .top-resource-dock {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.5rem;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .res-chip {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 0.35rem 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        .res-chip--gold { border-color: rgba(234, 179, 8, 0.4); color: #fef08a; }
+        .res-chip--jade { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+        .res-chip--ruby { border-color: rgba(244, 63, 94, 0.4); color: #fecdd3; }
+
+        /* ==========================================================================
+           PHẦN 2: TRUNG TÂM - NHÂN VẬT & TỤ LINH TRẬN 3D (RẤT QUAN TRỌNG)
+           ========================================================================== */
+        .cultivation-center {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        /* Hào quang phía sau nhân vật (Cultivator Celestial Aura) */
+        .celestial-back-aura {
+            position: absolute;
+            top: 25px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(16, 185, 129, 0.15) 45%, transparent 70%);
+            filter: blur(20px);
+            animation: pulseAura 4s ease-in-out infinite alternate;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes pulseAura {
+            0% { transform: scale(0.92); opacity: 0.5; filter: blur(20px); }
+            100% { transform: scale(1.15); opacity: 0.85; filter: blur(28px); }
+        }
+
+        /* Thẻ bao bọc Avatar nhân vật (Floating & Levitation) */
+        .cultivator-levitate-wrap {
+            position: relative;
+            z-index: 10;
+            width: 240px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: -55px; /* Để chân nhân vật đặt ngay trên tâm Tụ Linh Trận */
+            animation: levitateFloat 4.2s ease-in-out infinite alternate;
+            cursor: pointer;
+        }
+
+        @keyframes levitateFloat {
+            0% {
+                transform: translateY(0);
+                filter: drop-shadow(0 15px 25px rgba(56, 189, 248, 0.3));
+            }
+            100% {
+                transform: translateY(-16px);
+                filter: drop-shadow(0 25px 35px rgba(56, 189, 248, 0.6));
+            }
+        }
+
+        .cultivator-avatar-img {
+            width: 210px;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 2px solid rgba(234, 179, 8, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(254, 240, 138, 0.2);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .cultivator-levitate-wrap:active .cultivator-avatar-img {
+            transform: scale(0.96);
+        }
+
+        /* Điểm Đan Điền (Tâm thu nạp linh khí ở bụng) */
+        .dantian-core-point {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fef08a;
+            box-shadow: 0 0 15px #fef08a, 0 0 30px #38bdf8;
+            opacity: 0.7;
+            animation: dantianPulse 2s infinite alternate;
+            pointer-events: none;
+            z-index: 12;
+        }
+
+        @keyframes dantianPulse {
+            0% { transform: translateX(-50%) scale(0.8); opacity: 0.5; }
+            100% { transform: translateX(-50%) scale(1.3); opacity: 0.95; }
+        }
+
+        /* ==========================================================================
+           TỤ LINH TRẬN 3D (SPIRIT GATHERING ARRAY) - ÉP DẸT 65 ĐỘ
+           ========================================================================== */
+        .magic-circle-ground-stage {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            perspective: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* ÉP DẸT VÒNG TRÒN XUỐNG MẶT ĐẤT BẰNG CSS 3D */
+        .magic-circle-disc {
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            transform: rotateX(65deg);
+            transform-style: preserve-3d;
+            position: relative;
+            box-shadow: 0 0 45px rgba(234, 179, 8, 0.35), inset 0 0 40px rgba(56, 189, 248, 0.35);
+            animation: pulseArrayGlow 3.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseArrayGlow {
+            0% {
+                filter: drop-shadow(0 0 20px rgba(234, 179, 8, 0.4));
+            }
+            100% {
+                filter: drop-shadow(0 0 45px rgba(56, 189, 248, 0.8)) drop-shadow(0 0 35px rgba(234, 179, 8, 0.7));
+            }
+        }
+
+        /* SVG MA PHÁP TRẬN XOAY TRÒN LIÊN TỤC */
+        .magic-array-svg {
+            width: 100%;
+            height: 100%;
+            animation: spinArray 28s linear infinite;
+        }
+
+        @keyframes spinArray {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Vòng ngược chiều bên trong */
+        .magic-array-svg--inner {
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 70%;
+            height: 70%;
+            animation: spinArrayReverse 18s linear infinite;
+        }
+
+        @keyframes spinArrayReverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        /* ==========================================================================
+           PHẦN 3: HIỆU ỨNG HẤP THỤ TU VI (PARTICLES & FLOATING TEXT)
+           ========================================================================== */
+        /* Container sinh đốm sáng linh khí */
+        #qi-particles-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 15;
+            overflow: hidden;
+        }
+
+        .qi-mote {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fef08a 0%, #38bdf8 70%);
+            box-shadow: 0 0 10px #fef08a, 0 0 18px #38bdf8;
+            pointer-events: none;
+            animation: flyToDantian 1.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes flyToDantian {
+            0% {
+                opacity: 0;
+                transform: translate(var(--x-start), var(--y-start)) scale(0.4);
+            }
+            30% {
+                opacity: 1;
+                transform: translate(calc(var(--x-start) * 0.6), calc(var(--y-start) * 0.6)) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--x-target), var(--y-target)) scale(0.2);
+                filter: blur(2px);
+            }
+        }
+
+        /* Số Tu Vi bay lên từ đầu nhân vật */
+        .floating-tuvi-text {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #6ee7b7;
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.9), 0 0 25px rgba(56, 189, 248, 0.8);
+            pointer-events: none;
+            z-index: 50;
+            white-space: nowrap;
+            animation: floatUpAndFade 1.6s ease-out forwards;
+        }
+
+        @keyframes floatUpAndFade {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, 0) scale(0.6);
+            }
+            25% {
+                opacity: 1;
+                transform: translate(-50%, -20px) scale(1.15);
+            }
+            75% {
+                opacity: 0.9;
+                transform: translate(-50%, -55px) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -85px) scale(0.85);
+            }
+        }
+
+        /* Nút Tu Luyện thủ công dưới Tụ Linh Trận */
+        .btn-manual-cultivate {
+            margin-top: 10px;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(16, 185, 129, 0.3) 100%);
+            border: 1.5px solid var(--gold-base);
+            color: #fef08a;
+            padding: 0.7rem 1.8rem;
+            border-radius: 999px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            z-index: 25;
+        }
+
+        .btn-manual-cultivate:hover {
+            transform: translateY(-2px) scale(1.03);
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.4) 0%, rgba(16, 185, 129, 0.45) 100%);
+            box-shadow: 0 0 30px rgba(234, 179, 8, 0.6), 0 0 20px rgba(56, 189, 248, 0.5);
+            border-color: #fef08a;
+            color: #ffffff;
+        }
+
+        .btn-manual-cultivate:active {
+            transform: translateY(1px) scale(0.97);
+        }
+
+        /* ==========================================================================
+           PHẦN 4: SẮP XẾP UI CÁC NÚT TÍNH NĂNG (SIDEBARS & BOTTOM DOCK)
+           ========================================================================== */
+        /* Left Sidebar: Thông tin Cảnh Giới & Độ Kiếp */
+        .sidebar-dock--left {
+            position: absolute;
+            top: 50%;
+            left: 1.5rem;
+            transform: translateY(-50%);
+            z-index: 40;
+            width: 220px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 1.25rem;
+            padding: 1.2rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .realm-progress-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .realm-progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .realm-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ca8a04, #facc15);
+            box-shadow: 0 0 10px #facc15;
+            transition: width 0.3s ease;
+        }
+
+        .btn-breakthrough-glow {
+            width: 100%;
+            padding: 0.65rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #be123c, #e11d48);
+            border: 1px solid #fda4af;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 800;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(225, 29, 72, 0.5);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+        .btn-breakthrough-glow:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(225, 29, 72, 0.8);
+        }
+
+        /* Right Sidebar: Phím Chức Năng (Túi đồ, Công Pháp...) */
+        .sidebar-dock--right {
+            position: absolute;
+            top: 50%;
+            right: 1.5rem;
+            transform: translateY(-50%);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .quick-action-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f1f5f9;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .quick-action-pill:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.6);
+            transform: translateX(-4px);
+            color: #bae6fd;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+        }
+
+        /* Bottom Glass Navigation Bar */
+        .bottom-nav-dock {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(11, 16, 28, 0.88);
+            border: 1px solid var(--border-glass);
+            padding: 0.45rem 0.85rem;
+            border-radius: 1.25rem;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .nav-item-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.45rem 1rem;
+            border-radius: 10px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item-btn i { font-size: 1.1rem; }
+
+        .nav-item-btn:hover, .nav-item-btn.is-active {
+            color: #fef08a;
+            background: rgba(234, 179, 8, 0.15);
+            box-shadow: 0 0 12px rgba(234, 179, 8, 0.25);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar-dock--left, .sidebar-dock--right {
+                display: none; /* Thu gọn trên mobile, dồn vào bottom dock */
+            }
+            .world-name-banner {
+                left: 1rem;
+                top: 1rem;
+                padding: 0.5rem 0.85rem;
+            }
+            .top-resource-dock {
+                right: 1rem;
+                top: 1rem;
+            }
+            .magic-circle-ground-stage {
+                width: 320px;
+                height: 320px;
+            }
+            .magic-circle-disc {
+                width: 300px;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================
+         PHẦN 1: BỐ CỤC KHÔNG GIAN PARALLAX (WORLD ENVIRONMENT)
+         ======================================================================== -->
+    <div id="world-environment">
+        <!-- Lớp sâu nhất: Bầu trời & Núi non Tiên Giới -->
+        <div class="parallax-layer--sky"></div>
+        <div class="parallax-layer--mountains" id="mountains-layer"></div>
+
+        <!-- Lớp sương mù trôi lững lờ -->
+        <div class="fog-container">
+            <div class="fog-layer fog-layer--1"></div>
+            <div class="fog-layer fog-layer--2"></div>
+        </div>
+
+        <!-- Container sinh hạt linh khí bay -->
+        <div id="qi-particles-container"></div>
+    </div>
+
+
+    <!-- ========================================================================
+         BẢNG TÊN MAP CỔ TRANG & THANH TÀI NGUYÊN GÓC TRÊN
+         ======================================================================== -->
+    <!-- Bảng Tên Map Sang Trọng -->
+    <header class="world-name-banner">
+        <div class="map-emblem-box">
+            <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+        <div>
+            <h1 class="map-title-text">HẠ GIỚI • PHÀM TỤC</h1>
+            <div class="map-sub-text">
+                <i class="fa-solid fa-wind text-cyan-400"></i>
+                <span>Linh Khí: 1.5x • Vị Trí: Thanh Vân Sơn</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Thanh Tài Nguyên Kính Mờ (Top Dock) -->
+    <div class="top-resource-dock">
+        <div class="res-chip res-chip--gold">
+            <i class="fa-solid fa-coins text-amber-400"></i>
+            <span id="player-stones-val">38,500</span>
+        </div>
+        <div class="res-chip res-chip--jade">
+            <i class="fa-solid fa-bolt text-emerald-400"></i>
+            <span id="player-tuvi-val">142,600</span>
+        </div>
+        <div class="res-chip res-chip--ruby">
+            <i class="fa-solid fa-gem text-rose-400"></i>
+            <span id="player-jade-val">120</span>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================
+         PHẦN 2: TRUNG TÂM - NHÂN VẬT & TỤ LINH TRẬN 3D (RẤT QUAN TRỌNG)
+         ======================================================================== -->
+    <div class="cultivation-center" id="cultivation-center">
+        <!-- Quầng sáng Thiên Địa sau lưng -->
+        <div class="celestial-back-aura"></div>
+
+        <!-- Anchor định vị số Tu Vi nảy lên -->
+        <div id="floating-tuvi-anchor" style="position: absolute; top: -10px; left: 50%; width: 1px; height: 1px; pointer-events: none;"></div>
+
+        <!-- Nhân vật lơ lửng, nhấp nhô tĩnh tọa -->
+        <div class="cultivator-levitate-wrap" id="cultivator-wrap" onclick="triggerManualCultivate(event)">
+            <!-- Điểm Đan Điền (Bụng) hút linh khí -->
+            <div class="dantian-core-point" id="dantian-point"></div>
+
+            <img src="./assets/images/char_cultivator.jpg" alt="Tu Sĩ Ngồi Thiền" class="cultivator-avatar-img" onerror="this.src='./assets/images/pet_fox.jpg'">
+        </div>
+
+        <!-- TỤ LINH TRẬN 3D ÉP DẸT 65 ĐỘ DƯỚI CHÂN -->
+        <div class="magic-circle-ground-stage">
+            <div class="magic-circle-disc">
+                <!-- SVG VÒNG TRẬN PHÁP BÁT QUÁI NGOÀI -->
+                <svg class="magic-array-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Viền ngoài phát sáng -->
+                    <circle cx="200" cy="200" r="190" stroke="#facc15" stroke-width="2.5" stroke-dasharray="12 6" opacity="0.85"/>
+                    <circle cx="200" cy="200" r="175" stroke="#38bdf8" stroke-width="1.5" opacity="0.6"/>
+                    <circle cx="200" cy="200" r="160" stroke="#fef08a" stroke-width="2" stroke-dasharray="24 8" opacity="0.8"/>
+
+                    <!-- 8 Cung Bát Quái Cổ Ngữ (Càn Khảm Cấn Chấn Tốn Ly Khôn Đoài) -->
+                    <g font-family="'Cinzel', serif" font-size="14" font-weight="900" fill="#fef08a" text-anchor="middle">
+                        <text x="200" y="32">☰ CÀN</text>
+                        <text x="325" y="85">☱ ĐOÀI</text>
+                        <text x="375" y="205">☲ LY</text>
+                        <text x="325" y="325">☳ CHẤN</text>
+                        <text x="200" y="380">☷ KHÔN</text>
+                        <text x="75" y="325">☵ KHẢM</text>
+                        <text x="25" y="205">☶ CẤN</text>
+                        <text x="75" y="85">☴ TỐN</text>
+                    </g>
+
+                    <!-- Vòng sao Bát Giác bên trong -->
+                    <polygon points="200,60 298,102 340,200 298,298 200,340 102,298 60,200 102,102" stroke="#34d399" stroke-width="1.8" fill="none" opacity="0.65"/>
+                    <polygon points="200,60 340,200 200,340 60,200" stroke="#facc15" stroke-width="1" fill="none" opacity="0.45"/>
+                </svg>
+
+                <!-- SVG ÂM DƯƠNG NGƯ XOAY NGƯỢC CHIỀU Ở TÂM -->
+                <svg class="magic-array-svg magic-array-svg--inner" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="85" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8 4" opacity="0.8"/>
+                    <!-- Biểu tượng Bát Quái Âm Dương -->
+                    <circle cx="100" cy="100" r="70" stroke="#fef08a" stroke-width="1.5" opacity="0.7"/>
+                    <path d="M100,30 A70,70 0 0,1 100,170 A35,35 0 0,1 100,100 A35,35 0 0,0 100,30 Z" fill="#fef08a" opacity="0.4"/>
+                    <circle cx="100" cy="65" r="10" fill="#060a12"/>
+                    <circle cx="100" cy="135" r="10" fill="#fef08a"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Nút Tu Luyện thủ công hài hòa dưới trận pháp -->
+        <button type="button" class="btn-manual-cultivate" onclick="triggerManualCultivate(event)">
+            <i class="fa-solid fa-spa"></i>
+            <span>TĨNH TỌA HẤP THU LINH KHÍ (+150)</span>
+        </button>
+    </div>
+
+
+    <!-- ========================================================================
+         PHẦN 4: SẮP XẾP UI CÁC NÚT TÍNH NĂNG (SIDEBARS & BOTTOM DOCK)
+         ======================================================================== -->
+    <!-- LEFT SIDEBAR: CẢNH GIỚI & ĐỘ KIẾP -->
+    <aside class="sidebar-dock--left">
+        <div class="flex items-center justify-between border-b border-white/10 pb-2">
+            <div>
+                <b class="text-xs text-amber-300 font-serif">Trúc Cơ Hậu Kỳ</b>
+                <span class="text-[10px] text-slate-400 block font-mono">Bình cảnh: 85%</span>
+            </div>
+            <i class="fa-solid fa-feather text-amber-400"></i>
+        </div>
+
+        <div class="realm-progress-wrap">
+            <div class="flex justify-between text-[11px] font-mono text-slate-300">
+                <span>Tu Vi:</span>
+                <span id="sidebar-tuvi-text">85,000 / 100,000</span>
+            </div>
+            <div class="realm-progress-track">
+                <div class="realm-progress-fill" id="sidebar-tuvi-fill" style="width: 85%;"></div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-breakthrough-glow" onclick="alert('⚡ Đang tích lũy lôi kiếp để Đột Phá Kim Đan!')">
+            <i class="fa-solid fa-cloud-bolt text-amber-300"></i>
+            ĐỘ KIẾP PHÁ BÌNH CẢNH
+        </button>
+    </aside>
+
+    <!-- RIGHT SIDEBAR: CÁC TÍNH NĂNG NHANH -->
+    <aside class="sidebar-dock--right">
+        <button type="button" class="quick-action-pill" onclick="alert('Mở Túi Đồ Càn Khôn')">
+            <i class="fa-solid fa-sack-dollar text-amber-400"></i>
+            <span>Túi Đồ</span>
+        </button>
+        <button type="button" class="quick-action-pill" onclick="alert('Mở Hệ Thống Công Pháp')">
+            <i class="fa-solid fa-book-journal-whills text-sky-400"></i>
+            <span>Công Pháp</span>
+        </button>
+        <button type="button" class="quick-action-pill" onclick="alert('Mở Pháp Bảo Bản Mệnh')">
+            <i class="fa-solid fa-shield-halved text-purple-400"></i>
+            <span>Pháp Bảo</span>
+        </button>
+        <button type="button" class="quick-action-pill" onclick="alert('Mở Tâm Ma Tu Luyện')">
+            <i class="fa-solid fa-fire text-rose-500"></i>
+            <span>Tâm Ma</span>
+        </button>
+    </aside>
+
+    <!-- BOTTOM GLASS NAVIGATION BAR: CHUYỂN PHÂN KHU -->
+    <nav class="bottom-nav-dock">
+        <button type="button" class="nav-item-btn is-active">
+            <i class="fa-solid fa-mountain-sun"></i>
+            <span>Tu Tiên</span>
+        </button>
+        <button type="button" class="nav-item-btn" onclick="alert('Chuyển sang Động Phủ (Khuê Phòng & Gia Viên)')">
+            <i class="fa-solid fa-house-chimney-window"></i>
+            <span>Động Phủ</span>
+        </button>
+        <button type="button" class="nav-item-btn" onclick="alert('Chuyển sang Trấn Yêu Tháp')">
+            <i class="fa-solid fa-dungeon"></i>
+            <span>Trấn Tháp</span>
+        </button>
+        <button type="button" class="nav-item-btn" onclick="alert('Chuyển sang Tông Môn')">
+            <i class="fa-solid fa-torii-gate"></i>
+            <span>Tông Môn</span>
+        </button>
+        <button type="button" class="nav-item-btn" onclick="alert('Chuyển sang Thế Giới')">
+            <i class="fa-solid fa-earth-asia"></i>
+            <span>Thế Giới</span>
+        </button>
+    </nav>
+
+
+    <!-- ========================================================================
+         PHẦN 3 & LOGIC JAVASCRIPT: PARTICLE SPAWNER & FLOATING TEXT ENGINE
+         ======================================================================== -->
+    <script>
+        // State tài nguyên người chơi
+        const playerState = {
+            stones: 38500,
+            tuvi: 142600,
+            jade: 120,
+            tuviPerSecond: 150,
+            tuviToNextRealm: 100000,
+            currentRealmTuvi: 85000
+        };
+
+        // ====================================================================
+        // 1. LOGIC SINH HẠT LINH KHÍ (QI PARTICLES SPAWNER)
+        // ====================================================================
+        function spawnQiMotes(count = 5) {
+            const container = document.getElementById('qi-particles-container');
+            const centerEl = document.getElementById('cultivation-center');
+            const rect = centerEl.getBoundingClientRect();
+
+            // Tọa độ tâm đan điền (mục tiêu bay tới)
+            const targetX = rect.left + rect.width / 2;
+            const targetY = rect.top + rect.height / 2 + 30; // Điểm bụng nhân vật
+
+            for (let i = 0; i < count; i++) {
+                const mote = document.createElement('div');
+                mote.className = 'qi-mote';
+
+                // Tọa độ xuất phát ngẫu nhiên trên mặt phẳng Tụ Linh Trận (bên dưới)
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 60 + Math.random() * 110;
+                const startX = targetX + Math.cos(angle) * radius;
+                const startY = targetY + 90 + Math.sin(angle) * (radius * 0.4); // Dẹp theo góc 65 độ
+
+                mote.style.setProperty('--x-start', `${startX}px`);
+                mote.style.setProperty('--y-start', `${startY}px`);
+                mote.style.setProperty('--x-target', `${targetX}px`);
+                mote.style.setProperty('--y-target', `${targetY}px`);
+
+                // Kích thước & delay ngẫu nhiên
+                const size = 6 + Math.random() * 6;
+                mote.style.width = `${size}px`;
+                mote.style.height = `${size}px`;
+                mote.style.animationDelay = `${i * 0.1}s`;
+
+                container.appendChild(mote);
+
+                // Dọn dẹp DOM sau khi hoàn thành animation
+                setTimeout(() => {
+                    mote.remove();
+                }, 1400);
+            }
+        }
+
+        // ====================================================================
+        // 2. LOGIC HIỆN SỐ TU VI BAY LÊN (FLOATING TU VI TEXT)
+        // ====================================================================
+        function spawnFloatingTuvi(amount, isCrit = false) {
+            const anchor = document.getElementById('floating-tuvi-anchor');
+            const floatText = document.createElement('div');
+            floatText.className = 'floating-tuvi-text';
+            floatText.innerHTML = `<i class="fa-solid fa-spa mr-1 text-xs"></i>+${amount.toLocaleString()} Tu Vi`;
+
+            if (isCrit) {
+                floatText.style.color = '#fef08a';
+                floatText.style.fontSize = '1.35rem';
+                floatText.innerHTML = `🌟 <b>+${amount.toLocaleString()} Tu Vi (Bạo Phát)!</b>`;
+            }
+
+            // Lệch nhẹ theo phương ngang
+            const offsetX = (Math.random() - 0.5) * 30;
+            floatText.style.left = `calc(50% + ${offsetX}px)`;
+
+            anchor.appendChild(floatText);
+
+            setTimeout(() => {
+                floatText.remove();
+            }, 1600);
+        }
+
+        // ====================================================================
+        // 3. VÒNG LẶP HẤP THỤ TU VI TỰ ĐỘNG (IDLE SECOND TICK)
+        // ====================================================================
+        function runIdleCultivationTick() {
+            // Cộng tu vi
+            playerState.tuvi += playerState.tuviPerSecond;
+            playerState.currentRealmTuvi += playerState.tuviPerSecond;
+
+            // Sinh hạt linh khí bay từ trận pháp lên đan điền
+            spawnQiMotes(6);
+
+            // Nổi chữ +Tu Vi mỗi 2 giây để tránh rối màn hình
+            spawnFloatingTuvi(playerState.tuviPerSecond);
+
+            updateHUD();
+        }
+
+        // Bắt đầu vòng lặp mỗi 1.5 giây
+        setInterval(runIdleCultivationTick, 1500);
+
+        // ====================================================================
+        // 4. THAO TÁC TU LUYỆN THỦ CÔNG (MANUAL CULTIVATE)
+        // ====================================================================
+        function triggerManualCultivate(e) {
+            if (e) e.stopPropagation();
+
+            const bonus = 150;
+            playerState.tuvi += bonus;
+            playerState.currentRealmTuvi += bonus;
+
+            // Sinh nhiều hạt linh khí cùng lúc
+            spawnQiMotes(12);
+
+            // Bạo phát số nảy lên
+            spawnFloatingTuvi(bonus, true);
+
+            // Rung nhẹ nhân vật
+            const char = document.getElementById('cultivator-wrap');
+            char.style.transform = 'translateY(-22px) scale(1.05)';
+            setTimeout(() => {
+                char.style.transform = '';
+            }, 250);
+
+            updateHUD();
+        }
+
+        function updateHUD() {
+            document.getElementById('player-stones-val').textContent = playerState.stones.toLocaleString();
+            document.getElementById('player-tuvi-val').textContent = playerState.tuvi.toLocaleString();
+            document.getElementById('player-jade-val').textContent = playerState.jade.toLocaleString();
+
+            const pct = Math.min(100, Math.round((playerState.currentRealmTuvi / playerState.tuviToNextRealm) * 100));
+            document.getElementById('sidebar-tuvi-text').textContent = `${playerState.currentRealmTuvi.toLocaleString()} / ${playerState.tuviToNextRealm.toLocaleString()}`;
+            document.getElementById('sidebar-tuvi-fill').style.width = `${pct}%`;
+        }
+
+        // Tương tác nhẹ theo chuột (Subtle Parallax Mouse Move)
+        window.addEventListener('mousemove', (e) => {
+            const mouseX = (e.clientX / window.innerWidth - 0.5) * 15;
+            const mouseY = (e.clientY / window.innerHeight - 0.5) * 10;
+            const mLayer = document.getElementById('mountains-layer');
+            if (mLayer) {
+                mLayer.style.transform = `scale(1.05) translate(${mouseX}px, ${mouseY}px)`;
+            }
+        });
+
+        // Khởi động
+        window.addEventListener('DOMContentLoaded', () => {
+            updateHUD();
+        });
+    </script>
+</body>
+</html>

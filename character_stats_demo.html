@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bản Nguyên Tu Sĩ — Bảng Chỉ Số Nhân Vật Dark Xianxia</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* ==========================================================================
+           1. CSS VARIABLES & GLASSMORPHISM THEME (DARK XIANXIA)
+           ========================================================================== */
+        :root {
+            --bg-deep: #030712;
+            --bg-panel: rgba(15, 23, 42, 0.75);
+            --bg-card: rgba(30, 41, 59, 0.6);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(212, 175, 55, 0.35);
+            --gold-light: #fef08a;
+            --gold-primary: #d4af37;
+            --emerald-glow: #10b981;
+            --sky-glow: #38bdf8;
+            --rose-crimson: #f43f5e;
+            --purple-mystic: #c084fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #f1f5f9;
+            font-family: 'Noto Serif', serif, sans-serif;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 15%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 80% 85%, rgba(212, 175, 55, 0.06) 0%, transparent 40%);
+        }
+
+        /* KHUNG CHỨA TOÀN BỘ BẢNG CHỈ SỐ */
+        .character-profile-container {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* GLASSMORPHISM CARD CHUẨN XIANXIA */
+        .xianxia-glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 18px;
+            padding: 20px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .xianxia-glass-panel:hover {
+            border-color: rgba(212, 175, 55, 0.25);
+        }
+
+        .panel-header-title {
+            font-family: 'Cinzel', serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gold-primary);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .panel-header-title span i {
+            margin-right: 8px;
+        }
+
+        /* ==========================================================================
+           2. HEADER: THÔNG TIN TỔNG QUAN
+           ========================================================================== */
+        .char-overview-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            background: linear-gradient(135deg, rgba(20, 30, 48, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid var(--border-gold);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.15);
+        }
+
+        .char-identity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .char-avatar-box {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-primary);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            overflow: hidden;
+            background: #090d16;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .char-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .char-meta-name {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-world {
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+        }
+
+        .char-meta-sub {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .badge-dao-tam {
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        .header-stats-badges {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-capsule {
+            background: rgba(10, 15, 28, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 120px;
+        }
+
+        .stat-capsule-label {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-capsule-value {
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--gold-light);
+            text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+        }
+
+        /* ==========================================================================
+           3. PANEL 1: BẢN NGUYÊN TU SĨ (CORE PROGRESS BARS)
+           ========================================================================== */
+        .core-bars-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .core-bars-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .bar-container {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .bar-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .bar-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .bar-val-text {
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Màu sắc phát sáng đặc trưng */
+        .fill-hp { background: linear-gradient(90deg, #e11d48, #f43f5e); box-shadow: 0 0 10px rgba(244, 63, 94, 0.6); }
+        .fill-mp { background: linear-gradient(90deg, #0284c7, #38bdf8); box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
+        .fill-dao-tam { background: linear-gradient(90deg, #7c3aed, #a855f7); box-shadow: 0 0 10px rgba(168, 85, 247, 0.6); }
+        .fill-tho-nguyen { background: linear-gradient(90deg, #d97706, #fbbf24); box-shadow: 0 0 10px rgba(251, 191, 36, 0.6); }
+
+        /* ==========================================================================
+           4. PANEL 2: THUỘC TÍNH CHIẾN ĐẠO (COMBAT STATS - 6 Ô GRID)
+           ========================================================================== */
+        .combat-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 640px) {
+            .combat-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .combat-stat-tile {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.25s ease;
+        }
+
+        .combat-stat-tile:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+            background: rgba(30, 41, 59, 0.85);
+        }
+
+        .tile-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .tile-label {
+            font-size: 11px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .tile-value {
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        /* ==========================================================================
+           5. PANEL 3: CĂN CƠ & LINH CĂN (SPIRIT ROOTS)
+           ========================================================================== */
+        .elements-display-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .elements-display-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .element-slot {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.35;
+            transition: all 0.3s ease;
+        }
+
+        /* Element Slot được kích hoạt */
+        .element-slot.active {
+            opacity: 1;
+            background: rgba(20, 30, 48, 0.85);
+            border: 1.5px solid var(--gold-primary);
+            box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+            transform: scale(1.03);
+        }
+
+        .elem-icon {
+            font-size: 18px;
+        }
+        .elem-name {
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .elem-pct {
+            font-family: monospace;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        /* Màu sắc ngũ hành */
+        .elem-kim { color: #facc15; }
+        .elem-moc { color: #4ade80; }
+        .elem-thuy { color: #38bdf8; }
+        .elem-hoa { color: #fb7185; }
+        .elem-tho { color: #fb923c; }
+
+        .root-absorption-banner {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        /* ==========================================================================
+           6. PANEL 4: LINH THÚ & PHÁP BẢO (PETS & ARTIFACTS)
+           ========================================================================== */
+        .companion-tabs-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .comp-tab-btn {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .comp-tab-btn.active {
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border-color: var(--gold-primary);
+            color: var(--gold-light);
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+        }
+
+        .comp-tab-content {
+            display: none;
+        }
+        .comp-tab-content.active {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Layout Linh Thú */
+        .pet-showcase {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .pet-avatar-frame {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            border: 2px solid #a855f7;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+            overflow: hidden;
+            background: #1e112a;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pet-avatar-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pet-details h4 {
+            font-size: 15px;
+            color: #e9d5ff;
+            font-weight: 700;
+        }
+
+        .pet-details p {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* Layout Pháp Bảo Ô Trống */
+        .artifacts-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .artifact-slot-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1.5px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 110px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .artifact-slot-card:hover {
+            border-color: var(--gold-primary);
+            background: rgba(30, 41, 59, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .artifact-slot-card i {
+            font-size: 24px;
+            color: #64748b;
+        }
+
+        .artifact-slot-label {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="character-profile-container">
+
+        <!-- ====================================================================
+             1. HEADER: THÔNG TIN TỔNG QUAN
+             ==================================================================== -->
+        <header class="xianxia-glass-panel char-overview-header">
+            <div class="char-identity">
+                <div class="char-avatar-box">
+                    <img id="ui-avatar" src="./assets/images/cultivator_avatar.png" onerror="this.src='./assets/images/char_cultivator.jpg'" alt="Tu Sĩ">
+                </div>
+                <div>
+                    <h1 class="char-meta-name">
+                        <span id="ui-player-name">Tiêu Dao Tử</span>
+                        <span id="ui-world-badge" class="badge-world">[HẠ GIỚI] Phàm Tục</span>
+                    </h1>
+                    <div class="char-meta-sub">
+                        <span id="ui-dao-tam" class="badge-dao-tam"><i class="fa-solid fa-yin-yang mr-1"></i> Chính Tà Cân Bằng</span>
+                        <span>•</span>
+                        <span id="ui-root-badge" class="text-amber-300 font-bold"><i class="fa-solid fa-bolt mr-1"></i> Thiên Lôi Linh Căn</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-stats-badges">
+                <div class="stat-capsule">
+                    <span class="stat-capsule-label"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Tổng Lực Chiến</span>
+                    <span id="ui-total-cp" class="stat-capsule-value text-emerald-400">98.450 CP</span>
+                </div>
+                <div class="stat-capsule">
+                    <span class="stat-capsule-label"><i class="fa-solid fa-hourglass-half text-amber-400 mr-1"></i> Thọ Nguyên</span>
+                    <span id="ui-lifespan-brief" class="stat-capsule-value text-amber-300">18 / 200 năm</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ====================================================================
+             2. PANEL 1: BẢN NGUYÊN TU SĨ (CORE PROGRESS BARS)
+             ==================================================================== -->
+        <section class="xianxia-glass-panel">
+            <h3 class="panel-header-title">
+                <span><i class="fa-solid fa-dna text-rose-500"></i> Bản Nguyên Tu Sĩ</span>
+                <span class="text-xs text-slate-400 font-normal">Căn Cơ Sinh Mệnh & Tâm Cảnh</span>
+            </h3>
+
+            <div class="core-bars-grid">
+                <!-- KHÍ HUYẾT (HP) -->
+                <div class="bar-container">
+                    <div class="bar-info-row">
+                        <span class="bar-name text-rose-400"><i class="fa-solid fa-heart"></i> Khí Huyết (HP)</span>
+                        <span id="ui-hp-text" class="bar-val-text text-rose-300">5,800 / 5,800</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="ui-hp-bar" class="progress-fill fill-hp" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- LINH LỰC (MP) -->
+                <div class="bar-container">
+                    <div class="bar-info-row">
+                        <span class="bar-name text-sky-400"><i class="fa-solid fa-wind"></i> Linh Lực (MP)</span>
+                        <span id="ui-mp-text" class="bar-val-text text-sky-300">2,400 / 2,400</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="ui-mp-bar" class="progress-fill fill-mp" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- ĐẠO TÂM (TÂM CẢNH) -->
+                <div class="bar-container">
+                    <div class="bar-info-row">
+                        <span class="bar-name text-purple-400"><i class="fa-solid fa-om"></i> Đạo Tâm (Tâm Cảnh)</span>
+                        <span id="ui-mind-text" class="bar-val-text text-purple-300">100 / 100</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="ui-mind-bar" class="progress-fill fill-dao-tam" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- THỌ NGUYÊN -->
+                <div class="bar-container">
+                    <div class="bar-info-row">
+                        <span class="bar-name text-amber-400"><i class="fa-solid fa-hourglass-start"></i> Thọ Nguyên (Sinh Lực)</span>
+                        <span id="ui-lifespan-text" class="bar-val-text text-amber-300">18 / 200 năm</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="ui-lifespan-bar" class="progress-fill fill-tho-nguyen" style="width: 9%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             3. PANEL 2: THUỘC TÍNH CHIẾN ĐẠO (COMBAT STATS - 6 Ô GRID)
+             ==================================================================== -->
+        <section class="xianxia-glass-panel">
+            <h3 class="panel-header-title">
+                <span><i class="fa-solid fa-khanda text-amber-400"></i> Thuộc Tính Chiến Đạo</span>
+                <span class="text-xs text-slate-400 font-normal">Quy Chuẩn Giao Chiến & Càn Quét</span>
+            </h3>
+
+            <div class="combat-stats-grid">
+                <!-- CÔNG KÍCH -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-amber-400">
+                        <i class="fa-solid fa-burst"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Công Kích</span>
+                        <span id="ui-stat-atk" class="tile-value text-amber-300">680</span>
+                    </div>
+                </div>
+
+                <!-- PHÒNG NGỰ -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-sky-400">
+                        <i class="fa-solid fa-shield"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Phòng Ngự</span>
+                        <span id="ui-stat-def" class="tile-value text-sky-300">320</span>
+                    </div>
+                </div>
+
+                <!-- TỐC ĐỘ / THÂN PHÁP -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-teal-400">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Tốc Độ (Thân Pháp)</span>
+                        <span id="ui-stat-spd" class="tile-value text-teal-300">125</span>
+                    </div>
+                </div>
+
+                <!-- BẠO KÍCH (%) -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-rose-400">
+                        <i class="fa-solid fa-crosshairs"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Bạo Kích</span>
+                        <span id="ui-stat-crit" class="tile-value text-rose-300">18.5%</span>
+                    </div>
+                </div>
+
+                <!-- XUYÊN GIÁP (%) -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-indigo-400">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Xuyên Giáp (Phá Giáp)</span>
+                        <span id="ui-stat-pen" class="tile-value text-indigo-300">12.0%</span>
+                    </div>
+                </div>
+
+                <!-- NÉ TRÁNH (%) -->
+                <div class="combat-stat-tile">
+                    <div class="tile-icon-box text-emerald-400">
+                        <i class="fa-solid fa-person-walking-arrow-right"></i>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-label">Né Tránh</span>
+                        <span id="ui-stat-dodge" class="tile-value text-emerald-300">8.5%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             4. PANEL 3: CĂN CƠ & LINH CĂN (SPIRIT ROOTS)
+             ==================================================================== -->
+        <section class="xianxia-glass-panel">
+            <h3 class="panel-header-title">
+                <span><i class="fa-solid fa-seedling text-emerald-400"></i> Căn Cơ & Linh Căn</span>
+                <span id="ui-root-type-title" class="text-xs text-amber-300 font-bold">Biến Dị Linh Căn (Thiên Lôi)</span>
+            </h3>
+
+            <!-- 5 Ô NGŨ HÀNH (KIM, MỘC, THỦY, HỎA, THỔ) -->
+            <div class="elements-display-row">
+                <div class="element-slot active elem-kim">
+                    <i class="fa-solid fa-cube elem-icon"></i>
+                    <span class="elem-name">Kim</span>
+                    <span class="elem-pct">Thượng Phẩm</span>
+                </div>
+                <div class="element-slot elem-moc">
+                    <i class="fa-solid fa-leaf elem-icon"></i>
+                    <span class="elem-name">Mộc</span>
+                    <span class="elem-pct">Tiềm Ẩn</span>
+                </div>
+                <div class="element-slot active elem-thuy">
+                    <i class="fa-solid fa-droplet elem-icon"></i>
+                    <span class="elem-name">Thủy</span>
+                    <span class="elem-pct">Trung Phẩm</span>
+                </div>
+                <div class="element-slot elem-hoa">
+                    <i class="fa-solid fa-fire-flame-curved elem-icon"></i>
+                    <span class="elem-name">Hỏa</span>
+                    <span class="elem-pct">Tiềm Ẩn</span>
+                </div>
+                <div class="element-slot elem-tho">
+                    <i class="fa-solid fa-mountain elem-icon"></i>
+                    <span class="elem-name">Thổ</span>
+                    <span class="elem-pct">Tiềm Ẩn</span>
+                </div>
+            </div>
+
+            <!-- DÒNG THÔNG SỐ HẤP THU TU VI -->
+            <div class="root-absorption-banner">
+                <span class="text-slate-300">
+                    <i class="fa-solid fa-sparkles text-emerald-400 mr-1.5"></i>
+                    Độ Tinh Khiết Linh Căn: <strong id="ui-root-purity-name" class="text-emerald-300">Biến Dị (Đơn Hệ Thần Lôi)</strong>
+                </span>
+                <span class="font-mono font-bold text-amber-300">
+                    Hệ số tốc độ hấp thu: <strong id="ui-root-multiplier" class="text-emerald-400 text-sm">x2.00</strong>
+                </span>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             5. PANEL 4: LINH THÚ & PHÁP BẢO (PETS & ARTIFACTS)
+             ==================================================================== -->
+        <section class="xianxia-glass-panel">
+            <h3 class="panel-header-title">
+                <span><i class="fa-solid fa-dragon text-purple-400"></i> Hộ Mệnh Đồng Hành</span>
+                <span class="text-xs text-slate-400 font-normal">Linh Thú Trợ Chiến & Pháp Bảo Bản Mệnh</span>
+            </h3>
+
+            <!-- TAB NAVIGATION -->
+            <div class="companion-tabs-nav">
+                <button type="button" class="comp-tab-btn active" onclick="switchCompanionTab('pet', this)">
+                    <i class="fa-solid fa-paw mr-1"></i> Linh Thú Hộ Pháp
+                </button>
+                <button type="button" class="comp-tab-btn" onclick="switchCompanionTab('artifact', this)">
+                    <i class="fa-solid fa-gem mr-1"></i> Pháp Bảo Bản Mệnh (3 Ô)
+                </button>
+            </div>
+
+            <!-- TAB 1: LINH THÚ -->
+            <div id="tab-comp-pet" class="comp-tab-content active">
+                <div class="pet-showcase">
+                    <div class="pet-avatar-frame">
+                        <img id="ui-pet-img" src="./assets/images/pet_fox.jpg" onerror="this.src='./assets/images/cultivator_avatar.png'" alt="Linh Thú">
+                    </div>
+                    <div class="pet-details">
+                        <div class="flex items-center gap-2">
+                            <h4 id="ui-pet-name">Cửu Vĩ Thiên Hồ</h4>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-700">Huyết Mạch Thần Thú</span>
+                        </div>
+                        <p id="ui-pet-desc">Hồ ly chín đuôi thượng cổ, hộ vệ đạo tâm, gia tăng 15% Thân Pháp và 10% Tỉ lệ Bạo Kích cho chủ nhân khi xuất chiến.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PHÁP BẢO BẢN MỆNH (3 Ô TRỐNG) -->
+            <div id="tab-comp-artifact" class="comp-tab-content">
+                <div class="artifacts-slots-grid">
+                    <div class="artifact-slot-card" onclick="alert('Mở danh sách Phi Kiếm để liên kết bản mệnh!')">
+                        <i class="fa-solid fa-khanda text-amber-400"></i>
+                        <span class="artifact-slot-label">Phi Kiếm (Công)</span>
+                        <span class="text-[10px] text-emerald-400 font-mono">Trúc Kiếm Cổ Linh</span>
+                    </div>
+
+                    <div class="artifact-slot-card" onclick="alert('Mở danh sách Hộ Kính để liên kết bản mệnh!')">
+                        <i class="fa-solid fa-shield-halved text-sky-400"></i>
+                        <span class="artifact-slot-label">Hộ Kính (Thủ)</span>
+                        <span class="text-[10px] text-slate-500 font-mono">[Chưa gắn]</span>
+                    </div>
+
+                    <div class="artifact-slot-card" onclick="alert('Mở danh sách Phù Châu để liên kết bản mệnh!')">
+                        <i class="fa-solid fa-ring text-purple-400"></i>
+                        <span class="artifact-slot-label">Phù Châu (Pháp)</span>
+                        <span class="text-[10px] text-slate-500 font-mono">[Chưa gắn]</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ====================================================================
+         PHẦN 2: CẤU TRÚC DỮ LIỆU & LOGIC JAVASCRIPT
+         ==================================================================== -->
+    <script>
+        /**
+         * 1. CẤU TRÚC DỮ LIỆU ĐỐI TƯỢNG NHÂN VẬT (PLAYER OBJECT)
+         */
+        const player = {
+            // Thông tin cơ bản
+            name: "Tiêu Dao Tử",
+            world: "[HẠ GIỚI] Phàm Tục",
+            daoTam: "Chính Tà Cân Bằng", // Danh hiệu đạo tâm
+            realmIndex: 4,               // Vị trí cảnh giới (vd: Trúc Cơ Sơ Kỳ)
+            realmName: "Trúc Cơ - Sơ Kỳ",
+
+            // Panel 1: Bản Nguyên Tu Sĩ (Core Stats)
+            core: {
+                hp: 5800,
+                maxHp: 5800,
+                mp: 2400,
+                maxMp: 2400,
+                daoTamPoints: 100,
+                maxDaoTam: 100,
+                age: 18,
+                maxLifespan: 200 // Thọ nguyên tối đa ở Trúc Cơ
+            },
+
+            // Panel 2: Thuộc Tính Chiến Đạo (Combat Stats)
+            combat: {
+                atk: 680,
+                def: 320,
+                spd: 125,
+                critRate: 18.5,  // Tỉ lệ bạo kích (%)
+                armorPen: 12.0,  // Xuyên giáp (%)
+                dodge: 8.5       // Né tránh (%)
+            },
+
+            // Panel 3: Căn Cơ & Linh Căn
+            spiritRoot: {
+                name: "Thiên Lôi Linh Căn",
+                type: "mutated", // 'scrap' (Tạp), 'true' (Chân), 'heaven' (Thiên), 'mutated' (Biến dị)
+                elements: {
+                    kim: true,
+                    moc: false,
+                    thuy: true,
+                    hoa: false,
+                    tho: false
+                }
+            },
+
+            // Panel 4: Linh Thú & Pháp Bảo
+            companion: {
+                pet: {
+                    name: "Cửu Vĩ Thiên Hồ",
+                    rank: "Thần Thú",
+                    desc: "Hồ ly chín đuôi thượng cổ, hộ vệ đạo tâm, gia tăng 15% Thân Pháp và 10% Tỉ lệ Bạo Kích khi xuất chiến.",
+                    avatar: "./assets/images/pet_fox.jpg"
+                },
+                artifacts: [
+                    { slot: "sword", name: "Trúc Kiếm Cổ Linh", equipped: true },
+                    { slot: "mirror", name: null, equipped: false },
+                    { slot: "orb", name: null, equipped: false }
+                ]
+            }
+        };
+
+        /**
+         * 2. LOGIC TÍNH TOÁN LỰC CHIẾN (COMBAT POWER - CP)
+         * Gom HP, MP, Công, Thủ, Tốc Độ, Bạo Kích, Xuyên Giáp, Né Tránh
+         */
+        function calculateCP(p) {
+            if (!p || !p.core || !p.combat) return 0;
+
+            const c = p.combat;
+            const core = p.core;
+
+            // Hệ số quy đổi chuẩn Xianxia RPG:
+            // - Công Kích: x2.5
+            // - Phòng Ngự: x2.0
+            // - Khí Huyết: x0.15
+            // - Linh Lực: x0.10
+            // - Tốc Độ: x1.8
+            // - Bạo Kích (%): x15.0
+            // - Xuyên Giáp (%): x12.0
+            // - Né Tránh (%): x10.0
+            const cpAtk = (c.atk || 0) * 2.5;
+            const cpDef = (c.def || 0) * 2.0;
+            const cpHp = (core.maxHp || 0) * 0.15;
+            const cpMp = (core.maxMp || 0) * 0.10;
+            const cpSpd = (c.spd || 0) * 1.8;
+            const cpCrit = (c.critRate || 0) * 15.0;
+            const cpPen = (c.armorPen || 0) * 12.0;
+            const cpDodge = (c.dodge || 0) * 10.0;
+
+            const totalCP = Math.round(cpAtk + cpDef + cpHp + cpMp + cpSpd + cpCrit + cpPen + cpDodge);
+            return totalCP;
+        }
+
+        /**
+         * 3. LOGIC HỆ SỐ TỐC ĐỘ HẤP THU LINH CĂN
+         * - Tạp Linh Căn (4-5 hệ): x0.5
+         * - Chân Linh Căn (2-3 hệ): x1.0
+         * - Thiên Linh Căn (1 hệ tinh thuần): x1.5
+         * - Biến Dị Linh Căn (Phong, Băng, Lôi): x2.0
+         */
+        function getSpiritRootMultiplier(root) {
+            if (!root) return 1.0;
+            
+            switch (root.type) {
+                case 'mutated': // Biến dị (Phong / Băng / Lôi)
+                    return 2.0;
+                case 'heaven':  // Thiên Linh Căn (Đơn hệ tinh thuần)
+                    return 1.5;
+                case 'true':    // Chân Linh Căn (2-3 hệ)
+                    return 1.0;
+                case 'scrap':   // Tạp Linh Căn (4-5 hệ hỗn tạp)
+                default:
+                    return 0.5;
+            }
+        }
+
+        /**
+         * 4. CƠ CHẾ THỌ NGUYÊN (LIFESPAN & TỌA HÓA)
+         */
+        function advanceAge(p, years) {
+            p.core.age += years;
+
+            // Kiểm tra ngưỡng thọ nguyên
+            if (p.core.age >= p.core.maxLifespan) {
+                triggerToaHoa(p);
+                return true; // Đã tọa hóa
+            }
+            return false;
+        }
+
+        function triggerToaHoa(p) {
+            console.warn(`[Tọa Hóa] Đạo hữu ${p.name} thọ nguyên đã tận (${p.core.age}/${p.core.maxLifespan} năm)!`);
+            alert(`⚠️ THỌ NGUYÊN ĐÃ TẬN!\n\nĐạo hữu ${p.name} tuổi thọ đạt giới hạn (${p.core.age}/${p.core.maxLifespan} năm), nhục thân tan biến, hóa thành tro bụi nhân gian.\nHãy Chuyển Sinh để trùng tu kiếp sau!`);
+        }
+
+        // Tăng thọ nguyên khi đột phá đại cảnh giới
+        function onBreakthroughMajorRealm(p, bonusYears) {
+            p.core.maxLifespan += bonusYears;
+            console.log(`[Đột Phá] Thọ nguyên tăng thêm +${bonusYears} năm! (Tối đa: ${p.core.maxLifespan} năm)`);
+        }
+
+        /**
+         * 5. HÀM RENDER CẬP NHẬT GIAO DIỆN
+         */
+        function renderCharacterUI(p) {
+            const cp = calculateCP(p);
+            const rootMult = getSpiritRootMultiplier(p.spiritRoot);
+
+            // Header
+            document.getElementById('ui-player-name').textContent = p.name;
+            document.getElementById('ui-world-badge').textContent = p.world;
+            document.getElementById('ui-dao-tam').innerHTML = `<i class="fa-solid fa-yin-yang mr-1"></i> ${p.daoTam}`;
+            document.getElementById('ui-root-badge').innerHTML = `<i class="fa-solid fa-bolt mr-1"></i> ${p.spiritRoot.name}`;
+            document.getElementById('ui-total-cp').textContent = cp.toLocaleString('vi-VN') + " CP";
+            document.getElementById('ui-lifespan-brief').textContent = `${p.core.age} / ${p.core.maxLifespan} năm`;
+
+            // Panel 1: Progress Bars
+            document.getElementById('ui-hp-text').textContent = `${p.core.hp.toLocaleString()} / ${p.core.maxHp.toLocaleString()}`;
+            document.getElementById('ui-hp-bar').style.width = `${Math.min(100, (p.core.hp / p.core.maxHp) * 100)}%`;
+
+            document.getElementById('ui-mp-text').textContent = `${p.core.mp.toLocaleString()} / ${p.core.maxMp.toLocaleString()}`;
+            document.getElementById('ui-mp-bar').style.width = `${Math.min(100, (p.core.mp / p.core.maxMp) * 100)}%`;
+
+            document.getElementById('ui-mind-text').textContent = `${p.core.daoTamPoints} / ${p.core.maxDaoTam}`;
+            document.getElementById('ui-mind-bar').style.width = `${Math.min(100, (p.core.daoTamPoints / p.core.maxDaoTam) * 100)}%`;
+
+            document.getElementById('ui-lifespan-text').textContent = `${p.core.age} / ${p.core.maxLifespan} năm`;
+            document.getElementById('ui-lifespan-bar').style.width = `${Math.min(100, (p.core.age / p.core.maxLifespan) * 100)}%`;
+
+            // Panel 2: Combat Stats
+            document.getElementById('ui-stat-atk').textContent = p.combat.atk.toLocaleString();
+            document.getElementById('ui-stat-def').textContent = p.combat.def.toLocaleString();
+            document.getElementById('ui-stat-spd').textContent = p.combat.spd.toLocaleString();
+            document.getElementById('ui-stat-crit').textContent = `${p.combat.critRate}%`;
+            document.getElementById('ui-stat-pen').textContent = `${p.combat.armorPen}%`;
+            document.getElementById('ui-stat-dodge').textContent = `${p.combat.dodge}%`;
+
+            // Panel 3: Linh Căn
+            document.getElementById('ui-root-multiplier').textContent = `x${rootMult.toFixed(2)}`;
+        }
+
+        // Chuyển Tab Linh Thú / Pháp Bảo
+        function switchCompanionTab(tabType, btn) {
+            document.querySelectorAll('.comp-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.comp-tab-content').forEach(c => c.classList.remove('active'));
+
+            btn.classList.add('active');
+            if (tabType === 'pet') {
+                document.getElementById('tab-comp-pet').classList.add('active');
+            } else {
+                document.getElementById('tab-comp-artifact').classList.add('active');
+            }
+        }
+
+        // Tự động render khi tải trang
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCharacterUI(player);
+        });
+
+        // Phơi ra window để tiện debug
+        window.player = player;
+        window.calculateCP = calculateCP;
+        window.advanceAge = advanceAge;
+        window.renderCharacterUI = renderCharacterUI;
+    </script>
+</body>
+</html>

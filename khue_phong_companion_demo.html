@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Khuê Phòng • Động Phủ — Vạn Cổ Tu Tiên</title>
+    <!-- Google Fonts Tiên Hiệp -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. RESET & BIẾN MÀU SẮC LÃNG MẠN KHUÊ PHÒNG (ROMANTIC GLASSMORPHISM)
+           ========================================================================== */
+        :root {
+            --bg-deep: #09030c;
+            --bg-panel: rgba(22, 10, 28, 0.82);
+            --bg-card: rgba(35, 16, 44, 0.75);
+            --border-pink: rgba(244, 114, 182, 0.35);
+            --border-gold: rgba(212, 175, 55, 0.35);
+            --gold-light: #fef08a;
+            --pink-romantic: #f472b6;
+            --rose-affection: #f43f5e;
+            --purple-mystic: #c084fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(244, 63, 94, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.14) 0%, transparent 55%),
+                linear-gradient(180deg, #09030c 0%, #15061c 100%);
+            color: #fce7f3;
+            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Thanh cuộn hồng tiên hiệp */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(18, 6, 24, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(244, 114, 182, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(244, 114, 182, 0.75); }
+
+        /* ==========================================================================
+           HEADER KHUÊ PHÒNG & THÔNG TIN TU TIÊN
+           ========================================================================== */
+        .chamber-header-bar {
+            background: rgba(18, 6, 24, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-pink);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .chamber-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chamber-brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(192, 132, 252, 0.3));
+            border: 1.5px solid var(--pink-romantic);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fbcfe8;
+            font-size: 1.3rem;
+            box-shadow: 0 0 15px rgba(244, 114, 182, 0.35);
+        }
+
+        .chamber-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fdf2f8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Quick farm test resources */
+        .gifts-top-shelf {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .gift-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 8px;
+            background: rgba(35, 14, 46, 0.8);
+            border: 1px solid rgba(244, 114, 182, 0.25);
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fce7f3;
+        }
+
+        .btn-add-gift {
+            background: rgba(244, 114, 182, 0.2);
+            border: 1px solid rgba(244, 114, 182, 0.4);
+            color: #fbcfe8;
+            border-radius: 4px;
+            padding: 0.05rem 0.25rem;
+            font-size: 0.65rem;
+            cursor: pointer;
+            margin-left: 0.2rem;
+            transition: all 0.15s;
+        }
+        .btn-add-gift:hover { background: rgba(244, 114, 182, 0.4); }
+
+        /* ==========================================================================
+           BỐ CỤC CHÍNH (SPA VIEWPORT: 2 KHỐI FLEX/GRID)
+           ========================================================================== */
+        .chamber-viewport {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            padding: 1.25rem;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .chamber-viewport {
+                grid-template-columns: 46% 54%;
+                height: calc(100vh - 75px);
+                align-items: stretch;
+                overflow: hidden;
+            }
+        }
+
+        .chamber-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-pink);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ==========================================================================
+           KHỐI BÊN TRÁI: HÌNH ẢNH & TRẠNG THÁI ĐẠO LỮ ĐANG CHỌN
+           ========================================================================== */
+        .companion-visual-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            position: relative;
+            padding: 1.5rem;
+            min-height: 420px;
+            overflow: hidden;
+            background: radial-gradient(circle at center 40%, rgba(244, 114, 182, 0.12) 0%, rgba(12, 4, 16, 0.95) 85%);
+        }
+
+        /* Mành rủ & Mây khói lãng mạn */
+        .curtain-drapes-left, .curtain-drapes-right {
+            position: absolute;
+            top: 0;
+            width: 70px;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0.65;
+        }
+        .curtain-drapes-left {
+            left: 0;
+            background: linear-gradient(90deg, rgba(136, 19, 55, 0.7) 0%, transparent 100%);
+            border-right: 1px dashed rgba(244, 114, 182, 0.2);
+        }
+        .curtain-drapes-right {
+            right: 0;
+            background: linear-gradient(-90deg, rgba(136, 19, 55, 0.7) 0%, transparent 100%);
+            border-left: 1px dashed rgba(244, 114, 182, 0.2);
+        }
+
+        /* CSS ANIMATION BREATHING CHO ẢNH ĐẠO LỮ (NHẤP NHÔ NHẸ) */
+        .companion-portrait-wrap {
+            position: relative;
+            z-index: 4;
+            width: 260px;
+            height: 340px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: companionBreathing 4.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes companionBreathing {
+            0% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 15px 25px rgba(244, 114, 182, 0.35));
+            }
+            100% {
+                transform: translateY(-8px) scale(1.025);
+                filter: drop-shadow(0 20px 35px rgba(244, 114, 182, 0.6));
+            }
+        }
+
+        .companion-portrait-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 1.5rem;
+            border: 2px solid rgba(244, 114, 182, 0.5);
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Lời thoại lãng mạn */
+        .companion-dialog-balloon {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 88%;
+            background: rgba(28, 10, 36, 0.9);
+            border: 1px solid var(--border-pink);
+            border-radius: 14px;
+            padding: 0.65rem 1rem;
+            font-size: 0.78rem;
+            color: #fce7f3;
+            font-style: italic;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            z-index: 6;
+            line-height: 1.45;
+        }
+
+        /* BẢNG THÔNG TIN HẢO CẢM & BUFF THỤ ĐỘNG (DƯỚI CỘT TRÁI) */
+        .companion-status-panel {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(244, 114, 182, 0.2);
+            background: rgba(18, 6, 24, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+
+        .affection-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        .affection-track {
+            width: 100%;
+            height: 9px;
+            background: #020617;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .affection-fill {
+            height: 100%;
+            width: 35%;
+            background: linear-gradient(90deg, #ec4899, #f43f5e, #fda4af);
+            border-radius: 9999px;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+            transition: width 0.4s ease;
+        }
+
+        /* Danh sách Buff Chỉ Số */
+        .companion-buffs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .buff-tag-item {
+            font-size: 0.72rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(26, 10, 34, 0.7);
+        }
+        .buff--unlocked {
+            border-color: rgba(244, 114, 182, 0.4);
+            color: #fbcfe8;
+            background: rgba(244, 63, 94, 0.12);
+        }
+        .buff--locked {
+            border-color: rgba(71, 85, 105, 0.3);
+            color: #94a3b8;
+            opacity: 0.65;
+        }
+
+        /* ==========================================================================
+           KHỐI BÊN PHẢI: KHU VỰC TƯƠNG TÁC & DANH SÁCH ĐẠO LỮ
+           ========================================================================== */
+        .interaction-tabs-bar {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid rgba(244, 114, 182, 0.2);
+            background: rgba(14, 5, 19, 0.75);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .subtab-btn {
+            padding: 0.45rem 1rem;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #cbd5e1;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .subtab-btn:hover { color: #fbcfe8; }
+        .subtab-btn.is-active {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.25), rgba(168, 85, 247, 0.25));
+            border-color: var(--pink-romantic);
+            color: #fdf2f8;
+            box-shadow: 0 0 12px rgba(244, 114, 182, 0.25);
+        }
+
+        .tab-content-container {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* TAB 1: TƯƠNG TÁC (SONG TU & TẶNG QUÀ) */
+        /* Nút Song Tu Siêu To Phát Sáng */
+        .dual-cultivation-box {
+            background: radial-gradient(circle at center, rgba(244, 63, 94, 0.25) 0%, rgba(24, 8, 32, 0.85) 80%);
+            border: 1.5px solid var(--pink-romantic);
+            border-radius: 18px;
+            padding: 1.25rem;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(244, 63, 94, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-song-tu {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            padding: 0.85rem 1.5rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #e11d48, #f43f5e, #ec4899);
+            border: 1.5px solid #fef08a;
+            color: #fff;
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(244, 63, 94, 0.65);
+            transition: all 0.25s;
+        }
+        .btn-song-tu:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 0 35px rgba(244, 63, 94, 0.9);
+        }
+        .btn-song-tu:disabled {
+            background: rgba(51, 24, 64, 0.5);
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(80%);
+        }
+
+        /* Khu vực Tặng Quà */
+        .gifting-section {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1rem;
+        }
+
+        .gift-items-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .gift-card-btn {
+            background: rgba(18, 6, 24, 0.75);
+            border: 1.5px solid rgba(244, 114, 182, 0.25);
+            border-radius: 12px;
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fce7f3;
+            text-align: center;
+        }
+        .gift-card-btn:hover:not(:disabled) {
+            border-color: var(--pink-romantic);
+            background: rgba(244, 63, 94, 0.15);
+            transform: translateY(-2px);
+        }
+        .gift-card-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* TAB 2: DANH SÁCH ĐẠO LỮ (CUỘN DỌC, DẠNG BÓNG ĐEN CHO NGƯỜI CHƯA MỞ) */
+        .companion-cards-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .companion-item-card {
+            background: var(--bg-card);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: all 0.2s;
+        }
+        .companion-item-card:hover {
+            border-color: rgba(244, 114, 182, 0.4);
+            transform: translateY(-2px);
+        }
+        .companion-item-card.is-active-companion {
+            border-color: var(--pink-romantic);
+            background: rgba(244, 63, 94, 0.12);
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
+        }
+
+        /* Dạng bóng đen (Silhouette) khi chưa mở khóa */
+        .companion-item-card.is-locked-silhouette .comp-avatar-thumb {
+            filter: brightness(0) invert(0.2) opacity(0.6);
+        }
+
+        .comp-avatar-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1.5px solid rgba(244, 114, 182, 0.4);
+        }
+
+        /* ==========================================================================
+           FULLSCREEN ANIMATION KHI SONG TU (CÁNH HOA RƠI & ÂM DƯƠNG HÒA HỢP)
+           ========================================================================== */
+        .dual-cultivation-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(18, 4, 24, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        .dual-cultivation-overlay.is-active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Biểu tượng Âm Dương Ngư xoay tròn */
+        .yin-yang-rotating {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f43f5e 50%, #fef08a 50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 45px rgba(244, 63, 94, 0.8);
+            animation: spinTaiji 8s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+        @keyframes spinTaiji {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Cánh hoa đào rơi rải rác */
+        .petal-particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #fda4af;
+            border-radius: 12px 1px 12px 1px;
+            opacity: 0.85;
+            pointer-events: none;
+            animation: fallPetal 3.5s linear infinite;
+        }
+        @keyframes fallPetal {
+            0% { transform: translate(0, -50px) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.9; }
+            100% { transform: translate(var(--x-end), 100vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================
+         HEADER KHUÊ PHÒNG & THÔNG TIN TIÊN DUYÊN
+         ======================================================================== -->
+    <header class="chamber-header-bar">
+        <div class="chamber-brand">
+            <div class="chamber-brand-icon">
+                <i class="fa-solid fa-heart"></i>
+            </div>
+            <div>
+                <h1 class="chamber-title">Khuê Phòng Tiên Điện <span class="text-xs text-pink-300 font-mono">[Động Phủ]</span></h1>
+                <p class="text-xs text-slate-400">Nơi kết duyên Đạo Lữ, cùng hưởng hoan lạc và song tu vấn đỉnh trường sinh</p>
+            </div>
+        </div>
+
+        <!-- Kho Vật Phẩm Hảo Cảm Có Thể Tặng -->
+        <div class="gifts-top-shelf">
+            <div class="gift-chip" title="Bạch Ngọc Trâm Cài (+100 Hảo Cảm)">
+                <i class="fa-solid fa-wand-magic text-pink-300"></i>
+                <span>Trâm Cài: <b id="cnt-tram-cai">5</b></span>
+                <button type="button" class="btn-add-gift" onclick="addMockGift('gift_tramcai', 5)">+5</button>
+            </div>
+            <div class="gift-chip" title="Thất Bảo Lưu Ly (+250 Hảo Cảm)">
+                <i class="fa-solid fa-gem text-amber-300"></i>
+                <span>Lưu Ly: <b id="cnt-luu-ly">3</b></span>
+                <button type="button" class="btn-add-gift" onclick="addMockGift('gift_luuly', 3)">+3</button>
+            </div>
+            <div class="gift-chip" title="Hoa Lạc Tinh (+600 Hảo Cảm)">
+                <i class="fa-solid fa-spa text-purple-300"></i>
+                <span>Hoa Lạc Tinh: <b id="cnt-hoa-lac-tinh">2</b></span>
+                <button type="button" class="btn-add-gift" onclick="addMockGift('gift_hoalactinh', 2)">+2</button>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- ========================================================================
+         BỐ CỤC CHÍNH 2 CỘT CHO SPA
+         ======================================================================== -->
+    <main class="chamber-viewport">
+
+        <!-- ====================================================================
+             KHỐI BÊN TRÁI: HÌNH ẢNH & TRẠNG THÁI ĐẠO LỮ ĐANG CHỌN
+             ==================================================================== -->
+        <section class="chamber-panel" id="companion-visual-panel">
+            <div class="curtain-drapes-left"></div>
+            <div class="curtain-drapes-right"></div>
+
+            <div class="companion-visual-stage">
+                <!-- Lời thoại của nàng -->
+                <div class="companion-dialog-balloon" id="companion-quote-bubble">
+                    "Sư huynh, bế quan mệt mỏi rồi sao? Muội vừa pha linh trà tuyết liên cho huynh..."
+                </div>
+
+                <!-- ẢNH ĐẠO LỮ BREATHING ANIMATION (NHẤP NHÔ LƠ LỬNG) -->
+                <div class="companion-portrait-wrap">
+                    <img src="./assets/images/pet_fox.jpg" alt="Đạo Lữ" class="companion-portrait-img" id="companion-main-img">
+                </div>
+            </div>
+
+            <!-- BẢNG THÔNG TIN HẢO CẢM & BUFF THỤ ĐỘNG -->
+            <footer class="companion-status-panel">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base font-bold font-serif text-pink-200" id="comp-name-title">Liễu Như Yên</h2>
+                        <span class="text-xs text-pink-400 font-mono" id="comp-sect-title">Thanh Vân Tiên Phái • Tiểu Sư Muội</span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-rose-950/80 text-rose-300 border border-rose-500/50" id="comp-affection-rank-badge">
+                        Tri Kỷ (Cấp 3)
+                    </span>
+                </div>
+
+                <!-- Thanh Độ Hảo Cảm -->
+                <div class="space-y-1">
+                    <div class="affection-row">
+                        <span class="text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-heart text-rose-500 animate-pulse"></i> Độ Hảo Cảm:
+                        </span>
+                        <b class="text-rose-300 font-mono" id="affection-points-text">1,800 / 3,000</b>
+                    </div>
+                    <div class="affection-track">
+                        <div class="affection-fill" id="affection-fill" style="width: 60%;"></div>
+                    </div>
+                </div>
+
+                <!-- Bảng Buff Chỉ Số Đạo Lữ Đang Thụ Động Cộng -->
+                <div class="companion-buffs-list" id="companion-buffs-list">
+                    <!-- Render từ buffs data -->
+                </div>
+            </footer>
+        </section>
+
+
+        <!-- ====================================================================
+             KHỐI BÊN PHẢI: KHU VỰC TƯƠNG TÁC (SONG TU, TẶNG QUÀ & DANH SÁCH)
+             ==================================================================== -->
+        <section class="chamber-panel" id="interaction-panel">
+            <!-- Nút chuyển Tab nhỏ -->
+            <nav class="interaction-tabs-bar">
+                <button type="button" class="subtab-btn is-active" id="tab-btn-interact" onclick="switchChamberTab('interact')">
+                    <i class="fa-solid fa-heart-pulse"></i> Tương Tác Song Tu
+                </button>
+                <button type="button" class="subtab-btn" id="tab-btn-companions" onclick="switchChamberTab('companions')">
+                    <i class="fa-solid fa-users"></i> Danh Sách Đạo Lữ (3)
+                </button>
+            </nav>
+
+            <div class="tab-content-container">
+
+                <!-- TAB 1: TƯƠNG TÁC (SONG TU & TẶNG QUÀ) -->
+                <div id="tab-content-interact" class="space-y-4">
+
+                    <!-- KHỐI NÚT SONG TU SIÊU TO PHÁT SÁNG -->
+                    <div class="dual-cultivation-box">
+                        <div class="mb-3">
+                            <h3 class="text-lg font-bold font-serif text-pink-200 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-yin-yang text-amber-300"></i> Âm Dương Song Tu
+                            </h3>
+                            <p class="text-xs text-slate-300 mt-1">Cùng nàng đả tọa thông kinh mạch, thu nạp nguyên âm nguyên dương chuyển hóa thành biển Tu Vi.</p>
+                            <span class="text-xs font-mono text-amber-300 block mt-1" id="cultivation-reward-preview">Dự kiến nhận: +75,000 Tu Vi</span>
+                        </div>
+
+                        <button type="button" class="btn-song-tu" id="btn-song-tu" onclick="triggerDualCultivation()">
+                            <i class="fa-solid fa-spa"></i> KHỞI ĐỘNG SONG TU
+                        </button>
+
+                        <div class="flex justify-between items-center text-[11px] text-slate-400 mt-2 px-4 font-mono">
+                            <span id="cooldown-timer-status">Trạng thái: Sẵn sàng</span>
+                            <button type="button" onclick="resetDualCooldown()" class="text-pink-400 underline cursor-pointer hover:text-pink-300">Bỏ Cooldown (Test)</button>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC TẶNG QUÀ HẢO CẢM -->
+                    <div class="gifting-section">
+                        <div class="flex justify-between items-center border-b border-pink-500/20 pb-2">
+                            <h4 class="text-sm font-bold font-serif text-pink-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-gift text-rose-400"></i> Tặng Vật Phẩm Hảo Cảm
+                            </h4>
+                            <span class="text-xs text-slate-400 font-mono">Tăng tiến tình cảm để mở khóa Buff</span>
+                        </div>
+
+                        <div class="gift-items-grid">
+                            <button type="button" class="gift-card-btn" onclick="giveGift('gift_tramcai')">
+                                <i class="fa-solid fa-wand-magic text-2xl text-pink-300"></i>
+                                <b class="text-xs font-bold text-slate-100">Bạch Ngọc Trâm</b>
+                                <span class="text-[10px] text-rose-400 font-mono">+100 Hảo Cảm</span>
+                                <span class="text-[11px] text-amber-300 font-mono font-bold" id="badge-tram-cai">Còn: 5</span>
+                            </button>
+
+                            <button type="button" class="gift-card-btn" onclick="giveGift('gift_luuly')">
+                                <i class="fa-solid fa-gem text-2xl text-amber-300"></i>
+                                <b class="text-xs font-bold text-slate-100">Thất Bảo Lưu Ly</b>
+                                <span class="text-[10px] text-rose-400 font-mono">+250 Hảo Cảm</span>
+                                <span class="text-[11px] text-amber-300 font-mono font-bold" id="badge-luu-ly">Còn: 3</span>
+                            </button>
+
+                            <button type="button" class="gift-card-btn" onclick="giveGift('gift_hoalactinh')">
+                                <i class="fa-solid fa-spa text-2xl text-purple-300"></i>
+                                <b class="text-xs font-bold text-slate-100">Hoa Lạc Tinh</b>
+                                <span class="text-[10px] text-rose-400 font-mono">+600 Hảo Cảm</span>
+                                <span class="text-[11px] text-amber-300 font-mono font-bold" id="badge-hoa-lac-tinh">Còn: 2</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- TAB 2: DANH SÁCH ĐẠO LỮ (CÓ DẠNG BÓNG ĐEN CHO NGƯỜI CHƯA MỞ) -->
+                <div id="tab-content-companions" class="space-y-3" style="display: none;">
+                    <div class="companion-cards-list" id="companion-cards-list">
+                        <!-- Render từ COMPANIONS_DATA -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+
+    <!-- ========================================================================
+         FULL-SCREEN ANIMATION KHI SONG TU (CÁNH HOA ĐÀO RƠI & ÂM DƯƠNG HÒA HỢP)
+         ======================================================================== -->
+    <div class="dual-cultivation-overlay" id="dual-cultivation-overlay">
+        <!-- Vòng xoay Âm Dương Ngư -->
+        <div class="yin-yang-rotating">
+            <i class="fa-solid fa-yin-yang text-4xl text-slate-950"></i>
+        </div>
+
+        <h2 class="text-2xl font-bold font-serif text-pink-200 mb-2">ÂM DƯƠNG HÒA HỢP • KHÍ TỨC TƯƠNG GIAO</h2>
+        <p class="text-sm text-pink-300 max-w-md text-center leading-relaxed mb-4" id="dual-result-text">
+            Ngươi và đạo lữ tâm thần tương thông, âm dương tương hợp, kinh mạch như biển lớn hấp thu thiên địa nguyên khí!
+        </p>
+
+        <div class="p-3 rounded-xl bg-pink-950/80 border border-pink-500/50 text-center font-mono text-gold-light font-bold mb-4" id="dual-reward-amount-box">
+            +75,000 Tu Vi Linh Lực!
+        </div>
+
+        <button type="button" class="px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm cursor-pointer shadow-lg" onclick="closeDualAnimation()">
+            Lĩnh Hội Kết Thúc
+        </button>
+
+        <!-- Hạt cánh hoa đào rơi -->
+        <div id="petals-canvas"></div>
+    </div>
+
+
+    <!-- ========================================================================
+         PHẦN 2 & 3: LOGIC JAVASCRIPT & HỆ THỐNG DỮ LIỆU ĐẠO LỮ
+         ======================================================================== -->
+    <script>
+        // ====================================================================
+        // KHỐI 1: CẤU TRÚC DỮ LIỆU ĐẠO LỮ (COMPANIONS_DATA)
+        // ====================================================================
+        const COMPANIONS_DATA = [
+            {
+                id: "companion_1",
+                name: "Liễu Như Yên",
+                title: "Tiểu Sư Muội",
+                sect: "Thanh Vân Tiên Phái",
+                avatar: "./assets/images/pet_fox.jpg",
+                quote: "Sư huynh, bế quan mệt mỏi rồi sao? Muội vừa pha linh trà tuyết liên cho huynh...",
+                unlocked: true,
+                unlockCondition: "Hoàn thành nhiệm vụ Trúc Cơ",
+                expMultiplier: 1.5,
+                affection: 1800, // Cấp 3: Tri Kỷ
+                buffs: [
+                    { level: 1, text: "+5% Tốc độ tu luyện toàn phần" },
+                    { level: 3, text: "+10% Tốc độ hồi phục Linh Lực & Khí Huyết" },
+                    { level: 5, text: "Tự động thu hoạch Linh Điền khi offline" }
+                ]
+            },
+            {
+                id: "companion_2",
+                name: "Lãnh Nguyệt",
+                title: "Ma Tông Thánh Nữ",
+                sect: "U Minh Ma Tông",
+                avatar: "./assets/images/avatar_heart_demon.jpg",
+                quote: "Đạo ma bất đồng? Hừ, trên con đường vấn đỉnh trường sinh, ta chỉ tin ngươi...",
+                unlocked: false,
+                unlockCondition: "Điểm Tâm Ma > 500",
+                expMultiplier: 2.2,
+                affection: 0,
+                buffs: [
+                    { level: 1, text: "+10% Sát thương Bạo kích toàn phần" },
+                    { level: 3, text: "+15% Xuyên Giáp & Ma Đạo Sát Khí" },
+                    { level: 5, text: "Khi Song Tu có 20% tỷ lệ đột phá bình cảnh không cần Đan dược" }
+                ]
+            },
+            {
+                id: "companion_3",
+                name: "Hồ Mị Nhi",
+                title: "Yêu Tộc Công Chúa",
+                sect: "Thiên Hồ Vương Tộc",
+                avatar: "./assets/images/char_cultivator.jpg",
+                quote: "Nhân loại các ngươi cứ thích đoan chính, chẳng bằng cùng ta hưởng thụ nhân gian...",
+                unlocked: false,
+                unlockCondition: "Thu phục Cửu Vĩ Linh Hồ",
+                expMultiplier: 1.8,
+                affection: 0,
+                buffs: [
+                    { level: 1, text: "+8% Tốc độ di chuyển & Né tránh" },
+                    { level: 3, text: "+12% Hút máu khi công kích" },
+                    { level: 5, text: "Tăng 20% tỷ lệ Luyện Đan ra Cực Phẩm" }
+                ]
+            }
+        ];
+
+        // ====================================================================
+        // KHỐI 2: CẤP BẬC HẢO CẢM & VẬT PHẨM QUÀ TẶNG
+        // ====================================================================
+        const AFFECTION_RANKS = [
+            { level: 1, title: "Người Dưng", minExp: 0, maxExp: 500 },
+            { level: 2, title: "Quen Biết", minExp: 500, maxExp: 1500 },
+            { level: 3, title: "Tri Kỷ", minExp: 1500, maxExp: 3000 },
+            { level: 4, title: "Đạo Lữ", minExp: 3000, maxExp: 5000 },
+            { level: 5, title: "Sinh Tử Giao", minExp: 5000, maxExp: 5000 }
+        ];
+
+        const GIFT_ITEMS_DATA = {
+            gift_tramcai: { id: "gift_tramcai", name: "Bạch Ngọc Trâm Cài", affection: 100 },
+            gift_luuly: { id: "gift_luuly", name: "Thất Bảo Lưu Ly", affection: 250 },
+            gift_hoalactinh: { id: "gift_hoalactinh", name: "Hoa Lạc Tinh", affection: 600 }
+        };
+
+        // ====================================================================
+        // STATE NGƯỜI CHƠI & KHUÊ PHÒNG
+        // ====================================================================
+        const playerState = {
+            realmIndex: 2, // Cảnh giới người chơi (Luyện Khí Tầng 3)
+            activeCompanionId: "companion_1",
+            gifts: {
+                gift_tramcai: 5,
+                gift_luuly: 3,
+                gift_hoalactinh: 2
+            },
+            lastDualCultivationTime: 0, // Timestamp lần song tu trước
+            dualCooldownHours: 12        // Cooldown 12 giờ
+        };
+
+        function getActiveCompanion() {
+            return COMPANIONS_DATA.find(c => c.id === playerState.activeCompanionId) || COMPANIONS_DATA[0];
+        }
+
+        function getAffectionRank(points) {
+            for (let i = AFFECTION_RANKS.length - 1; i >= 0; i--) {
+                if (points >= AFFECTION_RANKS[i].minExp) {
+                    return AFFECTION_RANKS[i];
+                }
+            }
+            return AFFECTION_RANKS[0];
+        }
+
+        // ====================================================================
+        // HÀM 1: TẶNG QUÀ (GIVE GIFT)
+        // ====================================================================
+        function giveGift(itemId) {
+            const gift = GIFT_ITEMS_DATA[itemId];
+            if (!gift) return;
+
+            if ((playerState.gifts[itemId] || 0) <= 0) {
+                alert(`Đã hết [${gift.name}] trong túi!`);
+                return;
+            }
+
+            const comp = getActiveCompanion();
+            const prevRank = getAffectionRank(comp.affection);
+
+            // Trừ quà & cộng điểm Hảo Cảm
+            playerState.gifts[itemId]--;
+            comp.affection = Math.min(5000, comp.affection + gift.affection);
+
+            const newRank = getAffectionRank(comp.affection);
+
+            // Thông báo thăng cấp hảo cảm nếu vượt mốc
+            if (newRank.level > prevRank.level) {
+                alert(`💖 TÌNH CẢM THĂNG HOA!\nQuan hệ giữa ngươi và [${comp.name}] đã đạt đến cảnh giới: [${newRank.title}] (Cấp ${newRank.level})!`);
+            }
+
+            updateUI();
+        }
+
+        // ====================================================================
+        // HÀM 2: SONG TU CÙNG ĐẠO LỮ (DUAL CULTIVATION)
+        // ====================================================================
+        function getDualCooldownRemainingSeconds() {
+            const now = Date.now();
+            const cooldownMs = playerState.dualCooldownHours * 60 * 60 * 1000;
+            const elapsed = now - playerState.lastDualCultivationTime;
+            if (elapsed >= cooldownMs) return 0;
+            return Math.ceil((cooldownMs - elapsed) / 1000);
+        }
+
+        function triggerDualCultivation() {
+            const remaining = getDualCooldownRemainingSeconds();
+            if (remaining > 0) {
+                const hours = Math.floor(remaining / 3600);
+                const mins = Math.floor((remaining % 3600) / 60);
+                const secs = remaining % 60;
+                alert(`⚠️ ĐẠO HỮU NGHỈ NGƠI CHÚT ĐÃ!\nSong tu đòi hỏi điều hòa âm dương, cần chờ hồi phục khí huyết:\nCòn lại: ${hours}h ${mins}m ${secs}s.`);
+                return;
+            }
+
+            const comp = getActiveCompanion();
+
+            // Tính toán lượng Tu Vi nhận được
+            const gainedExp = Math.round((playerState.realmIndex + 1) * comp.expMultiplier * 25000);
+
+            // Kiểm tra hiệu quả Cấp 5 của Lãnh Nguyệt: 20% tỷ lệ đột phá bình cảnh
+            let breakthroughSuccess = false;
+            const currentRank = getAffectionRank(comp.affection);
+            if (comp.id === 'companion_2' && currentRank.level >= 5 && Math.random() < 0.20) {
+                breakthroughSuccess = true;
+            }
+
+            // Ghi nhận timestamp hồi chiêu
+            playerState.lastDualCultivationTime = Date.now();
+
+            // Bật hiệu ứng toàn màn hình lãng mạn
+            showDualCultivationAnimation(gainedExp, comp, breakthroughSuccess);
+            updateUI();
+        }
+
+        function resetDualCooldown() {
+            playerState.lastDualCultivationTime = 0;
+            updateUI();
+            alert("✨ Đã xóa thời gian hồi chiêu Song Tu để thử nghiệm!");
+        }
+
+        // ====================================================================
+        // HIỆU ỨNG SONG TU ANIMATION & CÁNH HOA RƠI
+        // ====================================================================
+        function showDualCultivationAnimation(gainedExp, comp, breakthroughSuccess) {
+            const overlay = document.getElementById('dual-cultivation-overlay');
+            const rewardBox = document.getElementById('dual-reward-amount-box');
+            const resultText = document.getElementById('dual-result-text');
+
+            rewardBox.textContent = `+${gainedExp.toLocaleString('vi-VN')} Tu Vi Linh Lực!`;
+            if (breakthroughSuccess) {
+                resultText.innerHTML = `🌟 MA ĐẠO THẦN UY! Nhờ âm dương giao hòa cùng [${comp.name}], ngươi may mắn kích phát cảm ngộ, <b>ĐỘT PHÁ BÌNH CẢNH THÀNH CÔNG</b> mà không cần Đan dược!`;
+            } else {
+                resultText.textContent = `Ngươi cùng [${comp.name}] tâm thần hòa hợp, đôi bên vận chuyển chu thiên, linh lực như thủy triều dâng trào!`;
+            }
+
+            // Sinh cánh hoa đào rơi
+            generatePetals();
+            overlay.classList.add('is-active');
+        }
+
+        function closeDualAnimation() {
+            document.getElementById('dual-cultivation-overlay').classList.remove('is-active');
+            const petals = document.getElementById('petals-canvas');
+            petals.innerHTML = '';
+        }
+
+        function generatePetals() {
+            const container = document.getElementById('petals-canvas');
+            container.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal-particle';
+                petal.style.left = `${Math.random() * 100}vw`;
+                petal.style.animationDelay = `${Math.random() * 2}s`;
+                petal.style.setProperty('--x-end', `${(Math.random() - 0.5) * 200}px`);
+                container.appendChild(petal);
+            }
+        }
+
+        // ====================================================================
+        // ĐIỀU HƯỚNG TABS & CHỌN ĐẠO LỮ
+        // ====================================================================
+        function switchChamberTab(tab) {
+            const btnInteract = document.getElementById('tab-btn-interact');
+            const btnCompanions = document.getElementById('tab-btn-companions');
+            const viewInteract = document.getElementById('tab-content-interact');
+            const viewCompanions = document.getElementById('tab-content-companions');
+
+            if (tab === 'interact') {
+                btnInteract.classList.add('is-active');
+                btnCompanions.classList.remove('is-active');
+                viewInteract.style.display = 'block';
+                viewCompanions.style.display = 'none';
+            } else {
+                btnInteract.classList.remove('is-active');
+                btnCompanions.classList.add('is-active');
+                viewInteract.style.display = 'none';
+                viewCompanions.style.display = 'block';
+            }
+        }
+
+        function selectCompanion(compId) {
+            const comp = COMPANIONS_DATA.find(c => c.id === compId);
+            if (!comp) return;
+
+            if (!comp.unlocked) {
+                alert(`🔒 Đạo Lữ Chưa Mở Khóa!\nĐiều kiện: ${comp.unlockCondition}`);
+                return;
+            }
+
+            playerState.activeCompanionId = compId;
+            updateUI();
+            switchChamberTab('interact');
+        }
+
+        function unlockCompanionTest(compId) {
+            const comp = COMPANIONS_DATA.find(c => c.id === compId);
+            if (comp) {
+                comp.unlocked = true;
+                comp.affection = 1500;
+                updateUI();
+                alert(`✨ Đã mở khóa [${comp.name}] để test!`);
+            }
+        }
+
+        function addMockGift(giftId, amount) {
+            playerState.gifts[giftId] = (playerState.gifts[giftId] || 0) + amount;
+            updateUI();
+        }
+
+        // ====================================================================
+        // CẬP NHẬT GIAO DIỆN TỔNG THỂ (UPDATE UI)
+        // ====================================================================
+        function updateUI() {
+            const comp = getActiveCompanion();
+            const rank = getAffectionRank(comp.affection);
+
+            // Cột Trái
+            document.getElementById('companion-main-img').src = comp.avatar;
+            document.getElementById('companion-quote-bubble').textContent = `"${comp.quote}"`;
+            document.getElementById('comp-name-title').textContent = comp.name;
+            document.getElementById('comp-sect-title').textContent = `${comp.sect} • ${comp.title}`;
+            document.getElementById('comp-affection-rank-badge').textContent = `${rank.title} (Cấp ${rank.level})`;
+
+            // Affection Points & Bar
+            document.getElementById('affection-points-text').textContent = `${comp.affection.toLocaleString('vi-VN')} / 5,000`;
+            const pct = Math.min(100, Math.round((comp.affection / 5000) * 100));
+            document.getElementById('affection-fill').style.width = `${pct}%`;
+
+            // Passive Buffs
+            const buffsBox = document.getElementById('companion-buffs-list');
+            buffsBox.innerHTML = comp.buffs.map(b => {
+                const isUnlocked = rank.level >= b.level;
+                return `
+                    <div class="buff-tag-item ${isUnlocked ? 'buff--unlocked' : 'buff--locked'}">
+                        <span><i class="fa-solid ${isUnlocked ? 'fa-circle-check text-rose-400' : 'fa-lock'} mr-1.5"></i>${b.text}</span>
+                        <span class="font-mono text-[10px] font-bold">[Cấp ${b.level}]</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Cột Phải: Quà tặng
+            document.getElementById('cnt-tram-cai').textContent = playerState.gifts.gift_tramcai;
+            document.getElementById('cnt-luu-ly').textContent = playerState.gifts.gift_luuly;
+            document.getElementById('cnt-hoa-lac-tinh').textContent = playerState.gifts.gift_hoalactinh;
+
+            document.getElementById('badge-tram-cai').textContent = `Còn: ${playerState.gifts.gift_tramcai}`;
+            document.getElementById('badge-luu-ly').textContent = `Còn: ${playerState.gifts.gift_luuly}`;
+            document.getElementById('badge-hoa-lac-tinh').textContent = `Còn: ${playerState.gifts.gift_hoalactinh}`;
+
+            // Cooldown & Nút Song Tu
+            const remaining = getDualCooldownRemainingSeconds();
+            const btnSongTu = document.getElementById('btn-song-tu');
+            const cdStatus = document.getElementById('cooldown-timer-status');
+            const rewardPreview = document.getElementById('cultivation-reward-preview');
+
+            const gainedExp = Math.round((playerState.realmIndex + 1) * comp.expMultiplier * 25000);
+            rewardPreview.textContent = `Dự kiến nhận: +${gainedExp.toLocaleString('vi-VN')} Tu Vi`;
+
+            if (remaining > 0) {
+                btnSongTu.disabled = true;
+                const hours = Math.floor(remaining / 3600);
+                const mins = Math.floor((remaining % 3600) / 60);
+                const secs = remaining % 60;
+                btnSongTu.innerHTML = `<i class="fa-regular fa-clock"></i> ĐANG HỒI KHÍ (${hours}h ${mins}m)`;
+                cdStatus.textContent = `Hồi chiêu: ${hours}h ${mins}m ${secs}s`;
+            } else {
+                btnSongTu.disabled = false;
+                btnSongTu.innerHTML = `<i class="fa-solid fa-spa"></i> KHỞI ĐỘNG SONG TU`;
+                cdStatus.textContent = `Trạng thái: Sẵn sàng`;
+            }
+
+            // Danh sách Đạo Lữ (Tab 2)
+            const compListContainer = document.getElementById('companion-cards-list');
+            compListContainer.innerHTML = COMPANIONS_DATA.map(c => {
+                const isSelected = c.id === playerState.activeCompanionId;
+                const cRank = getAffectionRank(c.affection);
+
+                if (!c.unlocked) {
+                    return `
+                        <div class="companion-item-card is-locked-silhouette">
+                            <div class="flex items-center gap-3">
+                                <img src="${c.avatar}" alt="${c.name}" class="comp-avatar-thumb">
+                                <div>
+                                    <h4 class="font-bold text-slate-400 text-sm font-serif flex items-center gap-2">
+                                        <i class="fa-solid fa-lock text-rose-500"></i> ${c.name}
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">[Chưa Mở]</span>
+                                    </h4>
+                                    <span class="text-xs text-rose-400 font-mono block mt-0.5">Yêu cầu: ${c.unlockCondition}</span>
+                                </div>
+                            </div>
+                            <button type="button" onclick="unlockCompanionTest('${c.id}')" class="px-2.5 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/40 text-xs font-bold transition">
+                                Mở (Test)
+                            </button>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="companion-item-card ${isSelected ? 'is-active-companion' : ''}" onclick="selectCompanion('${c.id}')">
+                        <div class="flex items-center gap-3">
+                            <img src="${c.avatar}" alt="${c.name}" class="comp-avatar-thumb">
+                            <div>
+                                <h4 class="font-bold text-slate-100 text-sm font-serif flex items-center gap-2">
+                                    ${c.name}
+                                    ${isSelected ? '<span class="text-[10px] px-2 py-0.5 rounded bg-rose-500 text-slate-950 font-bold font-mono">ĐANG CHỌN</span>' : ''}
+                                </h4>
+                                <span class="text-xs text-pink-300 font-mono block mt-0.5">${c.sect} • ${c.title}</span>
+                                <span class="text-[10px] text-slate-400 block">${cRank.title} (Hảo cảm: ${c.affection}/5000)</span>
+                            </div>
+                        </div>
+                        <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold ${isSelected ? 'bg-rose-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+                            ${isSelected ? 'Đã Chọn' : 'Đồng Hành'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Khởi động
+        window.addEventListener('DOMContentLoaded', () => {
+            updateUI();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+graphify-out/
+scratch/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
