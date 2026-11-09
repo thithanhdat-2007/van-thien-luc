@@ -2032,7 +2032,96 @@
             canvasSpaceCracks.push({ x, y, branches, life: 1.0, color });
         }
 
+        const lightningArtwork = new Map();
+        const eyeArtwork = new Map();
+        function prepareEyeArtwork(slashed) {
+            if (eyeArtwork.has(slashed)) return eyeArtwork.get(slashed);
+            const surface = document.createElement('canvas');
+            surface.width = 1000;
+            surface.height = 640;
+            const paint = surface.getContext('2d');
+            paint.scale(2, 2);
+            paint.translate(250, 160);
+            paint.strokeStyle = slashed ? '#f43f5e' : '#e879f9';
+            paint.lineWidth = 4;
+            paint.shadowColor = '#a855f7';
+            paint.shadowBlur = 40;
+            const split = slashed ? 16 : 0;
+            paint.beginPath();
+            paint.moveTo(-140, -split);
+            paint.quadraticCurveTo(0, -68 - split, 140, -split);
+            paint.quadraticCurveTo(0, 68 + split, -140, split);
+            paint.stroke();
+            paint.fillStyle = slashed ? '#f43f5e' : '#fde047';
+            paint.beginPath();
+            paint.arc(0, 0, 28, 0, Math.PI * 2);
+            paint.fill();
+            if (slashed) {
+                paint.strokeStyle = '#ffffff';
+                paint.lineWidth = 6;
+                paint.beginPath();
+                paint.moveTo(-165, 35);
+                paint.lineTo(165, -35);
+                paint.stroke();
+            }
+            eyeArtwork.set(slashed, surface);
+            return surface;
+        }
+        const crescentArtwork = new Map();
+        function prepareCrescentArtwork(color, radius) {
+            const key = `${color}:${radius}`;
+            if (crescentArtwork.has(key)) return crescentArtwork.get(key);
+            const size = Math.ceil(radius * 2 + 160);
+            const surface = document.createElement('canvas');
+            surface.width = size * 2;
+            surface.height = size * 2;
+            const paint = surface.getContext('2d');
+            paint.scale(2, 2);
+            paint.translate(size / 2, size / 2);
+            paint.fillStyle = '#ffffff';
+            paint.shadowColor = color;
+            paint.shadowBlur = 26;
+            paint.beginPath();
+            paint.arc(0, 0, radius, -Math.PI * 0.44, Math.PI * 0.44, false);
+            paint.arc(-14, 0, radius * 0.88, Math.PI * 0.4, -Math.PI * 0.4, true);
+            paint.closePath();
+            paint.fill();
+            crescentArtwork.set(key, surface);
+            return surface;
+        }
+        function prepareLightningArtwork(color) {
+            if (lightningArtwork.has(color)) return lightningArtwork.get(color);
+            const variants = Array.from({ length: 4 }, () => {
+                const surface = document.createElement('canvas');
+                surface.width = 1120;
+                surface.height = 240;
+                const paint = surface.getContext('2d');
+                paint.scale(2, 2);
+                paint.strokeStyle = color;
+                paint.shadowColor = color;
+                paint.shadowBlur = 18;
+                paint.lineWidth = 3.5;
+                paint.beginPath();
+                paint.moveTo(30, 60);
+                for (let i = 1; i < 8; i++) paint.lineTo(30 + i * 62.5, 60 + (Math.random() - 0.5) * 38);
+                paint.lineTo(530, 60);
+                paint.stroke();
+                paint.strokeStyle = '#ffffff';
+                paint.lineWidth = 1.2;
+                paint.stroke();
+                return surface;
+            });
+            lightningArtwork.set(color, variants);
+            return variants;
+        }
         function spawnLightningArc(x1, y1, x2, y2, color = '#38bdf8') {
+            const variants = prepareLightningArtwork(color);
+            canvasLightningArcs.push({
+                sprite: variants[Math.floor(Math.random() * variants.length)],
+                x: x1, y: y1, angle: Math.atan2(y2 - y1, x2 - x1),
+                length: Math.hypot(x2 - x1, y2 - y1), life: 1, color
+            });
+            return;
             const points = [{ x: x1, y: y1 }];
             const steps = 8;
             for (let i = 1; i < steps; i++) {
@@ -3057,6 +3146,26 @@
         }
 
         function initArenaCanvas() {
+            prepareEyeArtwork(false);
+            prepareEyeArtwork(true);
+            const preloadColors = new Set(['#38bdf8', '#fde047', '#e879f9', '#a855f7', '#06b6d4', '#ffffff']);
+            Object.values(ELEMENTS).forEach(element => {
+                preloadColors.add(element.color);
+                preloadColors.add(element.glow);
+            });
+            preloadColors.forEach(color => prepareLightningArtwork(color));
+            CULTIVATION_MANUALS.forEach(manual => manual.skills.forEach(skill => {
+                if (skill.color) preloadColors.add(skill.color);
+            }));
+            const preloadSurface = document.createElement('canvas');
+            preloadSurface.width = 1;
+            preloadSurface.height = 1;
+            const preloadContext = preloadSurface.getContext('2d');
+            preloadColors.forEach(color => {
+                prepareLightningArtwork(color);
+                [46, 56, 72].forEach(radius => prepareCrescentArtwork(color, radius));
+                [44, 48, 70].forEach(length => drawDetailedSword(preloadContext, length, color, color));
+            });
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const ctx = canvas.getContext('2d', { desynchronized: true });
@@ -3555,6 +3664,9 @@
                     ctx.save();
                     ctx.translate(ey.x, ey.y);
                     ctx.globalAlpha = Math.min(1, ey.life * 1.4);
+                    ctx.drawImage(prepareEyeArtwork(ey.slashed), -250, -160, 500, 320);
+                    ctx.restore();
+                    continue;
                     ctx.strokeStyle = ey.slashed ? '#f43f5e' : '#e879f9';
                     ctx.lineWidth = 4;
                     ctx.shadowColor = '#a855f7';
@@ -3995,15 +4107,9 @@
                     ctx.translate(cr.x, cr.y);
                     ctx.rotate(cr.angle);
                     ctx.globalAlpha = cr.life;
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowColor = cr.color;
-                    ctx.shadowBlur = 26;
-
-                    ctx.beginPath();
-                    ctx.arc(0, 0, cr.radius, -Math.PI * 0.44, Math.PI * 0.44, false);
-                    ctx.arc(-14, 0, cr.radius * 0.88, Math.PI * 0.4, -Math.PI * 0.4, true);
-                    ctx.closePath();
-                    ctx.fill();
+                    const crescent = prepareCrescentArtwork(cr.color, cr.radius);
+                    const crescentSize = crescent.width / 2;
+                    ctx.drawImage(crescent, -crescentSize / 2, -crescentSize / 2, crescentSize, crescentSize);
                     ctx.restore();
                 }
 
@@ -4017,6 +4123,13 @@
                     }
                     ctx.save();
                     ctx.globalAlpha = la.life;
+                    if (la.sprite) {
+                        ctx.translate(la.x, la.y);
+                        ctx.rotate(la.angle);
+                        ctx.drawImage(la.sprite, -30, -60, la.length + 60, 120);
+                        ctx.restore();
+                        continue;
+                    }
                     ctx.strokeStyle = la.color;
                     ctx.lineWidth = 3.5;
                     ctx.shadowColor = la.color;
