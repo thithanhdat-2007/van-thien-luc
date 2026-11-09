@@ -147,8 +147,8 @@
         const elMindBar = document.getElementById('ui-mind-bar');
         if (elMindBar) elMindBar.style.width = `${mindVal}%`;
 
-        const curAge = state.age || 18;
-        const maxAge = state.maxAge || 120;
+        const curAge = Math.floor(Number(state.age) || 18);
+        const maxAge = Math.floor(Number(state.maxAge) || 120);
         const elAgeText = document.getElementById('ui-lifespan-text');
         if (elAgeText) elAgeText.textContent = `${curAge} / ${maxAge} năm`;
         const elAgeBrief = document.getElementById('ui-lifespan-brief');
@@ -198,302 +198,15 @@
     };
 
     // ========================================================================
-    // PHẦN 3: TIÊN MÔN GIA VIÊN LOGIC
+    // PHẦN 3: TIÊN MÔN GIA VIÊN LOGIC (ỦY QUYỀN TOÀN DIỆN CHO MAIN.JS)
+    // Loại bỏ hoàn toàn bản demo thô cũ (Format 2: Dược Điền, Mỏ Quặng, Hàn Băng Trì)
+    // Bảo vệ tuyệt đối 4 Card Glassmorphism chuẩn (Linh Căn Mộc, Dược Tuyền, Khoáng Động, Tiền Trang)
     // ========================================================================
-    const ESTATE_DATA = {
-        nodes: [
-            {
-                id: 'node_spirit_tree',
-                name: 'Linh Căn Mộc',
-                subTitle: 'Tụ Linh Trận',
-                icon: 'fa-solid fa-tree',
-                color: 'text-emerald-400',
-                resourceType: 'exp',
-                resourceLabel: 'Tu Vi',
-                ratePerHour: 1200,
-                maxCapacity: 6000,
-                accumulated: 1850,
-                assignedCompanion: null
-            },
-            {
-                id: 'node_herb_garden',
-                name: 'Dược Điền Thiên Tuyền',
-                subTitle: 'Linh Thảo Viên',
-                icon: 'fa-solid fa-seedling',
-                color: 'text-green-400',
-                resourceType: 'herb',
-                resourceLabel: 'Linh Thảo',
-                ratePerHour: 6,
-                maxCapacity: 30,
-                accumulated: 9,
-                assignedCompanion: null
-            },
-            {
-                id: 'node_ore_mine',
-                name: 'Linh Thạch Mỏ Quặng',
-                subTitle: 'Địa Mạch Mỏ',
-                icon: 'fa-solid fa-gem',
-                color: 'text-amber-400',
-                resourceType: 'stones',
-                resourceLabel: 'Linh Thạch',
-                ratePerHour: 1800,
-                maxCapacity: 9000,
-                accumulated: 3200,
-                assignedCompanion: null
-            },
-            {
-                id: 'node_fish_pond',
-                name: 'Hàn Băng Linh Trì',
-                subTitle: 'Ngưng Tụ Tiên Tuyền',
-                icon: 'fa-solid fa-water',
-                color: 'text-sky-400',
-                resourceType: 'liquid',
-                resourceLabel: 'Tẩy Tủy Dịch',
-                ratePerHour: 4,
-                maxCapacity: 20,
-                accumulated: 6,
-                assignedCompanion: null
-            }
-        ],
-        activeNodeForDispatch: null
-    };
-
     function initEstateSystem() {
-        renderEstateNodes();
-        updateEstateVaultShelf();
-        // Cập nhật tích lũy định kỳ
-        setInterval(accumulateEstateResources, 3000);
-    }
-
-    function renderEstateNodes() {
-        const container = document.getElementById('estate-nodes-container');
-        if (!container) return;
-
-        let totalPending = 0;
-        let html = '';
-
-        ESTATE_DATA.nodes.forEach(node => {
-            const pct = Math.min(100, Math.floor((node.accumulated / node.maxCapacity) * 100));
-            const isFull = pct >= 100;
-            const boost = node.assignedCompanion ? 1.5 : 1.0;
-            const effectiveRate = Math.round(node.ratePerHour * boost);
-            totalPending += Math.floor(node.accumulated);
-
-            html += `
-            <div class="estate-node-card ${isFull ? 'is-full-capacity' : ''}" id="estate-card-${node.id}">
-                <div class="node-card-header">
-                    <div class="flex items-center gap-3">
-                        <div class="node-icon-box">
-                            <i class="${node.icon} ${node.color} text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="node-title">${node.name}</h3>
-                            <span class="node-subtitle">${node.subTitle}</span>
-                        </div>
-                    </div>
-                    <span class="node-rate-badge">
-                        +${effectiveRate}/giờ ${node.assignedCompanion ? '⚡+50%' : ''}
-                    </span>
-                </div>
-
-                <!-- THANH TÍCH LŨY -->
-                <div class="space-y-1.5 my-3">
-                    <div class="flex justify-between text-xs font-mono">
-                        <span class="text-slate-400">Tích lũy ${node.resourceLabel}:</span>
-                        <strong class="${isFull ? 'text-rose-400 font-bold animate-pulse' : 'text-slate-200'}">
-                            ${Math.floor(node.accumulated).toLocaleString()} / ${node.maxCapacity.toLocaleString()}
-                        </strong>
-                    </div>
-                    <div class="capacity-progress-track">
-                        <div class="capacity-progress-fill" style="width: ${pct}%;"></div>
-                    </div>
-                </div>
-
-                <!-- ĐẠO LỮ TỌA TRẤN -->
-                <div class="node-guardian-box" onclick="openDispatchModal('${node.id}')" title="Bấm để phái cử hoặc đổi Đạo Lữ cai quản">
-                    <i class="fa-solid fa-user-shield text-amber-400 text-sm"></i>
-                    <div class="guardian-info-text truncate">
-                        ${node.assignedCompanion ? `Cai quản: <b class="text-amber-300">${node.assignedCompanion.name}</b> (+50% tốc độ)` : 'Chưa phái cử Đạo Lữ <span class="text-cyan-400 underline ml-1">Phái cử</span>'}
-                    </div>
-                </div>
-
-                <!-- NÚT THU THẬP TỪNG ĐIỂM -->
-                <button type="button" class="btn-node-claim" onclick="claimEstateResource('${node.id}')" ${node.accumulated <= 0 ? 'disabled' : ''}>
-                    <i class="fa-solid fa-hand-holding-hand mr-1.5"></i>
-                    Thu Hoạch (${Math.floor(node.accumulated).toLocaleString()} ${node.resourceLabel})
-                </button>
-            </div>`;
-        });
-
-        container.innerHTML = html;
-
-        const totalEl = document.getElementById('total-pending-count');
-        if (totalEl) totalEl.textContent = `${totalPending.toLocaleString()} đơn vị`;
-    }
-
-    function accumulateEstateResources() {
-        ESTATE_DATA.nodes.forEach(node => {
-            const boost = node.assignedCompanion ? 1.5 : 1.0;
-            const ratePerSec = (node.ratePerHour * boost) / 3600;
-            const gain = ratePerSec * 3 * (state.timeScale || 1);
-            node.accumulated = Math.min(node.maxCapacity, node.accumulated + gain);
-        });
-        renderEstateNodes();
-    }
-
-    function updateEstateVaultShelf() {
-        if (typeof state === 'undefined') return;
-        const elStones = document.getElementById('player-linh-thach');
-        if (elStones) elStones.textContent = (state.stones || 0).toLocaleString();
-
-        const elTuVi = document.getElementById('player-tu-vi');
-        if (elTuVi) elTuVi.textContent = (state.exp || 0).toLocaleString();
-
-        const elHerbs = document.getElementById('player-herbs');
-        if (elHerbs) {
-            const herbsCount = (state.inventory || []).filter(i => (i.type === 'herb' || i.id?.includes('herb'))).length;
-            elHerbs.textContent = herbsCount;
-        }
-
-        const elOres = document.getElementById('player-ores');
-        if (elOres) {
-            const oresCount = (state.inventory || []).filter(i => (i.type === 'ore' || i.id?.includes('ore'))).length;
-            elOres.textContent = oresCount;
+        if (typeof window.updateEstateUI === 'function') {
+            window.updateEstateUI();
         }
     }
-
-    window.claimEstateResource = function (nodeId) {
-        const node = ESTATE_DATA.nodes.find(n => n.id === nodeId);
-        if (!node || node.accumulated <= 0) return;
-
-        const amount = Math.floor(node.accumulated);
-        node.accumulated -= amount;
-
-        // Bổ sung tài nguyên thật vào game
-        if (node.resourceType === 'stones') {
-            state.stones = (state.stones || 0) + amount;
-        } else if (node.resourceType === 'exp') {
-            if (typeof addExp === 'function') addExp(amount);
-            else state.exp = (state.exp || 0) + amount;
-        } else if (node.resourceType === 'herb') {
-            if (!Array.isArray(state.inventory)) state.inventory = [];
-            state.inventory.push({ id: 'herb_thai_at', name: 'Thái Ất Linh Thảo', type: 'herb', count: amount, quality: 'Hạ Phẩm' });
-        } else if (node.resourceType === 'liquid') {
-            if (!Array.isArray(state.inventory)) state.inventory = [];
-            state.inventory.push({ id: 'item_tay_tuy_dich', name: 'Tẩy Tủy Dịch', type: 'pill', count: amount, quality: 'Trung Phẩm' });
-        }
-
-        if (typeof showFloatingText === 'function') {
-            showFloatingText(`+${amount.toLocaleString()} ${node.resourceLabel}`, 'emerald');
-        } else {
-            showToastMessage(`Đã thu hoạch +${amount.toLocaleString()} ${node.resourceLabel}!`);
-        }
-
-        if (typeof updateHUD === 'function') updateHUD();
-        renderEstateNodes();
-        updateEstateVaultShelf();
-    };
-
-    window.claimAllEstateResources = function () {
-        let claimedCount = 0;
-        ESTATE_DATA.nodes.forEach(node => {
-            if (node.accumulated > 0) {
-                const amount = Math.floor(node.accumulated);
-                node.accumulated -= amount;
-                claimedCount += amount;
-
-                if (node.resourceType === 'stones') {
-                    state.stones = (state.stones || 0) + amount;
-                } else if (node.resourceType === 'exp') {
-                    if (typeof addExp === 'function') addExp(amount);
-                    else state.exp = (state.exp || 0) + amount;
-                } else {
-                    if (!Array.isArray(state.inventory)) state.inventory = [];
-                    state.inventory.push({ id: node.id + '_prod', name: node.resourceLabel, type: node.resourceType, count: amount });
-                }
-            }
-        });
-
-        if (claimedCount > 0) {
-            showToastMessage(`Thu nạp thành công toàn bộ tài nguyên gia viên (+${claimedCount.toLocaleString()})!`);
-            if (typeof updateHUD === 'function') updateHUD();
-        } else {
-            showToastMessage('Tất cả linh bồn đều trống rỗng, chưa có gì để thu hoạch.');
-        }
-
-        renderEstateNodes();
-        updateEstateVaultShelf();
-    };
-
-    window.openDispatchModal = function (nodeId) {
-        ESTATE_DATA.activeNodeForDispatch = nodeId;
-        const modal = document.getElementById('dispatch-modal');
-        if (!modal) return;
-
-        const companionsListEl = document.getElementById('dispatch-companions-list');
-        if (companionsListEl) {
-            // Danh sách đạo lữ từ state hoặc mặc định
-            const companions = (state.companions && state.companions.length > 0)
-                ? state.companions
-                : [
-                    { id: 'lieu_nhu_yen', name: 'Liễu Như Yên', avatar: './assets/images/dao_lu_avatar.jpg', favor: 5, bonus: '+50% Linh Thảo & EXP' },
-                    { id: 'tieu_ngoc', name: 'Bạch Thiển', avatar: './assets/images/pet_fox.jpg', favor: 4, bonus: '+50% Linh Thạch & Thần Thủy' }
-                ];
-
-            let html = '';
-            companions.forEach(c => {
-                html += `
-                <div class="companion-choice-card" onclick="assignCompanionToActiveNode('${c.id}', '${c.name}')">
-                    <img src="${c.avatar || './assets/images/dao_lu_avatar.jpg'}" class="companion-choice-avatar" alt="${c.name}">
-                    <div>
-                        <div class="font-bold text-slate-200 text-xs">${c.name}</div>
-                        <div class="text-[10px] text-amber-300 font-mono">${c.bonus || 'Tọa trấn +50% sản lượng'}</div>
-                    </div>
-                    <button type="button" class="ml-auto px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs border border-amber-500/40 font-bold">
-                        Bổ Nhiệm
-                    </button>
-                </div>`;
-            });
-            companionsListEl.innerHTML = html;
-        }
-
-        modal.classList.add('active');
-    };
-
-    window.closeDispatchModal = function (e) {
-        if (e && e.target && e.target.id !== 'dispatch-modal') return;
-        const modal = document.getElementById('dispatch-modal');
-        if (modal) modal.classList.remove('active');
-        ESTATE_DATA.activeNodeForDispatch = null;
-    };
-
-    window.assignCompanionToActiveNode = function (compId, compName) {
-        const nodeId = ESTATE_DATA.activeNodeForDispatch;
-        if (!nodeId) return;
-
-        const targetNode = ESTATE_DATA.nodes.find(n => n.id === nodeId);
-        if (targetNode) {
-            targetNode.assignedCompanion = { id: compId, name: compName };
-            showToastMessage(`Đã phái cử ${compName} tọa trấn cai quản ${targetNode.name}!`);
-        }
-
-        closeDispatchModal();
-        renderEstateNodes();
-    };
-
-    window.unassignCompanionFromActiveNode = function () {
-        const nodeId = ESTATE_DATA.activeNodeForDispatch;
-        if (!nodeId) return;
-
-        const targetNode = ESTATE_DATA.nodes.find(n => n.id === nodeId);
-        if (targetNode) {
-            targetNode.assignedCompanion = null;
-            showToastMessage(`Đã gỡ bỏ người cai quản tại ${targetNode.name}.`);
-        }
-
-        closeDispatchModal();
-        renderEstateNodes();
-    };
 
     function showToastMessage(msg) {
         let toast = document.getElementById('toast-bubble');
@@ -726,6 +439,9 @@
         row.className = 'log-entry';
         row.innerHTML = msg;
         logBox.appendChild(row);
+        while (logBox.children.length > 50 && logBox.firstElementChild) {
+            logBox.firstElementChild.remove();
+        }
         logBox.scrollTop = logBox.scrollHeight;
     }
 
@@ -740,7 +456,7 @@
     // ========================================================================
     function initAllMasterDemos() {
         console.log('⚡ [MasterDemos] Initializing integrated demo systems...');
-        initEstateSystem();
+        // initEstateSystem(); // Ủy quyền hoàn toàn cho main.js
         initSpriteTowerBattler();
         updateMasterTopBar();
         renderMasterCharacterStats();
@@ -756,7 +472,11 @@
         }
 
         // Định kỳ cập nhật topbar và character stats mỗi 1s
-        setInterval(() => {
+        if (window._masterDemosInterval) {
+            clearInterval(window._masterDemosInterval);
+            window._masterDemosInterval = null;
+        }
+        window._masterDemosInterval = setInterval(() => {
             updateMasterTopBar();
             renderMasterCharacterStats();
         }, 1000);
@@ -774,7 +494,7 @@
         renderCharacterStats: renderMasterCharacterStats,
         initEstate: initEstateSystem,
         initTowerBattler: initSpriteTowerBattler,
-        estateData: ESTATE_DATA,
+        get estateData() { return window.ESTATE_NODES || null; },
         towerData: TOWER_BATTLER
     };
 

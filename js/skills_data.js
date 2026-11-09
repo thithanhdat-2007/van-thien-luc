@@ -1538,6 +1538,379 @@ const SKILLS_DATA = [
 ];
 
 // ============================================================================
+// CHẾ ĐỘ "ĐẠI DIỄN CÔNG PHÁP & THẦN HÌNH" (ENDLESS CULTIVATION TECHNIQUES)
+// ============================================================================
+
+function getSkillImageUrl(skill) {
+    if (!skill) return 'https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png';
+    const type = skill.type || skill.category || '';
+    const name = skill.name || '';
+    const cleanName = encodeURIComponent(name.replace(/\s+/g, ''));
+
+    // 1. Kiếm Quyết / Vũ Kỹ / Binh Khí
+    if (type === 'VuKy' || type === 'VuKhi' || type === 'cong_kich' || name.includes('Kiếm') || name.includes('Đao') || name.includes('Thương') || name.includes('Kích')) {
+        return 'https://img.icons8.com/color/100/sword.png';
+    }
+    // 2. Thể Thuật / Trận Pháp / Luyện Thể
+    if (type === 'TheThuat' || type === 'the_thuat' || name.includes('Thân') || name.includes('Trận') || name.includes('Giáp') || name.includes('Thể') || name.includes('Bì') || name.includes('Cốt')) {
+        return `https://api.dicebear.com/9.x/rings/svg?seed=${cleanName}&backgroundColor=1a1a2e,450a0a`;
+    }
+    // 3. Ấn Quyết / Chưởng Pháp / Quyền / Chỉ
+    if (name.includes('Chưởng') || name.includes('Ấn') || name.includes('Quyền') || name.includes('Chỉ') || name.includes('Thủ')) {
+        return 'https://img.icons8.com/color/100/glowing-hands.png';
+    }
+    // 4. Bí Thuật / Tâm Pháp / Cuộn Giấy / Thân Pháp
+    if (type === 'BiThuat' || type === 'bi_thuat') {
+        return 'https://img.icons8.com/color/100/scroll.png';
+    }
+    return 'https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png';
+}
+
+// BỘ 1: U MINH HUYẾT THẦN HỆ (7 CÔNG PHÁP)
+const NEW_SKILLS_SET_01 = [
+    {
+        id: "skill_huyet_hai_kiem_quyet",
+        name: "Huyết Hải Kiếm Quyết",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "dia",
+        rarity: "Dia",
+        element: "hoa",
+        icon: "🩸",
+        image_url: "./assets/images/skill_huyet_hai_kiem_quyet.png",
+        stats: { attack: 2500, lifesteal: 12, crit_rate: 6 },
+        effect: "Hút máu 12%, tăng 6% Bạo kích. Hiến tế 5% HP chém ra huyết kiếm trảm hồn.",
+        desc: "Hiến tế khí huyết bản thân để chém ra một vệt kiếm đỏ thẫm, hấp thu sinh lực đối phương.",
+        price: 150000
+    },
+    {
+        id: "skill_cuu_u_chan_than",
+        name: "Cửu U Bất Diệt Ma Thân",
+        type: "TheThuat",
+        category: "the_thuat",
+        tier: "thien",
+        rarity: "Thien",
+        element: "tho",
+        icon: "🛡️",
+        image_url: "https://api.dicebear.com/9.x/rings/svg?seed=CuuUBatDietMaThan&backgroundColor=1a1a2e,450a0a",
+        stats: { hp: 45000, defense: 3200, damage_reflect: 25, shield_percent: 20 },
+        effect: "Tạo khiên 20% HP tối đa khi vào trận, phản lại 25% sát thương nhận vào.",
+        desc: "Luyện thể ma đạo thượng cổ, hấp thu u minh chi khí đúc thành ma khu bất diệt.",
+        price: 380000
+    },
+    {
+        id: "skill_hac_am_thien_ma_chuong",
+        name: "Hắc Ám Thiên Ma Chưởng",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "dia",
+        rarity: "Dia",
+        element: "hoa",
+        icon: "✋",
+        image_url: "https://img.icons8.com/color/100/glowing-hands.png",
+        stats: { attack: 3100, armor_ignore: 25, weaken_enemy: 15 },
+        effect: "Bỏ qua 25% Giáp kẻ địch, giảm 15% Công kích đối phương trong 8 giây.",
+        desc: "Một chưởng vỗ ra ma khí ngập trời, ma âm nhiễu loạn thần phách đối thủ.",
+        price: 180000
+    },
+    {
+        id: "skill_u_minh_quy_anh_bo",
+        name: "U Minh Quỷ Ảnh Bộ",
+        type: "ThanPhap",
+        category: "than_phap",
+        tier: "huyen",
+        rarity: "Huyen",
+        element: "phong",
+        icon: "💨",
+        image_url: "https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png",
+        stats: { speed: 180, dodge: 18, stealth_crit: 30 },
+        effect: "+18% Né tránh. Đòn đánh đầu tiên sau khi né tăng 30% sát thương bạo kích.",
+        desc: "Thân hình hư ảo thoắt ẩn thoắt hiện như quỷ mị giữa đêm đen.",
+        price: 65000
+    },
+    {
+        id: "skill_huyet_te_dai_phap",
+        name: "Huyết Tế Càn Khôn Bí Thuật",
+        type: "BiThuat",
+        category: "bi_thuat",
+        tier: "thien",
+        rarity: "Thien",
+        element: "hoa",
+        icon: "📜",
+        image_url: "https://img.icons8.com/color/100/scroll.png",
+        stats: { expPerSec: 350, all_damage_bonus: 30, blood_conversion: 10 },
+        effect: "+350 Tu vi/giây, tăng vĩnh viễn 30% toàn bộ sát thương xuất ra.",
+        desc: "Bí pháp thượng thừa của Huyết Thần Tông, chuyển hóa sát nghiệp thành căn cơ tu vi.",
+        price: 420000
+    },
+    {
+        id: "skill_nguyen_thuy_ma_kinh",
+        name: "Nguyên Thủy Chân Ma Tâm Kinh",
+        type: "TamPhap",
+        category: "tam_phap",
+        tier: "tien",
+        rarity: "Tien",
+        element: "vo_he",
+        icon: "🌌",
+        image_url: "https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png",
+        stats: { expPerSec: 1200, hpPercent: 0.50, lifesteal: 15, true_damage: 5000 },
+        effect: "+1200 Tu vi/giây, +50% HP, kèm 5000 sát thương chuẩn mỗi đòn đánh.",
+        desc: "Căn bản tâm kinh của Chân Ma Thủy Tổ, áp đảo chư thiên vạn giới.",
+        price: 1800000
+    },
+    {
+        id: "skill_tu_la_diet_tuyet_an",
+        name: "Tu La Diệt Tuyệt Đại Thủ Ấn",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "tien",
+        rarity: "Tien",
+        element: "hoa",
+        icon: "🔥",
+        image_url: "https://img.icons8.com/color/100/glowing-hands.png",
+        stats: { attack: 38000, execute_below_20_percent: 1, crit_damage: 80 },
+        effect: "Kết liễu ngay kẻ địch dưới 20% HP (trừ Boss), +80% Sát thương bạo kích.",
+        desc: "Ấn pháp sát phạt tuyệt đỉnh Tu La Giới, ấn xuống vạn linh tiêu tán.",
+        price: 2500000
+    }
+];
+
+// BỘ 2: TIÊN ĐẠO THẦN LÔI & THÁI THANH KIẾM TÔNG (7 CÔNG PHÁP)
+const NEW_SKILLS_SET_02 = [
+    {
+        id: "skill_thien_loi_chinh_phap",
+        name: "Cửu Thiên Thần Lôi Chánh Pháp",
+        type: "TamPhap",
+        category: "tam_phap",
+        tier: "thien",
+        rarity: "Thien",
+        element: "loi",
+        icon: "⚡",
+        image_url: "./assets/images/skill_thien_loi_chinh_phap.png",
+        stats: { expPerSec: 420, lightning_damage: 40, paralysis_rate: 15 },
+        effect: "+420 Tu vi/giây, +40% sát thương Lôi, 15% tỷ lệ làm tê liệt mục tiêu.",
+        desc: "Lôi pháp chính đạo thống lĩnh lôi đình cửu thiên, vạn tà quy phục.",
+        price: 350000
+    },
+    {
+        id: "skill_thai_thanh_van_kiem",
+        name: "Vạn Kiếm Quy Tông Quyết",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "thien",
+        rarity: "Thien",
+        element: "kim",
+        icon: "⚔️",
+        image_url: "./assets/images/skill_thai_thanh_van_kiem.png",
+        stats: { attack: 14500, multihit_count: 5, crit_rate: 25 },
+        effect: "Phân tách kiếm ảnh chém liên hoàn 5 đợt, +25% Tỷ lệ bạo kích.",
+        desc: "Cảnh giới tối cao của kiếm tu Thái Thanh, ý niệm động vạn kiếm đồng quy.",
+        price: 500000
+    },
+    {
+        id: "skill_bat_quai_kim_quang_tran",
+        name: "Bát Quái Hộ Đạo Thần Trận",
+        type: "TheThuat",
+        category: "the_thuat",
+        tier: "dia",
+        rarity: "Dia",
+        element: "tho",
+        icon: "☯️",
+        image_url: "https://api.dicebear.com/9.x/rings/svg?seed=BatQuaiHoDaoThanTran&backgroundColor=1a1a2e,450a0a",
+        stats: { defense: 2200, hp: 28000, barrier_absorb: 15000 },
+        effect: "Ngưng tụ trận bàn Bát Quái che chở, tạo lớp khiên hấp thu 15,000 sát thương.",
+        desc: "Đạo gia phòng ngự pháp trận, mượn càn khôn bát quái tiêu trừ thế công.",
+        price: 160000
+    },
+    {
+        id: "skill_thien_phong_doan_khong_bo",
+        name: "Thiên Phong Đoạn Không Thân Pháp",
+        type: "ThanPhap",
+        category: "than_phap",
+        tier: "dia",
+        rarity: "Dia",
+        element: "phong",
+        icon: "🌪️",
+        image_url: "https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png",
+        stats: { speed: 320, dodge: 25, counter_attack_chance: 20 },
+        effect: "+320 Thân pháp, 25% Né tránh, khi né thành công phản kích 1 kiếm cực mạnh.",
+        desc: "Hóa thân vào hư không vết rách, xé gió đạp mây mà đi.",
+        price: 175000
+    },
+    {
+        id: "skill_thai_at_phuc_ma_chuong",
+        name: "Thái Ất Phục Ma Chưởng",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "linh",
+        rarity: "Linh",
+        element: "kim",
+        icon: "✨",
+        image_url: "https://img.icons8.com/color/100/glowing-hands.png",
+        stats: { attack: 680, demon_bane: 30 },
+        effect: "Tăng 30% sát thương khi công kích Yêu Ma trong Trấn Yêu Tháp.",
+        desc: "Chưởng pháp thuần dương hàng ma trứ danh của Đạo môn.",
+        price: 8500
+    },
+    {
+        id: "skill_tam_thanh_hoa_khi_quyet",
+        name: "Tam Thanh Hóa Khí Bí Điển",
+        type: "BiThuat",
+        category: "bi_thuat",
+        tier: "tien",
+        rarity: "Tien",
+        element: "vo_he",
+        icon: "📜",
+        image_url: "https://img.icons8.com/color/100/scroll.png",
+        stats: { expPerSec: 1500, mp_regen_percent: 50, spell_cooldown_reduction: 20 },
+        effect: "+1500 Tu vi/giây, hồi phục linh lực +50%, giảm 20% thời gian hồi thần thông.",
+        desc: "Bí điển tuyệt mật nhất đạo môn, một khí hóa tam thanh, sinh hóa vô cùng.",
+        price: 3000000
+    },
+    {
+        id: "skill_tru_tien_kiem_tran_phap",
+        name: "Tru Tiên Tứ Kiếm Tuyệt Trận",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "tien",
+        rarity: "Tien",
+        element: "kim",
+        icon: "🗡️",
+        image_url: "https://img.icons8.com/external-smashingstocks-flat-smashing-stocks/100/external-Sword-weapons-smashingstocks-flat-smashing-stocks.png",
+        stats: { attack: 52000, crit_rate: 35, bleed_true_damage: 8000 },
+        effect: "Gây chảy máu chuẩn 8,000 sát thương/giây trong 5 giây, không thể giải trừ.",
+        desc: "Sát trận đệ nhất hồng hoang, bốn thanh kiếm Tru Tiên quy nhất diệt sát càn khôn.",
+        price: 3800000
+    }
+];
+
+// BỘ 3: NGŨ HÀNH DIỆU PHÁP & VẠN VẬT TỰ NHIÊN (7 CÔNG PHÁP)
+const NEW_SKILLS_SET_03 = [
+    {
+        id: "skill_ngu_hanh_luan_chuyen_quyet",
+        name: "Ngũ Hành Hỗn Nguyên Quyết",
+        type: "TamPhap",
+        category: "tam_phap",
+        tier: "huyen",
+        rarity: "Huyen",
+        element: "vo_he",
+        icon: "🌀",
+        image_url: "https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png",
+        stats: { expPerSec: 120, five_elements_buff: 15 },
+        effect: "+120 Tu vi/giây, tăng 15% hiệu quả kích hoạt của mọi cộng hưởng Ngũ Hành.",
+        desc: "Vận chuyển Kim Mộc Thủy Hỏa Thổ hài hòa, đan điền sinh sôi không ngừng nghỉ.",
+        price: 45000
+    },
+    {
+        id: "skill_thanh_moc_truong_sinh_the",
+        name: "Thanh Mộc Trường Sinh Thể",
+        type: "TheThuat",
+        category: "the_thuat",
+        tier: "dia",
+        rarity: "Dia",
+        element: "moc",
+        icon: "🌿",
+        image_url: "./assets/images/skill_thanh_moc_truong_sinh_the.png",
+        stats: { hp: 35000, defense: 1800, hp_regen_per_sec: 500 },
+        effect: "Hồi phục 500 HP mỗi giây liên tục ngay trong chiến đấu.",
+        desc: "Dẫn sinh khí Thái Cổ Thần Mộc vào tủy xương, tạo cơ thể trường sinh bất tử.",
+        price: 190000
+    },
+    {
+        id: "skill_thuy_long_ngam_thuat",
+        name: "Băng Hà Thủy Long Ngâm",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "dia",
+        rarity: "Dia",
+        element: "thuy",
+        icon: "🐉",
+        image_url: "https://img.icons8.com/color/100/glowing-hands.png",
+        stats: { attack: 4200, freeze_chance: 20, aoe_damage: 1200 },
+        effect: "Đóng băng đối thủ trong 3 giây (20% tỷ lệ), lan sát thương diện rộng.",
+        desc: "Thao túng vạn trượng hàn tuyền ngưng tụ thành Cự Long oanh tạc.",
+        price: 165000
+    },
+    {
+        id: "skill_hac_diem_phan_thien_chuong",
+        name: "Bắc Minh Hắc Diễm Chưởng",
+        type: "VuKy",
+        category: "vu_ky",
+        tier: "huyen",
+        rarity: "Huyen",
+        element: "hoa",
+        icon: "🔥",
+        image_url: "https://img.icons8.com/color/100/glowing-hands.png",
+        stats: { attack: 1850, burn_dot: 250 },
+        effect: "Thiêu đốt chân khí đối thủ, trừ 50 Linh lực/giây khi trúng đòn.",
+        desc: "Ngọn lửa đen thấu hàn từ Bắc Hải thiêu rụi kinh mạch từ bên trong.",
+        price: 58000
+    },
+    {
+        id: "skill_kim_cang_bat_hoai_than",
+        name: "Đại Nhật Kim Cang Thể",
+        type: "TheThuat",
+        category: "the_thuat",
+        tier: "thien",
+        rarity: "Thien",
+        element: "kim",
+        icon: "☀️",
+        image_url: "https://api.dicebear.com/9.x/rings/svg?seed=DaiNhatKimCangThe&backgroundColor=1a1a2e,450a0a",
+        stats: { defense: 4500, hp: 60000, crowd_control_immunity: 1 },
+        effect: "Miễn nhiễm mọi hiệu ứng Khống chế và Choáng, giảm 30% sát thương nhận vào.",
+        desc: "Thân thể tỏa kim quang như mặt trời chói chang, không gì phá nổi.",
+        price: 620000
+    },
+    {
+        id: "skill_khong_gian_di_hinh_bo",
+        name: "Hư Không Di Hình Thân Pháp",
+        type: "ThanPhap",
+        category: "than_phap",
+        tier: "thien",
+        rarity: "Thien",
+        element: "phong",
+        icon: "🌀",
+        image_url: "https://img.icons8.com/external-flat-wichaiwi/100/external-scroll-magic-school-flat-wichaiwi.png",
+        stats: { speed: 500, dodge: 35, blink_dodge: 1 },
+        effect: "Tỷ lệ né 35%, khi né thành công lập tức dịch chuyển ra sau lưng đối thủ.",
+        desc: "Thấu hiểu pháp tắc không gian, bước chân đạp nát quy tắc cự ly.",
+        price: 750000
+    },
+    {
+        id: "skill_hon_don_khai_thien_luc",
+        name: "Hỗn Độn Khai Thiên Chân Lục",
+        type: "BiThuat",
+        category: "bi_thuat",
+        tier: "tien",
+        rarity: "Tien",
+        element: "vo_he",
+        icon: "🌌",
+        image_url: "https://img.icons8.com/color/100/scroll.png",
+        stats: { expPerSec: 2500, all_attributes_percent: 40, execute_boss_percent: 5 },
+        effect: "+2500 Tu vi/giây, tăng 40% toàn chỉ số công phòng, trảm sát Boss dưới 5% HP.",
+        desc: "Ghi chép khoảnh khắc Bàn Cổ khai thiên tịch địa, đệ nhất bí thuật thiên hạ.",
+        price: 5000000
+    }
+];
+
+// NHIỆM VỤ 1: BỔ SUNG ẢNH CHO CÔNG PHÁP CŨ (BACKFILL IMAGES)
+if (Array.isArray(SKILLS_DATA)) {
+    SKILLS_DATA.forEach(skill => {
+        if (!skill.image_url) {
+            skill.image_url = getSkillImageUrl(skill);
+        }
+    });
+
+    // BỔ SUNG CÁC BỘ CÔNG PHÁP MỚI VÀO SKILLS_DATA (PUSH/APPEND KHÔNG TRÙNG LẶP)
+    const allNewSkills = [...NEW_SKILLS_SET_01, ...NEW_SKILLS_SET_02, ...NEW_SKILLS_SET_03];
+    allNewSkills.forEach(newSkill => {
+        if (!SKILLS_DATA.some(s => s.id === newSkill.id)) {
+            SKILLS_DATA.push(newSkill);
+        }
+    });
+}
+
+// ============================================================================
 // HỆ THỐNG QUẢN LÝ Ô TRANG BỊ THEO CẢNH GIỚI (SLOT SYSTEM)
 // ============================================================================
 
@@ -2207,7 +2580,7 @@ function renderManualsSystemTab(container, player) {
                             <div class="flex items-start justify-between gap-2.5">
                                 <div class="flex items-start gap-2.5">
                                     <div class="w-10 h-10 rounded-xl overflow-hidden border border-amber-500/30 shrink-0 bg-slate-950 flex items-center justify-center shadow-md">
-                                        <img src="./assets/images/item_bamboo_scroll.jpg" alt="${skill.name}" class="w-full h-full object-cover" onerror="this.src=DEFAULT_IMG_FALLBACK">
+                                        <img src="${skill.image_url || './assets/images/item_bamboo_scroll.jpg'}" alt="${skill.name}" class="w-full h-full object-cover" onerror="this.src=DEFAULT_IMG_FALLBACK">
                                     </div>
                                     <div>
                                         <div class="flex items-center gap-1.5 flex-wrap">

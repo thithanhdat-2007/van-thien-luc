@@ -10,10 +10,19 @@
     <!-- Google Fonts & FontAwesome -->
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- tsParticles & Lottie Player Thư Viện Đồ Họa Vector & Particle -->
+    <!-- tsParticles & Safe Lottie Component Component Guard -->
     <script src="https://cdn.jsdelivr.net/npm/tsparticles-engine@2/tsparticles.engine.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script>
+        if (!window.customElements?.get('lottie-player')) {
+            window.customElements?.define('lottie-player', class extends HTMLElement {
+                load() {}
+                play() {}
+                pause() {}
+                stop() {}
+            });
+        }
+    </script>
     <!-- Stylesheet Cổ Phong & Tiên Hiệp Hắc Ám -->
     <link rel="stylesheet" href="./css/styles.css">
     <link rel="stylesheet" href="./css/dark-xianxia-theme.css">
@@ -83,55 +92,77 @@
                 
                 <div id="locked-ascension-gate" class="hidden" aria-hidden="true"></div>
 
-                <!-- Trung tâm điều khiển tu luyện PC: Bố cục 4 Cột Cố Định Tiên Hiệp Tối Giản -->
-                <div id="tu-vi-bar" data-alias="primary-actions" data-feature-id="btn_dong_phu" data-is-locked="true" class="cultivation-progress-panel cultivation-pill-hud pointer-events-auto" style="position: fixed !important; bottom: 70px !important; left: 50% !important; transform: translateX(-50%) !important; width: 80% !important; max-width: 800px !important; z-index: 998 !important;" onclick="event.stopPropagation()">
-                    
-                    <!-- CỘT 1 (180px): TÊN CẢNH GIỚI (Vàng kim, font serif có chân, căn trái) -->
-                    <div class="cultivation-col-realm pill-realm-section">
-                        <span class="text-amber-400 text-xs shrink-0"><i class="fa-solid fa-gem"></i></span>
-                        <h2 id="realm-badge" class="realm-title">
-                            Luyện Khí - Sơ Kỳ
-                        </h2>
+                                <!-- Trung tâm điều khiển tu luyện PC: BẢNG TU VI & ĐỘT PHÁ CẢNH GIỚI LỘNG LẪY CHUẨN XIANXIA -->
+                
+                <div id="tu-vi-bar" data-alias="primary-actions" data-feature-id="btn_dong_phu" data-is-locked="true" class="cultivation-breakthrough-bar pointer-events-auto" onclick="event.stopPropagation()">
+                    <!-- Hoa văn góc ánh kim Tiên Hiệp -->
+                    <div class="cbar-corner-glow cbar-corner-tl"></div>
+                    <div class="cbar-corner-glow cbar-corner-tr"></div>
+                    <div class="cbar-corner-glow cbar-corner-bl"></div>
+                    <div class="cbar-corner-glow cbar-corner-br"></div>
 
-                        <!-- Trạng thái Trọng Thương (nếu có) -->
-                        <div id="heavy-injury-status" class="hidden text-[10px] text-rose-400 font-mono flex items-center gap-1 font-bold shrink-0">
-                            <i class="fa-solid fa-skull-crossbones animate-pulse"></i>
-                            <span id="heavy-injury-time">Trọng Thương</span>
+                    <!-- KHỐI 1: CẢNH GIỚI BẢN MỆNH (REALM EMBLEM) -->
+                    <div class="cbar-realm-block">
+                        <div class="cbar-realm-emblem" id="cbar-realm-icon-frame" title="Đan Điền Bản Mệnh">
+                            <i class="fa-solid fa-yin-yang cbar-yin-yang"></i>
                         </div>
-
-                        <!-- Chỉ báo Thiên Đạo Áp Chế -->
-                        <div id="heavenly-suppression" class="hidden shrink-0">
-                            <button id="heavenly-suppression-toggle" class="text-purple-400 text-xs" type="button" aria-label="Thiên Đạo Áp Chế" onclick="toggleHeavenlySuppressionInfo()"><i class="fa-solid fa-cloud-bolt"></i></button>
-                            <div id="heavenly-suppression-tooltip" class="hidden"><p id="heavenly-suppression-message"></p><span id="heavenly-suppression-leak"></span></div>
+                        <div class="cbar-realm-info">
+                            <div class="cbar-realm-header">
+                                <span class="cbar-sub-tag">CẢNH GIỚI</span>
+                                <!-- Trạng thái Trọng Thương (nếu có) -->
+                                <div id="heavy-injury-status" class="hidden text-[10px] text-rose-400 font-mono flex items-center gap-1 font-bold shrink-0">
+                                    <i class="fa-solid fa-skull-crossbones animate-pulse"></i>
+                                    <span id="heavy-injury-time">Trọng Thương</span>
+                                </div>
+                                <!-- Chỉ báo Thiên Đạo Áp Chế -->
+                                <div id="heavenly-suppression" class="hidden shrink-0">
+                                    <button id="heavenly-suppression-toggle" class="text-purple-400 text-xs" type="button" aria-label="Thiên Đạo Áp Chế" onclick="toggleHeavenlySuppressionInfo()"><i class="fa-solid fa-cloud-bolt"></i></button>
+                                    <div id="heavenly-suppression-tooltip" class="hidden"><p id="heavenly-suppression-message"></p><span id="heavenly-suppression-leak"></span></div>
+                                </div>
+                                <span id="buff-status-text" class="hidden" aria-hidden="true"></span>
+                            </div>
+                            <h2 id="realm-badge" class="cbar-realm-name">
+                                Luyện Khí - Sơ Kỳ
+                            </h2>
                         </div>
-                        <span id="buff-status-text" class="hidden" aria-hidden="true"></span>
                     </div>
 
-                    <!-- CỘT 2 (1fr): TIẾN ĐỘ & THANH TU VI (1 dòng chữ duy nhất + thanh 6px mảnh) -->
-                    <div class="cultivation-col-progress pill-progress-section">
-                        <div class="cultivation-progress-header">
-                            <span class="cultivation-progress-label">🌿 Tu Vi:</span>
-                            <span id="exp-text-desktop" class="cultivation-progress-numbers tabular-nums">0 / 100</span>
+                    <!-- KHỐI 2: DÒNG CHẢY LINH KHÍ & TIẾN ĐỘ TU VI (QI ESSENCE STREAM) -->
+                    <div class="cbar-progress-block">
+                        <div class="cbar-progress-meta">
+                            <div class="cbar-label-group">
+                                <span class="cbar-qi-icon"><i class="fa-solid fa-seedling"></i></span>
+                                <span class="cbar-qi-title">Tu Vi Tích Lũy</span>
+                            </div>
+                            <div class="cbar-values-group">
+                                <span id="exp-text-desktop" class="cbar-exp-numbers tabular-nums">0 / 100</span>
+                            </div>
                         </div>
-                        <div id="cultivation-progress-desktop" class="pill-progress-track" role="progressbar" aria-label="Tu vi hiện tại" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                            <div id="exp-bar-desktop" class="pill-progress-fill" style="width: 0%;"></div>
+                        <div id="cultivation-progress-desktop" class="cbar-track" role="progressbar" aria-label="Tu vi hiện tại" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="exp-bar-desktop" class="cbar-fill" style="width: 0%;">
+                                <div class="cbar-fill-sheen"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- CỘT 3 (120px): TỐC ĐỘ HẤP THU (Xanh lá, căn phải, tabular-nums) -->
-                    <div class="cultivation-col-rate pill-rate-section tabular-nums">
-                        <span id="btn-cultivate">⚡ <span id="idle-rate-badge">+6 / s</span></span>
+                    <!-- KHỐI 3: TỐC ĐỘ THỔ NẠP (QI RATE BADGE) -->
+                    <div class="cbar-rate-block" id="btn-cultivate" title="Tốc độ thổ nạp thiên địa linh khí">
+                        <span class="cbar-rate-sub">LINH TỐC</span>
+                        <div class="cbar-rate-num tabular-nums">
+                            <i class="fa-solid fa-bolt text-cyan-400 text-xs mr-0.5"></i>
+                            <span id="idle-rate-badge">+6 / s</span>
+                        </div>
                     </div>
 
-                    <!-- CỘT 4 (180px): NÚT ĐỘT PHÁ (Độ Kiếp Phá Bình Cảnh: Nằm gọn cột cuối, bo tròn 30px) -->
-                    <div class="cultivation-col-action pill-action-section">
-                        <button id="btn-cultivate-action" onclick="openDoKiepModal(null); event.stopPropagation();" class="pill-breakthrough-btn" type="button" title="Độ Kiếp Phá Bình Cảnh">
-                            <i id="btn-cultivate-icon" class="fa-solid fa-bolt-lightning text-[10px]"></i>
-                            <span id="btn-cultivate-label">Độ Kiếp Phá Bình Cảnh</span>
+                    <!-- KHỐI 4: NÚT ĐỘT PHÁ CẢNH GIỚI (BREAKTHROUGH ACTION) -->
+                    <div class="cbar-action-block">
+                        <button id="btn-cultivate-action" onclick="attemptCultivationBreakthrough(); event.stopPropagation();" class="cbar-btn pill-breakthrough-btn is-meditating" type="button" title="Đột phá cảnh giới">
+                            <i id="btn-cultivate-icon" class="fa-solid fa-yin-yang text-xs mr-1.5"></i>
+                            <span id="btn-cultivate-label">Đang Tụ Khí...</span>
                         </button>
                         <!-- Fallback ẩn giữ tương thích với các selector cũ -->
                         <div style="display: none !important;" aria-hidden="true">
-                            <button id="btn-breakthrough" onclick="openDoKiepModal(null); event.stopPropagation();" class="hidden" type="button" aria-hidden="true"><span>Đột Phá</span></button>
+                            <button id="btn-breakthrough" onclick="attemptCultivationBreakthrough(); event.stopPropagation();" class="hidden" type="button" aria-hidden="true"><span>Đột Phá</span></button>
                         </div>
                     </div>
                 </div>
@@ -148,7 +179,18 @@
     =========================================== -->
 
     <!-- 2.1. TOP BAR PC: Identity / Resources / Utilities -->
-    <header id="top-bar" data-alias="global-top-resource-bar" class="global-topbar" role="banner" aria-label="Thanh tài nguyên và cân bằng đạo tâm">
+    <header id="global-top-resource-bar" data-alias="top-bar" class="global-topbar" role="banner" aria-label="Thanh tài nguyên và cân bằng đạo tâm">
+
+        <!-- CỤM 0: AVATAR VÀ THÔNG TIN BẢN THỂ (GÓC TRÁI TRÊN CÙNG) -->
+        <div class="topbar-avatar-cluster" onclick="typeof openProfileModal === 'function' ? openProfileModal() : null" role="button" tabindex="0" title="Chỉnh Sửa Bản Thể & Tài Khoản">
+            <div class="topbar-avatar-box">
+                <img id="ui-avatar" class="topbar-avatar-img" src="./assets/images/avatar_lone_cultivator.jpg" onerror="this.src='./assets/images/avatar_lone_cultivator.jpg'" alt="Tu Sĩ">
+            </div>
+            <div class="topbar-identity-info">
+                <span id="ui-player-name" class="topbar-player-name">Tiêu Dao Tử</span>
+                <span id="ui-realm-title" class="topbar-player-realm">Trúc Cơ - Sơ Kỳ</span>
+            </div>
+        </div>
 
         <!-- CỤM 1: TIỀN TỆ (LINH THẠCH & TIÊN NGỌC) -->
         <div class="topbar-cluster topbar-currency-cluster" aria-label="Tiền tệ tu tiên">
@@ -158,7 +200,7 @@
                     <i class="fa-solid fa-gem"></i>
                 </div>
                 <span id="top-spirit-stones" class="currency-value currency-value--gold">0</span>
-                <button type="button" class="btn-plus-badge btn-plus-badge--gold" onclick="if(typeof openFeature==='function') openFeature('the-gioi'); else alert('Mở Phường Thị / Nạp Linh Thạch');" title="Gia tăng Linh Thạch">
+                <button type="button" class="btn-plus-badge btn-plus-badge--gold cursor-pointer" onclick="navigateTo('page-world-market')" title="Mở Phường Thị để gia tăng Linh Thạch">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
@@ -169,7 +211,7 @@
                     <i class="fa-solid fa-diamond"></i>
                 </div>
                 <span id="top-immortal-jade" class="currency-value currency-value--purple">0</span>
-                <button type="button" class="btn-plus-badge btn-plus-badge--purple" onclick="if(typeof openFeature==='function') openFeature('the-gioi'); else alert('Mở Các Thương Hội / Nạp Tiên Ngọc');" title="Gia tăng Tiên Ngọc">
+                <button type="button" class="btn-plus-badge btn-plus-badge--purple cursor-pointer" onclick="navigateTo('page-world-auction')" title="Mở Đấu Giá Hội để giao dịch Tiên Ngọc">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
@@ -177,28 +219,6 @@
             <!-- Hidden compatibility tags for legacy scripts -->
             <span id="spirit-stones" style="display:none;">0</span>
             <span id="immortal-jade" style="display:none;">0</span>
-        </div>
-
-        <!-- CỤM 2: LINH KHÍ / TU VI (DẢI SÓNG NĂNG LƯỢNG TIẾN ĐỘ) -->
-        <div class="qi-pool-card" id="top-qi-card" title="Bể chứa linh khí tự nhiên & Tốc độ hấp thu (Click mở Động Phủ)" onclick="if(typeof openFeature==='function') openFeature('dong-phu');">
-            <!-- Lớp màu lấp đầy theo tiến độ cuộn sóng -->
-            <div id="top-qi-fill" class="qi-pool-progress-fill" style="width: 50%;"></div>
-
-            <!-- Nội dung chữ nổi phía trên -->
-            <div class="qi-pool-content">
-                <span class="qi-pool-title">
-                    <i class="fa-solid fa-wind"></i>
-                    <span>Linh Khí</span>
-                </span>
-                <div class="qi-pool-values">
-                    <span id="top-qi-text">0 / 100</span>
-                    <span id="top-qi-rate" class="qi-rate-pulse">(+5/s)</span>
-                </div>
-            </div>
-
-            <!-- Hidden fallback tags for legacy scripts -->
-            <span id="top-qi-val" style="display:none;">0 / 100</span>
-            <span id="spirit-pool" style="display:none;">0/100 (+5/s)</span>
         </div>
 
         <!-- CỤM 3: KHỐI CÂN BẰNG ĐẠO TÂM (CHÍNH / TÀ - SUN & MOON) -->
@@ -267,7 +287,7 @@
     <!-- ==========================================================
          MAIN SCREEN 3-COLUMN FLEXBOX: TRÁI - GIỮA - PHẢI (#main-content)
          ========================================================== -->
-    <div id="main-content" style="position: absolute; top: 70px; bottom: 130px; width: 100vw; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 30; pointer-events: none;">
+    <div id="main-content" style="position: absolute; top: 70px; bottom: 155px; width: 100vw; display: flex; justify-content: space-between; align-items: stretch; gap: 20px; padding: 0 20px; box-sizing: border-box; z-index: 10; pointer-events: none; overflow: hidden;">
 
         <!-- 1. CỘT TRÁI: BẢN NGUYÊN TU SĨ -->
         <div id="left-panel" class="left-panel-col" style="width: 340px; max-height: 100%; display: flex; flex-direction: column; z-index: 40; pointer-events: auto; flex-shrink: 0;">
@@ -275,52 +295,28 @@
         <button onclick="togglePanel('left-card-body', 'left-toggle-icon', this)" class="hud-island-toggle sidebar-title toggle-btn" aria-expanded="true" aria-controls="left-card-body" aria-label="Mở hoặc thu gọn bảng nhân vật">
             <span class="font-medium flex items-center gap-1.5 text-cyan-300 font-serif"><i class="fa-solid fa-scroll text-cyan-400 text-xs"></i> Bản Nguyên Tu Sĩ</span>
             <i id="left-toggle-icon" class="fa-solid fa-chevron-left text-[10px] text-slate-400 transition-transform"></i>
+            <svg class="origin-collapsed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2"/>
+                <path d="M5 20v-2a7 7 0 0 1 14 0v2M8 20h8"/>
+            </svg>
         </button>
 
                 <div id="left-card-body" class="sidebar-body sidebar-content text-xs p-0 mt-2">
-            <div class="character-profile-container">
+            <div class="character-profile-container origin-dashboard">
 
-                <!-- 1. HEADER: THÔNG TIN TỔNG QUAN -->
-                <header class="xianxia-glass-panel char-overview-header">
-                    <div class="char-identity">
-                        <div class="char-avatar-box cursor-pointer" onclick="typeof openProfileModal === 'function' ? openProfileModal() : null" role="button" tabindex="0" title="Chỉnh Sửa Bản Thể">
-                            <img id="ui-avatar" src="./assets/images/cultivator_avatar.png" onerror="this.src='./assets/images/avatar_lone_cultivator.jpg'" alt="Tu Sĩ">
-                        </div>
-                        <div class="char-identity-meta">
-                            <h2 class="char-meta-name">
-                                <span id="ui-player-name">Tiêu Dao Tử</span>
-                                <span id="ui-world-badge" class="badge-world">[HẠ GIỚI] Phàm Tục</span>
-                            </h2>
-                            <div class="char-meta-sub">
-                                <span id="ui-dao-tam" class="badge-dao-tam"><i class="fa-solid fa-yin-yang mr-1"></i> Chính Tà Cân Bằng</span>
-                                <span>•</span>
-                                <span id="ui-realm-title" class="char-realm-title text-amber-300 font-bold">Trúc Cơ - Sơ Kỳ</span>
-                            </div>
-                            <div class="char-meta-extra mt-0.5">
-                                <span id="ui-root-badge" class="text-amber-300 font-bold text-[10px]"><i class="fa-solid fa-bolt mr-1 text-amber-400"></i> Thiên Lôi Linh Căn</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="header-stats-badges">
-                        <div class="stat-capsule">
-                            <span class="stat-capsule-label"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Chiến Lực</span>
-                            <span id="ui-total-cp" class="stat-capsule-value text-emerald-400">98.450 CP</span>
-                        </div>
-                        <div class="stat-capsule">
-                            <span class="stat-capsule-label"><i class="fa-solid fa-hourglass-half text-amber-400 mr-1"></i> Thọ Nguyên</span>
-                            <span id="ui-lifespan-brief" class="stat-capsule-value text-amber-300">18 / 200 năm</span>
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn-breakthrough-glow" onclick="typeof openDoKiepModal === 'function' ? openDoKiepModal(null) : null" style="margin-top: 10px; width: 100%; padding: 8px 12px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(234, 179, 8, 0.25) 100%); border: 1px solid rgba(168, 85, 247, 0.5); border-radius: 8px; color: #fef08a; font-family: 'Cinzel', serif; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); transition: all 0.2s ease;">
-                        <i class="fa-solid fa-cloud-bolt text-amber-400 animate-pulse"></i>
-                        <span>ĐỘ KIẾP PHÁ BÌNH CẢNH</span>
-                    </button>
-                </header>
-
-                <!-- 2. BẢN NGUYÊN TU SĨ (CORE PROGRESS BARS - GRID 2 CỘT) -->
+                <!-- 1. BẢN NGUYÊN TU SĨ (CORE PROGRESS BARS & ĐỘ KIẾP) -->
                 <section class="xianxia-glass-panel">
+                    <div class="header-stats-badges" style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <div class="stat-capsule" style="flex: 1;">
+                            <span class="stat-capsule-label"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Chiến Lực</span>
+                            <span id="ui-total-cp" class="stat-capsule-value text-emerald-400 font-mono">98.450 CP</span>
+                        </div>
+                        <div class="stat-capsule" style="flex: 1;">
+                            <span class="stat-capsule-label"><i class="fa-solid fa-hourglass-half text-amber-400 mr-1"></i> Thọ Nguyên</span>
+                            <span id="ui-lifespan-brief" class="stat-capsule-value text-amber-300 font-mono">18 / 200 năm</span>
+                        </div>
+                    </div>
+
                     <h3 class="panel-header-title">
                         <span><i class="fa-solid fa-dna text-rose-500"></i> Bản Nguyên Tu Sĩ</span>
                         <span class="text-[10px] text-slate-400 font-normal">Căn Cơ Sinh Mệnh</span>
@@ -371,6 +367,12 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- NÚT ĐỘ KIẾP PHÁ BÌNH CẢNH (MỞ MODAL THIÊN KIẾP) -->
+                    <button id="btn-open-do-kiep" type="button" class="btn-breakthrough-glow" onclick="attemptCultivationBreakthrough()" style="margin-top: 14px; width: 100%; padding: 10px 14px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(234, 179, 8, 0.3) 100%); border: 1px solid rgba(234, 179, 8, 0.6); border-radius: 8px; color: #fef08a; font-family: 'Cinzel', serif; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 16px rgba(168, 85, 247, 0.35); transition: all 0.2s ease;">
+                        <i class="fa-solid fa-cloud-bolt text-amber-400 animate-pulse"></i>
+                        <span>ĐỘT PHÁ BÌNH CẢNH</span>
+                    </button>
                 </section>
 
                 <!-- 3. THUỘC TÍNH CHIẾN ĐẠO (COMBAT STATS - GRID 6 Ô) -->
@@ -518,7 +520,7 @@
                     <div id="tab-comp-pet" class="comp-tab-content active">
                         <div class="pet-showcase">
                             <div class="pet-avatar-frame">
-                                <img id="ui-pet-img" src="./assets/images/pet_fox.jpg" onerror="this.src='./assets/images/cultivator_avatar.png'" alt="Linh Thú">
+                                <img id="ui-pet-img" src="./assets/images/pet_fox.jpg" onerror="this.src='./assets/images/pet_fox.jpg'" alt="Linh Thú">
                             </div>
                             <div class="pet-details">
                                 <div class="flex items-center gap-2">
@@ -530,25 +532,25 @@
                         </div>
                     </div>
 
-                    <!-- TAB 2: PHÁP BẢO BẢN MỆNH (3 Ô TRỐNG) -->
+                    <!-- TAB 2: PHÁP BẢO BẢN MỆNH (3 Ô TRANG BỊ) -->
                     <div id="tab-comp-artifact" class="comp-tab-content">
                         <div class="artifacts-slots-grid">
-                            <div class="artifact-slot-card" onclick="alert('Mở danh sách Phi Kiếm để liên kết bản mệnh!')">
+                            <div class="artifact-slot-card cursor-pointer" onclick="navigateTo('page-artifact')" title="Bấm để mở Pháp Bảo Bản Mệnh">
                                 <i class="fa-solid fa-khanda text-amber-400"></i>
                                 <span class="artifact-slot-label">Phi Kiếm (Công)</span>
-                                <span class="text-[10px] text-emerald-400 font-mono">Trúc Kiếm Cổ Linh</span>
+                                <span id="ui-artifact-slot-sword" class="text-[10px] text-emerald-400 font-mono">Trúc Kiếm Cổ Linh</span>
                             </div>
 
-                            <div class="artifact-slot-card" onclick="alert('Mở danh sách Hộ Kính để liên kết bản mệnh!')">
+                            <div class="artifact-slot-card cursor-pointer" onclick="navigateTo('page-artifact')" title="Bấm để mở Pháp Bảo Bản Mệnh">
                                 <i class="fa-solid fa-shield-halved text-sky-400"></i>
                                 <span class="artifact-slot-label">Hộ Kính (Thủ)</span>
-                                <span class="text-[10px] text-slate-500 font-mono">[Chưa gắn]</span>
+                                <span id="ui-artifact-slot-mirror" class="text-[10px] text-slate-400 font-mono">[Bấm để gắn]</span>
                             </div>
 
-                            <div class="artifact-slot-card" onclick="alert('Mở danh sách Phù Châu để liên kết bản mệnh!')">
+                            <div class="artifact-slot-card cursor-pointer" onclick="navigateTo('page-artifact')" title="Bấm để mở Pháp Bảo Bản Mệnh">
                                 <i class="fa-solid fa-ring text-purple-400"></i>
                                 <span class="artifact-slot-label">Phù Châu (Pháp)</span>
-                                <span class="text-[10px] text-slate-500 font-mono">[Chưa gắn]</span>
+                                <span id="ui-artifact-slot-orb" class="text-[10px] text-slate-400 font-mono">[Bấm để gắn]</span>
                             </div>
                         </div>
                     </div>
@@ -572,8 +574,8 @@
     </div>
     <!-- HẾT CỘT 1: #left-panel -->
 
-    <!-- 2. CỘT GIỮA: NHÂN VẬT TU TIÊN -->
-    <div id="center-avatar" data-alias="center-panel" class="center-panel-col" style="margin: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 20; pointer-events: none;">
+    <!-- 2. CỘT GIỮA: NHÂN VẬT TU TIÊN CỐ ĐỊNH CHÍNH GIỮA TRUNG TÂM -->
+    <div id="center-avatar" data-alias="center-panel" class="center-panel-col" style="position: fixed; left: 50%; bottom: 155px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; z-index: 15; pointer-events: none;">
         <div id="player-avatar" class="cultivation-center cultivation-cluster" style="position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
 
             <!-- Text tu vi cộng thêm: Nằm ngay trên đầu nhân vật -->
@@ -611,17 +613,15 @@
             </div>
 
             <!-- Trạng thái thổ nạp linh khí -->
-            <div class="text-stone-400 bg-stone-950/80 px-4 py-1 rounded-full border border-stone-800 backdrop-blur shadow-lg text-[10px] tracking-widest uppercase relative z-10 -mt-2 mb-0 pointer-events-none">
-                Đang thổ nạp linh khí...
-            </div>
+            <!-- Đang thổ nạp linh khí đã tích hợp vào thanh tu vi -->
 
             <!-- Vùng chứa hạt Linh khí hấp thụ -->
             <div id="particle-absorb-container" style="position: absolute; width: 100%; height: 100%; pointer-events: none;"></div>
         </div>
     </div>
 
-    <!-- 3. CỘT PHẢI: THIÊN CƠ NHẬT KÝ & TRỢ LÝ TỰ ĐỘNG -->
-    <div id="right-panel" class="right-panel-col" style="width: 320px; max-height: 100%; display: flex !important; flex-direction: column; z-index: 40; pointer-events: auto; flex-shrink: 0;">
+    <!-- 3. CỘT PHẢI: THIÊN CƠ NHẬT KÝ & TRỢ LÝ TỰ ĐỘNG CỐ ĐỊNH BÊN PHẢI -->
+    <div id="right-panel" class="right-panel-col" style="position: fixed; top: 70px; right: 20px; width: 320px; max-height: calc(100vh - 235px); display: flex !important; flex-direction: column; align-items: flex-end; z-index: 40; pointer-events: auto; box-sizing: border-box;">
         <aside id="hud-right" class="pc-sidebar pc-sidebar--right sidebar-container right-sidebar" style="position: relative !important; top: auto !important; right: auto !important; width: 100% !important; max-height: 100% !important; overflow-y: auto !important; display: block !important;">
         <!-- NÚT MỞ THIÊN CƠ NHẬT KÝ (ICON CHAT) -->
         <div class="sidebar-header flex items-center justify-between p-2 border-b border-slate-700/50 bg-slate-900/50">
@@ -700,9 +700,7 @@
     
     <section id="page-inventory" data-alias="modal-nhan-vat" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -723,9 +721,7 @@
          ======================================================================== -->
     <section id="page-skills" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -746,9 +742,7 @@
          ======================================================================== -->
     <section id="page-root" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -769,9 +763,7 @@
          ======================================================================== -->
     <section id="page-artifact" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -792,9 +784,7 @@
          ======================================================================== -->
     <section id="page-pet" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -815,9 +805,7 @@
          ======================================================================== -->
     <section id="page-sect-quests" data-alias="modal-tong-mon" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -838,9 +826,7 @@
          ======================================================================== -->
     <section id="page-sect-rank" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -861,9 +847,7 @@
          ======================================================================== -->
     <section id="page-sect-shop" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -884,9 +868,7 @@
          ======================================================================== -->
     <section id="page-sect-array" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -907,9 +889,7 @@
          ======================================================================== -->
     <section id="page-world-market" data-alias="modal-the-gioi" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -930,9 +910,7 @@
          ======================================================================== -->
     <section id="page-world-auction" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -953,9 +931,7 @@
          ======================================================================== -->
     <section id="page-world-dungeon" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -976,9 +952,7 @@
          ======================================================================== -->
     <section id="page-world-arena" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -999,9 +973,7 @@
          ======================================================================== -->
     <section id="page-world-encounter" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
         
-    <button type="button" onclick="navigateTo('main-screen')" class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 flex items-center justify-center transition shadow-lg cursor-pointer" title="Đóng về Màn Hình Chính">
-        <i class="fa-solid fa-xmark text-lg"></i>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
 
         <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
             <div>
@@ -1066,19 +1038,12 @@
     <!-- ========================================================================
          2.6. MODAL TRẤN YÊU THÁP • AUTO-BATTLER SPA (DEMON SUPPRESSION TOWER)
          ======================================================================== -->
-    <div id="modal-tran-yeu-thap" data-alias="demon-tower-modal" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; background: #070308; overflow-y: auto;">
+    <div id="modal-tran-yeu-thap" data-alias="demon-tower-modal" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: #070308; overflow-y: auto;">
     <!-- Nút Đóng Trấn Tháp To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeDemonTowerModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG TRẤN THÁP</span>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="closeDemonTowerModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
 
         
-        <!-- Nút Đóng Trấn Tháp To và Rõ Ràng ở góc trên bên phải -->
-        <button type="button" class="btn-close-tower" onclick="closeDemonTowerModal()" aria-label="Đóng Trấn Tháp">
-            <i class="fa-solid fa-xmark text-lg"></i>
-            <span>✖ ĐÓNG TRẤN THÁP</span>
-        </button>
+        
 
         <!-- HEADER BAR TRẤN YÊU THÁP -->
         <header class="tower-header-bar">
@@ -1454,7 +1419,7 @@
     <!-- ==========================================
          CINEMATIC OVERLAY: ĐỘT PHÁ THẤT BẠI (DEMONIC BACKLASH)
     =========================================== -->
-    <div id="breakthrough-failure-modal" class="hidden fixed inset-0 z-[80] cinematic-overlay cinematic-overlay-failure select-none overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="bt-fail-title">
+    <div id="breakthrough-failure-modal" class="hidden fixed inset-0 z-[100050] cinematic-overlay cinematic-overlay-failure select-none overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="bt-fail-title">
         
         <!-- 2 Dải Viền Đen Điện Ảnh (Letterbox) -->
         <div class="cinematic-letterbox cinematic-letterbox-top"></div>
@@ -1464,56 +1429,140 @@
         <div class="cinematic-heavy-vignette"></div>
         <div class="cinematic-blood-mist"></div>
 
-        <!-- Nội Dung Trôi Lơ Lửng Ở Trung Tâm Toàn Màn Hình (Không Hộp Chứa) -->
+        <!-- Trận Đồ Ma Đạo Phản Phệ Nền (Demonic Array Watermark SVG) -->
+        <div class="demonic-array-bg" aria-hidden="true">
+            <svg class="demonic-array-svg" viewBox="0 0 600 600" fill="none">
+                <!-- Vòng tròn trấn áp ngoài cùng -->
+                <circle cx="300" cy="300" r="290" stroke="rgba(244,63,94,0.3)" stroke-width="2" stroke-dasharray="14 8" />
+                <circle cx="300" cy="300" r="275" stroke="rgba(251,113,133,0.18)" stroke-width="1.5" />
+                <circle cx="300" cy="300" r="255" stroke="rgba(244,63,94,0.35)" stroke-width="2" stroke-dasharray="6 10" />
+                <circle cx="300" cy="300" r="225" stroke="rgba(244,63,94,0.2)" stroke-width="1.5" />
+                
+                <!-- Bát Giác & Lục Giác Trận Pháp -->
+                <polygon points="300,45 520,445 80,445" stroke="rgba(244,63,94,0.28)" stroke-width="1.8" />
+                <polygon points="300,555 80,155 520,155" stroke="rgba(244,63,94,0.28)" stroke-width="1.8" />
+                <polygon points="300,60 540,300 300,540 60,300" stroke="rgba(251,113,133,0.22)" stroke-width="1.5" stroke-dasharray="8 6" />
+
+                <!-- Trấn Ấn Bát Phương (8 Hướng Phù Điêu) -->
+                <circle cx="300" cy="25" r="7" fill="rgba(244,63,94,0.4)" stroke="rgba(251,113,133,0.7)" />
+                <circle cx="300" cy="575" r="7" fill="rgba(244,63,94,0.4)" stroke="rgba(251,113,133,0.7)" />
+                <circle cx="25" cy="300" r="7" fill="rgba(244,63,94,0.4)" stroke="rgba(251,113,133,0.7)" />
+                <circle cx="575" cy="300" r="7" fill="rgba(244,63,94,0.4)" stroke="rgba(251,113,133,0.7)" />
+                <circle cx="105" cy="105" r="5" fill="rgba(244,63,94,0.35)" />
+                <circle cx="495" cy="105" r="5" fill="rgba(244,63,94,0.35)" />
+                <circle cx="105" cy="495" r="5" fill="rgba(244,63,94,0.35)" />
+                <circle cx="495" cy="495" r="5" fill="rgba(244,63,94,0.35)" />
+
+                <!-- Vòng lõi tâm linh -->
+                <circle cx="300" cy="300" r="140" stroke="rgba(244,63,94,0.25)" stroke-width="2" stroke-dasharray="8 8" />
+                <circle cx="300" cy="300" r="95" stroke="rgba(251,113,133,0.35)" stroke-width="2" />
+                
+                <!-- Tia Sét Phản Phệ Vỡ Nát Trung Tâm -->
+                <path d="M300,60 L280,210 L330,245 L250,380 L295,385 L225,480" stroke="rgba(254,205,211,0.5)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M300,160 L340,230 L310,270 L370,340" stroke="rgba(244,63,94,0.45)" stroke-width="2" stroke-linecap="round" />
+                <path d="M260,260 L210,310 L240,340 L180,410" stroke="rgba(244,63,94,0.45)" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+
+        <!-- BẢNG THÔNG BÁO THẤT BẠI TIÊN HIỆP ĐỈNH CAO (Grand Xianxia Backlash Board) -->
         <div class="cinematic-content cinematic-content-failure">
-            
-            <!-- Kicker Cảnh Báo -->
-            <div class="cinematic-kicker-crimson">
-                <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
-                <span>KHÍ HUYẾT NGHỊCH CHUYỂN • THIÊN ĐẠO BẤT DUNG</span>
-                <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
-            </div>
+            <section class="failure-board-card">
+                <!-- Phù Văn Trấn Sát Bốn Góc -->
+                <span class="fb-corner fb-corner-tl" aria-hidden="true"></span>
+                <span class="fb-corner fb-corner-tr" aria-hidden="true"></span>
+                <span class="fb-corner fb-corner-bl" aria-hidden="true"></span>
+                <span class="fb-corner fb-corner-br" aria-hidden="true"></span>
 
-            <!-- TIÊU ĐỀ CỰC TO ĐỎ THẪM NỨT NẺ -->
-            <h1 id="bt-fail-title" class="cinematic-title-crimson">
-                ĐỘT PHÁ THẤT BẠI!
-            </h1>
-
-            <!-- Cảnh Giới Cũ ✖ Cảnh Giới Bất Thành -->
-            <div class="cinematic-realm-transition cinematic-realm-transition-fail">
-                <span id="bt-fail-realm-current" class="cinematic-realm-current">Luyện Khí Kỳ Viên Mãn</span>
-                <span class="cinematic-realm-fail-x"><i class="fa-solid fa-xmark"></i></span>
-                <span id="bt-fail-realm-target" class="cinematic-realm-broken">Trúc Cơ Kỳ Sơ Kỳ</span>
-            </div>
-
-            <!-- Text "Đạo tâm chưa vững..." có màu xám tro tàn -->
-            <p id="bt-fail-flavor-desc" class="cinematic-desc-ash">
-                Đạo tâm chưa vững, chân nguyên hỗn loạn, thần hồn chấn động dữ dội trước lôi kiếp!
-            </p>
-
-            <!-- HẬU QUẢ PHẢN PHỆ: Liệt kê thẳng các dòng chữ lơ lửng trong sương mù đỏ (Không Box) -->
-            <div class="cinematic-punishment-list">
-                <div class="cinematic-punish-item">
-                    <span class="cinematic-punish-label"><i class="fa-solid fa-bolt-lightning text-rose-500 mr-2"></i>Tu Vi Tán Thoát:</span>
-                    <strong id="bt-fail-exp-lost" class="cinematic-punish-val-red">-25% Tu Vi Tích Lũy</strong>
+                <!-- Top Demonic Crest (Huy Hiệu Phản Phệ Tâm Ma) -->
+                <div class="failure-crest-wrap">
+                    <div class="failure-crest-gem">
+                        <i class="fa-solid fa-heart-crack failure-crest-icon"></i>
+                    </div>
                 </div>
 
-                <div class="cinematic-punish-item">
-                    <span class="cinematic-punish-label"><i class="fa-solid fa-heart-crack text-rose-500 mr-2"></i>Nhục Thân Thể Trạng:</span>
-                    <strong id="bt-fail-hp-status" class="cinematic-punish-val-amber">Trọng Thương (Khí Huyết Cạn Kiệt)</strong>
+                <!-- Kicker Cảnh Báo -->
+                <div class="cinematic-kicker-crimson">
+                    <span class="kicker-wing kicker-wing-left"></span>
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
+                    <span>KHÍ HUYẾT NGHỊCH CHUYỂN • THIÊN ĐẠO BẤT DUNG</span>
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
+                    <span class="kicker-wing kicker-wing-right"></span>
                 </div>
 
-                <div class="cinematic-punish-advice">
-                    <i class="fa-solid fa-skull-crossbones text-rose-400 mr-2"></i>
-                    <span>Kinh mạch bế tắc, cần vận công điều tức và phục dụng Hộ Tâm Đan trước khi tái chiến lôi kiếp!</span>
-                </div>
-            </div>
+                <!-- TIÊU ĐỀ ĐỘT PHÁ THẤT BẠI (Luôn hiển thị 1 dòng, uy nghiêm, sắc sảo) -->
+                <h1 id="bt-fail-title" class="cinematic-title-crimson">
+                    ĐỘT PHÁ THẤT BẠI!
+                </h1>
 
-            <!-- Nút Hành Động Cố Thủ Nguyên Thần -->
-            <button onclick="closeBreakthroughFailureModal()" class="cinematic-action-btn-crimson">
-                <span>CỐ THỦ NGUYÊN THẦN • TỊCH TĨNH ĐẢ TỌA</span>
-                <i class="fa-solid fa-yin-yang ml-2"></i>
-            </button>
+                <!-- Cảnh Giới Cũ ✖ Cảnh Giới Bất Thành (Thanh Huy Hiệu Cảnh Giới Sang Trọng) -->
+                <div class="cinematic-realm-transition cinematic-realm-transition-fail">
+                    <div class="realm-pill realm-pill-current">
+                        <i class="fa-solid fa-yin-yang text-amber-300 mr-1.5 text-xs"></i>
+                        <span id="bt-fail-realm-current" class="cinematic-realm-current">Luyện Khí Kỳ Viên Mãn</span>
+                    </div>
+                    <div class="realm-fail-divider">
+                        <i class="fa-solid fa-bolt-lightning text-rose-500 text-sm"></i>
+                        <i class="fa-solid fa-xmark text-rose-400 font-black text-xs"></i>
+                    </div>
+                    <div class="realm-pill realm-pill-broken">
+                        <i class="fa-solid fa-lock text-rose-400 mr-1.5 text-xs opacity-75"></i>
+                        <span id="bt-fail-realm-target" class="cinematic-realm-broken">Trúc Cơ Kỳ Sơ Kỳ</span>
+                    </div>
+                </div>
+
+                <!-- Nguyên Nhân & Cảm Quan ("Đạo tâm chưa vững...") -->
+                <div class="cinematic-desc-wrap">
+                    <p id="bt-fail-flavor-desc" class="cinematic-desc-ash">
+                        Đạo tâm chưa vững, chân nguyên hỗn loạn, thần hồn chấn động dữ dội trước lôi kiếp!
+                    </p>
+                </div>
+
+                <!-- HẬU QUẢ PHẢN PHỆ: Lưới Thẻ Trạng Thái Sang Trọng -->
+                <div class="cinematic-punishment-grid">
+                    <!-- Thẻ 1: Tu Vi Tán Thoát -->
+                    <div class="cinematic-punish-card">
+                        <div class="punish-card-icon-box punish-icon-bolt">
+                            <i class="fa-solid fa-bolt-lightning"></i>
+                        </div>
+                        <div class="punish-card-info">
+                            <div class="punish-card-header">
+                                <span class="cinematic-punish-label">Tu Vi Tán Thoát</span>
+                                <span class="punish-tag-badge punish-tag-danger">Tán chân nguyên</span>
+                            </div>
+                            <strong id="bt-fail-exp-lost" class="cinematic-punish-val-red">-25% Tu Vi Tích Lũy</strong>
+                        </div>
+                    </div>
+
+                    <!-- Thẻ 2: Nhục Thân Thể Trạng -->
+                    <div class="cinematic-punish-card">
+                        <div class="punish-card-icon-box punish-icon-heart">
+                            <i class="fa-solid fa-heart-crack"></i>
+                        </div>
+                        <div class="punish-card-info">
+                            <div class="punish-card-header">
+                                <span class="cinematic-punish-label">Nhục Thân Thể Trạng</span>
+                                <span class="punish-tag-badge punish-tag-warning">Khí huyết tổn thương</span>
+                            </div>
+                            <strong id="bt-fail-hp-status" class="cinematic-punish-val-amber">Trọng Thương (Khí Huyết Cạn Kiệt)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khung Cảnh Báo Vận Công Điều Tức -->
+                <div class="cinematic-punish-advice-box">
+                    <i class="fa-solid fa-skull-crossbones text-rose-400 text-sm"></i>
+                    <span>Kinh mạch bế tắc, cần vận công điều tức và phục dụng Hộ Tâm Đơn trước khi tái chiến lôi kiếp!</span>
+                </div>
+
+                <!-- Nút Hành Động Cố Thủ Nguyên Thần -->
+                <div class="failure-action-wrapper">
+                    <button onclick="closeBreakthroughFailureModal()" class="cinematic-action-btn-crimson">
+                        <span class="btn-shimmer" aria-hidden="true"></span>
+                        <span class="btn-text">CỐ THỦ NGUYÊN THẦN • TỊCH TĨNH ĐẢ TỌA</span>
+                        <i class="fa-solid fa-yin-yang ml-2.5 text-rose-200"></i>
+                    </button>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -1692,39 +1741,49 @@
          LỚP 3: SLIDE-OUT RIGHT DRAWER (1 CÚ NHẤP - 1 TRỌNG TÂM)
     =========================================== -->
     
-    <div id="modal-do-kiep" class="feature-popup tribulation-sky-modal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(5, 5, 10, 0.96); overflow-y: auto;">
-    <!-- Nút Đóng Độ Kiếp To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeDoKiepModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG ĐỘ KIẾP</span>
-    </button>
-
+    <div id="modal-do-kiep" class="feature-popup tribulation-sky-modal" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: rgba(5, 5, 10, 0.96); overflow-y: auto;">
         
-        <!-- Hiệu ứng chớp lóe sáng màn hình khi sét oanh kích -->
-        <div id="trib-sky-flash" class="trib-sky-flash"></div>
-
         <!-- Mây sấm cuộn trào & khí thế bức người -->
         <div class="trib-sky-clouds"></div>
 
-        <!-- Tầng sinh các tia sét giáng từ trên đỉnh màn hình xuống -->
-        <div id="trib-lightning-stage" class="trib-lightning-stage"></div>
+        <img data-trib-lightning-tier="0" src="./assets/images/tribulation_bolt_01_cyan.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="1" src="./assets/images/tribulation_bolt_02_gold.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="2" src="./assets/images/tribulation_bolt_03_violet.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="3" src="./assets/images/tribulation_bolt_04_jade.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="4" src="./assets/images/tribulation_bolt_05_ice.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="5" src="./assets/images/tribulation_bolt_06_flame.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="6" src="./assets/images/tribulation_bolt_07_void.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="7" src="./assets/images/tribulation_bolt_08_dual.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="8" src="./assets/images/tribulation_bolt_09_rune.png" alt="" hidden aria-hidden="true">
+        <img data-trib-lightning-tier="9" src="./assets/images/tribulation_bolt_10_primordial.png" alt="" hidden aria-hidden="true">
+        <img id="trib-scene-source" src="./assets/images/tribulation_sanctuary_scene.png" alt="" hidden aria-hidden="true">
+        <div class="trib-storm-omen" aria-hidden="true"></div>
+        <div class="trib-air-motes" aria-hidden="true"></div>
 
         <!-- Header trên cùng: Tên cảnh giới độ kiếp & Nút bỏ cuộc -->
         <header class="trib-top-header">
             <div class="trib-realm-badge">
-                <i class="fa-solid fa-cloud-bolt text-purple-400 animate-pulse"></i>
-                <span id="trib-target-realm-title">THIÊN KIẾP ĐỘT PHÁ • TRÚC CƠ KỲ</span>
-                <i class="fa-solid fa-cloud-bolt text-purple-400 animate-pulse"></i>
+                <i class="fa-solid fa-cloud-bolt" aria-hidden="true"></i>
+                <span><small>THIÊN KIẾP ĐỘT PHÁ</small><strong id="trib-target-realm-title">TRÚC CƠ</strong></span>
             </div>
             
-            <button type="button" onclick="closeDoKiepModal(true)" class="trib-abandon-btn" title="Bỏ Cuộc (Tẩu Hỏa Nhập Ma)">
+            <button type="button" onclick="closeDoKiepModal(true)" class="trib-abandon-btn" title="Rời trận; đang giao chiến sẽ mất Tu Vi">
                 <i class="fa-solid fa-skull-crossbones mr-1.5 text-rose-400"></i>
-                <span>Bỏ Cuộc (Tẩu Hỏa Nhập Ma)</span>
+                <span>Rời trận</span>
             </button>
         </header>
 
+        <!-- CHỈ BÁO SỐ ĐẠO LÔI KIẾP — Ở BẦU TRỜI TRÊN ĐỈNH ĐẦU NHÂN VẬT, NẰM TRÊN LỚP TIA SÉT -->
+        <aside class="trib-encounter-card" id="trib-encounter-card" aria-label="Tình hình thiên kiếp">
+            <span class="trib-card-eyebrow">THIÊN ĐẠO GIÁNG LÂM</span>
+            <strong id="trib-encounter-target">Lôi kiếp đại cảnh giới</strong>
+            <div id="trib-strike-pips" class="trib-strike-pips" aria-label="Các đạo lôi kiếp"></div>
+            <p id="trib-action-hint">Bắt đầu thiên kiếp, rồi dùng hộ trận và pháp bảo trước những đạo lôi nguy hiểm.</p>
+        </aside>
+
         <!-- KHỐI TRUNG TÂM TÁI CHẾ TỪ man_hinh_chinh_idle_demo.html -->
         <div class="cultivation-center tribulation-center" id="tribulation-center">
+            <div class="trib-sanctuary-dome" aria-hidden="true"></div>
             
             <!-- Hào quang chớp giật liên tục (Flash animation) sau lưng nhân vật -->
             <div class="tribulation-back-aura" id="tribulation-back-aura"></div>
@@ -1732,12 +1791,31 @@
             <!-- Anchor định vị số sát thương bay lên -->
             <div id="trib-damage-anchor" class="trib-damage-anchor"></div>
 
+
             <!-- Nhân vật lơ lửng, nhấp nhô tĩnh tọa -->
             <div class="cultivator-levitate-wrap trib-levitate-wrap" id="tribulation-avatar-wrap">
                 <!-- Điểm Đan Điền hấp thụ lôi lực -->
                 <div class="dantian-core-point trib-dantian-point" id="trib-dantian-point"></div>
                 <!-- Avatar nhân vật -->
                 <img id="tribulation-avatar-img" src="./assets/images/image_11.png" alt="Tu Sĩ Độ Kiếp" class="cultivator-avatar-img trib-avatar-img" onerror="this.src='./assets/images/nu_tu_trong_suot.png'">
+
+                <!-- THANH MÁU HỘ THỂ CHÂN KHÍ — ĐẶT TRỰC TIẾP DƯỚI MÔNG NHÂN VẬT -->
+                <div class="trib-shield-box" id="trib-shield-box" aria-label="Hộ Thể Chân Khí">
+                    <div class="trib-shield-header" style="display: none;">
+                        <span class="trib-shield-label">
+                            <i class="fa-solid fa-shield-halved text-purple-400 mr-1.5"></i>
+                            <span>HỘ THỂ CHÂN KHÍ</span>
+                        </span>
+                    </div>
+                    <div class="trib-shield-track">
+                        <div id="trib-shield-bar" class="trib-shield-fill" style="width: 100%;"></div>
+                        <span id="trib-shield-num" class="trib-shield-value">12,500 / 12,500</span>
+                    </div>
+                    <div class="trib-wave-indicator" aria-live="polite" style="display: none;">
+                        <span id="trib-wave-badge" class="trib-wave-badge">Đạo Lôi Kiếp: 0 / 3</span>
+                        <span id="trib-state-desc" class="trib-state-desc">Lôi vân tụ hội, áp lực ngập tràn...</span>
+                    </div>
+                </div>
             </div>
 
             <!-- TRẬN PHÁP PHÒNG NGỰ 3D ÉP DẸT 65 ĐỘ (TÍM HUYỀN BÍ / ĐỎ THẪM) -->
@@ -1778,52 +1856,840 @@
                 </div>
             </div>
 
-            <!-- THANH "HỘ THỂ CHÂN KHÍ" (HP BAR) THẬT TO NGAY DƯỚI NHÂN VẬT -->
-            <div class="trib-shield-box">
-                <div class="trib-shield-header">
-                    <span class="trib-shield-label">
-                        <i class="fa-solid fa-shield-halved text-purple-400 mr-1.5"></i>
-                        <span>HỘ THỂ CHÂN KHÍ</span>
-                    </span>
-                    <span id="trib-shield-num" class="trib-shield-value">12,500 / 12,500</span>
-                </div>
-                <div class="trib-shield-track">
-                    <div id="trib-shield-bar" class="trib-shield-fill" style="width: 100%;"></div>
-                </div>
-                <div class="trib-wave-indicator">
-                    <span id="trib-wave-badge" class="trib-wave-badge">Đạo Lôi Kiếp: 0 / 3</span>
-                    <span id="trib-state-desc" class="trib-state-desc">Lôi vân tụ hội, áp lực ngập tràn...</span>
-                </div>
-            </div>
-
             <!-- BẢNG NÚT HÀNH ĐỘNG ĐỘ KIẾP -->
-            <div class="trib-control-buttons">
-                <!-- Nút Tế Pháp Bảo Chống Đỡ Lôi Kiếp -->
-                <button type="button" id="btn-te-phap-bao" class="btn-trib-artifact" onclick="defendWithArtifact(event)">
-                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                    <span>TẾ PHÁP BẢO CHỐNG ĐỠ LÔI KIẾP</span>
-                </button>
+            <div class="trib-bottom-controls-wrap">
+                <!-- Nút Đón Thiên Kiếp riêng biệt ở giữa, nằm trên thanh chức năng -->
+                <div class="trib-primary-action-slot" id="trib-primary-action-slot">
+                    <button type="button" id="btn-start-dokiep" class="btn-trib-start" onclick="startDoKiepStrikes()">
+                        <i class="fa-solid fa-bolt-lightning" aria-hidden="true"></i>
+                        <span>Nghênh thiên kiếp</span>
+                    </button>
+                    <button type="button" id="btn-trib-next" class="btn-trib-next" onclick="advanceTribulationStrike()" hidden disabled>
+                        <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+                        <span>Đón đạo lôi tiếp</span>
+                    </button>
+                </div>
 
-                <!-- Nút Nghênh Đón Lôi Kiếp (Bắt đầu oanh kích) -->
-                <button type="button" id="btn-start-dokiep" class="btn-trib-start" onclick="startDoKiepStrikes()">
-                    <i class="fa-solid fa-bolt-lightning text-yellow-300 animate-pulse"></i>
-                    <span>⚡ NGHÊNH ĐÓN THIÊN KIẾP ⚡</span>
-                </button>
+                <!-- Thanh chức năng phụ trợ bên dưới -->
+                <div class="trib-control-buttons" id="trib-aux-actions-bar">
+                    <!-- Nút Tế Pháp Bảo Chống Đỡ Lôi Kiếp -->
+                    <button type="button" id="btn-te-phap-bao" class="btn-trib-artifact" onclick="defendWithArtifact(event)">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                        <span>Tế pháp bảo</span>
+                    </button>
+                    <button type="button" id="btn-trib-recover" onclick="recoverTribulationShield()" disabled>
+                        <i class="fa-solid fa-seedling" aria-hidden="true"></i><span>Hồi nguyên <small id="trib-recover-count">3/3</small></span>
+                    </button>
+                    <button type="button" id="btn-trib-ward" onclick="raiseTribulationWard()" disabled>
+                        <i class="fa-solid fa-shield-heart" aria-hidden="true"></i><span>Hộ trận <small id="trib-ward-count">1/1</small></span>
+                    </button>
+                    <button type="button" id="btn-trib-auto" onclick="toggleTribulationAuto()" aria-pressed="true">
+                        <i class="fa-solid fa-rotate" aria-hidden="true"></i><span>Tự động: Bật</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ========================================================================
-         TIÊN MÔN GIA VIÊN • ĐỘNG PHỦ (ISOLATED SPA MODULE)
+         MODAL OVERLAY: TIÊN MÔN GIA VIÊN • ĐỘNG PHỦ (#modal-gia-vien)
+         Khôi phục và tái thiết kế theo chuẩn tien_mon_gia_vien_demo.html
          ======================================================================== -->
-    <div id="modal-gia-vien" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; background: var(--bg-deep, #06090e); overflow-y: auto;">
-    <!-- Nút Đóng Gia Viên To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeGiaVienModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG GIA VIÊN</span>
-    </button>
+    <style id="style-modal-gia-vien">
+/* ==========================================================================
+   7. TIÊN MÔN GIA VIÊN • ĐỘNG PHỦ (#modal-gia-vien) — ISOLATED SPA MODULE
+   Khôi phục 100% card glassmorphism theo chuẩn tien_mon_gia_vien_demo.html
+   ========================================================================== */
+#modal-gia-vien {
+    --bg-deep: #06090e;
+    --bg-panel: rgba(13, 20, 32, 0.78);
+    --bg-card: rgba(18, 28, 45, 0.75);
+    --border-glass: rgba(56, 189, 248, 0.22);
+    --border-gold: rgba(234, 179, 8, 0.35);
+    --gold-light: #fef08a;
+    --gold-base: #eab308;
+    --cyan-glow: #38bdf8;
+    --emerald-glow: #10b981;
+    --purple-glow: #a855f7;
+    --rose-glow: #f43f5e;
+    --amber-glow: #f59e0b;
 
-        
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0;
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 10000 !important;
+    background: #06090e !important;
+    background-image: 
+        radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(234, 179, 8, 0.04) 0%, transparent 60%),
+        linear-gradient(180deg, #06090e 0%, #0b1320 100%) !important;
+    color: #f1f5f9 !important;
+    font-family: 'Noto Serif', serif, -apple-system, sans-serif !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+#modal-gia-vien.active,
+#modal-gia-vien.is-open,
+#modal-gia-vien.is-active,
+#modal-gia-vien.flex {
+    display: flex !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}
+
+#modal-gia-vien::-webkit-scrollbar { width: 6px; height: 6px; }
+#modal-gia-vien::-webkit-scrollbar-track { background: rgba(10, 16, 26, 0.6); }
+#modal-gia-vien::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.35); border-radius: 4px; }
+#modal-gia-vien::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.6); }
+
+/* HEADER BAR GIA VIÊN */
+#modal-gia-vien .estate-header-bar {
+    background: rgba(11, 19, 32, 0.94) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.22) !important;
+    padding: 0.75rem 1.5rem !important;
+    padding-right: 140px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+#modal-gia-vien .estate-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+#modal-gia-vien .estate-brand-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(16, 185, 129, 0.25)) !important;
+    border: 1.5px solid #38bdf8 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #bae6fd !important;
+    font-size: 1.4rem !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3) !important;
+}
+
+#modal-gia-vien .estate-brand-title {
+    font-family: 'Cinzel', serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 !important;
+}
+
+#modal-gia-vien .estate-brand-sub {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    font-family: 'Noto Serif', serif !important;
+    letter-spacing: normal !important;
+    margin: 0 !important;
+}
+
+#modal-gia-vien .player-vault-shelf {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    flex-wrap: wrap !important;
+}
+
+#modal-gia-vien .vault-pill {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 999px !important;
+    font-size: 0.78rem !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+#modal-gia-vien .vault-pill span { color: #94a3b8 !important; }
+#modal-gia-vien .vault-pill b { font-family: 'JetBrains Mono', monospace !important; font-weight: 700 !important; }
+
+#modal-gia-vien .vault-pill--gold { border-color: rgba(234, 179, 8, 0.4) !important; color: #fef08a !important; }
+#modal-gia-vien .vault-pill--gold b { color: #facc15 !important; }
+#modal-gia-vien .vault-pill--tuvi { border-color: rgba(56, 189, 248, 0.4) !important; color: #bae6fd !important; }
+#modal-gia-vien .vault-pill--tuvi b { color: #38bdf8 !important; }
+#modal-gia-vien .vault-pill--herb { border-color: rgba(16, 185, 129, 0.4) !important; color: #a7f3d0 !important; }
+#modal-gia-vien .vault-pill--herb b { color: #10b981 !important; }
+#modal-gia-vien .vault-pill--ore { border-color: rgba(168, 85, 247, 0.4) !important; color: #e9d5ff !important; }
+#modal-gia-vien .vault-pill--ore b { color: #c084fc !important; }
+
+/* VIEWPORT & LORE BANNER */
+#modal-gia-vien .estate-viewport {
+    flex: 1 !important;
+    padding: 1.5rem 2rem 6rem 2rem !important;
+    max-width: 1560px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    box-sizing: border-box !important;
+}
+
+#modal-gia-vien .estate-lore-banner {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.08)) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    border-radius: 1rem !important;
+    padding: 0.85rem 1.25rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+}
+
+#modal-gia-vien .lore-banner-text {
+    font-size: 0.8rem !important;
+    color: #cbd5e1 !important;
+    line-height: 1.5 !important;
+}
+#modal-gia-vien .lore-banner-text b { color: #f8fafc !important; }
+
+#modal-gia-vien .auto-status-indicator {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    background: rgba(15, 23, 42, 0.7) !important;
+    border: 1px solid #10b981 !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 999px !important;
+    font-size: 0.74rem !important;
+    color: #a7f3d0 !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+    white-space: nowrap !important;
+}
+#modal-gia-vien .auto-status-indicator.is-disabled {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   1. GRID 4 KHỐI TÀI NGUYÊN (ESTATE NODES GRID) — BẮT BUỘC 4 CỘT
+   ========================================================================== */
+#modal-gia-vien .estate-nodes-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.25rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 1100px) {
+    #modal-gia-vien .estate-nodes-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+@media (max-width: 650px) {
+    #modal-gia-vien .estate-nodes-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ==========================================================================
+   2. KHÔI PHỤC CSS CARD (.node-card) SANG TRỌNG KÍNH MỜ
+   ========================================================================== */
+#modal-gia-vien .node-card {
+    background: rgba(18, 28, 45, 0.75) !important;
+    border: 1px solid rgba(56, 189, 248, 0.22) !important;
+    border-radius: 1.25rem !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    position: relative !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#modal-gia-vien .node-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+}
+
+#modal-gia-vien .node-card.is-full {
+    border-color: rgba(244, 63, 94, 0.6) !important;
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.25) !important;
+}
+
+/* ==========================================================================
+   3. HEADER CARD: ICON PHÁT SÁNG & HUY HIỆU CẤP ĐỘ
+   ========================================================================== */
+#modal-gia-vien .node-card-header {
+    padding: 1rem 1.25rem 0.75rem 1.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+#modal-gia-vien .node-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+#modal-gia-vien .node-icon-frame {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.5rem !important;
+    position: relative !important;
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6) !important;
+    flex-shrink: 0 !important;
+}
+
+#modal-gia-vien .node-icon-frame--tuvi {
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1.5px solid #38bdf8 !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.35) !important;
+}
+
+#modal-gia-vien .node-icon-frame--herb {
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1.5px solid #10b981 !important;
+    color: #10b981 !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.35) !important;
+}
+
+#modal-gia-vien .node-icon-frame--ore {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1.5px solid #a855f7 !important;
+    color: #c084fc !important;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.35) !important;
+}
+
+#modal-gia-vien .node-icon-frame--gold {
+    background: radial-gradient(circle, rgba(234, 179, 8, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1.5px solid #eab308 !important;
+    color: #facc15 !important;
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.35) !important;
+}
+
+#modal-gia-vien .node-title-group h3 {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    font-family: 'Cinzel', serif !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+}
+
+#modal-gia-vien .node-title-group span {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+#modal-gia-vien .node-level-badge {
+    padding: 0.2rem 0.55rem !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 700 !important;
+    background: rgba(234, 179, 8, 0.15) !important;
+    border: 1px solid rgba(234, 179, 8, 0.4) !important;
+    color: #fef08a !important;
+}
+
+/* ==========================================================================
+   4. BODY CARD: TIẾN ĐỘ BỒN CHỨA & PHÁI CỬ ĐẠO LỮ
+   ========================================================================== */
+#modal-gia-vien .node-card-body {
+    padding: 1rem 1.25rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    flex: 1 !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+#modal-gia-vien .storage-status-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+}
+
+#modal-gia-vien .storage-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    font-size: 0.75rem !important;
+}
+
+#modal-gia-vien .storage-label {
+    color: #94a3b8 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+#modal-gia-vien .storage-numbers {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 700 !important;
+    color: #f1f5f9 !important;
+}
+
+#modal-gia-vien .storage-numbers.is-maxed {
+    color: #fb7185 !important;
+    animation: pulseText 1.5s infinite alternate !important;
+}
+
+@keyframes pulseText {
+    0% { opacity: 0.8; }
+    100% { opacity: 1; text-shadow: 0 0 10px rgba(251, 113, 133, 0.8); }
+}
+
+#modal-gia-vien .storage-track {
+    width: 100% !important;
+    height: 10px !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    position: relative !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6) !important;
+}
+
+#modal-gia-vien .storage-fill {
+    height: 100% !important;
+    border-radius: 999px !important;
+    transition: width 0.35s ease !important;
+    position: relative !important;
+}
+
+#modal-gia-vien .storage-fill--tuvi {
+    background: linear-gradient(90deg, #0284c7, #38bdf8) !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
+}
+
+#modal-gia-vien .storage-fill--herb {
+    background: linear-gradient(90deg, #059669, #10b981) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5) !important;
+}
+
+#modal-gia-vien .storage-fill--ore {
+    background: linear-gradient(90deg, #7c3aed, #a855f7) !important;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5) !important;
+}
+
+#modal-gia-vien .storage-fill--gold {
+    background: linear-gradient(90deg, #d97706, #eab308) !important;
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.5) !important;
+}
+
+#modal-gia-vien .rate-and-dispatch-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.75rem !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 0.65rem 0.85rem !important;
+}
+
+#modal-gia-vien .production-rate-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.15rem !important;
+}
+
+#modal-gia-vien .rate-title {
+    font-size: 0.7rem !important;
+    color: #94a3b8 !important;
+}
+
+#modal-gia-vien .rate-value {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    color: #38bdf8 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+}
+
+#modal-gia-vien .rate-bonus-tag {
+    font-size: 0.65rem !important;
+    color: #facc15 !important;
+    background: rgba(234, 179, 8, 0.15) !important;
+    padding: 0.05rem 0.3rem !important;
+    border-radius: 4px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+#modal-gia-vien .dispatch-slot-box {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    cursor: pointer !important;
+    padding: 0.3rem 0.5rem !important;
+    border-radius: 10px !important;
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px dashed rgba(56, 189, 248, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+#modal-gia-vien .dispatch-slot-box:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.6) !important;
+}
+
+#modal-gia-vien .dispatch-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    object-fit: cover !important;
+    border: 1.5px solid rgba(234, 179, 8, 0.5) !important;
+}
+
+#modal-gia-vien .dispatch-placeholder {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px dashed rgba(148, 163, 184, 0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #64748b !important;
+    font-size: 0.85rem !important;
+}
+
+#modal-gia-vien .dispatch-label-col {
+    display: flex !important;
+    flex-direction: column !important;
+    text-align: left !important;
+}
+
+#modal-gia-vien .dispatch-label-col span:first-child {
+    font-size: 0.65rem !important;
+    color: #94a3b8 !important;
+}
+
+#modal-gia-vien .dispatch-label-col span:last-child {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    max-width: 90px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ==========================================================================
+   5. FOOTER CARD: 2 NÚT HÀNH ĐỘNG GRADIENT (THU NẠP & NÂNG CẤP)
+   ========================================================================== */
+#modal-gia-vien .node-card-footer {
+    padding: 0.85rem 1.25rem 1.25rem 1.25rem !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    position: relative !important;
+    z-index: 2 !important;
+    background: rgba(11, 19, 32, 0.4) !important;
+}
+
+#modal-gia-vien .btn-node-action {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+    padding: 0.55rem 0.6rem !important;
+    border-radius: 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid transparent !important;
+    font-family: inherit !important;
+}
+
+#modal-gia-vien .btn-claim {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.6)) !important;
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    color: #ecfdf5 !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+}
+
+#modal-gia-vien .btn-claim:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(5, 150, 105, 0.8)) !important;
+    transform: translateY(-1.5px) !important;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
+}
+
+#modal-gia-vien .btn-claim:disabled {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border-color: rgba(71, 85, 105, 0.3) !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+#modal-gia-vien .btn-upgrade {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(234, 179, 8, 0.35) !important;
+    color: #fef08a !important;
+}
+
+#modal-gia-vien .btn-upgrade:hover:not(:disabled) {
+    background: rgba(234, 179, 8, 0.18) !important;
+    border-color: rgba(234, 179, 8, 0.7) !important;
+    color: #ffffff !important;
+    transform: translateY(-1.5px) !important;
+}
+
+#modal-gia-vien .btn-upgrade:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* ==========================================================================
+   6. FOOTER TOÀN CỤC & NÚT THU THẬP TẤT CẢ
+   ========================================================================== */
+#modal-gia-vien .estate-bottom-control-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: rgba(11, 19, 32, 0.95) !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.22) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    padding: 0.85rem 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1.5rem !important;
+    z-index: 60 !important;
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.7) !important;
+}
+
+#modal-gia-vien .control-summary-text {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    font-size: 0.85rem !important;
+    color: #cbd5e1 !important;
+}
+
+#modal-gia-vien .btn-claim-all-huge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border: 1px solid #34d399 !important;
+    color: #ffffff !important;
+    padding: 0.85rem 2.2rem !important;
+    border-radius: 1rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    font-family: 'Cinzel', serif !important;
+    letter-spacing: 0.5px !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.6rem !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#modal-gia-vien .btn-claim-all-huge:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.65), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+#modal-gia-vien .btn-claim-all-huge:disabled {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* ==========================================================================
+   7. DISPATCH MODAL & TOAST
+   ========================================================================== */
+#modal-gia-vien .dispatch-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 100 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1.25rem !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.25s ease !important;
+}
+
+#modal-gia-vien .dispatch-modal-backdrop.is-open,
+#modal-gia-vien .dispatch-modal-backdrop.is-active,
+#modal-gia-vien .dispatch-modal-backdrop.active {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+#modal-gia-vien .dispatch-modal-dialog {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+    border-radius: 1.25rem !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9) !important;
+    padding: 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.2rem !important;
+    transform: scale(0.95) !important;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#modal-gia-vien .dispatch-modal-backdrop.is-open .dispatch-modal-dialog {
+    transform: scale(1) !important;
+}
+
+#modal-gia-vien .dispatch-modal-dialog .modal-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-bottom: 0.75rem !important;
+}
+
+#modal-gia-vien .dispatch-modal-dialog .modal-title {
+    font-family: 'Cinzel', serif !important;
+    font-size: 1.1rem !important;
+    color: #fef08a !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+#modal-gia-vien .dispatch-modal-dialog .btn-close-modal,
+#modal-gia-vien .dispatch-modal-dialog .btn-close-dispatch {
+    background: none !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 1.25rem !important;
+    cursor: pointer !important;
+    position: static !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+#modal-gia-vien .companions-select-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    padding-right: 0.25rem !important;
+}
+
+#modal-gia-vien .companion-select-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 0.65rem 0.85rem !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+#modal-gia-vien .companion-select-item:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+#modal-gia-vien .toast-bubble {
+    position: fixed !important;
+    bottom: 2rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(20px) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid #10b981 !important;
+    color: #ecfdf5 !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 999px !important;
+    font-size: 0.85rem !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.3) !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 200 !important;
+}
+
+#modal-gia-vien .toast-bubble.is-active {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+</style>
+    <div id="modal-gia-vien" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: var(--bg-deep, #06090e); overflow-y: auto;">
+        <!-- Nút Đóng Gia Viên Chuẩn Toàn Hệ Thống -->
+        <button type="button" class="btn-close-modal" onclick="closeGiaVienModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
+
         <!-- HEADER BAR GIA VIÊN & KHO TÀI SẢN BẢN THÂN -->
         <header class="estate-header-bar">
             <div class="estate-brand">
@@ -1836,40 +2702,33 @@
                 </div>
             </div>
 
-            <!-- Kho báu người chơi -->
+            <!-- Kho báu người chơi (4 Tài Nguyên Chuẩn) -->
             <div class="player-vault-shelf">
                 <div class="vault-pill vault-pill--gold">
                     <i class="fa-solid fa-coins"></i>
                     <span>Linh Thạch:</span>
-                    <b id="player-linh-thach">25,000</b>
+                    <b id="player-linh-thach">0</b>
                 </div>
                 <div class="vault-pill vault-pill--tuvi">
                     <i class="fa-solid fa-bolt"></i>
                     <span>Tu Vi:</span>
-                    <b id="player-tu-vi">128,500</b>
+                    <b id="player-tu-vi">0</b>
                 </div>
                 <div class="vault-pill vault-pill--herb">
                     <i class="fa-solid fa-seedling"></i>
                     <span>Linh Thảo:</span>
-                    <b id="player-herbs">14</b>
+                    <b id="player-herbs">0</b>
                 </div>
                 <div class="vault-pill vault-pill--ore">
                     <i class="fa-solid fa-gem"></i>
                     <span>Khoáng Thạch:</span>
-                    <b id="player-ores">8</b>
+                    <b id="player-ores">0</b>
                 </div>
             </div>
-
-            <!-- Nút đóng Gia Viên to và rõ ràng ở góc trên bên phải -->
-            <button type="button" class="btn-close-estate" onclick="closeGiaVienModal()" title="Thoát về Màn Hình Tu Tiên">
-                <i class="fa-solid fa-xmark text-sm"></i>
-                <span>✖ ĐÓNG GIA VIÊN</span>
-            </button>
         </header>
 
         <!-- MAIN CONTENT: VIEWPORT GIA VIÊN -->
         <main class="estate-viewport">
-
             <!-- Dẫn nhập tiên gia & Trạng thái Auto -->
             <section class="estate-lore-banner">
                 <div class="lore-banner-text">
@@ -1878,13 +2737,259 @@
                 </div>
                 <div class="auto-status-indicator" id="auto-claim-indicator">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span id="auto-claim-text">Liễu Như Yên: Chưa đạt Hảo Cảm Cấp 5</span>
+                    <span id="auto-claim-text">Liễu Như Yên: Cần Hảo Cảm Cấp 5 để mở Auto</span>
                 </div>
             </section>
 
-            <!-- CSS GRID 4 NODES LINH TRẬN TÀI NGUYÊN -->
+            <!-- CSS GRID 4 NODES LINH TRẬN TÀI NGUYÊN (4 CARD THIẾT KẾ KÍNH MỜ SANG TRỌNG) -->
             <section class="estate-nodes-grid" id="estate-nodes-container">
-                <!-- 4 Cards sẽ được render bằng JavaScript -->
+<!-- CARD: Linh Căn Mộc (Tụ Linh Trận) -->
+                <article class="node-card " id="card-node_spirit_tree">
+                    <div class="node-card-header">
+                        <div class="node-meta">
+                            <div class="node-icon-frame node-icon-frame--tuvi">
+                                <i class="fa-solid fa-tree"></i>
+                            </div>
+                            <div class="node-title-group">
+                                <h3>Linh Căn Mộc</h3>
+                                <span>Tụ Linh Trận</span>
+                            </div>
+                        </div>
+                        <span class="node-level-badge" id="badge-node_spirit_tree">Cấp 1</span>
+                    </div>
+
+                    <div class="node-card-body">
+                        <!-- KHU VỰC SỨC CHỨA (STORAGE) & TIẾN ĐỘ -->
+                        <div class="storage-status-block">
+                            <div class="storage-header">
+                                <span class="storage-label">
+                                    <i class="fa-solid fa-box-archive"></i> Bồn Chứa:
+                                </span>
+                                <span class="storage-numbers " id="storage-txt-node_spirit_tree">
+                                    180 / 500 điểm
+                                    
+                                </span>
+                            </div>
+                            <div class="storage-track">
+                                <div class="storage-fill storage-fill--tuvi " id="storage-bar-node_spirit_tree" style="width: 36%"></div>
+                            </div>
+                        </div>
+
+                        <!-- TỐC ĐỘ SẢN XUẤT & PHÁI CỬ ĐẠO LỮ -->
+                        <div class="rate-and-dispatch-row">
+                            <div class="production-rate-info">
+                                <span class="rate-title">Sản lượng:</span>
+                                <span class="rate-value" id="rate-txt-node_spirit_tree">
+                                    +180 / phút
+                                    <span class="rate-bonus-tag">+50%</span>
+                                </span>
+                            </div>
+
+                            <div class="dispatch-slot-box" id="dispatch-box-node_spirit_tree" onclick="openDispatchModal('node_spirit_tree')" title="Bấm để cử Đạo Lữ tọa trấn">
+                                <img src="./assets/images/pet_fox.jpg" alt="Liễu Như Yên" class="dispatch-avatar" onerror="this.src='./assets/images/nu_tu_trong_suot.png'">
+                                <div class="dispatch-label-col">
+                                    <span>Phái cử</span>
+                                    <span>Liễu Như Yên</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="node-card-footer">
+                        <button type="button" class="btn-node-action btn-claim cursor-pointer" onclick="claimSingleNode('node_spirit_tree')">
+                            <i class="fa-solid fa-hand-holding"></i> Thu Nạp
+                        </button>
+                        <button type="button" class="btn-node-action btn-upgrade cursor-pointer" onclick="upgradeNode('node_spirit_tree')" title="Cần 1.500 Linh Thạch">
+                            <i class="fa-solid fa-arrow-up-right-dots"></i> Cấp 2 (1.500)
+                        </button>
+                    </div>
+                </article>
+
+                <!-- CARD: Dược Tuyền (Suối Linh Dịch) -->
+                <article class="node-card " id="card-node_herb_spring">
+                    <div class="node-card-header">
+                        <div class="node-meta">
+                            <div class="node-icon-frame node-icon-frame--herb">
+                                <i class="fa-solid fa-faucet-drip"></i>
+                            </div>
+                            <div class="node-title-group">
+                                <h3>Dược Tuyền</h3>
+                                <span>Suối Linh Dịch</span>
+                            </div>
+                        </div>
+                        <span class="node-level-badge" id="badge-node_herb_spring">Cấp 1</span>
+                    </div>
+
+                    <div class="node-card-body">
+                        <!-- KHU VỰC SỨC CHỨA (STORAGE) & TIẾN ĐỘ -->
+                        <div class="storage-status-block">
+                            <div class="storage-header">
+                                <span class="storage-label">
+                                    <i class="fa-solid fa-box-archive"></i> Bồn Chứa:
+                                </span>
+                                <span class="storage-numbers " id="storage-txt-node_herb_spring">
+                                    12 / 40 bó
+                                    
+                                </span>
+                            </div>
+                            <div class="storage-track">
+                                <div class="storage-fill storage-fill--herb " id="storage-bar-node_herb_spring" style="width: 30%"></div>
+                            </div>
+                        </div>
+
+                        <!-- TỐC ĐỘ SẢN XUẤT & PHÁI CỬ ĐẠO LỮ -->
+                        <div class="rate-and-dispatch-row">
+                            <div class="production-rate-info">
+                                <span class="rate-title">Sản lượng:</span>
+                                <span class="rate-value" id="rate-txt-node_herb_spring">
+                                    +6 / phút
+                                    
+                                </span>
+                            </div>
+
+                            <div class="dispatch-slot-box" id="dispatch-box-node_herb_spring" onclick="openDispatchModal('node_herb_spring')" title="Bấm để cử Đạo Lữ tọa trấn">
+                                <div class="dispatch-placeholder"><i class="fa-solid fa-plus"></i></div>
+                                <div class="dispatch-label-col">
+                                    <span>Phái cử</span>
+                                    <span>Trống (+50%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="node-card-footer">
+                        <button type="button" class="btn-node-action btn-claim cursor-pointer" onclick="claimSingleNode('node_herb_spring')">
+                            <i class="fa-solid fa-hand-holding"></i> Thu Nạp
+                        </button>
+                        <button type="button" class="btn-node-action btn-upgrade cursor-pointer" onclick="upgradeNode('node_herb_spring')" title="Cần 1.200 Linh Thạch">
+                            <i class="fa-solid fa-arrow-up-right-dots"></i> Cấp 2 (1.200)
+                        </button>
+                    </div>
+                </article>
+
+                <!-- CARD: Khoáng Động (Địa Mạch Thần Khoáng) -->
+                <article class="node-card " id="card-node_mineral_cavern">
+                    <div class="node-card-header">
+                        <div class="node-meta">
+                            <div class="node-icon-frame node-icon-frame--ore">
+                                <i class="fa-solid fa-mountain"></i>
+                            </div>
+                            <div class="node-title-group">
+                                <h3>Khoáng Động</h3>
+                                <span>Địa Mạch Thần Khoáng</span>
+                            </div>
+                        </div>
+                        <span class="node-level-badge" id="badge-node_mineral_cavern">Cấp 1</span>
+                    </div>
+
+                    <div class="node-card-body">
+                        <!-- KHU VỰC SỨC CHỨA (STORAGE) & TIẾN ĐỘ -->
+                        <div class="storage-status-block">
+                            <div class="storage-header">
+                                <span class="storage-label">
+                                    <i class="fa-solid fa-box-archive"></i> Bồn Chứa:
+                                </span>
+                                <span class="storage-numbers " id="storage-txt-node_mineral_cavern">
+                                    8 / 40 khối
+                                    
+                                </span>
+                            </div>
+                            <div class="storage-track">
+                                <div class="storage-fill storage-fill--ore " id="storage-bar-node_mineral_cavern" style="width: 20%"></div>
+                            </div>
+                        </div>
+
+                        <!-- TỐC ĐỘ SẢN XUẤT & PHÁI CỬ ĐẠO LỮ -->
+                        <div class="rate-and-dispatch-row">
+                            <div class="production-rate-info">
+                                <span class="rate-title">Sản lượng:</span>
+                                <span class="rate-value" id="rate-txt-node_mineral_cavern">
+                                    +6 / phút
+                                    
+                                </span>
+                            </div>
+
+                            <div class="dispatch-slot-box" id="dispatch-box-node_mineral_cavern" onclick="openDispatchModal('node_mineral_cavern')" title="Bấm để cử Đạo Lữ tọa trấn">
+                                <div class="dispatch-placeholder"><i class="fa-solid fa-plus"></i></div>
+                                <div class="dispatch-label-col">
+                                    <span>Phái cử</span>
+                                    <span>Trống (+50%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="node-card-footer">
+                        <button type="button" class="btn-node-action btn-claim cursor-pointer" onclick="claimSingleNode('node_mineral_cavern')">
+                            <i class="fa-solid fa-hand-holding"></i> Thu Nạp
+                        </button>
+                        <button type="button" class="btn-node-action btn-upgrade cursor-pointer" onclick="upgradeNode('node_mineral_cavern')" title="Cần 1.200 Linh Thạch">
+                            <i class="fa-solid fa-arrow-up-right-dots"></i> Cấp 2 (1.200)
+                        </button>
+                    </div>
+                </article>
+
+                <!-- CARD: Tiền Trang (Tụ Tài Trận) -->
+                <article class="node-card " id="card-node_money_treasury">
+                    <div class="node-card-header">
+                        <div class="node-meta">
+                            <div class="node-icon-frame node-icon-frame--gold">
+                                <i class="fa-solid fa-vault"></i>
+                            </div>
+                            <div class="node-title-group">
+                                <h3>Tiền Trang</h3>
+                                <span>Tụ Tài Trận</span>
+                            </div>
+                        </div>
+                        <span class="node-level-badge" id="badge-node_money_treasury">Cấp 1</span>
+                    </div>
+
+                    <div class="node-card-body">
+                        <!-- KHU VỰC SỨC CHỨA (STORAGE) & TIẾN ĐỘ -->
+                        <div class="storage-status-block">
+                            <div class="storage-header">
+                                <span class="storage-label">
+                                    <i class="fa-solid fa-box-archive"></i> Bồn Chứa:
+                                </span>
+                                <span class="storage-numbers " id="storage-txt-node_money_treasury">
+                                    240 / 600 viên
+                                    
+                                </span>
+                            </div>
+                            <div class="storage-track">
+                                <div class="storage-fill storage-fill--gold " id="storage-bar-node_money_treasury" style="width: 40%"></div>
+                            </div>
+                        </div>
+
+                        <!-- TỐC ĐỘ SẢN XUẤT & PHÁI CỬ ĐẠO LỮ -->
+                        <div class="rate-and-dispatch-row">
+                            <div class="production-rate-info">
+                                <span class="rate-title">Sản lượng:</span>
+                                <span class="rate-value" id="rate-txt-node_money_treasury">
+                                    +60 / phút
+                                    
+                                </span>
+                            </div>
+
+                            <div class="dispatch-slot-box" id="dispatch-box-node_money_treasury" onclick="openDispatchModal('node_money_treasury')" title="Bấm để cử Đạo Lữ tọa trấn">
+                                <div class="dispatch-placeholder"><i class="fa-solid fa-plus"></i></div>
+                                <div class="dispatch-label-col">
+                                    <span>Phái cử</span>
+                                    <span>Trống (+50%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="node-card-footer">
+                        <button type="button" class="btn-node-action btn-claim cursor-pointer" onclick="claimSingleNode('node_money_treasury')">
+                            <i class="fa-solid fa-hand-holding"></i> Thu Nạp
+                        </button>
+                        <button type="button" class="btn-node-action btn-upgrade cursor-pointer" onclick="upgradeNode('node_money_treasury')" title="Cần 2.000 Linh Thạch">
+                            <i class="fa-solid fa-arrow-up-right-dots"></i> Cấp 2 (2.000)
+                        </button>
+                    </div>
+                </article>
             </section>
 
             <!-- FOOTER: THANH THU THẬP TẤT CẢ TẬP TRUNG -->
@@ -1892,7 +2997,7 @@
                 <div class="control-summary-text">
                     <i class="fa-solid fa-cubes-stacked text-amber-400 text-lg"></i>
                     <div>
-                        <div>Tổng sản lượng đang chờ thu hoạch: <b id="total-pending-count" class="text-emerald-400 font-mono">0 món</b></div>
+                        <div>Tổng sản lượng đang chờ thu hoạch: <b id="total-pending-count" class="text-emerald-400 font-mono">0 món tài nguyên</b></div>
                         <span class="text-xs text-slate-400">Các bồn chứa đạt 100% sẽ ngừng tích lũy cho đến khi được thu nạp.</span>
                     </div>
                 </div>
@@ -1904,7 +3009,6 @@
                     </button>
                 </div>
             </footer>
-
         </main>
 
         <!-- MODAL PHÁI CỬ ĐẠO LỮ (DISPATCH MODAL) -->
@@ -1914,7 +3018,7 @@
                     <h3 class="modal-title" id="dispatch-modal-title">
                         <i class="fa-solid fa-user-shield text-amber-300"></i> Phái Cử Người Cai Quản
                     </h3>
-                    <button type="button" class="btn-close-modal" onclick="closeDispatchModal()">&times;</button>
+                    <button type="button" class="btn-close-dispatch btn-close-modal" onclick="closeDispatchModal()">&times;</button>
                 </div>
 
                 <p class="text-xs text-slate-300">
@@ -1943,12 +3047,9 @@
         <!-- ========================================================================
          MODAL OVERLAY: MODAL-LUYEN-DAN (Luyện Đan Phòng)
          ======================================================================== -->
-    <div id="modal-luyen-dan" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; background: #030712; overflow-y: auto;">
+    <div id="modal-luyen-dan" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: #030712; overflow-y: auto;">
     <!-- Nút Đóng Luyện Đan Phòng To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeLuyenDanModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG LUYỆN ĐAN PHÒNG</span>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="closeLuyenDanModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
 
 <!-- ========================================================================
          KHỐI TRÊN CÙNG: THÔNG TIN LUYỆN ĐAN SƯ, EXP NGHỀ & THANH ĐAN ĐỘC
@@ -2246,12 +3347,9 @@
     <!-- ========================================================================
          MODAL OVERLAY: MODAL-LUYEN-KHI (Luyện Khí Thất)
          ======================================================================== -->
-    <div id="modal-luyen-khi" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; background: #030712; overflow-y: auto;">
+    <div id="modal-luyen-khi" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: #030712; overflow-y: auto;">
     <!-- Nút Đóng Luyện Khí Thất To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeLuyenKhiModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG LUYỆN KHÍ THẤT</span>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="closeLuyenKhiModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
 
 <!-- ========================================================================
          PHẦN 1: THANH ĐIỀU HƯỚNG & TÀI NGUYÊN (STICKY TOP BAR)
@@ -2502,12 +3600,9 @@
         <!-- ========================================================================
          MODAL OVERLAY: KHUÊ PHÒNG TIÊN ĐIỆN (ĐẠO LỮ SONG TU)
          ======================================================================== -->
-    <div id="modal-khue-phong" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; background: #09030c; overflow-y: auto;">
+    <div id="modal-khue-phong" class="feature-popup" style="display: none; position: fixed; inset: 0; z-index: 10000; pointer-events: none; background: #09030c; overflow-y: auto;">
     <!-- Nút Đóng Khuê Phòng To và Rõ Ràng ở góc trên bên phải -->
-    <button type="button" class="btn-close-modal-fixed" onclick="closeKhuePhongModal()" title="Thoát về Màn Hình Tu Tiên">
-        <i class="fa-solid fa-xmark"></i>
-        <span>✖ ĐÓNG KHUÊ PHÒNG</span>
-    </button>
+    <button type="button" class="btn-close-modal" onclick="closeKhuePhongModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
 
 <!-- ========================================================================
          HEADER KHUÊ PHÒNG & THÔNG TIN TIÊN DUYÊN
@@ -2724,47 +3819,47 @@
          TẦNG ĐIỀU HƯỚNG TỐI CAO: BOTTOM NAVIGATION BAR (DOCK CỐ ĐỊNH ĐÁY MÀN HÌNH)
          BẮT BUỘC NẰM Ở CẤP TRỰC THUỘC BODY ĐỂ NỔI TRÊN MỌI MODAL/OVERLAY (Z-INDEX 9999)
     =========================================== -->
-    <div id="bottom-menu" data-alias="bottom-nav" class="bottom-nav-container" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100vw !important; height: 60px !important; display: flex !important; justify-content: center !important; align-items: center !important; gap: 15px !important; z-index: 10005 !important; background: #0b0e14 !important; border-top: 1px solid #cfa968 !important; overflow: visible !important; pointer-events: auto !important; box-sizing: border-box !important;">
+    <div id="bottom-menu" data-alias="bottom-nav" class="bottom-nav-container">
         <div class="nav-item-wrapper">
-            <div class="nav-btn" onclick="openFeature('nhan-vat', event)">👤 Nhân Vật <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></div>
+            <button type="button" class="nav-btn" aria-haspopup="true" aria-controls="menu-nhan-vat" onclick="toggleDropup('menu-nhan-vat', event)">👤 Nhân Vật <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></button>
             <div id="menu-nhan-vat" class="dropup-menu">
-                <div class="dropup-item" onclick="navigateTo('page-inventory')">📦 Túi Đồ Bản Nguyên</div>
-                <div class="dropup-item" onclick="navigateTo('page-skills')">📜 Công Pháp Tu Luyện</div>
-                <div class="dropup-item" onclick="navigateTo('page-root')">🌿 Căn Cơ Linh Căn</div>
-                <div class="dropup-item" onclick="navigateTo('page-artifact')">⚔️ Pháp Bảo Bản Mệnh</div>
-                <div class="dropup-item" onclick="navigateTo('page-pet')">🦊 Linh Thú Hộ Mệnh</div>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-inventory')">📦 Túi Đồ Bản Nguyên</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-skills')">📜 Công Pháp Tu Luyện</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-root')">🌿 Căn Cơ Linh Căn</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-artifact')">⚔️ Pháp Bảo Bản Mệnh</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-pet')">🦊 Linh Thú Hộ Mệnh</button>
             </div>
         </div>
         <div class="nav-item-wrapper">
-            <div class="nav-btn" onclick="openFeature('dong-phu', event)">🏠 Động Phủ <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></div>
+            <button type="button" class="nav-btn" aria-haspopup="true" aria-controls="menu-dong-phu" onclick="toggleDropup('menu-dong-phu', event)">🏠 Động Phủ <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></button>
             <div id="menu-dong-phu" class="dropup-menu">
-                <div class="dropup-item" onclick="document.getElementById('modal-gia-vien').style.display='block'; if(typeof openGiaVienModal==='function') openGiaVienModal();">🌿 Tiên Môn Gia Viên</div>
-                <div class="dropup-item" onclick="document.getElementById('modal-luyen-dan').style.display='block'; if(typeof openLuyenDanModal==='function') openLuyenDanModal();">♨️ Luyện Đan Phòng</div>
-                <div class="dropup-item" onclick="document.getElementById('modal-luyen-khi').style.display='block'; if(typeof openLuyenKhiModal==='function') openLuyenKhiModal();">⚒️ Luyện Khí Thất</div>
-                <div class="dropup-item" onclick="document.getElementById('modal-khue-phong').style.display='block'; if(typeof openKhuePhongModal==='function') openKhuePhongModal();">🌸 Khuê Phòng Đạo Lữ</div>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); if(typeof openGiaVienModal==='function') openGiaVienModal(); else { document.getElementById('modal-gia-vien').style.display='block'; }">🌿 Tiên Môn Gia Viên</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); if(typeof openLuyenDanModal==='function') openLuyenDanModal(); else { document.getElementById('modal-luyen-dan').style.display='block'; }">♨️ Luyện Đan Phòng</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); if(typeof openLuyenKhiModal==='function') openLuyenKhiModal(); else { document.getElementById('modal-luyen-khi').style.display='block'; }">⚒️ Luyện Khí Thất</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); if(typeof openKhuePhongModal==='function') openKhuePhongModal(); else { document.getElementById('modal-khue-phong').style.display='block'; }">🌸 Khuê Phòng Đạo Lữ</button>
             </div>
         </div>
         <div class="nav-item-wrapper">
-            <div class="nav-btn" onclick="openFeature('tong-mon', event)">⛩️ Tông Môn <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></div>
+            <button type="button" class="nav-btn" aria-haspopup="true" aria-controls="menu-tong-mon" onclick="toggleDropup('menu-tong-mon', event)">⛩️ Tông Môn <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></button>
             <div id="menu-tong-mon" class="dropup-menu">
-                <div class="dropup-item" onclick="navigateTo('page-sect-quests')">📜 Nhiệm Vụ Đường</div>
-                <div class="dropup-item" onclick="navigateTo('page-sect-rank')">🏛️ Chấp Sự Điện</div>
-                <div class="dropup-item" onclick="navigateTo('page-sect-shop')">📖 Tàng Kinh Các</div>
-                <div class="dropup-item" onclick="navigateTo('page-sect-array')">🛡️ Hộ Sơn Đại Trận</div>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-sect-quests')">📜 Nhiệm Vụ Đường</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-sect-rank')">🏛️ Chấp Sự Điện</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-sect-shop')">📖 Tàng Kinh Các</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-sect-array')">🛡️ Hộ Sơn Đại Trận</button>
             </div>
         </div>
         <div class="nav-item-wrapper">
-            <div class="nav-btn" onclick="openFeature('the-gioi', event)">🌍 Thế Giới <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></div>
+            <button type="button" class="nav-btn" aria-haspopup="true" aria-controls="menu-the-gioi" onclick="toggleDropup('menu-the-gioi', event)">🌍 Thế Giới <i class="fa-solid fa-caret-up text-[10px] opacity-80"></i></button>
             <div id="menu-the-gioi" class="dropup-menu">
-                <div class="dropup-item" onclick="navigateTo('page-world-market')">🏮 Phường Thị</div>
-                <div class="dropup-item" onclick="navigateTo('page-world-auction')">🔨 Đấu Giá Hội</div>
-                <div class="dropup-item" onclick="navigateTo('page-world-dungeon')">🗝️ Bí Cảnh Thám Hiểm</div>
-                <div class="dropup-item" onclick="navigateTo('page-world-arena')">⚔️ Đấu Pháp Đài</div>
-                <div class="dropup-item" onclick="navigateTo('page-world-encounter')">🗺️ Lịch Luyện Hồng Hoang</div>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-world-market')">🏮 Phường Thị</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-world-auction')">🔨 Đấu Giá Hội</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-world-dungeon')">🗝️ Bí Cảnh Thám Hiểm</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-world-arena')">⚔️ Đấu Pháp Đài</button>
+                <button type="button" class="dropup-item" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); navigateTo('page-world-encounter')">🗺️ Lịch Luyện Hồng Hoang</button>
             </div>
         </div>
         <div class="nav-item-wrapper">
-            <div class="nav-btn nav-btn--danger" onclick="document.getElementById('modal-tran-yeu-thap').style.display='block'; if(typeof openDemonTowerModal==='function') openDemonTowerModal();">🗼 Trấn Yêu Tháp</div>
+            <button type="button" class="nav-btn nav-btn--danger" onclick="if(typeof closeAllDropups==='function') closeAllDropups(); if(typeof openDemonTowerModal==='function') openDemonTowerModal(); else { document.getElementById('modal-tran-yeu-thap').style.display='block'; }">🗼 Trấn Yêu Tháp</button>
         </div>
     </div>
 
@@ -3038,6 +4133,10 @@
                     <button type="button" onclick="saveProfileChanges()" class="btn-save-profile w-full sm:flex-1 py-2.5 px-4 rounded-xl font-bold font-serif text-xs uppercase tracking-wider transition-all">
                         <i class="fa-solid fa-floppy-disk mr-1.5"></i> LƯU CHUYỂN HÓA
                     </button>
+
+                    <button type="button" onclick="if (confirm('Bản Tôn có chắc chắn muốn chuyển cảnh giới về Luyện Khí Kỳ? (Vẫn giữ nguyên toàn bộ Trang Bị, Đan Dược và Linh Thạch)')) { resetToLuyenKhi(); if (typeof closeProfileModal === 'function') closeProfileModal(); }" class="w-full sm:w-auto py-2.5 px-3.5 rounded-xl font-bold font-serif text-xs uppercase tracking-wider text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-600/50 transition-all flex items-center justify-center gap-1.5" title="Hạ cảnh giới về Luyện Khí Kỳ, bảo toàn toàn bộ trang bị và linh thạch">
+                        <i class="fa-solid fa-rotate-left text-emerald-400"></i> Về Luyện Khí
+                    </button>
                     
                     <button type="button" onclick="logoutFromCloud()" class="btn-logout-cloud w-full sm:w-auto py-2.5 px-3 rounded-xl font-bold font-serif text-xs uppercase tracking-wider flex items-center justify-center gap-1.5" title="Đăng Xuất Tài Khoản Google">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng Xuất (Tách Hồn)
@@ -3078,5 +4177,15 @@
     </div>
     <script type="module" src="./js/profile_system.js"></script>
     <script src="./main.js" defer></script>
+    <script src="./js/features/tribulation.js" defer></script>
+    <script src="./js/features/estate.js" defer></script>
+    <script src="./js/features/demon_tower.js" defer></script>
+    <script src="./js/features/topbar.js" defer></script>
+    <script src="./js/features/character.js" defer></script>
+    <script src="./js/features/alchemy.js" defer></script>
+    <script src="./js/features/forging.js" defer></script>
+    <script src="./js/features/chamber.js" defer></script>
+    <script src="./js/features/bootstrap.js" defer></script>
+    <script src="./js/tribulation_visuals.js" defer></script>
 </body>
 </html>

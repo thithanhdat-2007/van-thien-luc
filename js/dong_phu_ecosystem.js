@@ -82,7 +82,7 @@
                     id: 'ho_mi_nhi',
                     name: 'Hồ Mị Nhi',
                     title: 'Cửu Vĩ Thiên Hồ',
-                    avatar: './assets/images/cultivator_avatar.png',
+                    avatar: './assets/images/avatar_lone_cultivator.jpg',
                     level: 3,
                     affection: 1500,
                     maxAffection: 3000,
@@ -180,41 +180,46 @@
         const p = window.player;
         const buffs = calculateDongPhuBuffs(p);
 
-        // Tìm node trong MasterDemos hoặc data nội bộ
+        // Tìm node trong ESTATE_NODES canonical hoặc fallback
         let targetNode = null;
-        if (window.MasterDemos && window.MasterDemos.estateData) {
-            targetNode = window.MasterDemos.estateData.nodes.find(n => n.id === nodeId);
+        if (Array.isArray(window.ESTATE_NODES)) {
+            targetNode = window.ESTATE_NODES.find(n => n.id === nodeId);
+        } else if (window.MasterDemos && window.MasterDemos.estateData) {
+            const list = Array.isArray(window.MasterDemos.estateData) ? window.MasterDemos.estateData : window.MasterDemos.estateData.nodes;
+            if (Array.isArray(list)) targetNode = list.find(n => n.id === nodeId);
         }
 
         if (!targetNode) {
             // Fallback thu thập mẫu nếu chưa render
             targetNode = {
                 id: nodeId,
-                name: nodeId === 'node_herb_garden' ? 'Dược Điền' : 'Linh Thạch Mỏ Quặng',
+                name: (nodeId === 'node_herb_spring' || nodeId === 'node_herb_garden') ? 'Dược Tuyền' : 'Khoáng Động',
+                currentAmount: 10,
                 accumulated: 10,
-                resourceType: nodeId === 'node_herb_garden' ? 'herb' : 'stones'
+                resourceType: (nodeId === 'node_herb_spring' || nodeId === 'node_herb_garden') ? 'herb' : 'ore'
             };
         }
 
-        const rawAmount = Math.floor(targetNode.accumulated || 5);
+        const rawAmount = Math.floor(targetNode.currentAmount || targetNode.accumulated || 5);
         if (rawAmount <= 0) {
             showDongPhuToast('Linh bồn hiện chưa tích tụ đủ sản lượng để thu nạp.');
             return;
         }
 
         // Áp dụng bonus đạo lữ
-        const bonusMultiplier = (targetNode.assignedCompanion ? 1.5 : 1.0) + (buffs.estateBonus || 0);
+        const bonusMultiplier = (targetNode.assignedCompanionId || targetNode.assignedCompanion ? 1.5 : 1.0) + (buffs.estateBonus || 0);
         const finalAmount = Math.max(1, Math.round(rawAmount * bonusMultiplier));
+        targetNode.currentAmount = 0;
         targetNode.accumulated = 0;
 
-        if (targetNode.id === 'node_herb_garden' || targetNode.resourceType === 'herb') {
+        if (targetNode.id === 'node_herb_spring' || targetNode.id === 'node_herb_garden' || targetNode.resourceType === 'herb') {
             // Cộng thẳng vào player.inventory.herbs
             let herb = p.inventory.herbs.find(h => h.id === 'herb_thai_at');
             if (herb) herb.count += finalAmount;
             else p.inventory.herbs.push({ id: 'herb_thai_at', name: 'Thái Ất Linh Thảo', count: finalAmount, icon: 'fa-seedling', quality: 'Hạ Phẩm' });
 
             showDongPhuToast(`🌿 Đã thu hoạch +${finalAmount} Thái Ất Linh Thảo vào Kho Thảo Dược!`);
-        } else if (targetNode.id === 'node_ore_mine' || targetNode.resourceType === 'stones') {
+        } else if (targetNode.id === 'node_mineral_cavern' || targetNode.id === 'node_ore_mine' || targetNode.resourceType === 'ore' || targetNode.resourceType === 'stones') {
             // Cộng khoáng thạch vào player.inventory.materials & cộng linh thạch
             let ore = p.inventory.materials.find(m => m.id === 'ore_huyen_thach');
             if (ore) ore.count += Math.max(1, Math.round(finalAmount / 2));
@@ -225,6 +230,11 @@
             if (window.state) window.state.stones = (window.state.stones || 0) + stonesGained;
 
             showDongPhuToast(`💎 Đã khai thác +${Math.max(1, Math.round(finalAmount / 2))} Huyền Thiết Thạch và +${stonesGained.toLocaleString()} Linh Thạch!`);
+        } else if (targetNode.id === 'node_money_treasury' || targetNode.resourceType === 'gold') {
+            const stonesGained = finalAmount * 200;
+            p.stones = (p.stones || 0) + stonesGained;
+            if (window.state) window.state.stones = (window.state.stones || 0) + stonesGained;
+            showDongPhuToast(`💰 Tiền Trang tích lũy phát tài, thu nạp +${stonesGained.toLocaleString()} Linh Thạch!`);
         } else if (targetNode.id === 'node_spirit_tree' || targetNode.resourceType === 'exp') {
             // Cộng Tu Vi
             const expGained = finalAmount * 200;

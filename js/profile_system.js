@@ -10,6 +10,14 @@
 let GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut;
 let doc, setDoc, getDoc;
 
+function showNotify(msg, type = 'info') {
+    if (typeof window.showXianxiaToast === 'function') {
+        window.showXianxiaToast(msg, type);
+    } else if (typeof alert === 'function') {
+        alert(msg);
+    }
+}
+
 const STORAGE_KEY = 'playerProfile';
 
 const DEFAULT_AVATARS = {
@@ -258,7 +266,7 @@ window.saveProfileToCloud = saveProfileToCloud;
 async function loginWithGoogle() {
     if (firebaseReady) await firebaseReady;
     if (!auth) {
-        alert(firebaseConfig ? 'Không thể kết nối dịch vụ đăng nhập. Hãy kiểm tra mạng và thử lại.' : 'Đăng nhập Google chưa được cấu hình cho bản web này. Bạn vẫn có thể tạo bản thể và chơi cục bộ.');
+        showNotify(firebaseConfig ? 'Không thể kết nối dịch vụ đăng nhập. Hãy kiểm tra mạng và thử lại.' : 'Đăng nhập Google chưa được cấu hình cho bản web này. Bạn vẫn có thể tạo bản thể và chơi cục bộ.', 'error');
         return;
     }
 
@@ -278,7 +286,7 @@ async function loginWithGoogle() {
             window.addLog(`🌐 <span class="text-amber-400 font-bold">[Thiên Đạo Liên Kết]</span> Hồn phách đã kết nối Google: <strong>${user.email}</strong>!`, 'text-amber-300');
         }
 
-        alert(`✨ Liên kết Thiên Đạo thành công! Chào mừng đạo hữu ${profile?.name || user.displayName || 'Vô Danh'} đã bước vào Vấn Thiên Lục.`);
+        showNotify(`✨ Liên kết Thiên Đạo thành công! Chào mừng đạo hữu ${profile?.name || user.displayName || 'Vô Danh'} đã bước vào Vấn Thiên Lục.`, 'success');
 
         // Đóng màn hình Start Screen và trả lại giao diện chính cho người chơi
         const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
@@ -292,7 +300,7 @@ async function loginWithGoogle() {
             console.log('Người chơi đã đóng cửa sổ đăng nhập.');
             return;
         }
-        alert(`Không thể liên kết Thiên Đạo: ${error.message}`);
+        showNotify(`Không thể liên kết Thiên Đạo: ${error.message}`, 'error');
     }
 }
 window.loginWithGoogle = loginWithGoogle;
@@ -310,13 +318,13 @@ async function logoutFromCloud() {
             window.addLog(`🌌 <span class="text-purple-400 font-bold">[Tách Hồn Xuất Thể]</span> Đã ngắt kết nối linh thức với Google!`, 'text-purple-300');
         }
 
-        alert('Đã tách hồn xuất thể (Đăng xuất Google)! Trở về trạng thái tự tu bản thể.');
+        showNotify('Đã tách hồn xuất thể (Đăng xuất Google)! Trở về trạng thái tự tu bản thể.', 'info');
         const localProfile = getStoredProfile();
         if (localProfile) updateCloudStatusUI(localProfile, null);
         else openProfileModal('new');
     } catch (e) {
         console.error('[Firebase Auth] Lỗi đăng xuất:', e);
-        alert(`Lỗi đăng xuất: ${e.message}`);
+        showNotify(`Lỗi đăng xuất: ${e.message}`, 'error');
     }
 }
 window.logoutFromCloud = logoutFromCloud;
@@ -381,7 +389,7 @@ window.openProfileModal = openProfileModal;
 function closeProfileModal() {
     const profile = getStoredProfile();
     if (!profile && !currentUser) {
-        alert('Đạo hữu chưa hoàn tất Bước Vào Tiên Đồ! Xin hãy đăng nhập Google hoặc tạo Đạo Hiệu khởi đầu.');
+        showNotify('Đạo hữu chưa hoàn tất Bước Vào Tiên Đồ! Xin hãy đăng nhập Google hoặc tạo Đạo Hiệu khởi đầu.', 'error');
         return;
     }
     const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
@@ -415,7 +423,7 @@ function handleCreateProfile(event) {
     const name = nameInput ? nameInput.value.trim() : '';
 
     if (!name) {
-        alert('Đạo hữu xin hãy nhập Đạo Hiệu để ghi danh vào Tiên Đạo!');
+        showNotify('Đạo hữu xin hãy nhập Đạo Hiệu để ghi danh vào Tiên Đạo!', 'error');
         if (nameInput) nameInput.focus();
         return;
     }
@@ -492,17 +500,17 @@ function applyCustomAvatarUrl() {
 
     const url = input.value.trim();
     if (!url) {
-        alert('Vui lòng dán liên kết ảnh hợp lệ!');
+        showNotify('Vui lòng dán liên kết ảnh hợp lệ!', 'error');
         return;
     }
 
     const testImg = new Image();
     testImg.onload = function () {
         preview.src = url;
-        alert('Tải ảnh đại diện mới thành công! Hãy bấm "LƯU CHUYỂN HÓA" để hoàn tất.');
+        showNotify('Tải ảnh đại diện mới thành công! Hãy bấm "LƯU CHUYỂN HÓA" để hoàn tất.', 'success');
     };
     testImg.onerror = function () {
-        alert('Không thể tải ảnh từ liên kết này! Hãy kiểm tra lại URL ảnh.');
+        showNotify('Không thể tải ảnh từ liên kết này! Hãy kiểm tra lại URL ảnh.', 'error');
     };
     testImg.src = url;
 }
@@ -515,7 +523,7 @@ async function saveProfileChanges() {
 
     const newName = editNameInput ? editNameInput.value.trim() : '';
     if (!newName) {
-        alert('Đạo hiệu không được để trống!');
+        showNotify('Đạo hiệu không được để trống!', 'error');
         return;
     }
 
@@ -541,7 +549,7 @@ async function saveProfileChanges() {
         window.addLog(`🎭 <span class="text-amber-400 font-bold">[Chuyển Hóa Bản Thể]</span> Đạo Hữu đã đổi tôn hiệu thành: <strong>${newName}</strong>!`, 'text-amber-300');
     }
 
-    alert('✨ Chuyển Hóa Bản Thể thành công! Đạo Hiệu và Tướng Mạo mới đã được ghi nhận.');
+    showNotify('✨ Chuyển Hóa Bản Thể thành công! Đạo Hiệu và Tướng Mạo mới đã được ghi nhận.', 'success');
     closeProfileModal();
 
     if (typeof window.saveGameState === 'function') {
@@ -575,7 +583,7 @@ function confirmResetGame() {
     } catch (e) {
         console.error('[ProfileSystem] Lỗi xóa save:', e);
     }
-    alert('💥 Đã Tán Công Trùng Tu! Toàn bộ tu vi và dữ liệu đã tiêu tán về cõi hư vô.');
+    showNotify('💥 Đã Tán Công Trùng Tu! Toàn bộ tu vi và dữ liệu đã tiêu tán về cõi hư vô.', 'info');
     window.location.reload();
 }
 window.confirmResetGame = confirmResetGame;

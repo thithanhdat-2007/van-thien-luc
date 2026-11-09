@@ -559,6 +559,34 @@ function loadGameState() {
             let saved = null;
             try { saved = JSON.parse(localStorage.getItem('van_co_tu_tien_save_v2') || 'null'); } catch (e) {}
             state = { ...structuredClone(DEFAULT_STATE), ...(saved && typeof saved === 'object' ? saved : {}) };
+            let previewManualGiftAdded = false;
+            if (saved && !state.manualArtGiftV1 && typeof PREVIEW_MANUAL_SKILL_IDS !== 'undefined' && typeof SKILLS_DATA !== 'undefined') {
+                const manuals = PREVIEW_MANUAL_SKILL_IDS.map(id => SKILLS_DATA.find(skill => skill.id === id));
+                if (manuals.every(Boolean)) {
+                    if (!Array.isArray(state.inventory)) state.inventory = [];
+                    manuals.forEach(skill => {
+                        const itemId = `manual_${skill.id}`;
+                        const existing = state.inventory.find(item => item.id === itemId);
+                        if (existing) {
+                            existing.count = Math.max(1, Number(existing.count) || 0);
+                        } else {
+                            state.inventory.push({
+                                id: itemId,
+                                skillId: skill.id,
+                                name: skill.name,
+                                type: 'Bí Tịch',
+                                rarity: skill.tier === 'thien' ? 5 : 4,
+                                count: 1,
+                                desc: skill.desc,
+                                icon: 'fa-book',
+                                image: skill.image_url
+                            });
+                        }
+                    });
+                    state.manualArtGiftV1 = true;
+                    previewManualGiftAdded = true;
+                }
+            }
             if (state.hpRegenBase === undefined) state.hpRegenBase = 5;
             state.realmStage = typeof REALMS !== 'undefined' && REALMS[state.realmIndex]?.majorIndex !== undefined ? REALMS[state.realmIndex].majorIndex : (state.realmStage ?? 0);
             if (saved && saved.ageYears === undefined) state.ageYears = Math.max(0, Number(saved.lifespan) || DEFAULT_STATE.ageYears);
@@ -726,6 +754,7 @@ function loadGameState() {
                 }
             }
             state.lastOnlineTime = Date.now();
+            if (previewManualGiftAdded) saveGameState();
             return { seconds: rawOfflineSeconds, gained: state.exp - previousExp, linhKhiGained: state.linhKhi - previousLinhKhi, yearsAged: state.ageYears - ageBefore };
         }
 function saveGameState() {
@@ -757,6 +786,29 @@ function resetGameData() {
             saveGameState();
             window.location.reload();
         }
+function resetToLuyenKhi() {
+    state.realmIndex = 0;
+    state.realmStage = 0;
+    state.exp = 0;
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+    if (typeof addLog === 'function') {
+        addLog("🌀 <strong class='text-emerald-400'>[Trùng Tu Tiên Lộ]</strong> Bản Tôn đã nghịch chuyển càn khôn, trở về cảnh giới <strong>Luyện Khí Kỳ</strong>!", "text-emerald-400");
+    }
+}
+window.resetToLuyenKhi = resetToLuyenKhi;
+
+function setPlayerRealm(realmIdx = 0) {
+    state.realmIndex = Math.max(0, Number(realmIdx) || 0);
+    state.realmStage = typeof REALMS !== 'undefined' && REALMS[state.realmIndex]?.majorIndex !== undefined ? REALMS[state.realmIndex].majorIndex : 0;
+    state.exp = 0;
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+}
+window.setPlayerRealm = setPlayerRealm;
+
 // Tester Toolbar đã bị thanh tẩy hoàn toàn theo quy chuẩn Anti-Cheat
 function toggleTesterToolbar() {}
 function closeTesterToolbar() {}
@@ -967,16 +1019,11 @@ window.processIdleResourceAction = processIdleResourceAction;
 
 function getAdjustedCultivationGain(amount) {
     const rawAmount = Math.max(0, Number(amount) || 0);
-
-    // THIÊN ĐẠO ÁP CHẾ (EXP LOCK): Khóa hoàn toàn Tu Vi = 0
-    if (typeof isHeavenlySuppressed === 'function' && isHeavenlySuppressed()) {
-        return {
-            rawAmount,
-            gainedAmount: 0
-        };
-    }
-
-    let gained = rawAmount;
+    // The configured suppression reduces cultivation by 90%; it does not stop progress.
+    const suppressionMultiplier = typeof isHeavenlySuppressed === 'function' && isHeavenlySuppressed()
+        ? HEAVENLY_REJECTION_RULES.cultivationGainMultiplier
+        : 1;
+    let gained = rawAmount * suppressionMultiplier;
 
     // Hình phạt [Trọng Thương] do Thiên Kiếp đánh bại: Giảm 50% tốc độ tu vi
     if (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil) {
@@ -1525,14 +1572,14 @@ function isHardCapReached() {
 }
 window.isHardCapReached = isHardCapReached;
 
-function addExp(amount) {
+function addExp(amount, deferHud = false) {
             const currentRealm = REALMS[state.realmIndex];
             if (!currentRealm || state.isDead) return { rawAmount: 0, gainedAmount: 0 };
             // Bể chứa Tu Vi là VÔ HẠN: Ngay cả khi đạt bình cảnh, Tu Vi vẫn tiếp tục tích lũy vô hạn
             const { rawAmount, gainedAmount } = getAdjustedCultivationGain(amount);
             if (gainedAmount <= 0) return { rawAmount, gainedAmount: 0 };
             state.exp = (Number(state.exp) || 0) + gainedAmount;
-            updateHUD();
+            if (!deferHud) updateHUD();
             return { rawAmount, gainedAmount };
         }
 window.addExp = addExp;
@@ -1740,12 +1787,12 @@ function addLog(message, type = "text-slate-300", actionId = null, extraRewards 
 
     // Dọn rác (DOM Virtualization / Culling): Giữ tối đa 50 thẻ <p>
     const MAX_LOG_DOM_NODES = 50;
-    while (logBox.children.length > MAX_LOG_DOM_NODES) {
-        const oldest = logBox.firstChild;
+    while (logBox.children.length > MAX_LOG_DOM_NODES && logBox.firstElementChild) {
+        const oldest = logBox.firstElementChild;
         if (oldest === lastLogElement) {
             lastLogElement = null;
         }
-        logBox.removeChild(oldest);
+        oldest.remove();
     }
     logBox.scrollTop = logBox.scrollHeight;
 }
@@ -2098,7 +2145,7 @@ function processCultivationRequest(request = {}) {
     if (action === 'Tick') {
         const raw = Math.max(0, Number(request.tu_vi_nhan_duoc ?? request.raw_cultivation_gain) || 0);
         gained = isHeavenlyRejected(target)
-            ? (REALMS[realmIndex].minorStage === 'Viên Mãn' ? 0 : raw * HEAVENLY_REJECTION_RULES.cultivationGainMultiplier)
+            ? raw * HEAVENLY_REJECTION_RULES.cultivationGainMultiplier
             : raw;
         target.exp += gained;
     } else if (action === 'Breakthrough' || action === 'Dot_Pha') {
@@ -2154,23 +2201,11 @@ function getFeatureAccess(realmIndex = state.realmIndex, exp = state.exp) {
 }
 
 function isFeatureUnlocked(featureId) {
-    const nestedAliases = {
-        btn_dong_phu: 'tab_tu_linh_tran',
-        btn_linh_ngo: 'tab_can_co',
-        btn_lich_luyen: 'tab_lich_luyen',
-        btn_phuong_thi: 'tab_phuong_thi',
-        btn_tong_mon: 'tab_tong_mon',
-        btn_bi_canh: 'tab_bi_canh',
-        btn_linh_dien: 'tab_linh_dien',
-        btn_lo_dan: 'tab_dan_cac',
-        btn_linh_thu: 'tab_linh_thu',
-        btn_phap_bao_ban_menh: 'tab_phap_bao',
-        btn_dao_lu: 'tab_dao_lu'
-    };
-    if (nestedAliases[featureId]) {
-        return getLiveM1NestedAccess().unlocked.includes(nestedAliases[featureId]);
+    if (featureId === 'btn_phi_thang') {
+        const rule = FEATURE_UNLOCKS.btn_phi_thang;
+        return Number.isFinite(rule?.minRealmIndex) && state.realmIndex >= rule.minRealmIndex;
     }
-    return getFeatureAccess().unlocked.includes(featureId);
+    return true;
 }
 
 function applyFeatureVisibility() {
@@ -2250,7 +2285,7 @@ function processM1WebInput(input) {
     const rejected = realm.majorRealm === HEAVENLY_REJECTION_RULES.triggeringMajorRealm
         && (input.vi_dien || HEAVENLY_REJECTION_RULES.triggeringWorld) === HEAVENLY_REJECTION_RULES.triggeringWorld;
     const cultivationGain = rejected
-        ? (realm.minorStage === 'Viên Mãn' ? 0 : rawCultivationGain * HEAVENLY_REJECTION_RULES.cultivationGainMultiplier)
+        ? rawCultivationGain * HEAVENLY_REJECTION_RULES.cultivationGainMultiplier
         : rawCultivationGain;
     const nextExp = Math.max(0, Number(input.tu_vi_hien_tai) || 0) + cultivationGain;
     const featureAccess = getFeatureAccess(REALMS.indexOf(realm), nextExp);
@@ -2389,6 +2424,7 @@ function renderSpiritualRootPanel(hostId = 'spiritual-root-panel') {
             host.innerHTML = `
                 <div class="linh-can-layout">
                     <div class="linh-can-visual" aria-label="Kinh mạch ngũ hành và bể Linh Khí">
+                        <div class="linh-can-visual__heading"><strong>Ngũ Hành Luân Xa</strong><span>Chạm một hệ để chọn chủ vị</span></div>
                         <div class="linh-can-visual__halo" aria-hidden="true"></div>
                         <svg class="linh-can-visual__body" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
                             <circle cx="50" cy="20" r="8.5" />
@@ -2411,15 +2447,15 @@ function renderSpiritualRootPanel(hostId = 'spiritual-root-panel') {
                             const isMutated = Boolean(state.spiritualRoot?.mutations?.[key]);
                             const mutation = isMutated ? LINH_CAN_MUTATIONS[key] : null;
                             const nodeColor = isMutated ? (mutation?.color || '#a855f7') : pillar.color;
-                            return `<div class="meridian-node meridian-node--${key} ${state.activeElement === key ? 'is-active' : ''} ${isMutated ? 'is-mutated' : ''}" onclick="setActiveElement('${key}')" data-element="${key}" style="--element-color:${nodeColor}" title="${isMutated ? mutation.name + ' (Đã Thức Tỉnh)' : pillar.element + ' Luân Xa · Cấp ' + level + ' (' + stage.name + ')'} - Chạm để chọn làm chủ vị"><span class="flex flex-col items-center justify-center leading-none pointer-events-none"><span>${isMutated ? '✦ ' + pillar.element : pillar.element}</span><span class="text-[8px] font-mono opacity-85 mt-0.5">${level}</span></span></div>`;
+                            return `<button type="button" class="meridian-node meridian-node--${key} ${state.activeElement === key ? 'is-active' : ''} ${isMutated ? 'is-mutated' : ''}" onclick="setActiveElement('${key}')" data-element="${key}" style="--element-color:${nodeColor}" aria-label="Chọn ${pillar.element} làm chủ vị, cấp ${level}" aria-pressed="${state.activeElement === key}" title="${isMutated ? mutation.name + ' (Đã Thức Tỉnh)' : pillar.element + ' Luân Xa · Cấp ' + level + ' (' + stage.name + ')'} - Chạm để chọn làm chủ vị"><span class="flex flex-col items-center justify-center leading-none pointer-events-none"><span>${isMutated ? '✦ ' + pillar.element : pillar.element}</span><span class="text-[8px] font-mono opacity-85 mt-0.5">${level}</span></span></button>`;
                         }).join('')}
                         <div class="qi-pool"><span class="qi-pool__orb" aria-hidden="true"></span><span class="qi-pool__label">Bể Linh Khí</span><strong id="foundation-qi-amount">Linh Khí: ${formatCultivationNumber(state.linhKhi)}</strong></div>
                     </div>
-                    <div class="linh-can-controls">
-                        <details class="linh-can-root-info">
+                    <details class="linh-can-root-info">
                             <summary><span id="linh-can-title">Linh Căn</span><small id="linh-can-quality" class="linh-can-quality">Phẩm chất</small></summary>
                             <div>Đặc tính đang trang bị: <strong>${root.name} · ${tier.name}</strong><br>${root.description}<br>Hệ số tu luyện: ×${tier.cultivationMult.toFixed(2)} · Kháng Lôi Kiếp: ${tier.tribulationResist}%<br>Thể chất: ${getPhysique().name} · Tư chất: ${getAptitude().name} · Kháng Tâm Ma: ${getAptitude().heartDemonResistance}<br>${root.special}</div>
-                        </details>
+                    </details>
+                    <div class="linh-can-controls">
                         <div class="linh-can-upgrades">
                             ${Object.entries(ELEMENTAL_PILLARS).map(([key, pillar]) => renderLinhCanUpgradeRow(key, pillar)).join('')}
                             ${Object.entries(RARE_LINH_CAN_BRANCHES).filter(([key]) => state.spiritualRoot.rareBranches[key].isUnlocked).map(([key, pillar]) => renderLinhCanUpgradeRow(key, pillar)).join('')}
@@ -2547,6 +2583,7 @@ function openHubModal(hub, tab = null) {
                 addLog("⚡ Thần thức đang nghênh chiến Thiên Kiếp, không thể truy cập giao diện toàn cục!", "text-amber-300");
                 return;
             }
+            if (typeof hideMainScreenHUD === 'function') hideMainScreenHUD();
             // Bước 1: Đóng tất cả các trang .game-page khác trước khi mở Hub Modal
             hideAllGamePages('hub-modal-backdrop');
 
@@ -2576,6 +2613,7 @@ function closeHubModal() {
             const tabs = document.getElementById('hub-modal-tabs');
             if (tabs) tabs.classList.remove('hidden');
             if (typeof hideItemTooltip === 'function') hideItemTooltip();
+            if (typeof showMainScreenHUD === 'function') showMainScreenHUD();
         }
 function renderHubModal(hub, activeTab = null) {
             const title = document.getElementById('hub-modal-title');
@@ -2719,7 +2757,11 @@ function switchTab(tabId) {
     } else if (tabId === 'phap-bao' || tabId === 'artifact') {
         openHubModal('character', 'artifact');
     } else if (tabId === 'dong-phu' || tabId === 'cave') {
-        openHubModal('cave');
+        if (typeof openGiaVienModal === 'function') {
+            openGiaVienModal();
+        } else {
+            openHubModal('cave');
+        }
     } else if (tabId === 'tong-mon' || tabId === 'sect') {
         if (typeof openSectModal === 'function') openSectModal();
     } else if (tabId === 'the-gioi' || tabId === 'world') {
@@ -2777,7 +2819,10 @@ function toggleDropup(menuId, event) {
         if (parentWrap) {
             parentWrap.classList.add('is-open');
             const btn = parentWrap.querySelector('.nav-btn');
-            if (btn) btn.classList.add('active');
+            if (btn) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-expanded', 'true');
+            }
         }
     }
 }
@@ -2785,14 +2830,17 @@ function toggleDropup(menuId, event) {
 function closeAllDropups() {
     const allMenus = document.querySelectorAll('.dropup-menu');
     allMenus.forEach(menu => {
-        menu.style.setProperty('display', 'none', 'important');
+        menu.style.removeProperty('display');
         menu.classList.remove('active');
     });
     const allWrappers = document.querySelectorAll('.nav-item-wrapper');
     allWrappers.forEach(wrap => {
         wrap.classList.remove('is-open');
         const btn = wrap.querySelector('.nav-btn');
-        if (btn) btn.classList.remove('active');
+        if (btn) {
+            btn.classList.remove('active');
+            if (btn.hasAttribute('aria-controls')) btn.setAttribute('aria-expanded', 'false');
+        }
     });
 }
 
@@ -2876,7 +2924,12 @@ function openFeature(featureKey) {
     
     let targetPageId = featureKey;
     if (featureKey === 'nhan-vat' || featureKey === 'character') targetPageId = 'page-inventory';
-    else if (featureKey === 'dong-phu' || featureKey === 'cave') targetPageId = 'page-linh-dien';
+    else if (featureKey === 'dong-phu' || featureKey === 'cave') {
+        if (typeof openGiaVienModal === 'function') {
+            return openGiaVienModal();
+        }
+        targetPageId = 'page-linh-dien';
+    }
     else if (featureKey === 'tong-mon' || featureKey === 'sect') targetPageId = 'page-sect-quests';
     else if (featureKey === 'the-gioi' || featureKey === 'world') targetPageId = 'page-world-market';
     else if (featureKey === 'demon-tower' || featureKey === 'demon-tower-modal') targetPageId = 'demon-tower-modal';
@@ -2897,7 +2950,146 @@ function openFeature(featureKey) {
 window.openFeature = openFeature;
 globalThis.openFeature = openFeature;
 
+const featurePageHistory = [];
+let returningToPreviousFeaturePage = false;
+
+function ensureFeaturePageBackdrop() {
+    let backdrop = document.getElementById('feature-page-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'feature-page-backdrop';
+        backdrop.setAttribute('aria-hidden', 'true');
+        backdrop.addEventListener('click', returnToPreviousFeaturePage);
+        document.body.appendChild(backdrop);
+    }
+    return backdrop;
+}
+
+function returnToPreviousFeaturePage() {
+    const previousPage = featurePageHistory.pop() || 'main-screen';
+    returningToPreviousFeaturePage = true;
+    switchPage(previousPage);
+}
+window.returnToPreviousFeaturePage = returnToPreviousFeaturePage;
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && document.getElementById('feature-page-backdrop')?.classList.contains('is-visible')) {
+        event.preventDefault();
+        returnToPreviousFeaturePage();
+    }
+});
+
+const cavePopupClosers = {
+    'modal-gia-vien': 'closeGiaVienModal',
+    'modal-luyen-dan': 'closeLuyenDanModal',
+    'modal-luyen-khi': 'closeLuyenKhiModal',
+    'modal-khue-phong': 'closeKhuePhongModal'
+};
+document.addEventListener('pointerdown', (event) => {
+    for (const [id, closer] of Object.entries(cavePopupClosers)) {
+        const popup = document.getElementById(id);
+        if (popup && getComputedStyle(popup).display !== 'none' && !popup.contains(event.target)) {
+            window[closer]?.();
+        }
+    }
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    for (const [id, closer] of Object.entries(cavePopupClosers)) {
+        const popup = document.getElementById(id);
+        if (popup && getComputedStyle(popup).display !== 'none') {
+            event.preventDefault();
+            window[closer]?.();
+            break;
+        }
+    }
+});
+
+function hideMainScreenHUD() {
+    document.body.classList.add('has-active-modal');
+    const main = document.getElementById('main-content');
+    if (main) {
+        main.style.setProperty('display', 'none', 'important');
+        main.style.setProperty('pointer-events', 'none', 'important');
+    }
+    const right = document.getElementById('right-panel');
+    if (right) {
+        right.style.setProperty('display', 'none', 'important');
+        right.style.setProperty('pointer-events', 'none', 'important');
+    }
+    const left = document.getElementById('left-panel');
+    if (left) {
+        left.style.setProperty('display', 'none', 'important');
+        left.style.setProperty('pointer-events', 'none', 'important');
+    }
+    const center = document.getElementById('center-avatar');
+    if (center) {
+        center.style.setProperty('display', 'none', 'important');
+        center.style.setProperty('pointer-events', 'none', 'important');
+    }
+    const bar = document.getElementById('tu-vi-bar');
+    if (bar) {
+        bar.style.setProperty('display', 'none', 'important');
+        bar.style.setProperty('pointer-events', 'none', 'important');
+    }
+    const bottom = document.getElementById('bottom-menu');
+    if (bottom) {
+        bottom.style.setProperty('display', 'none', 'important');
+        bottom.style.setProperty('pointer-events', 'none', 'important');
+    }
+}
+window.hideMainScreenHUD = hideMainScreenHUD;
+
+function showMainScreenHUD() {
+    document.body.classList.remove('has-active-modal');
+    const main = document.getElementById('main-content');
+    if (main) {
+        main.style.removeProperty('display');
+        main.style.removeProperty('pointer-events');
+    }
+    const right = document.getElementById('right-panel');
+    if (right) {
+        right.style.removeProperty('display');
+        right.style.removeProperty('pointer-events');
+    }
+    const left = document.getElementById('left-panel');
+    if (left) {
+        left.style.removeProperty('display');
+        left.style.removeProperty('pointer-events');
+    }
+    const center = document.getElementById('center-avatar');
+    if (center) {
+        center.style.removeProperty('display');
+        center.style.removeProperty('pointer-events');
+    }
+    const bar = document.getElementById('tu-vi-bar');
+    if (bar) {
+        bar.style.removeProperty('display');
+        bar.style.removeProperty('pointer-events');
+    }
+    const bottom = document.getElementById('bottom-menu');
+    if (bottom) {
+        bottom.style.removeProperty('display');
+        bottom.style.removeProperty('pointer-events');
+    }
+    if (bar) {
+        bar.style.removeProperty('display');
+        bar.style.removeProperty('pointer-events');
+    }
+}
+window.showMainScreenHUD = showMainScreenHUD;
+
 function switchPage(pageId) {
+    const activePage = document.querySelector('section.feature-page.game-page.active:not(.hidden)');
+    const isReturning = returningToPreviousFeaturePage;
+    returningToPreviousFeaturePage = false;
+    if (!activePage && !isReturning) featurePageHistory.length = 0;
+    if (!isReturning && activePage && pageId !== activePage.id && pageId !== 'main' && pageId !== 'main-screen') {
+        featurePageHistory.push(activePage.id);
+    }
+    if (pageId === 'main' || pageId === 'main-screen' || pageId === 'nhan-vat') featurePageHistory.length = 0;
+    const featureBackdrop = document.getElementById('feature-page-backdrop');
+    if (featureBackdrop) featureBackdrop.classList.remove('is-visible');
+
     // Bước 1: Ẩn TẤT CẢ các trang đang mở (Tránh lỗi đè giao diện)
     const allPages = document.querySelectorAll('.feature-popup, .feature-page, .game-page');
     allPages.forEach(page => {
@@ -2911,7 +3103,7 @@ function switchPage(pageId) {
     const allMenus = document.querySelectorAll('.dropup-menu');
     allMenus.forEach(menu => {
         menu.classList.remove('active');
-        menu.style.setProperty('display', 'none', 'important');
+        menu.style.removeProperty('display');
     });
     closeAllDropups();
 
@@ -2922,15 +3114,19 @@ function switchPage(pageId) {
     if (pageId === 'main' || pageId === 'main-screen' || pageId === 'nhan-vat') {
         const stage = document.getElementById('hero-stage');
         if (stage) stage.style.display = 'flex';
+        showMainScreenHUD();
         return;
     }
 
     const showPopupEl = (el) => {
         if (!el) return;
+        hideMainScreenHUD();
         el.classList.remove('hidden');
         el.classList.add('active');
         el.style.setProperty('display', 'block', 'important');
+        el.style.removeProperty('pointer-events');
         el.style.setProperty('z-index', '10000', 'important');
+        if (el.matches('section.feature-page.game-page')) ensureFeaturePageBackdrop().classList.add('is-visible');
     };
 
     // 1. NHÂN VẬT - POP-MENU CHỨC NĂNG
@@ -3153,9 +3349,7 @@ function switchPage(pageId) {
     // Nếu truyền trực tiếp ID của một trang .game-page cụ thể
     const targetPage = document.getElementById(pageId);
     if (targetPage) {
-        targetPage.classList.remove('hidden');
-        targetPage.classList.add('active', 'flex');
-        targetPage.style.display = 'flex';
+        showPopupEl(targetPage);
     } else if (typeof openTab === 'function') {
         openTab(pageId);
     }
@@ -3166,10 +3360,37 @@ window.switchPage = switchPage;
  * 3. Tính năng Click ra ngoài tự đóng (Click Outside Close):
  */
 if (typeof document !== 'undefined') {
+    document.querySelectorAll('#bottom-menu .nav-item-wrapper').forEach(wrapper => {
+        const trigger = wrapper.querySelector('.nav-btn[aria-controls]');
+        if (!trigger) return;
+        trigger.setAttribute('aria-expanded', 'false');
+        let closeTimer;
+        wrapper.addEventListener('pointerenter', event => {
+            if (event.pointerType !== 'mouse') return;
+            clearTimeout(closeTimer);
+            const menu = document.getElementById(trigger.getAttribute('aria-controls'));
+            if (menu && !menu.classList.contains('active')) toggleDropup(menu.id);
+        });
+        wrapper.addEventListener('pointerleave', event => {
+            if (event.pointerType !== 'mouse') return;
+            closeTimer = setTimeout(() => {
+                if (!wrapper.matches(':hover')) closeAllDropups();
+            }, 180);
+        });
+    });
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.nav-item-wrapper')) {
             closeAllDropups();
         }
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        const openMenu = document.querySelector('#bottom-menu .dropup-menu.active');
+        if (!openMenu) return;
+        const trigger = openMenu.closest('.nav-item-wrapper')?.querySelector('.nav-btn');
+        closeAllDropups();
+        trigger?.focus();
+        e.preventDefault();
     });
 }
 
@@ -3289,7 +3510,7 @@ function showItemTooltip(e, itemId) {
         <p class="text-xs text-slate-300/90 leading-relaxed my-2">${item.desc}</p>
         <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-gold-400/90 font-mono">
             <span>Số lượng: x${item.count}</span>
-            <span>${item.slot ? (item.equipped ? '⚡ Nhấn để Tháo' : '⚡ Nhấn để Đeo') : item.type === 'Đan Dược' ? '💊 Nhấn để Dùng' : '📦 Nguyên liệu'}</span>
+            <span>${item.slot ? (item.equipped ? '⚡ Nhấn để Tháo' : '⚡ Nhấn để Đeo') : item.type === 'Đan Dược' ? '💊 Nhấn để Dùng' : item.type === 'Bí Tịch' ? '📖 Nhấn để Xem' : '📦 Nguyên liệu'}</span>
         </div>
     `;
 
@@ -3496,6 +3717,8 @@ function handleInventoryItemClick(itemId) {
             currentInventoryFilter = 'equipment';
         }
         triggerSlotFlash(item.slot);
+    } else if (item.type === 'Bí Tịch' && item.skillId) {
+        showSkillDetail(item.skillId);
     } else if (item.type === 'Đan Dược' || item.effect) {
         useInventoryItem(itemId);
     } else {
@@ -4458,12 +4681,13 @@ function feedGuardianPetPill(pillType) {
 
     state.petExp += expGain;
     let leveledUp = false;
-    let maxExp = state.petLevel * 600;
-    while (state.petExp >= maxExp) {
+    let maxExp = Math.max(100, (state.petLevel || 1) * 600);
+    let petLoopGuard = 0;
+    while (maxExp > 0 && state.petExp >= maxExp && petLoopGuard++ < 100) {
         state.petExp -= maxExp;
         state.petLevel += 1;
         leveledUp = true;
-        maxExp = state.petLevel * 600;
+        maxExp = Math.max(100, state.petLevel * 600);
     }
 
     if (leveledUp) {
@@ -6063,6 +6287,17 @@ function updateHUD() {
 
             document.getElementById('realm-badge').textContent = currentRealm.name;
 
+            // Đồng bộ Top Bar Avatar Cluster
+            const topbarName = document.getElementById('ui-player-name');
+            if (topbarName && state.player?.name) topbarName.textContent = state.player.name;
+            const topbarRealm = document.getElementById('ui-realm-title');
+            if (topbarRealm && currentRealm?.name) topbarRealm.textContent = currentRealm.name;
+            const topbarAvatar = document.getElementById('ui-avatar');
+            if (topbarAvatar && (state.player?.avatar_url || state.avatar_url)) {
+                const avatarUrl = state.player?.avatar_url || state.avatar_url;
+                if (topbarAvatar.getAttribute('src') !== avatarUrl) topbarAvatar.src = avatarUrl;
+            }
+
             // Cập nhật trạng thái [Trọng Thương] do Thiên Kiếp đánh bại nếu có
             const heavyInjuryEl = document.getElementById('heavy-injury-status');
             const heavyInjuryTimeEl = document.getElementById('heavy-injury-time');
@@ -6094,7 +6329,8 @@ function updateHUD() {
             const surplusExp = isAtOrAboveBottleneck ? Math.max(0, state.exp - currentRealm.maxExp) : 0;
             const expDesktopEl = document.getElementById('exp-text-desktop');
             if (expDesktopEl) {
-                expDesktopEl.textContent = `${formatCultivationNumber(state.exp)} / ${formatCultivationNumber(currentRealm.maxExp)}`;
+                const expLabel = `${formatCultivationNumber(state.exp)} / ${formatCultivationNumber(currentRealm.maxExp)}`;
+                if (expDesktopEl.textContent !== expLabel) expDesktopEl.textContent = expLabel;
                 if (isAtOrAboveBottleneck) {
                     expDesktopEl.setAttribute('title', `Bể chứa vô hạn: Đã tích lũy ${formatCultivationNumber(state.exp)} Tu Vi (vượt ngưỡng +${formatCultivationNumber(surplusExp)}). Toàn bộ tu vi dư sẽ được bảo toàn khi đột phá!`);
                 } else {
@@ -6254,15 +6490,16 @@ function updateHUD() {
                 }
             }
 
-            document.getElementById('stat-lifespan').textContent = `${Math.floor(state.ageYears)} / ${getThoNguyenMax()} năm`;
+            const lifespanStat = document.getElementById('stat-lifespan-text') || document.getElementById('stat-lifespan');
+            if (lifespanStat) lifespanStat.textContent = `${Math.floor(state.ageYears)} / ${getThoNguyenMax()} năm`;
             const topLife = document.getElementById('top-lifespan-text');
             if (topLife) topLife.textContent = `${Math.floor(state.ageYears)}/${getThoNguyenMax()} năm`;
             const timePayload = getTimeSystemPayload().time_system;
             const warningLifespan = state.isDead || (timePayload.time_to_death_seconds !== null && timePayload.time_to_death_seconds < 3600);
             document.body.dataset.heavenlyRejection = String(warningLifespan);
-            document.getElementById('stat-lifespan')?.classList.toggle('lifespan-danger', warningLifespan);
+            lifespanStat?.classList.toggle('lifespan-danger', warningLifespan);
             topLife?.classList.toggle('lifespan-danger', warningLifespan);
-            document.getElementById('stat-lifespan')?.classList.toggle('lifespan-paused', !timePayload.is_aging && !state.isDead);
+            lifespanStat?.classList.toggle('lifespan-paused', !timePayload.is_aging && !state.isDead);
 
             const currentCP = getCombatPower();
             const statAtkEl = document.getElementById('stat-atk');
@@ -6298,13 +6535,10 @@ function updateHUD() {
             renderSpiritualRootPanel();
             const cpEl = document.getElementById('combat-power-text');
             const modalCpEl = document.getElementById('rpg-char-combat-power');
-            if (previousCombatPower !== null && previousCombatPower !== currentCP) {
-                if (cpEl) animateCombatPowerCountUp(cpEl, previousCombatPower, currentCP);
-                if (modalCpEl) animateCombatPowerCountUp(modalCpEl, previousCombatPower, currentCP);
-            } else {
-                if (cpEl) cpEl.textContent = currentCP.toLocaleString('vi-VN');
-                if (modalCpEl) modalCpEl.textContent = currentCP.toLocaleString('vi-VN');
-            }
+            // Passive stat ticks must not restart the count-up animation every second.
+            const cpLabel = currentCP.toLocaleString('vi-VN');
+            if (cpEl && cpEl.textContent !== cpLabel) cpEl.textContent = cpLabel;
+            if (modalCpEl && modalCpEl.textContent !== cpLabel) modalCpEl.textContent = cpLabel;
             previousCombatPower = currentCP;
             document.getElementById('stage-location-badge').textContent = `${BACKGROUNDS[state.bgIndex].name} • Tụ Linh Trận Cấp ${state.arrayLevel}`;
 
@@ -6424,6 +6658,7 @@ function updateHUD() {
             const mainActionIcon = document.getElementById('btn-cultivate-icon');
             const mainActionLabel = document.getElementById('btn-cultivate-label');
             const btnBreak = document.getElementById('btn-breakthrough');
+            if (mainActionBtn) mainActionBtn.onclick = attemptCultivationBreakthrough;
 
             const isSuppressed = checkHeavenlySuppression(state);
             const hasCleared50 = Boolean(state.hasClearedTower50 || (state.towerFloor && state.towerFloor > 50));
@@ -6450,7 +6685,7 @@ function updateHUD() {
                         mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn btn-ascension-locked cursor-pointer";
                         mainActionIcon.className = "fa-solid fa-lock mr-1.5 text-rose-400 animate-pulse";
                         mainActionLabel.textContent = "ÁP CHẾ • PHÁ THÁP 50";
-                        mainActionBtn.setAttribute('title', `Thiên Đạo đang áp chế (Tu Vi = 0)! Hãy đả thông Tầng 50 Trấn Yêu Tháp (Hiện tại: Tầng ${state.towerFloor || 1}) để Phi Thăng!`);
+                        mainActionBtn.setAttribute('title', `Thiên Đạo giảm 90% tốc độ Tu Vi. Hãy đả thông Tầng 50 Trấn Yêu Tháp (Hiện tại: Tầng ${state.towerFloor || 1}) để Phi Thăng!`);
                         mainActionBtn.onclick = () => {
                             if (typeof openDemonTowerModal === 'function') openDemonTowerModal('fight');
                         };
@@ -6461,10 +6696,7 @@ function updateHUD() {
                     btnBreak.classList.add('hidden');
                     btnBreak.className = "hidden";
                     btnBreak.setAttribute('aria-hidden', 'true');
-                    btnBreak.onclick = () => {
-                        if (currentRealm.isMajorBottleneck) openBreakthroughModal();
-                        else openMinorBreakthroughModal();
-                    };
+                    btnBreak.onclick = attemptCultivationBreakthrough;
                 }
                 if (mainActionBtn && mainActionIcon && mainActionLabel) {
                     mainActionBtn.classList.remove('hidden');
@@ -6579,11 +6811,14 @@ function syncRealmTheme() {
             const realmTheme = (typeof REALM_THEME_BY_INDEX !== 'undefined' && REALM_THEME_BY_INDEX[state.realmIndex]) || 'luyen-khi';
             const worldTheme = BACKGROUNDS[state.bgIndex]?.themeKey;
             const activeTheme = worldTheme || realmTheme;
-            document.body.dataset.realm = activeTheme;
-            document.body.dataset.cultivationRealm = realmTheme;
-            document.body.dataset.world = worldTheme || 'realm';
-            if (typeof updateCharacterModel === 'function') {
+            if (document && document.body) {
+                if (document.body.dataset.realm !== activeTheme) document.body.dataset.realm = activeTheme;
+                if (document.body.dataset.cultivationRealm !== realmTheme) document.body.dataset.cultivationRealm = realmTheme;
+                if (document.body.dataset.world !== (worldTheme || 'realm')) document.body.dataset.world = worldTheme || 'realm';
+            }
+            if (typeof updateCharacterModel === 'function' && syncRealmTheme.lastModelTheme !== realmTheme) {
                 updateCharacterModel(realmTheme);
+                syncRealmTheme.lastModelTheme = realmTheme;
             }
         }
 function renderQuickEquipSlots() {
@@ -6878,8 +7113,12 @@ function openDrawer(tabName) {
                 openHubModal('character', 'inventory');
                 return;
             }
-            if (tabName === 'cave' && typeof openHubModal === 'function') {
-                openHubModal('cave');
+            if (tabName === 'cave') {
+                if (typeof openGiaVienModal === 'function') {
+                    openGiaVienModal();
+                } else if (typeof openHubModal === 'function') {
+                    openHubModal('cave');
+                }
                 return;
             }
             if (tabName === 'sect') {
@@ -7880,7 +8119,6 @@ function craftPill(pillId, herbId, requiredCount, isAuto = false) {
                 return;
             }
             herb.count -= requiredCount;
-            const pill = state.inventory.find(i => i.id === pillId);
             const successChance = Math.min(0.95, 0.7 + getPillarLevel('fire') * 0.02 * getPillarEfficiency('fire'));
             if (Math.random() > successChance) {
                 playSound('thunder');
@@ -7889,10 +8127,13 @@ function craftPill(pillId, herbId, requiredCount, isAuto = false) {
                 return;
             }
             const qualityBonus = Math.random() < getPillarLevel('fire') * 0.02 ? 1 : 0;
-            if (pill) pill.count += 1 + qualityBonus;
+            const yieldCount = 1 + qualityBonus;
+            addItemToInventory(pillId, yieldCount);
+            const pill = state.inventory.find(i => i.id === pillId);
+            const pillName = pill?.name || (typeof BREAKTHROUGH_PILLS !== 'undefined' && BREAKTHROUGH_PILLS.find(p => p.id === pillId)?.name) || pillId;
 
             playSound('bell');
-            addLog(`${isAuto ? '[Tự động] ' : ''}🔥 Hương đan tỏa ngát! Luyện chế thành công <span class="text-gold-300 font-semibold">${1 + qualityBonus} ${pill.name}</span>.`, 'reward', 'craft-' + pillId);
+            addLog(`${isAuto ? '[Tự động] ' : ''}🔥 Hương đan tỏa ngát! Luyện chế thành công <span class="text-gold-300 font-semibold">${yieldCount} ${pillName}</span>.`, 'reward', 'craft-' + pillId);
             maybeAddM1ContextLog('alchemy');
             renderDrawerContent('alchemy');
         }
@@ -8499,6 +8740,18 @@ function openBreakthroughModal() {
         startTribulationCutscene(nextRealm);
     }
 }
+
+function attemptCultivationBreakthrough() {
+    const currentRealm = REALMS[state.realmIndex];
+    const nextRealm = REALMS[state.realmIndex + 1];
+    if (!currentRealm || !nextRealm || state.exp < currentRealm.maxExp) return;
+    if (currentRealm.isMajorBottleneck) {
+        openBreakthroughModal();
+    } else {
+        openMinorBreakthroughModal();
+    }
+}
+window.attemptCultivationBreakthrough = attemptCultivationBreakthrough;
 
 function renderTribulationLightningIcons() {
     const row = document.getElementById('lightning-icons-row');
@@ -9300,6 +9553,24 @@ function finishTribulationCutscene(survived = true) {
         }
     }
 }
+
+// The sky tribulation screen uses the same realm, reward, failure and save rules
+// as the existing major-breakthrough cutscene.
+function resolveSkyTribulation(survived, totalDamage = 0) {
+    const currentRealm = REALMS[state.realmIndex];
+    const nextRealm = REALMS[state.realmIndex + 1];
+    if (!currentRealm?.isMajorBottleneck || !nextRealm || state.exp < currentRealm.maxExp) return false;
+    cutsceneState = {
+        inProgress: true,
+        isStriking: false,
+        config: typeof getTribulationConfig === 'function' ? getTribulationConfig(nextRealm) : {},
+        totalChance: (currentRealm.baseChance || 70) + (breakthroughBonusChance || 0),
+        totalDamage: Math.max(0, Number(totalDamage) || 0)
+    };
+    finishTribulationCutscene(Boolean(survived));
+    return true;
+}
+window.resolveSkyTribulation = resolveSkyTribulation;
 
 function triggerHeavenlyPunishment(reason) {
     const rules = M1_SYSTEM_RULES.heavenlyPunishment;
@@ -12138,7 +12409,10 @@ function applyLiveLinhCanAction(action, key) {
     const result = applyLinhCanAction(state, action, key);
     if (result.error_code) {
         const required = result.required_item ? ` Cần ${LINH_CAN_MUTATIONS[key]?.itemName || result.required_item}.` : '';
-        addLog(`[Căn Cơ] ${result.error_code}.${required}`, 'text-rose-400');
+        const message = result.error_code === 'INSUFFICIENT_LINH_KHI'
+            ? `Không đủ Linh Khí để nâng ${ELEMENTAL_PILLARS[key]?.element || RARE_LINH_CAN_BRANCHES[key]?.element || 'Linh Căn'}. Hiện có ${formatCultivationNumber(state.linhKhi)} Linh Khí.`
+            : `${result.error_code}.${required}`;
+        addLog(`[Căn Cơ] ${message}`, 'text-rose-400');
         return JSON.stringify(buildLinhCanResponse(state, { status: 'error', error_code: result.error_code }));
     }
     updateLinhCanTitle();
@@ -12282,6 +12556,11 @@ function startLiveCombat() {
             }
             if (logEl) logEl.innerHTML = '';
 
+            if (combatTimer) {
+                clearInterval(combatTimer);
+                combatTimer = null;
+            }
+
             combatTimer = setInterval(() => {
                 combatTurn++;
                 playSound('sword');
@@ -12357,8 +12636,9 @@ function startLiveCombat() {
                     state.stones += dungeon.stoneReward;
                     addExp(dungeon.expReward);
 
-                    const dropItem = state.inventory.find(i => i.id === dungeon.dropId);
-                    if (dropItem) dropItem.count += 1;
+                    if (dungeon.dropId) {
+                        addItemToInventory(dungeon.dropId, 1);
+                    }
 
                     // Lưu tiến độ Bí Cảnh & Thưởng Thủ Sát
                     if (!state.dungeonsCleared) state.dungeonsCleared = {};
@@ -12830,13 +13110,7 @@ function runAutoAssistants(automationEnabled, loopStats, currentRealm) {
         }
     }
 
-    // 2. Tự động hồi phục Khí Huyết (QoL)
-    const autoHeal = state.auto.heal;
-    const autoHealMpCost = 12 * (loopStats.mpCostMultiplier || 1);
-    if (autoHeal && state.hp < loopStats.maxHp && state.mp >= autoHealMpCost) {
-        state.mp -= autoHealMpCost;
-        state.hp = Math.min(loopStats.maxHp, state.hp + 25 * state.timeScale);
-    }
+    // Auto-heal is handled once per tick by checkAutoHeal(state).
 
     // 3. Tự động khai Lò Đan (Kiểm tra mở khóa tính năng Lò Đan - silently ignore nếu chưa mở)
     const autoAlchemy = state.auto.alchemy;
@@ -12882,11 +13156,13 @@ function GameLoop() {
         } else {
             const gain = getAdjustedCultivationGain(getIdleRate() * state.timeScale).gainedAmount;
             if (gain > 0) {
+                // Commit the cultivation HUD with the gain itself. Optional VFX,
+                // automation or room ticks below must not leave this bar stale.
                 addExp(getIdleRate() * state.timeScale);
                 spawnTuViFloatingText(gain);
                 spawnSpiritParticles(3);
             }
-            else updateHUD();
+            // The outer tick updates the HUD once after all state changes.
         }
         if (typeof tickExpedition === 'function') tickExpedition();
         return { ...getIdleResourcesPayload(), ...getTimeSystemPayload() };
@@ -12896,7 +13172,7 @@ function updateUI() {
     if (typeof syncGameState === 'function') {
         syncGameState(state);
     }
-    if (typeof ensureCultivationCenter === 'function') {
+    if (!document.getElementById('player-avatar') && typeof ensureCultivationCenter === 'function') {
         ensureCultivationCenter();
     }
     updateHUD();
@@ -13072,6 +13348,7 @@ window.onload = function() {
         // Cập nhật tiến trình Linh Điền
         let farmReady = false;
         let farmUpdated = false;
+        const automationEnabled = Boolean(state.auto && state.auto.enabled);
         const isFarmUnlocked = isFeatureUnlocked('btn_linh_dien');
         const autoFarm = automationEnabled && state.auto.farm && isFarmUnlocked;
         state.farmPlots.forEach(plot => {
@@ -13115,9 +13392,7 @@ window.onload = function() {
             realmIndex: Number(state.realmIndex) || 0,
             linhKhi: Math.floor(Number(state.linhKhi) || 0)
         };
-        const changed = (typeof hasStateChangedForUI === 'function')
-            ? hasStateChangedForUI(prevSnapshot, nextSnapshot)
-            : (
+        const changed = (
                 prevSnapshot.exp !== nextSnapshot.exp ||
                 prevSnapshot.hp !== nextSnapshot.hp ||
                 prevSnapshot.mp !== nextSnapshot.mp ||
@@ -13222,6 +13497,7 @@ function showSkillDetail(nameOrId) {
     if (popoverCard && backdrop) {
         popoverCard.innerHTML = `
             <div class="relative z-10 text-xs">
+                ${s.image_url ? `<img src="${s.image_url}" alt="Bìa ${s.name || nameOrId}" class="w-36 h-36 mx-auto mb-3 rounded-lg object-cover border border-amber-500/40" onerror="this.style.display='none'">` : ''}
                 <h3 class="font-serif text-base font-bold mb-1 ${colorClass}">${s.name || nameOrId} [${tierName}]</h3>
                 <span class="px-2 py-0.5 rounded text-[10px] bg-stone-900 border border-stone-700 text-amber-200">${s.type || 'Công Pháp'}</span>
                 <p class="text-stone-300 mt-2.5 leading-relaxed font-serif italic">"${s.desc || ''}"</p>

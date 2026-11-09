@@ -78,9 +78,18 @@ const tribulationConfig = {
 };
 tribulationConfig["KetDan"] = tribulationConfig["KimDan"];
 var tribConfigs = tribulationConfig;
+// Per-encounter support actions for the interactive Độ Kiếp scene.
+const tribulationActionConfig = Object.freeze({
+    recoveryCharges: 3,
+    wardCharges: 1,
+    recoveryPercent: 0.18,
+    wardReduction: 0.5,
+    nextStrikeDelayMs: 2800
+});
 if (typeof window !== 'undefined') {
     window.tribulationConfig = tribulationConfig;
     window.tribConfigs = tribulationConfig;
+    window.tribulationActionConfig = tribulationActionConfig;
 }
 if (typeof globalThis !== 'undefined') {
     globalThis.tribulationConfig = tribulationConfig;
@@ -672,8 +681,8 @@ const CAVE_HUB_RULES = {
     arrayUpgradeBaseCost: 100,
     farmExpandBaseCost: 150,
     maxFarmPlots: 8,
-    alchemyUnlockRealmIndex: 4, // Trúc Cơ - Sơ Kỳ
-    forgeUnlockRealmIndex: 5,   // Trúc Cơ - Trung Kỳ
+    alchemyUnlockRealmIndex: 0, // Mở khóa ngay từ Luyện Khí Kỳ
+    forgeUnlockRealmIndex: 0,   // Mở khóa ngay từ Luyện Khí Kỳ
     seeds: [
         { herbId: "herb_spirit", herbName: "Tử Linh Chi", speed: 12, icon: "fa-leaf" },
         { herbId: "herb_blood", herbName: "Huyết Ngọc Sâm", speed: 9, icon: "fa-seedling" },
@@ -986,17 +995,17 @@ const M1_SYSTEM_RULES = {
 const FEATURE_UNLOCKS = {
     btn_dong_phu: { minRealmIndex: 0, group: "tu_luyen" },
     btn_tui_do: { minRealmIndex: 0, group: "tu_luyen" },
-    btn_linh_ngo: { minRealmIndex: 2, group: "tu_luyen" },
+    btn_linh_ngo: { minRealmIndex: 0, group: "tu_luyen" },
     btn_dot_pha: { minRealmIndex: 0, group: "tu_luyen", requiresFullBottleneck: true },
-    btn_phuong_thi: { minRealmIndex: 1, group: "san_xuat" },
-    btn_linh_dien: { minRealmIndex: 2, group: "san_xuat" },
-    btn_lo_dan: { minRealmIndex: 4, group: "san_xuat" },
+    btn_phuong_thi: { minRealmIndex: 0, group: "san_xuat" },
+    btn_linh_dien: { minRealmIndex: 0, group: "san_xuat" },
+    btn_lo_dan: { minRealmIndex: 0, group: "san_xuat" },
     btn_lich_luyen: { minRealmIndex: 0, group: "the_gioi" },
-    btn_tong_mon: { minRealmIndex: 2, group: "the_gioi" },
-    btn_bi_canh: { minRealmIndex: 4, group: "the_gioi" },
-    btn_linh_thu: { minRealmIndex: 6, group: "nhan_sinh" },
-    btn_phap_bao_ban_menh: { minRealmIndex: 8, group: "nhan_sinh" },
-    btn_dao_lu: { minRealmIndex: 12, group: "nhan_sinh" },
+    btn_tong_mon: { minRealmIndex: 0, group: "the_gioi" },
+    btn_bi_canh: { minRealmIndex: 0, group: "the_gioi" },
+    btn_linh_thu: { minRealmIndex: 0, group: "nhan_sinh" },
+    btn_phap_bao_ban_menh: { minRealmIndex: 0, group: "nhan_sinh" },
+    btn_dao_lu: { minRealmIndex: 0, group: "nhan_sinh" },
     btn_phi_thang: { minRealmIndex: Number.POSITIVE_INFINITY, group: "the_gioi" }
 };
 
@@ -1007,13 +1016,13 @@ const QI_REFINING_RULES = {
     features: {
         btn_chu_thien: { defaultUnlocked: true },
         btn_tap_dich: { defaultUnlocked: true },
-        btn_tu_linh_tran: { minLevel: 3, requiredItems: { "Bản vẽ Tụ Linh Trận Sơ Giai": 1 }, stoneCost: 50 },
-        btn_hoa_phu: { requiredItems: { "Bút Lông Linh Thú": 1, "Chu Sa": 1 }, requiredFlags: ["da_doc_bach_khoa_phu_luc_1"] },
-        btn_luyen_dan: { permanentlyLocked: true },
-        btn_luyen_khi: { permanentlyLocked: true },
-        btn_phuong_thi: { requiredFlags: ["tung_so_huu_tren_10_linh_thach"] },
-        btn_tong_mon: { minLevel: 3 },
-        btn_huyet_sac_cam_dia: { minLevel: 9, requiredItems: { "Bản Đồ Cấm Địa": 1 } },
+        btn_tu_linh_tran: { minLevel: 1, defaultUnlocked: true, stoneCost: 0 },
+        btn_hoa_phu: { defaultUnlocked: true },
+        btn_luyen_dan: { defaultUnlocked: true },
+        btn_luyen_khi: { defaultUnlocked: true },
+        btn_phuong_thi: { defaultUnlocked: true },
+        btn_tong_mon: { minLevel: 1, defaultUnlocked: true },
+        btn_huyet_sac_cam_dia: { minLevel: 1, defaultUnlocked: true },
         btn_lich_luyen: { defaultUnlocked: true }
     },
     talismanPriority: ["Thần Hành Phù", "Hỏa Cầu Phù", "Khinh Công Phù"],
@@ -1032,24 +1041,24 @@ const M1_NESTED_FEATURES = {
     tab_chu_thien: { minRank: 1, hub: "cave", farming: true },
     tab_lich_luyen: { minRank: 1, hub: "world", farming: true },
     tab_tui_do: { minRank: 1, hub: "character" },
-    tab_phuong_thi: { minRank: 1, minStones: 11, hub: "world" },
-    tab_tong_mon: { minRank: 3, hub: "world" },
-    tab_hoa_phu: { minRank: 7, items: { "Bút Lông": 1, "Chu Sa": 1 }, knowledge: ["Bách Khoa Phù Lục"], hub: "character" },
+    tab_phuong_thi: { minRank: 1, hub: "world" },
+    tab_tong_mon: { minRank: 1, hub: "world" },
+    tab_hoa_phu: { minRank: 1, hub: "character" },
     tab_can_co: { minRank: 1, hub: "character" },
-    tab_bi_canh: { minRank: 10, items: { "Ngọc Giản Thần Thức": 1 }, hub: "world", farming: true },
-    tab_dan_cac: { minRank: 11, knowledge: ["Đan Phương"], hub: "cave", farming: true },
-    tab_linh_dien: { minRank: 11, roles: ["Đệ Tử Nội Môn"], hub: "cave", farming: true },
-    tab_khi_cac: { minRank: 12, knowledge: ["Sơ Cấp Luyện Khí Quyết"], hub: "cave", farming: true },
+    tab_bi_canh: { minRank: 1, hub: "world", farming: true },
+    tab_dan_cac: { minRank: 1, hub: "cave", farming: true },
+    tab_linh_dien: { minRank: 1, hub: "cave", farming: true },
+    tab_khi_cac: { minRank: 1, hub: "cave", farming: true },
     tab_tu_linh_tran: { minRank: 1, hub: "cave", farming: true },
-    tab_linh_thu: { minRank: 13, items: { "Trứng Linh Thú": 1 }, hub: "character" },
-    tab_auto_bot: { minRank: 14, hub: "cave" },
-    tab_phap_bao: { minRank: 15, hub: "character" },
-    tab_dau_phap_dai: { minRank: 16, hub: "world" },
-    tab_dau_gia: { minRank: 17, items: { "VIP Tôn Sư Lệnh": 1 }, hub: "world" },
-    tab_dao_lu: { minRank: 19, hub: "character" },
-    tab_phan_than: { minRank: 19, knowledge: ["Phân Thần Quyết"], hub: "character" },
-    tab_chuong_mon: { minRank: 20, flags: ["cong_hien_max"], hub: "world" },
-    tab_thien_kiep_dai: { minRank: 22, requiresFullCultivation: true, hub: "world" },
+    tab_linh_thu: { minRank: 1, hub: "character" },
+    tab_auto_bot: { minRank: 1, hub: "cave" },
+    tab_phap_bao: { minRank: 1, hub: "character" },
+    tab_dau_phap_dai: { minRank: 1, hub: "world" },
+    tab_dau_gia: { minRank: 1, hub: "world" },
+    tab_dao_lu: { minRank: 1, hub: "character" },
+    tab_phan_than: { minRank: 1, hub: "character" },
+    tab_chuong_mon: { minRank: 1, hub: "world" },
+    tab_thien_kiep_dai: { minRank: 1, hub: "world" },
     tab_khong_gian_liet_phung: { statusEffect: "thien_dao_ap_che", hub: "world" }
 };
 
@@ -1172,8 +1181,8 @@ const LINH_CAN_MUTATIONS = {
 const FOUNDATION_RULES = {
     tabs: {
         linh_can: { minRank: 1 },
-        the_chat: { minRank: 3 },
-        than_thuc: { minRank: 11 },
+        the_chat: { minRank: 1 },
+        than_thuc: { minRank: 1 },
         menh_cach: { minRank: 1 }
     },
     physiqueStages: ["Phàm Khu", "Ngưu Bì", "Thiết Cốt", "Đồng Bì", "Kim Thân"],
@@ -3634,6 +3643,14 @@ if (typeof globalThis !== 'undefined') {
     globalThis.SECT_ARRAY_TIERS = SECT_ARRAY_TIERS;
     globalThis.SECT_ELDER_TRIALS = SECT_ELDER_TRIALS;
 }
+
+// Bộ bí tịch mẫu tặng một lần cho nhân vật đã có bản lưu.
+const PREVIEW_MANUAL_SKILL_IDS = [
+    'skill_huyet_hai_kiem_quyet',
+    'skill_thien_loi_chinh_phap',
+    'skill_thanh_moc_truong_sinh_the',
+    'skill_thai_thanh_van_kiem'
+];
 
 const DEFAULT_STATE = {
     player: {

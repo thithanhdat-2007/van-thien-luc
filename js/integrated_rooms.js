@@ -16,6 +16,9 @@
 (function (window, document) {
     'use strict';
 
+    let roomCraftTimer = null;
+    let roomAlchTimer = null;
+
     // =========================================================================
     // 0. COMMON GAME STATE BRIDGE & HELPERS
     // =========================================================================
@@ -279,7 +282,12 @@
         const totalDurationMs = 2000;
         const intervalStepMs = 50;
 
-        const craftTimer = setInterval(() => {
+        if (roomCraftTimer) {
+            clearInterval(roomCraftTimer);
+            roomCraftTimer = null;
+        }
+
+        roomCraftTimer = setInterval(() => {
             elapsedMs += intervalStepMs;
             const progress = Math.min(100, Math.round((elapsedMs / totalDurationMs) * 100));
             const remainSec = Math.max(0, ((totalDurationMs - elapsedMs) / 1000)).toFixed(1);
@@ -289,7 +297,8 @@
             if (timerText) timerText.textContent = `${remainSec}s`;
 
             if (elapsedMs >= totalDurationMs) {
-                clearInterval(craftTimer);
+                clearInterval(roomCraftTimer);
+                roomCraftTimer = null;
                 finishCrafting(recipe);
             }
         }, intervalStepMs);
@@ -640,7 +649,12 @@
         const totalDurationMs = 2200;
         const stepMs = 60;
 
-        const alchTimer = setInterval(() => {
+        if (roomAlchTimer) {
+            clearInterval(roomAlchTimer);
+            roomAlchTimer = null;
+        }
+
+        roomAlchTimer = setInterval(() => {
             elapsedMs += stepMs;
             const pct = Math.min(100, Math.round((elapsedMs / totalDurationMs) * 100));
             const remainSec = Math.max(0, ((totalDurationMs - elapsedMs) / 1000)).toFixed(1);
@@ -650,7 +664,8 @@
             if (timerText) timerText.textContent = `${remainSec}s`;
 
             if (elapsedMs >= totalDurationMs) {
-                clearInterval(alchTimer);
+                clearInterval(roomAlchTimer);
+                roomAlchTimer = null;
                 finishAlchemy(recipe);
             }
         }, stepMs);
@@ -693,7 +708,11 @@
                 window.addLog(`♨️ <span class="text-teal-400 font-bold">[Luyện Đan Phòng]</span> Luyện chế thành công <strong>${pillItem.name}</strong> (+ ${recipe.danDocGain} Đan Độc)!`, 'text-teal-300');
             }
         } else {
-            alert(`Luyện đan thất bại! Lửa nổ đan lô, dược liệu hóa thành tro bụi!`);
+            if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast(`Luyện đan thất bại! Lửa nổ đan lô, dược liệu hóa thành tro bụi!`, 'error');
+            } else {
+                alert(`Luyện đan thất bại! Lửa nổ đan lô, dược liệu hóa thành tro bụi!`);
+            }
             if (typeof window.addLog === 'function') {
                 window.addLog(`💥 <span class="text-rose-400 font-bold">[Luyện Đan Phòng]</span> Nổ đỉnh! Luyện chế ${recipe.name} thất bại.`, 'text-rose-400');
             }
@@ -735,7 +754,11 @@
         if (pill.expGain && typeof window.addExp === 'function') {
             const res = window.addExp(pill.expGain);
             if (res && res.gainedAmount === 0 && window.state?.realmIndex >= 14) {
-                alert("⚠️ Thiên Đạo Áp Chế! Khí tức của ngươi đã vượt giới hạn Hạ Giới, nuốt đan dược không thể gia tăng Tu Vi!");
+                if (typeof window.showXianxiaToast === 'function') {
+                    window.showXianxiaToast("⚠️ Thiên Đạo Áp Chế! Khí tức của ngươi đã vượt giới hạn Hạ Giới, nuốt đan dược không thể gia tăng Tu Vi!", "error");
+                } else {
+                    alert("⚠️ Thiên Đạo Áp Chế! Khí tức của ngươi đã vượt giới hạn Hạ Giới, nuốt đan dược không thể gia tăng Tu Vi!");
+                }
             }
         }
         if (pill.healAmount && window.state) {
@@ -749,11 +772,19 @@
         if (!window.state) return;
         const curDoc = Number(window.state.danDoc) || 0;
         if (curDoc <= 0) {
-            alert("Kinh mạch thanh tịnh, không có đan độc!");
+            if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast("Kinh mạch thanh tịnh, không có đan độc!", "info");
+            } else {
+                alert("Kinh mạch thanh tịnh, không có đan độc!");
+            }
             return;
         }
         window.state.danDoc = Math.max(0, curDoc - 30);
-        alert(`Đã uống Thanh Tâm Đan! Đan độc giảm bớt 30 điểm (Hiện tại: ${window.state.danDoc}/100).`);
+        if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(`🌿 Đã uống Thanh Tâm Đan! Đan độc giảm bớt 30 điểm (Hiện tại: ${window.state.danDoc}/100).`, "success");
+        } else {
+            alert(`Đã uống Thanh Tâm Đan! Đan độc giảm bớt 30 điểm (Hiện tại: ${window.state.danDoc}/100).`);
+        }
         updateAlchemyHeaderUI();
         if (typeof window.updateHUD === 'function') window.updateHUD();
     }
@@ -1021,7 +1052,11 @@
         const comp = COMPANIONS_DATA[activeCompIndex];
         const now = Date.now();
         if (now - lastDualTime < dualCooldownMs) {
-            alert("Hai người vừa song tu xong, cần tĩnh dưỡng hồi phục kinh mạch!");
+            if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast("Hai người vừa song tu xong, cần tĩnh dưỡng hồi phục kinh mạch!", "error");
+            } else {
+                alert("Hai người vừa song tu xong, cần tĩnh dưỡng hồi phục kinh mạch!");
+            }
             return;
         }
 
@@ -1254,10 +1289,17 @@
         p.className = `text-xs leading-relaxed ${colorClass}`;
         p.innerHTML = msg;
         box.appendChild(p);
+        while (box.children.length > 50 && box.firstElementChild) {
+            box.firstElementChild.remove();
+        }
         box.scrollTop = box.scrollHeight;
     }
 
     function startTowerCombat() {
+        if (towerCombatInterval) {
+            clearInterval(towerCombatInterval);
+            towerCombatInterval = null;
+        }
         isTowerCombatRunning = true;
         const btn = document.getElementById('btn-challenge-tower');
         if (btn) btn.disabled = true;
@@ -1408,7 +1450,11 @@
             window.state.currentHp = window.state.maxHp || 10000;
         }
         updateTowerArenaUI();
-        alert("Khí huyết đã hồi phục toàn diện!");
+        if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast("Khí huyết đã hồi phục toàn diện!", "success");
+        } else {
+            alert("Khí huyết đã hồi phục toàn diện!");
+        }
     }
     window.fullHealPlayer = fullHealPlayer;
 

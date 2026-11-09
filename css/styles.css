@@ -6690,7 +6690,10 @@ body.heavenly-rejection-impact::after{animation-duration:.01ms}
 }
 
 #major-breakthrough-modal,
-#breakthrough-failure-modal,
+#breakthrough-failure-modal {
+    z-index: 100050 !important;
+}
+
 #tam-ma-battle-modal,
 #smart-slot-popover-backdrop,
 #ancient-scroll-backdrop {

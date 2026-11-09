@@ -4,6 +4,9 @@ These instructions apply to every file and every AI-assisted change in this repo
 
 ## Project boundaries
 
+- Read `FEATURE_MAP.md` first to locate the requested feature. Gemini must also follow `GEMINI.md`. Read focused search results and relevant caller/callee ranges before expanding scope. Keep changes within the user's requested feature.
+- Feature controllers extracted from `main.js` live in `js/features/`. Preserve their ordered classic-script loading and existing public exports. `main.js` owns shared popup/menu handling, while `js/features/bootstrap.js` connects startup and navigation.
+
 - Treat `index.html`, `css/`, and `js/` as the current application source. Treat `graphify-out/` as generated analysis output.
 - Inspect the current implementation before changing behavior. Preserve unrelated user changes.
 - Keep the existing static HTML5/Vite architecture unless the user explicitly approves a framework or build-system migration.

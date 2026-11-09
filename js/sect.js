@@ -1400,6 +1400,11 @@ function startSectTrialCombat(trialId) {
     const playerTxt = document.getElementById('trial-player-hp-text');
     const actionBox = document.getElementById('sect-trial-action-container');
 
+    if (sectCombatTimer) {
+        clearInterval(sectCombatTimer);
+        sectCombatTimer = null;
+    }
+
     sectCombatTimer = setInterval(() => {
         turn++;
         if (typeof playSound === 'function') playSound('sword');
@@ -1412,6 +1417,9 @@ function startSectTrialCombat(trialId) {
 
         if (logsBox) {
             logsBox.innerHTML += `<div>🗡️ [Hiệp ${turn}] Bạn xuất chiêu đánh trúng <span class="text-amber-300">${trial.name}</span> gây <b class="text-emerald-400">-${pDmg.toLocaleString('vi-VN')} HP</b>.</div>`;
+            while (logsBox.children.length > 50 && logsBox.firstElementChild) {
+                logsBox.firstElementChild.remove();
+            }
             logsBox.scrollTop = logsBox.scrollHeight;
         }
 
@@ -1427,6 +1435,9 @@ function startSectTrialCombat(trialId) {
             if (elderTxt) elderTxt.textContent = `${elderHp.toLocaleString('vi-VN')} / ${trial.hp.toLocaleString('vi-VN')}`;
             if (logsBox) {
                 logsBox.innerHTML += `<div>🐾 Thần Thú Hộ Tộc thần uy hiển lộ, hỗ trợ giáng <b class="text-amber-300">-${petDmg.toLocaleString('vi-VN')} HP</b>!</div>`;
+                while (logsBox.children.length > 50 && logsBox.firstElementChild) {
+                    logsBox.firstElementChild.remove();
+                }
                 logsBox.scrollTop = logsBox.scrollHeight;
             }
         }

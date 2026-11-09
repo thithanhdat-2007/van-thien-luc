@@ -711,18 +711,21 @@
             background: rgba(3, 7, 18, 0.85);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            display: flex;
+            display: none !important;
             align-items: center;
             justify-content: center;
             z-index: 100;
             padding: 1.25rem;
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none !important;
             transition: opacity 0.3s ease;
         }
-        .crafting-modal-overlay.is-open {
-            opacity: 1;
-            pointer-events: auto;
+        .crafting-modal-overlay.is-open,
+        .crafting-modal-overlay.is-active,
+        .crafting-modal-overlay.active {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         .crafting-result-card {
@@ -1491,18 +1494,21 @@
             background: rgba(2, 6, 18, 0.88);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            display: flex;
+            display: none !important;
             align-items: center;
             justify-content: center;
             z-index: 100;
             padding: 1.25rem;
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none !important;
             transition: opacity 0.3s ease;
         }
-        .modal-overlay.is-open {
-            opacity: 1;
-            pointer-events: auto;
+        .modal-overlay.is-open,
+        .modal-overlay.is-active,
+        .modal-overlay.active {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         .picker-dialog-card {
@@ -2035,18 +2041,21 @@
             background: rgba(18, 4, 24, 0.9);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            display: flex;
+            display: none !important;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none !important;
             transition: opacity 0.4s ease;
         }
-        .dual-cultivation-overlay.is-active {
-            opacity: 1;
-            pointer-events: auto;
+        .dual-cultivation-overlay.is-active,
+        .dual-cultivation-overlay.is-open,
+        .dual-cultivation-overlay.active {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         /* Biểu tượng Âm Dương Ngư xoay tròn */
