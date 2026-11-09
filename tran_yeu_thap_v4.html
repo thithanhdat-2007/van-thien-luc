@@ -3075,16 +3075,42 @@
             let profileTotalMs = 0;
             let profileMaxMs = 0;
             let profileStartedAt = 0;
-            const wakeEffects = () => { effectsActiveUntil = performance.now() + 2200; };
+            let renderFrameId = null;
+            let idleRenderTimer = null;
+            let lastRenderTimestamp = 0;
+            const wakeEffects = () => {
+                effectsActiveUntil = performance.now() + 2200;
+                if (idleRenderTimer !== null) {
+                    clearTimeout(idleRenderTimer);
+                    idleRenderTimer = null;
+                }
+                if (renderFrameId === null && !document.hidden) {
+                    renderFrameId = requestAnimationFrame(renderLoop);
+                }
+            };
             window.addEventListener('pointerdown', (event) => {
                 if (event.target.closest('button, input, label, [onclick]')) wakeEffects();
             });
             window.addEventListener('keydown', wakeEffects);
             window.addEventListener('resize', wakeEffects);
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (renderFrameId !== null) cancelAnimationFrame(renderFrameId);
+                    renderFrameId = null;
+                    if (idleRenderTimer !== null) clearTimeout(idleRenderTimer);
+                    idleRenderTimer = null;
+                } else {
+                    wakeEffects();
+                }
+            });
 
             function renderLoop(timestamp) {
-                requestAnimationFrame(renderLoop);
-                if (document.hidden || (!profileRendering && timestamp > effectsActiveUntil)) return;
+                renderFrameId = null;
+                if (document.hidden) return;
+                const frameFactor = lastRenderTimestamp
+                    ? Math.min(3, Math.max(0.25, (timestamp - lastRenderTimestamp) / 16.6667))
+                    : 1;
+                lastRenderTimestamp = timestamp;
                 const frameStartedAt = performance.now();
                 if (!profileStartedAt) profileStartedAt = frameStartedAt;
                 const t = timestamp * 0.001;
@@ -3107,14 +3133,14 @@
                 const bossX = w * 0.77;
                 const bossY = h * 0.57;
 
-                if (heroAnim.dashOffset > 0) heroAnim.dashOffset *= 0.84;
-                if (heroAnim.dodgeOffset < 0) heroAnim.dodgeOffset *= 0.85;
-                if (heroAnim.avatarSlashAngle > 0) heroAnim.avatarSlashAngle *= 0.86;
-                if (heroAnim.hitFlash > 0) heroAnim.hitFlash--;
+                if (heroAnim.dashOffset > 0) heroAnim.dashOffset *= Math.pow(0.84, frameFactor);
+                if (heroAnim.dodgeOffset < 0) heroAnim.dodgeOffset *= Math.pow(0.85, frameFactor);
+                if (heroAnim.avatarSlashAngle > 0) heroAnim.avatarSlashAngle *= Math.pow(0.86, frameFactor);
+                if (heroAnim.hitFlash > 0) heroAnim.hitFlash = Math.max(0, heroAnim.hitFlash - frameFactor);
 
-                if (bossAnim.dashOffset < 0) bossAnim.dashOffset *= 0.84;
-                if (bossAnim.dodgeOffset > 0) bossAnim.dodgeOffset *= 0.85;
-                if (bossAnim.hitFlash > 0) bossAnim.hitFlash--;
+                if (bossAnim.dashOffset < 0) bossAnim.dashOffset *= Math.pow(0.84, frameFactor);
+                if (bossAnim.dodgeOffset > 0) bossAnim.dodgeOffset *= Math.pow(0.85, frameFactor);
+                if (bossAnim.hitFlash > 0) bossAnim.hitFlash = Math.max(0, bossAnim.hitFlash - frameFactor);
 
                 // ==================== LAYER 0: BẦU TRỜI & THIÊN TƯỢNG ====================
                 ctx.save();
@@ -3345,8 +3371,8 @@
 
                 // ==================== LAYER 3: HẠT LINH KHÍ & TRU TIÊN TỨ KIẾM TRẬN ====================
                 ambientDust.forEach(d => {
-                    d.y += d.vy * (gameState.domainActive ? 3.0 : 1);
-                    d.x += d.vx;
+                    d.y += d.vy * (gameState.domainActive ? 3.0 : 1) * frameFactor;
+                    d.x += d.vx * frameFactor;
                     if (d.y < 0) { d.y = h; d.x = Math.random() * w; }
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
@@ -3406,7 +3432,7 @@
                 // 6.001 LỤC ĐẠO LUÂN HỒI BÀN (6-REALM REINCARNATION WHEEL)
                 for (let i = canvasReincarnationWheels.length - 1; i >= 0; i--) {
                     const rw = canvasReincarnationWheels[i];
-                    rw.life -= 0.02;
+                    rw.life -= 0.02 * frameFactor;
                     if (rw.life <= 0) {
                         canvasReincarnationWheels.splice(i, 1);
                         continue;
@@ -3448,7 +3474,7 @@
                 // 6.002 NHẬT NGUYỆT TINH THẦN BỊ CHÉM ĐÔI TRÊN BẦU TRỜI (SLICED CELESTIAL PLANETS)
                 for (let i = canvasCelestialPlanets.length - 1; i >= 0; i--) {
                     const pl = canvasCelestialPlanets[i];
-                    pl.life -= 0.018;
+                    pl.life -= 0.018 * frameFactor;
                     if (pl.life < 0.78) {
                         pl.splitOffset += 1.9;
                     }
@@ -3499,7 +3525,7 @@
                 // 6.003 THIÊN ĐẠO PHÁP NHÃN CỬU TRỌNG LÔI KIẾP (HEAVENLY TRIBULATION EYE)
                 for (let i = canvasTribulationEyes.length - 1; i >= 0; i--) {
                     const ey = canvasTribulationEyes[i];
-                    ey.life -= 0.015;
+                    ey.life -= 0.015 * frameFactor;
                     if (ey.life <= 0) {
                         canvasTribulationEyes.splice(i, 1);
                         continue;
@@ -3538,11 +3564,11 @@
                 // 6.004 MẢNH VỠ KÍNH KHÔNG GIAN 3D (3D SPATIAL GLASS SHARDS)
                 for (let i = canvasGlassShards.length - 1; i >= 0; i--) {
                     const gs = canvasGlassShards[i];
-                    gs.x += gs.vx;
-                    gs.y += gs.vy;
+                    gs.x += gs.vx * frameFactor;
+                    gs.y += gs.vy * frameFactor;
                     gs.vy += 0.25;
                     gs.rot += gs.vRot;
-                    gs.life -= 0.032;
+                    gs.life -= 0.032 * frameFactor;
                     if (gs.life <= 0) {
                         canvasGlassShards.splice(i, 1);
                         continue;
@@ -3570,10 +3596,10 @@
                 // 6.01 THÁI CỰC HỖN ĐỘN DIỆT THẾ LUÂN (Spinning Yin-Yang Taiji Wheel)
                 for (let i = canvasTaijiWheels.length - 1; i >= 0; i--) {
                     const tw = canvasTaijiWheels[i];
-                    tw.progress += 0.032;
+                    tw.progress += 0.032 * frameFactor;
                     const cx = tw.x + (tw.tx - tw.x) * Math.min(1, tw.progress);
                     const cy = tw.y + (tw.ty - tw.y) * Math.min(1, tw.progress);
-                    if (tw.progress >= 1) tw.life -= 0.05;
+                    if (tw.progress >= 1) tw.life -= 0.05 * frameFactor;
                     if (tw.life <= 0) {
                         canvasTaijiWheels.splice(i, 1);
                         continue;
@@ -3605,10 +3631,10 @@
                 // 6.02 CHU TƯỚC PHẦN THIÊN PHƯỢNG HOÀNG LỬA (Soaring Fire Phoenix)
                 for (let i = canvasPhoenixes.length - 1; i >= 0; i--) {
                     const ph = canvasPhoenixes[i];
-                    ph.progress += 0.036;
+                    ph.progress += 0.036 * frameFactor;
                     const px = ph.sx + (ph.tx - ph.sx) * Math.min(1, ph.progress);
                     const py = ph.sy + (ph.ty - ph.sy) * Math.min(1, ph.progress) - Math.sin(ph.progress * Math.PI) * 55;
-                    if (ph.progress >= 1) ph.life -= 0.06;
+                    if (ph.progress >= 1) ph.life -= 0.06 * frameFactor;
                     if (ph.life <= 0) {
                         canvasPhoenixes.splice(i, 1);
                         continue;
@@ -3642,7 +3668,7 @@
                 // 6.03 VẾT CHÉM KHAI THIÊN MÔN XẺ ĐÔI BẦU TRỜI (Heaven Split Dimensional Rift)
                 for (let i = canvasHeavenSplits.length - 1; i >= 0; i--) {
                     const hs = canvasHeavenSplits[i];
-                    hs.life -= 0.025;
+                    hs.life -= 0.025 * frameFactor;
                     if (hs.life <= 0) {
                         canvasHeavenSplits.splice(i, 1);
                         continue;
@@ -3675,7 +3701,7 @@
                             spawnSpaceShatter(gp.x, gp.targetY, gp.color, 16);
                         }
                     } else {
-                        gp.life -= 0.032;
+                        gp.life -= 0.032 * frameFactor;
                     }
                     if (gp.life <= 0) {
                         canvasGiantPalms.splice(i, 1);
@@ -3721,12 +3747,12 @@
                 // 6.05 PHẬT NỘ HỎA LIÊN - DỊ HỎA DUNG HỢP (3-Color Spinning Supernova Fire Lotus)
                 for (let i = canvasFireLotuses.length - 1; i >= 0; i--) {
                     const fl = canvasFireLotuses[i];
-                    fl.progress += 0.035;
+                    fl.progress += 0.035 * frameFactor;
                     const cx = fl.sx + (fl.tx - fl.sx) * Math.min(1, fl.progress);
                     const cy = fl.sy + (fl.ty - fl.sy) * Math.min(1, fl.progress);
                     if (fl.progress >= 1) {
                         fl.explodeRadius += 14;
-                        fl.life -= 0.04;
+                        fl.life -= 0.04 * frameFactor;
                     }
                     if (fl.life <= 0) {
                         canvasFireLotuses.splice(i, 1);
@@ -3768,7 +3794,7 @@
                 // 6.06 THÔN THIÊN HẮC ĐỘNG - VẠN HÓA QUY KHƯ (Gravitational Singularity Black Hole)
                 for (let i = canvasBlackHoles.length - 1; i >= 0; i--) {
                     const bh = canvasBlackHoles[i];
-                    bh.life -= 0.024;
+                    bh.life -= 0.024 * frameFactor;
                     if (bh.life <= 0) {
                         canvasBlackHoles.splice(i, 1);
                         continue;
@@ -3808,7 +3834,7 @@
                 for (let i = canvasBuddhaSeals.length - 1; i >= 0; i--) {
                     const bs = canvasBuddhaSeals[i];
                     bs.scale += (1.15 - bs.scale) * 0.18;
-                    bs.life -= 0.028;
+                    bs.life -= 0.028 * frameFactor;
                     if (bs.life <= 0) {
                         canvasBuddhaSeals.splice(i, 1);
                         continue;
@@ -3839,7 +3865,7 @@
                 for (let i = canvasIcePillars.length - 1; i >= 0; i--) {
                     const ip = canvasIcePillars[i];
                     ip.height = Math.min(ip.maxHeight, ip.height + 32);
-                    ip.life -= 0.028;
+                    ip.life -= 0.028 * frameFactor;
                     if (ip.life <= 0) {
                         canvasIcePillars.splice(i, 1);
                         continue;
@@ -3872,8 +3898,8 @@
                 // 6.09 CHU THIÊN TINH ĐẤU VẪN THẠCH (Cosmic Starlight Meteors)
                 for (let i = canvasMeteors.length - 1; i >= 0; i--) {
                     const mt = canvasMeteors[i];
-                    mt.x += mt.vx;
-                    mt.y += mt.vy;
+                    mt.x += mt.vx * frameFactor;
+                    mt.y += mt.vy * frameFactor;
                     if (mt.y >= mt.targetY) {
                         canvasShockwaves.push({ x: mt.x, y: mt.y, r: 8, maxR: 85, alpha: 0.95, color: mt.color });
                         spawnSpaceShatter(mt.x, mt.y, mt.color, 7);
@@ -3910,7 +3936,7 @@
                 // 6.1 Laser Beams
                 for (let i = canvasLaserBeams.length - 1; i >= 0; i--) {
                     const lb = canvasLaserBeams[i];
-                    lb.life -= 0.06;
+                    lb.life -= 0.06 * frameFactor;
                     if (lb.life <= 0) {
                         canvasLaserBeams.splice(i, 1);
                         continue;
@@ -3936,9 +3962,9 @@
                 // 6.2 Bán Nguyệt Kiếm Mang
                 for (let i = canvasCrescents.length - 1; i >= 0; i--) {
                     const cr = canvasCrescents[i];
-                    cr.x += cr.vx;
-                    cr.y += cr.vy;
-                    cr.life -= 0.04;
+                    cr.x += cr.vx * frameFactor;
+                    cr.y += cr.vy * frameFactor;
+                    cr.life -= 0.04 * frameFactor;
                     if (cr.life <= 0) {
                         canvasCrescents.splice(i, 1);
                         continue;
@@ -3962,7 +3988,7 @@
                 // 6.3 Tia Chớp Kiếm Điện
                 for (let i = canvasLightningArcs.length - 1; i >= 0; i--) {
                     const la = canvasLightningArcs[i];
-                    la.life -= 0.11;
+                    la.life -= 0.11 * frameFactor;
                     if (la.life <= 0) {
                         canvasLightningArcs.splice(i, 1);
                         continue;
@@ -3989,7 +4015,7 @@
                 // 6.4 Vết Nứt Không Gian
                 for (let i = canvasSpaceCracks.length - 1; i >= 0; i--) {
                     const sc = canvasSpaceCracks[i];
-                    sc.life -= 0.045;
+                    sc.life -= 0.045 * frameFactor;
                     if (sc.life <= 0) {
                         canvasSpaceCracks.splice(i, 1);
                         continue;
@@ -4014,7 +4040,7 @@
                 // 6.5 Đường Đạn Phi Kiếm
                 for (let i = canvasProjectiles.length - 1; i >= 0; i--) {
                     const p = canvasProjectiles[i];
-                    p.progress += p.speed;
+                    p.progress += p.speed * frameFactor;
 
                     const inv = 1 - p.progress;
                     const curX = inv * inv * p.sx + 2 * inv * p.progress * p.cx + p.progress * p.progress * p.tx;
@@ -4090,7 +4116,7 @@
                 // 6.6 Vệt Chém Không Gian
                 for (let i = canvasSlashes.length - 1; i >= 0; i--) {
                     const sl = canvasSlashes[i];
-                    sl.life -= 0.08;
+                    sl.life -= 0.08 * frameFactor;
                     if (sl.life <= 0) {
                         canvasSlashes.splice(i, 1);
                         continue;
@@ -4113,10 +4139,10 @@
                 // 6.7 Đại Kiếm Khổng Lồ
                 for (let i = canvasColossalSwords.length - 1; i >= 0; i--) {
                     const cs = canvasColossalSwords[i];
-                    cs.y += cs.vy;
+                    cs.y += cs.vy * frameFactor;
                     if (cs.y >= cs.targetY) {
                         cs.y = cs.targetY;
-                        cs.life -= 0.04;
+                        cs.life -= 0.04 * frameFactor;
                     }
                     if (cs.life <= 0) {
                         canvasColossalSwords.splice(i, 1);
@@ -4134,8 +4160,8 @@
                 // 6.8 Sóng Xung Kích & Hạt Kiếm Quang
                 for (let i = canvasShockwaves.length - 1; i >= 0; i--) {
                     const sw = canvasShockwaves[i];
-                    sw.r += (sw.maxR - sw.r) * 0.22;
-                    sw.alpha -= 0.06;
+                    sw.r += (sw.maxR - sw.r) * (1 - Math.pow(0.78, frameFactor));
+                    sw.alpha -= 0.06 * frameFactor;
                     if (sw.alpha <= 0) {
                         canvasShockwaves.splice(i, 1);
                         continue;
@@ -4154,9 +4180,9 @@
 
                 for (let i = canvasParticles.length - 1; i >= 0; i--) {
                     const pt = canvasParticles[i];
-                    pt.x += pt.vx;
-                    pt.y += pt.vy;
-                    pt.life -= 0.045;
+                    pt.x += pt.vx * frameFactor;
+                    pt.y += pt.vy * frameFactor;
+                    pt.life -= 0.045 * frameFactor;
                     if (pt.life <= 0) {
                         canvasParticles.splice(i, 1);
                         continue;
@@ -4187,8 +4213,11 @@
                         canvas.dataset.renderFps = (profileFrames * 1000 / (performance.now() - profileStartedAt)).toFixed(1);
                     }
                 }
+                // Luôn bám theo nhịp màn hình (144 Hz nếu máy hỗ trợ). Gameplay/VFX
+                // đã chuẩn hóa theo frameFactor nên tăng FPS không làm animation chạy nhanh hơn.
+                if (!document.hidden) renderFrameId = requestAnimationFrame(renderLoop);
             }
-            requestAnimationFrame(renderLoop);
+            wakeEffects();
         }
 
         function spawnFlyingSwordProjectile(sx, sy, tx, ty, glowColor = '#06b6d4', bladeColor = '#67e8f9', triggerClash = true, scale = 0.96) {
