@@ -1544,7 +1544,7 @@
             if (!arena) return;
             if (quoteEl && quoteText) quoteEl.textContent = quoteText;
             arena.classList.add('cinema-mode-active');
-            setTimeout(() => {
+            scheduleTowerEffect(() => {
                 arena.classList.remove('cinema-mode-active');
             }, duration);
         }
@@ -1555,7 +1555,7 @@
             arena.classList.remove('vfx-timestop-frame');
             void arena.offsetWidth;
             arena.classList.add('vfx-timestop-frame');
-            setTimeout(() => {
+            scheduleTowerEffect(() => {
                 arena.classList.remove('vfx-timestop-frame');
             }, duration);
         }
@@ -1603,7 +1603,7 @@
             wrap.classList.remove('hidden', 'anime-cutin-active');
             void wrap.offsetWidth;
             wrap.classList.add('anime-cutin-active');
-            setTimeout(() => {
+            scheduleTowerEffect(() => {
                 wrap.classList.add('hidden');
             }, 1650);
         }
@@ -1614,6 +1614,8 @@
          * ============================================================================
          */
         let canvasProjectiles = [];
+        const towerSwordPool = [];
+        const towerParticlePool = [];
         let canvasCrescents = [];
         let canvasLaserBeams = [];
         let canvasLightningArcs = [];
@@ -1633,6 +1635,19 @@
         let canvasIcePillars = [];
         let canvasMeteors = [];
         let canvasReincarnationWheels = [];
+        const towerEffectTimers = new Set();
+        function scheduleTowerEffect(callback, delay) {
+            const timerId = window.setTimeout(() => {
+                towerEffectTimers.delete(timerId);
+                callback();
+            }, delay);
+            towerEffectTimers.add(timerId);
+            return timerId;
+        }
+        function cancelTowerEffects() {
+            towerEffectTimers.forEach(timerId => window.clearTimeout(timerId));
+            towerEffectTimers.clear();
+        }
         let canvasCelestialPlanets = [];
         let canvasTribulationEyes = [];
         let canvasGlassShards = [];
@@ -1700,7 +1715,7 @@
 
         function triggerCameraZoom(zoom = 1.09, duration = 450) {
             arenaCam.targetScale = zoom;
-            setTimeout(() => {
+            scheduleTowerEffect(() => {
                 arenaCam.targetScale = 1.0;
             }, duration);
         }
@@ -1731,7 +1746,7 @@
             spawnCalligraphySeal('萬劍朝宗', w * 0.5, h * 0.36, elemObj.color);
 
             for (let i = 0; i < 68; i++) {
-                setTimeout(() => {
+                scheduleTowerEffect(() => {
                     const startX = w * (0.05 + Math.random() * 0.65);
                     const startY = -60 - Math.random() * 140;
                     const targetX = w * (0.62 + Math.random() * 0.32);
@@ -1827,7 +1842,7 @@
             );
 
             // Vết chém Lục Ngọc Đại Đạo cắt ngang cả 3 hành tinh và chém thẳng xuống Yêu Vương
-            setTimeout(() => {
+            scheduleTowerEffect(() => {
                 triggerAnimeImpactFrame();
                 spawnLaserBeam(w * 0.04, h * 0.14, w * 0.96, h * 0.32, '#10b981', 38);
                 spawnLaserBeam(w * 0.18, h * 0.62, w * 0.92, h * 0.45, '#34d399', 44);
@@ -1873,7 +1888,7 @@
 
             // 9 Đạo Hồng Mông Tử Tiêu Thần Lôi giáng liên hoàn
             for (let i = 0; i < 9; i++) {
-                setTimeout(() => {
+                scheduleTowerEffect(() => {
                     playSound('thunder');
                     const lx = w * (0.64 + (Math.random() - 0.5) * 0.26);
                     const ly = h * (0.48 + (Math.random() - 0.5) * 0.16);
@@ -4053,8 +4068,10 @@
                     const curX = inv * inv * p.sx + 2 * inv * p.progress * p.cx + p.progress * p.progress * p.tx;
                     const curY = inv * inv * p.sy + 2 * inv * p.progress * p.cy + p.progress * p.progress * p.ty;
 
-                    p.trail.push({ x: curX, y: curY });
-                    if (p.trail.length > 11) p.trail.shift();
+                    const trailPoint = p.trail.length >= 11 ? p.trail.shift() : { x: 0, y: 0 };
+                    trailPoint.x = curX;
+                    trailPoint.y = curY;
+                    p.trail.push(trailPoint);
 
                     if (p.trail.length > 2) {
                         ctx.save();
@@ -4107,16 +4124,17 @@
                         for (let k = 0; k < 12; k++) {
                             const spAngle = Math.random() * Math.PI * 2;
                             const spSpeed = 2.5 + Math.random() * 7;
-                            canvasParticles.push({
-                                x: p.tx, y: p.ty,
-                                vx: Math.cos(spAngle) * spSpeed,
-                                vy: Math.sin(spAngle) * spSpeed,
-                                life: 1,
-                                color: k % 2 === 0 ? '#ffffff' : p.glowColor,
-                                size: 2 + Math.random() * 3
-                            });
+                            const particle = towerParticlePool.pop() || {};
+                            particle.x = p.tx; particle.y = p.ty;
+                            particle.vx = Math.cos(spAngle) * spSpeed;
+                            particle.vy = Math.sin(spAngle) * spSpeed;
+                            particle.life = 1;
+                            particle.color = k % 2 === 0 ? '#ffffff' : p.glowColor;
+                            particle.size = 2 + Math.random() * 3;
+                            canvasParticles.push(particle);
                         }
                         canvasProjectiles.splice(i, 1);
+                        if (towerSwordPool.length < 256) towerSwordPool.push(p);
                     }
                 }
 
@@ -4192,6 +4210,7 @@
                     pt.life -= 0.045 * frameFactor;
                     if (pt.life <= 0) {
                         canvasParticles.splice(i, 1);
+                        if (towerParticlePool.length < 2048) towerParticlePool.push(pt);
                         continue;
                     }
                     ctx.save();
@@ -4230,18 +4249,16 @@
         function spawnFlyingSwordProjectile(sx, sy, tx, ty, glowColor = '#06b6d4', bladeColor = '#67e8f9', triggerClash = true, scale = 0.96) {
             const midX = (sx + tx) * 0.5;
             const midY = (sy + ty) * 0.5 + (Math.random() - 0.5) * 195;
-            canvasProjectiles.push({
-                sx, sy,
-                cx: midX, cy: midY,
-                tx, ty,
-                progress: 0,
-                speed: 0.068 + Math.random() * 0.035,
-                glowColor,
-                bladeColor,
-                triggerClash,
-                scale,
-                trail: []
-            });
+            const sword = towerSwordPool.pop() || { trail: [] };
+            sword.sx = sx; sword.sy = sy;
+            sword.cx = midX; sword.cy = midY;
+            sword.tx = tx; sword.ty = ty;
+            sword.progress = 0;
+            sword.speed = 0.068 + Math.random() * 0.035;
+            sword.glowColor = glowColor; sword.bladeColor = bladeColor;
+            sword.triggerClash = triggerClash; sword.scale = scale;
+            sword.trail.length = 0;
+            canvasProjectiles.push(sword);
         }
 
         function fireCanvasSwordQi(fromHero = true, color = '#38bdf8', count = 3, isHeavyCrit = false) {
@@ -4286,7 +4303,7 @@
             }
 
             for (let i = 0; i < count; i++) {
-                setTimeout(() => {
+                scheduleTowerEffect(() => {
                     spawnFlyingSwordProjectile(
                         sx, sy + (Math.random() * 65 - 32),
                         tx + (Math.random() * 35 - 17), ty + (Math.random() * 65 - 32),
@@ -5036,7 +5053,7 @@
                 }
 
                 // LƯỢT 2: YÊU VƯƠNG PHẢN KÍCH
-                setTimeout(() => {
+            setTimeout(() => {
                     if (!gameState.inCombat) return;
 
                     const heroDodged = (Math.random() * 100) < h.eva;
@@ -5101,6 +5118,7 @@
         function stopCombat(reason) {
             nextCombatTurn = null;
             clearInterval(gameState.combatTimer);
+            cancelTowerEffects();
             gameState.inCombat = false;
             gameState.domainActive = false;
             gameState.bossEnragedVisual = false;
