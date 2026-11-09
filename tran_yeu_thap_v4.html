@@ -3238,6 +3238,8 @@
             let renderFrameId = null;
             let idleRenderTimer = null;
             let lastRenderTimestamp = 0;
+            const renderInterval = 1000 / 60;
+            let nextRenderTimestamp = 0;
             const wakeEffects = () => {
                 effectsActiveUntil = performance.now() + 2200;
                 if (idleRenderTimer !== null) {
@@ -3267,6 +3269,11 @@
             function renderLoop(timestamp) {
                 renderFrameId = null;
                 if (document.hidden) return;
+                if (timestamp < nextRenderTimestamp - 0.5) {
+                    renderFrameId = requestAnimationFrame(renderLoop);
+                    return;
+                }
+                nextRenderTimestamp = timestamp + renderInterval - Math.max(0, timestamp - nextRenderTimestamp) % renderInterval;
                 const frameFactor = lastRenderTimestamp
                     ? Math.min(3, Math.max(0.25, (timestamp - lastRenderTimestamp) / 16.6667))
                     : 1;
