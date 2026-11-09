@@ -1638,6 +1638,42 @@
         let canvasGlassShards = [];
         let ambientDust = [];
         let backgroundSwords = [];
+            const formationCache = new Map();
+            function getFormationSprite(width, height, domainActive) {
+                const key = `${Math.round(width)}x${Math.round(height)}:${domainActive ? 'domain' : 'normal'}`;
+                let cached = formationCache.get(key);
+                if (cached) return cached;
+                const off = document.createElement('canvas');
+                off.width = Math.ceil(width);
+                off.height = Math.ceil(height * 0.62);
+                const c = off.getContext('2d');
+                c.translate(width * 0.5, height * 0.31);
+                c.scale(1, 0.31);
+                const ringColor = domainActive ? 'rgba(56, 189, 248, 0.72)' : 'rgba(245, 158, 11, 0.36)';
+                c.strokeStyle = ringColor;
+                c.lineWidth = 3.8;
+                c.shadowColor = domainActive ? '#06b6d4' : '#f59e0b';
+                c.shadowBlur = 26;
+                c.beginPath(); c.arc(0, 0, width * 0.37, 0, Math.PI * 2); c.stroke();
+                c.shadowBlur = 0;
+                c.lineWidth = 2;
+                c.setLineDash([14, 10]);
+                c.beginPath(); c.arc(0, 0, width * 0.29, 0, Math.PI * 2); c.stroke();
+                c.setLineDash([]);
+                for (let s = 0; s < 2; s++) {
+                    c.beginPath();
+                    for (let i = 0; i < 3; i++) {
+                        const a = s * (Math.PI / 3) + (i * Math.PI * 2) / 3;
+                        const rx = Math.cos(a) * width * 0.29;
+                        const ry = Math.sin(a) * width * 0.29;
+                        if (i === 0) c.moveTo(rx, ry); else c.lineTo(rx, ry);
+                    }
+                    c.closePath(); c.stroke();
+                }
+                if (formationCache.size > 8) formationCache.delete(formationCache.keys().next().value);
+                formationCache.set(key, off);
+                return off;
+            }
         let starfield = [];
         let godRays = [];
 
@@ -3298,38 +3334,9 @@
 
                 ctx.save();
                 ctx.translate(w * 0.5, floorY);
-                ctx.scale(1, 0.31);
                 ctx.rotate(t * (gameState.domainActive ? 2.1 : 0.48));
-
-                const ringColor = gameState.domainActive ? 'rgba(56, 189, 248, 0.72)' : 'rgba(245, 158, 11, 0.36)';
-                ctx.strokeStyle = ringColor;
-                ctx.lineWidth = 3.8;
-                ctx.shadowColor = gameState.domainActive ? '#06b6d4' : '#f59e0b';
-                ctx.shadowBlur = 26;
-
-                ctx.beginPath();
-                ctx.arc(0, 0, w * 0.37, 0, Math.PI * 2);
-                ctx.stroke();
-
-                ctx.lineWidth = 2;
-                ctx.setLineDash([14, 10]);
-                ctx.beginPath();
-                ctx.arc(0, 0, w * 0.29, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                for (let s = 0; s < 2; s++) {
-                    ctx.beginPath();
-                    for (let i = 0; i < 3; i++) {
-                        const a = s * (Math.PI / 3) + (i * Math.PI * 2) / 3;
-                        const rx = Math.cos(a) * w * 0.29;
-                        const ry = Math.sin(a) * w * 0.29;
-                        if (i === 0) ctx.moveTo(rx, ry);
-                        else ctx.lineTo(rx, ry);
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                }
+                const formation = getFormationSprite(w, h, gameState.domainActive);
+                ctx.drawImage(formation, -w * 0.5, -h * 0.31, w, h * 0.62);
                 ctx.restore();
 
                 backgroundSwords.forEach(bs => {
