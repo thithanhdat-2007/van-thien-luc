@@ -4,7 +4,7 @@
 
 | Phần người dùng yêu cầu | File điều khiển chính | Nguồn liên quan khi cần |
 | --- | --- | --- |
-| Trấn Yêu Tháp | `js/features/demon_tower.js` | `#modal-tran-yeu-thap` trong HTML, dữ liệu tháp trong `js/data.js`. Hệ tháp cũ trong `js/app.js` chỉ đọc khi truy vết caller thực tế |
+| Trấn Yêu Tháp | `js/features/demon_tower.js` | Nút mở `tran_yeu_thap_v4.html` trong iframe toàn màn hình. Engine và dữ liệu của mẫu v4 nằm trong trang đó, chưa đồng bộ save chính. `#modal-tran-yeu-thap` và hệ tháp trong `js/app.js` là các bản cũ |
 | Độ kiếp | `js/features/tribulation.js` | `js/tribulation_visuals.js`, `js/tribulation_system.js`, `#modal-do-kiep` |
 | Gia viên | `js/features/estate.js` | `js/dong_phu_ecosystem.js`, `js/cave.js`, `#modal-gia-vien` |
 | Luyện đan | `js/features/alchemy.js` | `js/alchemy_data.js`, `#modal-luyen-dan` |

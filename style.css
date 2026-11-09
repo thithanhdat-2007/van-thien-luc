@@ -9931,3 +9931,12 @@ section.feature-page {
     #hud-left .origin-dashboard .pet-details > div > span { display: none !important; }
     #hud-left .origin-dashboard #ui-pet-desc { max-height: 36px; overflow: hidden; }
 }
+/* The fullscreen tower owns painting while its host game remains active. */
+body.tower-v4-active > :not(#tower-v4-frame) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+body.tower-v4-active > :not(#tower-v4-frame),
+body.tower-v4-active > :not(#tower-v4-frame) * {
+    animation-play-state: paused !important;
+}

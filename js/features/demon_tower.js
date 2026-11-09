@@ -101,21 +101,31 @@
         if (nameEl) nameEl.textContent = towerPlayer.name;
     }
 
+    let towerV4Frame = null;
+
+    window.addEventListener('message', (event) => {
+        if (towerV4Frame && event.source === towerV4Frame.contentWindow && event.data?.type === 'van-thien-luc:tower-close') {
+            closeDemonTowerModal();
+        }
+    });
+
     function openDemonTowerModal() {
+        if (towerV4Frame) return;
         closeAllFeaturePopups();
         if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
-        const el = document.getElementById('modal-tran-yeu-thap');
-        if (el) {
-            el.classList.remove('hidden');
-            el.classList.add('active');
-            el.style.setProperty('display', 'block', 'important');
-            el.scrollTop = 0;
-        }
-        syncTowerPlayerStats();
-        updateArenaUI();
+        towerV4Frame = document.createElement('iframe');
+        towerV4Frame.id = 'tower-v4-frame';
+        towerV4Frame.title = 'Trấn Yêu Tháp';
+        towerV4Frame.src = './tran_yeu_thap_v4.html';
+        towerV4Frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483646;background:#020307;';
+        document.body.appendChild(towerV4Frame);
+        document.body.classList.add('tower-v4-active');
     }
 
     function closeDemonTowerModal() {
+        towerV4Frame?.remove();
+        towerV4Frame = null;
+        document.body.classList.remove('tower-v4-active');
         const el = document.getElementById('modal-tran-yeu-thap');
         if (el) {
             el.style.setProperty('display', 'none', 'important');

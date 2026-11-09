@@ -418,6 +418,10 @@ if (canvas && ctx) {
 }
 
 function animateCanvas() {
+    if (document.body?.classList.contains('tower-v4-active')) {
+        requestAnimationFrame(animateCanvas);
+        return;
+    }
     if (!canvas || !ctx) {
         if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(animateCanvas);
         return;
