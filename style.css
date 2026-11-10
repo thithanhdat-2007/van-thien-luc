@@ -7278,7 +7278,7 @@ section.feature-page.game-page #char-right-tab-content {
 }
 
 /* Character pages need the two useful panes, without a third frame around them. */
-:is(#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet) {
+:is(#page-root, #page-artifact, #page-pet) {
     width: min(1200px, calc(100vw - 48px)) !important;
     max-width: 1200px !important;
     max-height: calc(100dvh - 120px) !important;
@@ -7291,7 +7291,43 @@ section.feature-page.game-page #char-right-tab-content {
     -webkit-backdrop-filter: none !important;
 }
 
-:is(#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet) > button:first-child {
+#page-inventory {
+    width: min(1420px, calc(100vw - 32px)) !important;
+    max-width: 1420px !important;
+    max-height: min(88vh, 880px) !important;
+    padding: 24px 12px 12px !important;
+    margin: auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* POPUP TÚI ĐỒ & CÔNG PHÁP (CHUẨN 2D TIÊN HIỆP - MASTER 3 CỘT ĐỘC LẬP) */
+:is(#page-inventory, #page-skills) {
+    width: min(1420px, calc(100vw - 32px)) !important;
+    max-width: 1420px !important;
+    max-height: min(88vh, 880px) !important;
+    padding: 14px 12px 12px !important;
+    margin: auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+:is(#page-inventory, #page-skills) > button.btn-close-modal,
+:is(#page-inventory, #page-skills) > button:first-child,
+:is(#page-inventory, #page-skills) > .page-header-title,
+:is(#page-inventory, #page-skills) > .popup-subnav-bar {
+    display: none !important;
+}
+
+:is(#page-root, #page-artifact, #page-pet) > button:first-child {
     top: 2px !important;
     right: 2px !important;
 }
@@ -7425,13 +7461,13 @@ section.feature-page.game-page #char-right-tab-content {
     background: rgba(31, 42, 57, .92) !important;
 }
 
-:is(#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet) .rpg-equip-slot,
-:is(#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet) #rpg-inventory-grid > [data-item-id] {
+:is(#page-skills, #page-root, #page-artifact, #page-pet) .rpg-equip-slot,
+:is(#page-skills, #page-root, #page-artifact, #page-pet) #rpg-inventory-grid > [data-item-id]:not([class*="rpg-rarity-"]) {
     background: rgba(31, 42, 57, .92) !important;
     border-color: rgba(126, 148, 164, .3) !important;
 }
 
-:is(#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet) #rpg-inventory-grid > :not([data-item-id]) {
+:is(#page-skills, #page-root, #page-artifact, #page-pet) #rpg-inventory-grid > :not([data-item-id]) {
     background: rgba(24, 34, 48, .74) !important;
     border-color: rgba(126, 148, 164, .16) !important;
 }
@@ -9940,3 +9976,484 @@ body.tower-v4-active > :not(#tower-v4-frame),
 body.tower-v4-active > :not(#tower-v4-frame) * {
     animation-play-state: paused !important;
 }
+/* Túi đồ — mây tím, ngọc thanh. Chỉ áp dụng trang túi đồ hiện tại. */
+#inventory-page-content {
+    --bag-border: rgba(178, 161, 227, .36);
+    background: radial-gradient(ellipse at 15% 0%, rgba(127, 89, 180, .15), transparent 65%);
+}
+#inventory-page-content .page-header-title {
+    background: linear-gradient(110deg, rgba(111, 78, 155, .2), rgba(47, 104, 119, .13));
+    border-bottom: 1px solid var(--bag-border);
+}
+#inventory-page-content .page-header-title h2 { color: #e9d6a7; letter-spacing: .08em; }
+#inventory-page-content .inventory-refinement {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px;
+    color: #c5b9dc; font-size: 12px;
+}
+#inventory-page-content .inventory-refinement label { width: 100%; color: #d6c2f2; letter-spacing: .12em; }
+#inventory-page-content .inventory-refinement input,
+#inventory-page-content .inventory-refinement select {
+    background: rgba(18, 25, 45, .9); border: 1px solid var(--bag-border);
+    border-radius: 9px; padding: 9px 11px; color: #e4e3ee; min-width: 0;
+}
+#inventory-page-content .inventory-refinement input { flex: 1; }
+#inventory-page-content .inventory-refinement :focus-visible { outline: 2px solid #8bd8dc; outline-offset: 2px; }
+#inventory-page-content #rpg-inventory-grid > [data-item-id] {
+    background: linear-gradient(145deg, rgba(43, 46, 72, .91), rgba(16, 32, 47, .94));
+    border-color: var(--bag-border); border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(232, 224, 255, .09);
+}
+#inventory-page-content #rpg-inventory-grid > [hidden] { display: none !important; }
+#inventory-page-content #rpg-inventory-grid > [data-item-id]:hover {
+    border-color: #a1e1e2; box-shadow: inset 0 0 15px rgba(126, 111, 193, .2);
+}
+@media (max-width: 600px) {
+    #inventory-page-content .inventory-refinement input { flex-basis: 100%; }
+}
+/* Bảng vật phẩm chọn bằng chuột, chạm hoặc bàn phím. */
+#inventory-page-content .inventory-inspector {
+    background: linear-gradient(125deg, rgba(48, 38, 72, .96), rgba(17, 41, 54, .96));
+    border: 1px solid rgba(178, 161, 227, .4); border-radius: 14px;
+    padding: 14px; margin-bottom: 14px; color: #d8dce9; font-size: 12px;
+}
+#inventory-page-content .inventory-inspector h3 { color: #f0deb3; font-size: 16px; margin-bottom: 8px; }
+#inventory-page-content .inventory-inspector p { margin-bottom: 6px; }
+#inventory-page-content .inventory-inspector button { border: 1px solid #a1b7c6; background: #2e405d; border-radius: 8px; padding: 8px 18px; margin-top: 8px; }
+#inventory-page-content .inventory-inspector button:disabled { opacity: .45; cursor: not-allowed; }
+#inventory-page-content #rpg-inventory-grid [aria-pressed="true"] { outline: 2px solid #b5e5e6; outline-offset: 1px; }
+
+/* ==================== MỘNG HUYỄN PHI TIÊN — BẢN NGUYÊN TU SĨ & CÀN KHÔN BẢO NANG ==================== */
+@keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+    animation: spinSlow 24s linear infinite;
+}
+
+#inventory-page-content > div {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+#inventory-page-content .backdrop-blur-md {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+#inventory-page-content .rpg-split-container {
+    gap: 20px !important;
+}
+
+/* Các Cấp Phẩm Chất Trang Bị & Vật Phẩm (Rarity 1 - 6) Phong Cách Mộng Huyễn Phi Tiên */
+.rpg-rarity-1,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-1 {
+    border: 2px solid rgba(148, 163, 184, 0.5) !important;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6) !important;
+}
+.rpg-rarity-1:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-1:hover {
+    border-color: rgba(226, 232, 240, 0.85) !important;
+    box-shadow: 0 0 14px rgba(148, 163, 184, 0.4) !important;
+}
+
+.rpg-rarity-2,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-2 {
+    border: 2px solid rgba(52, 211, 153, 0.85) !important;
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.5), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.25), 0 0 12px rgba(16, 185, 129, 0.3) !important;
+}
+.rpg-rarity-2:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-2:hover {
+    border-color: #34d399 !important;
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.55) !important;
+}
+
+.rpg-rarity-3,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-3 {
+    border: 2px solid rgba(56, 189, 248, 0.9) !important;
+    background: linear-gradient(145deg, rgba(8, 51, 68, 0.6), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: inset 0 0 14px rgba(6, 182, 212, 0.3), 0 0 14px rgba(6, 182, 212, 0.4) !important;
+}
+.rpg-rarity-3:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-3:hover {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.6) !important;
+}
+
+.rpg-rarity-4,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-4 {
+    border: 2px solid rgba(192, 132, 252, 0.9) !important;
+    background: linear-gradient(145deg, rgba(59, 7, 100, 0.6), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: inset 0 0 16px rgba(168, 85, 247, 0.35), 0 0 16px rgba(168, 85, 247, 0.45) !important;
+}
+.rpg-rarity-4:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-4:hover {
+    border-color: #c084fc !important;
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.65) !important;
+}
+
+.rpg-rarity-5,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-5 {
+    border: 2px solid rgba(251, 191, 36, 0.95) !important;
+    background: linear-gradient(145deg, rgba(120, 53, 15, 0.6), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: inset 0 0 18px rgba(245, 158, 11, 0.4), 0 0 20px rgba(245, 158, 11, 0.55) !important;
+}
+.rpg-rarity-5:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-5:hover {
+    border-color: #fde047 !important;
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.8) !important;
+}
+
+.rpg-rarity-6,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-6 {
+    border: 2px solid rgba(244, 63, 94, 0.95) !important;
+    background: linear-gradient(145deg, rgba(136, 19, 55, 0.65), rgba(15, 23, 42, 0.95)) !important;
+    box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.45), 0 0 24px rgba(244, 63, 94, 0.7) !important;
+}
+.rpg-rarity-6:hover,
+#inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-6:hover {
+    border-color: #fb7185 !important;
+    box-shadow: 0 0 28px rgba(244, 63, 94, 0.9) !important;
+}
+
+/* ==================== MỘNG HUYỄN PHI TIÊN — MASTER 3-COLUMN LAYOUT & CHUẨN TIÊN HIỆP ==================== */
+
+/* 1. Khử nền đen vuông vức của Icon vẽ bằng AI & Tối ưu hiển thị ảnh */
+.item-slot img,
+.equip-slot img,
+.rpg-equip-slot img,
+#rpg-inventory-grid img,
+.inspector-icon img,
+#inventory-inspector img {
+    mix-blend-mode: screen !important;
+    border-radius: 10px !important;
+    mask-image: radial-gradient(circle, black 64%, transparent 98%) !important;
+    -webkit-mask-image: radial-gradient(circle, black 64%, transparent 98%) !important;
+    transition: transform 0.2s ease !important;
+}
+
+/* 2. Cấu trúc Ô Vật Phẩm (Item Slot) Chuẩn Tiên Hiệp */
+.item-slot,
+#rpg-inventory-grid > div {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+.item-slot:hover,
+#rpg-inventory-grid > [data-item-id]:hover {
+    transform: translateY(-3px) scale(1.05);
+    z-index: 10;
+}
+.item-slot.selected,
+.item-slot:focus,
+#rpg-inventory-grid [aria-pressed="true"] {
+    outline: 2px solid #fde047 !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.65) !important;
+}
+
+/* 3. Bảng Màu 6 Phẩm Chất (Hào Quang Tâm Sáng Radial Gradient) */
+/* Phàm Phẩm (Trắng/Xám) */
+.rarity-1, .rarity-white, .rarity-common, .rarity-Pham,
+.rpg-rarity-1, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-1 {
+    background: radial-gradient(circle at 50% 45%, rgba(100, 116, 139, 0.35) 0%, rgba(15, 23, 42, 0.95) 85%) !important;
+    border: 1.5px solid rgba(148, 163, 184, 0.45) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6) !important;
+}
+/* Linh Phẩm (Lục Ngọc - Xanh Lá) */
+.rarity-2, .rarity-green, .rarity-uncommon, .rarity-Linh,
+.rpg-rarity-2, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-2 {
+    background: radial-gradient(circle at 50% 45%, rgba(16, 185, 129, 0.38) 0%, rgba(6, 36, 28, 0.95) 85%) !important;
+    border: 1.5px solid rgba(52, 211, 153, 0.7) !important;
+    box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.22), 0 0 12px rgba(16, 185, 129, 0.25) !important;
+}
+/* Huyền Phẩm (Thanh Lam - Xanh Dương) */
+.rarity-3, .rarity-blue, .rarity-rare, .rarity-Huyen,
+.rpg-rarity-3, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-3 {
+    background: radial-gradient(circle at 50% 45%, rgba(14, 165, 233, 0.42) 0%, rgba(8, 28, 48, 0.95) 85%) !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.75) !important;
+    box-shadow: inset 0 0 14px rgba(56, 189, 248, 0.25), 0 0 14px rgba(56, 189, 248, 0.35) !important;
+}
+/* Địa Phẩm (Tử Quang - Tím) */
+.rarity-4, .rarity-purple, .rarity-epic, .rarity-Dia,
+.rpg-rarity-4, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-4 {
+    background: radial-gradient(circle at 50% 45%, rgba(168, 85, 247, 0.45) 0%, rgba(30, 12, 54, 0.95) 85%) !important;
+    border: 1.5px solid rgba(192, 132, 252, 0.8) !important;
+    box-shadow: inset 0 0 16px rgba(168, 85, 247, 0.3), 0 0 16px rgba(168, 85, 247, 0.45) !important;
+}
+/* Thiên Phẩm (Kim Sắc - Vàng Hoàng Kim) */
+.rarity-5, .rarity-orange, .rarity-legendary, .rarity-Thien,
+.rpg-rarity-5, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-5 {
+    background: radial-gradient(circle at 50% 45%, rgba(245, 158, 11, 0.5) 0%, rgba(46, 26, 4, 0.95) 85%) !important;
+    border: 1.5px solid rgba(251, 191, 36, 0.85) !important;
+    box-shadow: inset 0 0 18px rgba(245, 158, 11, 0.35), 0 0 20px rgba(245, 158, 11, 0.5) !important;
+}
+/* Thần Phẩm (Hồng Hoang / Huyết Hồng - Đỏ/Hồng) */
+.rarity-6, .rarity-red, .rarity-mythic, .rarity-Than,
+.rpg-rarity-6, #inventory-page-content #rpg-inventory-grid > [data-item-id].rpg-rarity-6 {
+    background: radial-gradient(circle at 50% 45%, rgba(244, 63, 94, 0.55) 0%, rgba(48, 10, 22, 0.95) 85%) !important;
+    border: 1.5px solid rgba(251, 113, 133, 0.9) !important;
+    box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.4), 0 0 24px rgba(244, 63, 94, 0.65) !important;
+}
+
+/* 4. Nhịp Thở Tiên Nhân & Mạch Linh Khí */
+@keyframes immortalBreath {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+        filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.65));
+    }
+    50% {
+        transform: translateY(-5px) scale(1.02);
+        filter: drop-shadow(0 0 26px rgba(56, 189, 248, 0.9));
+    }
+}
+.avatar-breathing {
+    animation: immortalBreath 4.5s ease-in-out infinite;
+}
+
+@keyframes meridianPulse {
+    0% { stroke-dashoffset: 24; opacity: 0.35; }
+    50% { opacity: 0.9; }
+    100% { stroke-dashoffset: 0; opacity: 0.35; }
+}
+.meridian-flow {
+    animation: meridianPulse 3s linear infinite;
+}
+
+/* 5. Cột 3 - Đài Giám Định Độc Lập */
+#inventory-inspector {
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    background: linear-gradient(155deg, rgba(15, 20, 38, 0.96), rgba(9, 13, 26, 0.98)) !important;
+    border: 1.5px solid rgba(245, 158, 11, 0.45) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 0 35px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(245, 158, 11, 0.08) !important;
+}
+#inventory-inspector[hidden] {
+    display: flex !important;
+}
+
+/* 6. Thanh Cuộn Cổ Phong Tinh Tế */
+.custom-inventory-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-inventory-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 4px;
+}
+.custom-inventory-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.35);
+    border-radius: 4px;
+}
+.custom-inventory-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.65);
+}
+
+/* 7. Grid Túi Đồ Càn Khôn */
+#inventory-page-content #rpg-inventory-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    align-content: start;
+}
+@media (min-width: 1280px) {
+    #inventory-page-content #rpg-inventory-grid {
+        grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 768px) {
+    #inventory-page-content #rpg-inventory-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 540px) {
+    #inventory-page-content #rpg-inventory-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+/* ============================================================================
+   BỘ STYLE TÀNG KINH CÁC • THẺ TRÚC QUỶ CỐC BÁT HOANG (HIGH CONTRAST CLEAN UI)
+   ============================================================================ */
+.bamboo-slip-card {
+    position: relative;
+    width: 100%;
+    min-height: 236px;
+    height: 100%;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(17, 28, 50, 0.98) 0%, rgba(10, 16, 32, 0.99) 100%);
+    border: 1.5px solid rgba(234, 179, 8, 0.45);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.75), inset 0 0 12px rgba(56, 189, 248, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px 10px 8px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    overflow: hidden;
+}
+
+.bamboo-slip-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(234, 179, 8, 0.045) 0px,
+        rgba(234, 179, 8, 0.045) 1px,
+        transparent 1px,
+        transparent 16px
+    );
+    pointer-events: none;
+}
+
+.bamboo-slip-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85), 0 0 22px rgba(234, 179, 8, 0.45);
+    border-color: rgba(250, 204, 21, 0.85);
+    background: linear-gradient(180deg, rgba(23, 37, 66, 0.99) 0%, rgba(12, 20, 39, 0.99) 100%);
+}
+
+.bamboo-slip-card.is-selected {
+    border: 2px solid #fde047 !important;
+    box-shadow: 0 0 26px rgba(253, 224, 71, 0.65), 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 16px rgba(253, 224, 71, 0.25) !important;
+    transform: translateY(-3px);
+    background: linear-gradient(180deg, rgba(30, 48, 84, 0.99) 0%, rgba(16, 26, 48, 0.99) 100%) !important;
+}
+
+/* Viền & Phát Quang Sáng Rực Rỡ Theo Phẩm Chất Thẻ Trúc (High Contrast) */
+.slip-pham { border-color: rgba(203, 213, 225, 0.6); }
+.slip-pham:hover { border-color: #f1f5f9; box-shadow: 0 0 15px rgba(241, 245, 249, 0.45); }
+
+.slip-linh { border-color: rgba(52, 211, 153, 0.7); }
+.slip-linh:hover { border-color: #34d399; box-shadow: 0 0 20px rgba(52, 211, 153, 0.55); }
+
+.slip-huyen { border-color: rgba(56, 189, 248, 0.7); }
+.slip-huyen:hover { border-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.55); }
+
+.slip-dia { border-color: rgba(192, 132, 252, 0.75); }
+.slip-dia:hover { border-color: #c084fc; box-shadow: 0 0 22px rgba(192, 132, 252, 0.6); }
+
+.slip-thien { border-color: rgba(250, 204, 21, 0.85); }
+.slip-thien:hover { border-color: #fde047; box-shadow: 0 0 26px rgba(250, 204, 21, 0.7); }
+
+.slip-tien { border-color: rgba(244, 114, 182, 0.85); }
+.slip-tien:hover { border-color: #f472b6; box-shadow: 0 0 28px rgba(244, 114, 182, 0.75); }
+
+/* Chữ Cổ Phong Thẻ Trúc Siêu Nét */
+.font-xianxia-title {
+    font-family: 'Cinzel', 'Noto Serif SC', 'Times New Roman', serif;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Thẻ Ô Lắp Chu Thiên Pháp Vị */
+.chu-thien-slot {
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chu-thien-slot:hover {
+    border-color: rgba(250, 204, 21, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 0 16px rgba(234, 179, 8, 0.4);
+}
+
+/* Các Nút Bấm Hành Động CTA Rực Rỡ */
+.btn-cta-gold {
+    background: linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%) !important;
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    border: 1.5px solid #fef08a !important;
+    box-shadow: 0 0 22px rgba(234, 179, 8, 0.65), 0 4px 12px rgba(0,0,0,0.6) !important;
+    letter-spacing: 0.5px;
+}
+.btn-cta-gold:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 28px rgba(253, 224, 71, 0.8), 0 6px 16px rgba(0,0,0,0.7) !important;
+    transform: translateY(-1px);
+}
+
+.btn-cta-fire {
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #ea580c 100%) !important;
+    color: #0c0a09 !important;
+    font-weight: 900 !important;
+    border: 1.5px solid #fef08a !important;
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.65), 0 4px 14px rgba(0,0,0,0.6) !important;
+    letter-spacing: 0.5px;
+}
+.btn-cta-fire:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 32px rgba(249, 115, 22, 0.8), 0 6px 18px rgba(0,0,0,0.7) !important;
+    transform: translateY(-1px);
+}
+
+.btn-cta-danger {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border: 1.5px solid #fda4af !important;
+    box-shadow: 0 0 20px rgba(225, 29, 72, 0.55), 0 4px 12px rgba(0,0,0,0.5) !important;
+}
+.btn-cta-danger:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.75) !important;
+    transform: translateY(-1px);
+}
+
+.btn-cta-breakthrough {
+    background: linear-gradient(135deg, #a855f7 0%, #d946ef 45%, #eab308 100%) !important;
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    border: 2px solid #fef08a !important;
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.75), 0 0 15px rgba(234, 179, 8, 0.5) !important;
+    letter-spacing: 0.5px;
+}
+.btn-cta-breakthrough:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 36px rgba(168, 85, 247, 0.9), 0 0 20px rgba(253, 224, 71, 0.7) !important;
+    transform: translateY(-1px);
+}
+
+.btn-cta-emerald {
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border: 1.5px solid #6ee7b7 !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 4px 12px rgba(0,0,0,0.5) !important;
+    letter-spacing: 0.5px;
+}
+.btn-cta-emerald:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 28px rgba(52, 211, 153, 0.8), 0 6px 16px rgba(0,0,0,0.6) !important;
+    transform: translateY(-1px);
+}
+
+.btn-cta-cyan {
+    background: linear-gradient(135deg, #38bdf8 0%, #0284c7 50%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border: 1.5px solid #7dd3fc !important;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6), 0 4px 12px rgba(0,0,0,0.5) !important;
+    letter-spacing: 0.5px;
+}
+.btn-cta-cyan:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 28px rgba(56, 189, 248, 0.8) !important;
+    transform: translateY(-1px);
+}
+
+

@@ -400,6 +400,7 @@ function closeProfileModal() {
 
     const urlBox = document.getElementById('avatar-url-input-container');
     if (urlBox) urlBox.classList.add('hidden');
+    if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
 }
 window.closeProfileModal = closeProfileModal;
 

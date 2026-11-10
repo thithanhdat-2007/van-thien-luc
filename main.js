@@ -31,6 +31,11 @@
     globalThis.showXianxiaToast = showXianxiaToast;
 
     function closeAllFeaturePopups() {
+        if (typeof window.switchPage === 'function') {
+            window.switchPage('main-screen');
+            return;
+        }
+        document.getElementById('feature-page-backdrop')?.classList.remove('is-visible', 'active');
         document.querySelectorAll('.feature-popup, .feature-page, .game-page').forEach((el) => {
             el.classList.remove('active', 'flex');
             el.classList.add('hidden');
@@ -54,10 +59,12 @@
      * Mở bảng Chỉnh Sửa Bản Thể / Đăng Nhập Google (Modal Overlay)
      */
     function openProfileModal() {
-        if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
         const modal = document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal');
         if (modal) {
+            if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
             modal.classList.remove('hidden');
+            modal.classList.add('is-open');
+            modal.removeAttribute('aria-hidden');
             modal.style.setProperty('display', 'flex', 'important');
             modal.style.setProperty('z-index', '10020', 'important');
         } else {
@@ -71,6 +78,7 @@
     function closeProfileModal() {
         const modal = document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal');
         if (modal) {
+            modal.classList.remove('is-open', 'active', 'is-active');
             modal.style.setProperty('display', 'none', 'important');
         }
         if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
@@ -221,12 +229,12 @@
         }
     }
 
-    window.openProfileModal = openProfileModal;
-    window.closeProfileModal = closeProfileModal;
+    // The account module owns profile state and edit/new mode selection.
+    // Keep these handlers only as a fallback while that module is loading.
+    window.openProfileModal = window.openProfileModal || openProfileModal;
+    window.closeProfileModal = window.closeProfileModal || closeProfileModal;
     window.openFeature = openFeature;
     window.closeAllFeaturePopups = closeAllFeaturePopups;
-    globalThis.openProfileModal = openProfileModal;
-    globalThis.closeProfileModal = closeProfileModal;
     globalThis.openFeature = openFeature;
     globalThis.closeAllFeaturePopups = closeAllFeaturePopups;
 })();

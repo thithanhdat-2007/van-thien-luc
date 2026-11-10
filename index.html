@@ -712,7 +712,7 @@
             </div>
         </div>
         <div class="popup-subnav-bar"><button type="button" class="popup-subnav-btn is-active" onclick="navigateTo('page-inventory')">📦 Túi Đồ</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-skills')">📜 Công Pháp</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-root')">🌿 Căn Cơ</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-artifact')">⚔️ Pháp Bảo</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-pet')">🦊 Linh Thú</button></div>
-        <div id="inventory-page-content" class="max-w-6xl mx-auto"></div>
+        <div id="inventory-page-content" class="w-full max-w-[1420px] mx-auto h-full"></div>
     </section>
     
 
@@ -733,7 +733,7 @@
             </div>
         </div>
         <div class="popup-subnav-bar"><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-inventory')">📦 Túi Đồ</button><button type="button" class="popup-subnav-btn is-active" onclick="navigateTo('page-skills')">📜 Công Pháp</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-root')">🌿 Căn Cơ</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-artifact')">⚔️ Pháp Bảo</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-pet')">🦊 Linh Thú</button></div>
-        <div id="skills-page-content" class="max-w-6xl mx-auto"></div>
+        <div id="skills-page-content" class="w-full max-w-[1420px] mx-auto h-full"></div>
     </section>
     
 
@@ -3898,7 +3898,7 @@
     <div id="profile-login-modal" class="profile-account-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999999 !important; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; flex-direction: column;">
         <div class="profile-panel-card xianxia-glass-box" style="margin: auto; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;">
             <!-- Nút đóng Modal -->
-            <button id="profile-close-btn" type="button" class="profile-close-btn" onclick="document.getElementById('profile-login-modal').style.setProperty('display', 'none', 'important');" title="Đóng">
+            <button id="profile-close-btn" type="button" class="profile-close-btn" onclick="closeProfileModal()" title="Đóng">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 

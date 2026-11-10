@@ -559,6 +559,9 @@ function loadGameState() {
             let saved = null;
             try { saved = JSON.parse(localStorage.getItem('van_co_tu_tien_save_v2') || 'null'); } catch (e) {}
             state = { ...structuredClone(DEFAULT_STATE), ...(saved && typeof saved === 'object' ? saved : {}) };
+            // Older object-based rewards were stored as {id: reward, name: reward}.
+            // Recover the original metadata and quantity instead of discarding loot.
+            state.inventory = (Array.isArray(state.inventory) ? state.inventory : []).map(normalizeInventoryEntry);
             let previewManualGiftAdded = false;
             if (saved && !state.manualArtGiftV1 && typeof PREVIEW_MANUAL_SKILL_IDS !== 'undefined' && typeof SKILLS_DATA !== 'undefined') {
                 const manuals = PREVIEW_MANUAL_SKILL_IDS.map(id => SKILLS_DATA.find(skill => skill.id === id));
@@ -754,6 +757,18 @@ function loadGameState() {
                 }
             }
             state.lastOnlineTime = Date.now();
+            // Dọn một lần theo yêu cầu chủ bản lưu. Giữ định nghĩa item để có thể nhận lại sau này.
+            if (saved && !state.materialCleanup20261110) {
+                const materialTypes = new Set(['Nguyên Liệu', 'Nguyên liệu', 'Thảo Dược', 'Dược Liệu', 'Khoáng Thạch', 'Nguyên liệu luyện khí']);
+                state.inventory.forEach(item => {
+                    if (!item.equipped && !item.slot && materialTypes.has(item.type)) {
+                        item.count = 0;
+                        if ('quantity' in item) item.quantity = 0;
+                    }
+                });
+                state.materialCleanup20261110 = true;
+                saveGameState();
+            }
             if (previewManualGiftAdded) saveGameState();
             return { seconds: rawOfflineSeconds, gained: state.exp - previousExp, linhKhiGained: state.linhKhi - previousLinhKhi, yearsAged: state.ageYears - ageBefore };
         }
@@ -2583,6 +2598,15 @@ function openHubModal(hub, tab = null) {
                 addLog("⚡ Thần thức đang nghênh chiến Thiên Kiếp, không thể truy cập giao diện toàn cục!", "text-amber-300");
                 return;
             }
+            // Chuyển hướng trực tiếp các trang đặc thù có layout độc lập chuẩn 2D Tiên Hiệp
+            if (hub === 'character' && (tab === 'inventory' || tab === 'tui-do')) {
+                navigateTo('page-inventory');
+                return;
+            }
+            if (hub === 'character' && (tab === 'skills' || tab === 'cong-phap')) {
+                navigateTo('page-skills');
+                return;
+            }
             if (typeof hideMainScreenHUD === 'function') hideMainScreenHUD();
             // Bước 1: Đóng tất cả các trang .game-page khác trước khi mở Hub Modal
             hideAllGamePages('hub-modal-backdrop');
@@ -2749,9 +2773,9 @@ function switchTab(tabId) {
     });
 
     if (tabId === 'tui-do' || tabId === 'inventory') {
-        openHubModal('character', 'inventory');
+        navigateTo('page-inventory');
     } else if (tabId === 'cong-phap' || tabId === 'skills') {
-        openHubModal('character', 'skills');
+        navigateTo('page-skills');
     } else if (tabId === 'can-co' || tabId === 'root') {
         openHubModal('character', 'root');
     } else if (tabId === 'phap-bao' || tabId === 'artifact') {
@@ -2808,6 +2832,9 @@ function toggleDropup(menuId, event) {
 
     // Menu được coi là đang mở nếu có display === 'flex' hoặc class 'active'
     const isCurrentlyOpen = (targetMenu.style.display === 'flex' || targetMenu.classList.contains('active'));
+    // Pointer entry already opens this menu. Its following mouse click must
+    // not immediately close it; keyboard/touch still toggle normally.
+    if (isCurrentlyOpen && e?.type === 'click' && e.detail > 0 && targetMenu.closest('.nav-item-wrapper')?.matches(':hover')) return;
 
     // Đóng toàn bộ các menu đang mở khác
     closeAllDropups();
@@ -2958,7 +2985,7 @@ function ensureFeaturePageBackdrop() {
     if (!backdrop) {
         backdrop = document.createElement('div');
         backdrop.id = 'feature-page-backdrop';
-        backdrop.setAttribute('aria-hidden', 'true');
+        backdrop.setAttribute('role', 'presentation');
         backdrop.addEventListener('click', returnToPreviousFeaturePage);
         document.body.appendChild(backdrop);
     }
@@ -3123,10 +3150,18 @@ function switchPage(pageId) {
         hideMainScreenHUD();
         el.classList.remove('hidden');
         el.classList.add('active');
+        el.removeAttribute('aria-hidden');
+        el.style.removeProperty('visibility');
         el.style.setProperty('display', 'block', 'important');
         el.style.removeProperty('pointer-events');
         el.style.setProperty('z-index', '10000', 'important');
-        if (el.matches('section.feature-page.game-page')) ensureFeaturePageBackdrop().classList.add('is-visible');
+        if (el.matches('section.feature-page.game-page')) {
+            const backdrop = ensureFeaturePageBackdrop();
+            // Legacy backdrops carried aria-hidden=true, which the shared
+            // visibility rule treats as display:none, disabling outside close.
+            backdrop.removeAttribute('aria-hidden');
+            backdrop.classList.add('is-visible');
+        }
     };
 
     // 1. NHÂN VẬT - POP-MENU CHỨC NĂNG
@@ -3144,7 +3179,9 @@ function switchPage(pageId) {
         const el = document.getElementById('page-skills');
         if (el) {
             showPopupEl(el);
-            if (typeof renderCharacterHub === 'function') {
+            if (typeof renderSkillsHub === 'function') {
+                renderSkillsHub(document.getElementById('skills-page-content'));
+            } else if (typeof renderCharacterHub === 'function') {
                 renderCharacterHub('skills', document.getElementById('skills-page-content'));
             }
             return;
@@ -3875,6 +3912,465 @@ function renderRpgCharacterInventory(filter = currentInventoryFilter) {
     renderCharacterHub('inventory', null, filter);
 }
 
+// Chỉ thay đổi cách hiển thị. Dùng dữ liệu túi đồ thật, không sửa số lượng hoặc save.
+function refineInventoryView() {
+    const grid = document.getElementById('rpg-inventory-grid');
+    if (!grid) return;
+    const query = (document.getElementById('inventory-search')?.value || '').trim().toLocaleLowerCase('vi');
+    const order = document.getElementById('inventory-order')?.value || 'default';
+    const cards = Array.from(grid.querySelectorAll('[data-item-id]'));
+    const items = new Map(state.inventory.map(item => [String(item.id), item]));
+    const needsSorting = grid.dataset.sortOrder !== order;
+    if (needsSorting && order !== 'default') {
+        cards.sort((a, b) => {
+            const first = items.get(a.dataset.itemId) || {};
+            const second = items.get(b.dataset.itemId) || {};
+            if (order === 'rarity') return (second.rarity || 1) - (first.rarity || 1);
+            return String(first.name || '').localeCompare(String(second.name || ''), 'vi');
+        });
+    } else if (needsSorting) {
+        const positions = new Map(state.inventory.map((item, index) => [String(item.id), index]));
+        cards.sort((a, b) => positions.get(a.dataset.itemId) - positions.get(b.dataset.itemId));
+    }
+    let visible = 0;
+    cards.forEach(card => {
+        const matches = (card.title || '').toLocaleLowerCase('vi').includes(query);
+        card.hidden = !matches;
+        if (matches) visible++;
+        if (needsSorting) grid.appendChild(card);
+    });
+    grid.querySelectorAll(':scope > :not([data-item-id])').forEach(slot => {
+        slot.hidden = Boolean(query);
+        if (needsSorting) grid.appendChild(slot);
+    });
+    grid.dataset.sortOrder = order;
+    const result = document.getElementById('inventory-search-result');
+    if (result) result.textContent = `${visible} loại vật phẩm`;
+}
+
+// ==================== BỘ ICON & VECTOR PHONG CÁCH TIÊN HIỆP ĐẲNG CẤP ====================
+function getXianxiaItemSVG(type = '', rarity = 1, slot = '', name = '') {
+    const r = Math.min(6, Math.max(1, Number(rarity) || 1));
+    const palettes = {
+        1: { p: '#94a3b8', a: '#cbd5e1', g: 'rgba(148, 163, 184, 0.4)' }, // Phàm
+        2: { p: '#10b981', a: '#34d399', g: 'rgba(16, 185, 129, 0.5)' },  // Linh
+        3: { p: '#0284c7', a: '#38bdf8', g: 'rgba(56, 189, 248, 0.5)' },  // Huyền
+        4: { p: '#9333ea', a: '#c084fc', g: 'rgba(168, 85, 247, 0.5)' },  // Địa
+        5: { p: '#d97706', a: '#fbbf24', g: 'rgba(245, 158, 11, 0.6)' },  // Thiên
+        6: { p: '#e11d48', a: '#fb7185', g: 'rgba(244, 63, 94, 0.7)' }   // Thần
+    };
+    const c = palettes[r] || palettes[1];
+    const s = String(slot || '').toLowerCase();
+    const t = String(type || '').toLowerCase();
+    const n = String(name || '').toLowerCase();
+
+    // 1. Áo Giáp / Đạo Bào
+    if (s === 'armor' || t.includes('giáp') || n.includes('bào') || n.includes('giáp') || n.includes('y')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 10 L32 20 L42 10 L50 20 L44 32 L40 28 L40 54 L24 54 L24 28 L20 32 L14 20 Z" fill="${c.p}" fill-opacity="0.3" stroke="${c.a}" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M22 10 L32 24 L42 10" stroke="${c.a}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M24 38 L40 38" stroke="${c.a}" stroke-width="2.5"/>
+            <circle cx="32" cy="38" r="3" fill="${c.a}" stroke="#0f172a" stroke-width="1"/>
+            <path d="M32 38 L32 50" stroke="${c.a}" stroke-width="1.5" stroke-dasharray="2 2"/>
+            <path d="M27 44 C27 48 37 48 37 44" stroke="${c.p}" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+        </svg>`;
+    }
+
+    // 2. Phi Kiếm / Vũ Khí
+    if (s === 'weapon' || t.includes('vũ khí') || n.includes('kiếm') || n.includes('đao') || n.includes('thương')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M48 12 L52 16 L26 42 L22 38 Z" fill="${c.p}" fill-opacity="0.35" stroke="${c.a}" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M52 12 L50 14" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 38 L16 44 L14 42 L20 36 Z" fill="${c.p}" stroke="${c.a}" stroke-width="1.5"/>
+            <path d="M14 44 L10 48" stroke="${c.a}" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="9" cy="49" r="2" fill="${c.a}"/>
+            <path d="M9 51 C8 55 6 56 5 58" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="30" y1="34" x2="44" y2="20" stroke="#ffffff" stroke-width="1" opacity="0.8"/>
+            <circle cx="40" cy="18" r="1.5" fill="#ffffff"/>
+        </svg>`;
+    }
+
+    // 3. Bát Quái Kính / Vũ Khí Phụ / Pháp Bảo
+    if (s === 'artifact' || s === 'secondary_weapon' || n.includes('kính') || n.includes('thuẫn') || n.includes('khiên') || n.includes('trận')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="22,8 42,8 54,20 54,44 42,56 22,56 10,44 10,20" fill="${c.p}" fill-opacity="0.25" stroke="${c.a}" stroke-width="2"/>
+            <circle cx="32" cy="32" r="15" fill="#0b1329" stroke="${c.a}" stroke-width="1.5"/>
+            <path d="M32 17 A7.5 7.5 0 0 1 32 32 A7.5 7.5 0 0 0 32 47 A15 15 0 0 1 32 17" fill="${c.a}"/>
+            <circle cx="32" cy="24.5" r="2" fill="#0b1329"/>
+            <circle cx="32" cy="39.5" r="2" fill="${c.a}"/>
+            <line x1="32" y1="11" x2="32" y2="14" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="32" y1="50" x2="32" y2="53" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="13" y1="32" x2="16" y2="32" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="48" y1="32" x2="51" y2="32" stroke="${c.a}" stroke-width="1.5"/>
+        </svg>`;
+    }
+
+    // 4. Hộ Thân Ngọc Bội
+    if (s === 'talisman' || n.includes('ngọc bội') || n.includes('bội') || n.includes('phù')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 8 C30 14 34 14 32 18" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="32" cy="30" r="14" fill="${c.p}" fill-opacity="0.3" stroke="${c.a}" stroke-width="2.5"/>
+            <circle cx="32" cy="30" r="6" fill="#0b1329" stroke="${c.a}" stroke-width="1.5"/>
+            <path d="M24 30 C24 26 28 22 32 22" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+            <path d="M30 44 L28 58 M34 44 L36 58" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="32" cy="44" r="2.5" fill="#f59e0b"/>
+        </svg>`;
+    }
+
+    // 5. Càn Khôn Giới Chỉ
+    if (s === 'ring' || n.includes('giới chỉ') || n.includes('nhẫn')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="32" cy="36" rx="16" ry="12" fill="none" stroke="${c.a}" stroke-width="3"/>
+            <ellipse cx="32" cy="34" rx="16" ry="12" fill="none" stroke="${c.p}" stroke-width="1" opacity="0.7"/>
+            <polygon points="32,14 40,20 32,26 24,20" fill="${c.a}" stroke="#ffffff" stroke-width="1.5"/>
+            <circle cx="32" cy="20" r="2" fill="#ffffff"/>
+            <line x1="32" y1="10" x2="32" y2="6" stroke="${c.a}" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="20" y1="14" x2="16" y2="10" stroke="${c.a}" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="44" y1="14" x2="48" y2="10" stroke="${c.a}" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`;
+    }
+
+    // 6. Vân Hài / Phi Hài
+    if (s === 'boots' || n.includes('hài') || n.includes('giày') || n.includes('ủng')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 14 L34 14 L34 32 L48 38 C54 41 54 48 48 48 L18 48 C14 48 14 40 18 36 L22 32 Z" fill="${c.p}" fill-opacity="0.3" stroke="${c.a}" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M22 14 L34 14" stroke="${c.a}" stroke-width="3" stroke-linecap="round"/>
+            <path d="M44 48 C48 48 52 45 50 42 C48 39 42 42 42 44" stroke="${c.a}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M16 48 L48 48" stroke="${c.a}" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`;
+    }
+
+    // 7. Linh Đan Hồ Lô / Đan Dược
+    if (t.includes('đan') || n.includes('đan') || n.includes('hoàn') || n.includes('dược')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="24" r="8" fill="${c.p}" fill-opacity="0.3" stroke="${c.a}" stroke-width="2"/>
+            <circle cx="32" cy="42" r="13" fill="${c.p}" fill-opacity="0.3" stroke="${c.a}" stroke-width="2"/>
+            <rect x="29" y="12" width="6" height="5" rx="1.5" fill="${c.a}" stroke="${c.p}" stroke-width="1.5"/>
+            <path d="M26 31 C29 33 35 33 38 31" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+            <path d="M36 32 L40 40 M38 32 L42 38" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="48" cy="20" r="4" fill="${c.a}" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="47" cy="19" r="1" fill="#ffffff"/>
+            <path d="M46 14 C48 10 52 10 50 6" stroke="${c.a}" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+        </svg>`;
+    }
+
+    // 8. Ngọc Giản / Bí Kíp
+    if (t.includes('bí tịch') || n.includes('bí tịch') || n.includes('quyển') || n.includes('công pháp') || n.includes('kinh')) {
+        return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="16" width="36" height="32" rx="3" fill="${c.p}" fill-opacity="0.25" stroke="${c.a}" stroke-width="2"/>
+            <line x1="22" y1="16" x2="22" y2="48" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="32" y1="16" x2="32" y2="48" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="42" y1="16" x2="42" y2="48" stroke="${c.a}" stroke-width="1.5"/>
+            <line x1="14" y1="32" x2="50" y2="32" stroke="#f59e0b" stroke-width="2"/>
+            <circle cx="32" cy="32" r="3" fill="#ef4444" stroke="#f59e0b" stroke-width="1"/>
+            <circle cx="48" cy="18" r="1.5" fill="#ffffff"/>
+        </svg>`;
+    }
+
+    // 9. Túi Gấm Càn Khôn (Mặc định cho Nguyên Liệu, Thảo Dược, Khoáng Thạch, Tạp Vật)
+    return `<svg viewBox="0 0 64 64" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow pointer-events-none group-hover:scale-115 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 20 C18 20 14 30 14 42 C14 52 22 56 32 56 C42 56 50 52 50 42 C50 30 46 20 42 20 Z" fill="${c.p}" fill-opacity="0.35" stroke="${c.a}" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20 16 L24 22 L40 22 L44 16 Z" fill="${c.a}" fill-opacity="0.6" stroke="${c.p}" stroke-width="1.5"/>
+        <ellipse cx="32" cy="22" rx="10" ry="2.5" fill="none" stroke="#f59e0b" stroke-width="2"/>
+        <path d="M30 24 L27 32 M34 24 L37 32" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="32" y="44" font-family="serif" font-size="14" font-weight="900" text-anchor="middle" fill="${c.a}">乾</text>
+    </svg>`;
+}
+window.getXianxiaItemSVG = getXianxiaItemSVG;
+
+// ==================== TẨY RỬA & PHÂN GIẢI NGUYÊN LIỆU ====================
+function cleanOrRecycleMaterials() {
+    const recyclable = state.inventory.filter(item => 
+        !item.equipped && 
+        !item.slot && 
+        item.type !== 'Đan Dược' && 
+        item.type !== 'Pháp Bảo' && 
+        item.type !== 'Bí Tịch' && 
+        (item.count > 0 || item.quantity > 0)
+    );
+
+    if (recyclable.length === 0) {
+        if (typeof showGameToast === 'function') showGameToast('Càn Khôn Nang không có nguyên liệu tồn đọng để phân giải!');
+        else if (typeof addLog === 'function') addLog('Càn Khôn Nang không có nguyên liệu tồn đọng để phân giải.', 'text-amber-300');
+        return;
+    }
+
+    let totalGain = 0;
+    let totalItems = 0;
+    recyclable.forEach(item => {
+        const count = item.count || item.quantity || 1;
+        const rarity = item.rarity || 1;
+        const gain = Math.max(10, rarity * 25) * count;
+        totalGain += gain;
+        totalItems += count;
+    });
+
+    const confirmed = window.confirm(`Bản Tôn có chắc chắn muốn phân giải/thu hồi ${recyclable.length} loại nguyên liệu (${totalItems.toLocaleString('vi-VN')} món) thành ${totalGain.toLocaleString('vi-VN')} Linh Thạch không?`);
+    if (!confirmed) return;
+
+    recyclable.forEach(item => {
+        item.count = 0;
+        if ('quantity' in item) item.quantity = 0;
+    });
+
+    state.stones = (state.stones || 0) + totalGain;
+    if (typeof saveGameState === 'function') saveGameState();
+    if (typeof updateResourceUI === 'function') updateResourceUI();
+    if (typeof addLog === 'function') {
+        addLog(`Phân giải hoàn tất ${recyclable.length} loại nguyên liệu, thu về ${totalGain.toLocaleString('vi-VN')} Linh Thạch!`, 'text-emerald-400');
+    }
+    if (typeof showGameToast === 'function') {
+        showGameToast(`Đã thu hồi ${totalGain.toLocaleString('vi-VN')} Linh Thạch!`);
+    }
+
+    renderCharacterHub('inventory');
+}
+window.cleanOrRecycleMaterials = cleanOrRecycleMaterials;
+
+function recycleSingleItem(itemId) {
+    const item = state.inventory.find(i => i.id === itemId);
+    if (!item || item.equipped || (!item.count && !item.quantity)) return;
+    const count = item.count || item.quantity || 1;
+    const rarity = item.rarity || 1;
+    const gain = Math.max(15, rarity * 30) * count;
+    const confirmed = window.confirm(`Bản Tôn có muốn phân giải [${item.name}] (x${count}) lấy ${gain.toLocaleString('vi-VN')} Linh Thạch không?`);
+    if (!confirmed) return;
+
+    item.count = 0;
+    if ('quantity' in item) item.quantity = 0;
+    state.stones = (state.stones || 0) + gain;
+    if (typeof saveGameState === 'function') saveGameState();
+    if (typeof updateResourceUI === 'function') updateResourceUI();
+    if (typeof addLog === 'function') addLog(`Đã phân giải [${item.name}] thu về ${gain.toLocaleString('vi-VN')} Linh Thạch!`, 'text-emerald-400');
+    if (typeof showGameToast === 'function') showGameToast(`Đã thu hồi ${gain.toLocaleString('vi-VN')} Linh Thạch!`);
+
+    inspectedInventoryItemId = null;
+    renderCharacterHub('inventory');
+}
+window.recycleSingleItem = recycleSingleItem;
+
+function renderEmptyInspector(panel) {
+    if (!panel) return;
+    panel.innerHTML = `
+        <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-amber-500/40 shrink-0">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 font-xianxia font-black text-sm uppercase tracking-widest drop-shadow-[0_0_10px_rgba(245,158,11,0.6)] flex items-center gap-1.5">
+                🔮 Đài Giám Định
+            </span>
+            <button type="button" onclick="navigateTo('main-screen')" class="w-7 h-7 rounded-xl bg-rose-950/90 hover:bg-rose-700 border border-rose-500/80 hover:border-rose-300 text-rose-200 hover:text-white flex items-center justify-center font-bold text-xs transition-all shadow-[0_0_10px_rgba(244,63,94,0.4)] active:scale-95 cursor-pointer" title="Đóng về Màn Hình Chính">
+                ✕
+            </button>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center text-center p-4 text-slate-300 my-auto">
+            <div class="relative w-24 h-24 flex items-center justify-center mb-4">
+                <div class="absolute inset-0 rounded-full border-2 border-dashed border-amber-400/50 animate-spin-slow"></div>
+                <div class="absolute w-16 h-16 rounded-full border border-cyan-400/50 animate-pulse"></div>
+                <span class="text-4xl text-amber-300 font-serif select-none drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">☯</span>
+            </div>
+            <p class="font-serif text-xs text-yellow-200 leading-relaxed font-bold max-w-[220px] drop-shadow">
+                ✦ Chạm chọn bảo vật trong Càn Khôn Bảo Nang để giám định thuộc tính và so sánh Lực Chiến ✦
+            </p>
+            <span class="text-[11px] text-amber-300/80 mt-3 font-mono bg-slate-900/90 border border-amber-500/30 px-2.5 py-1 rounded-full shadow-inner">So Sánh Lực Chiến & Thao Tác Nhanh</span>
+        </div>
+    `;
+    panel.hidden = false;
+}
+window.renderEmptyInspector = renderEmptyInspector;
+
+let inspectedInventoryItemId = null;
+function inspectInventoryItem(itemId) {
+    if (activeEquipTarget) {
+        handleItemClick(itemId);
+        return;
+    }
+    inspectedInventoryItemId = itemId;
+    const panel = document.getElementById('inventory-inspector');
+    const item = state.inventory.find(entry => entry.id === itemId);
+    if (!panel) return;
+    if (!item) {
+        renderEmptyInspector(panel);
+        return;
+    }
+
+    const r = Math.min(6, Math.max(1, item.rarity || 1));
+    const rarityNames = { 1: 'Phàm Phẩm', 2: 'Linh Phẩm', 3: 'Huyền Phẩm', 4: 'Địa Phẩm', 5: 'Thiên Phẩm', 6: 'Thần Phẩm' };
+    const rarityColors = { 1: 'text-slate-200', 2: 'text-emerald-300', 3: 'text-sky-300', 4: 'text-purple-300', 5: 'text-amber-300', 6: 'text-rose-300' };
+    const rarityName = rarityNames[r] || 'Phàm Phẩm';
+    const rarityColor = rarityColors[r] || 'text-slate-200';
+    const countNum = item.count || item.quantity || 1;
+
+    // Item preview
+    const safeName = (item.name || '').replace(/'/g, "\\'");
+    const safeType = (item.type || '').replace(/'/g, "\\'");
+    const safeSlot = (item.slot || '').replace(/'/g, "\\'");
+    const hasImage = item.image || (item.icon && (item.icon.includes('/') || item.icon.includes('.')));
+    const previewHtml = hasImage 
+        ? `<img src="${item.image || item.icon}" alt="${item.name}" class="w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" onerror="this.outerHTML=getXianxiaItemSVG('${safeType}', ${r}, '${safeSlot}', '${safeName}')">`
+        : getXianxiaItemSVG(item.type, r, item.slot, item.name);
+
+    // Power Score & Comparison
+    let powerCompareHtml = '';
+    if (item.slot) {
+        const itemScore = getItemPowerScore(item);
+        const equipped = state.inventory.find(entry => entry.slot === item.slot && entry.equipped);
+        if (item.equipped) {
+            powerCompareHtml = `
+                <div class="p-2.5 rounded-2xl bg-gradient-to-r from-amber-950/90 via-slate-900 to-amber-950/90 border-2 border-amber-400 text-center my-2.5 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                    <span class="text-xs font-xianxia font-black text-yellow-300 block drop-shadow">✦ ĐANG NGỰ DỤNG ✦</span>
+                    <span class="font-mono font-black text-amber-200 text-base drop-shadow">Lực Chiến: ${itemScore.toLocaleString('vi-VN')}</span>
+                </div>
+            `;
+        } else {
+            const equippedScore = equipped ? getItemPowerScore(equipped) : 0;
+            const diff = itemScore - equippedScore;
+            if (diff > 0) {
+                powerCompareHtml = `
+                    <div class="p-2.5 rounded-2xl bg-gradient-to-r from-emerald-950/95 via-slate-900 to-emerald-950/95 border-2 border-emerald-400 my-2.5 shadow-[0_0_22px_rgba(16,185,129,0.45)]">
+                        <div class="flex items-center justify-between text-xs font-xianxia">
+                            <span class="text-emerald-200 font-black flex items-center gap-1.5"><i class="fa-solid fa-arrow-trend-up text-emerald-400 text-sm"></i> Lực Chiến Dự Kiến:</span>
+                            <span class="text-emerald-300 font-mono font-black text-base drop-shadow">▲ +${diff.toLocaleString('vi-VN')} LC</span>
+                        </div>
+                        ${equipped ? `<div class="text-[11px] text-slate-300 mt-1 font-mono truncate">So với ${equipped.name} (${equippedScore.toLocaleString('vi-VN')} LC)</div>` : ''}
+                    </div>
+                `;
+            } else if (diff < 0) {
+                powerCompareHtml = `
+                    <div class="p-2.5 rounded-2xl bg-gradient-to-r from-rose-950/95 via-slate-900 to-rose-950/95 border-2 border-rose-400 my-2.5 shadow-[0_0_22px_rgba(244,63,94,0.45)]">
+                        <div class="flex items-center justify-between text-xs font-xianxia">
+                            <span class="text-rose-200 font-black flex items-center gap-1.5"><i class="fa-solid fa-arrow-trend-down text-rose-400 text-sm"></i> Lực Chiến Dự Kiến:</span>
+                            <span class="text-rose-300 font-mono font-black text-base drop-shadow">▼ ${diff.toLocaleString('vi-VN')} LC</span>
+                        </div>
+                        ${equipped ? `<div class="text-[11px] text-slate-300 mt-1 font-mono truncate">So với ${equipped.name} (${equippedScore.toLocaleString('vi-VN')} LC)</div>` : ''}
+                    </div>
+                `;
+            } else {
+                powerCompareHtml = `
+                    <div class="p-2.5 rounded-2xl bg-gradient-to-r from-amber-950/90 via-slate-900 to-amber-950/90 border-2 border-amber-400/80 my-2.5 text-center">
+                        <span class="text-yellow-300 font-mono font-bold text-xs">— Tương Đương (${itemScore.toLocaleString('vi-VN')} LC)</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // Stats Grid
+    const fields = [
+        { k: 'atkBonus', l: 'Công Kích', ic: 'fa-bolt', col: 'text-amber-400' },
+        { k: 'defBonus', l: 'Phòng Ngự', ic: 'fa-shield', col: 'text-sky-400' },
+        { k: 'hpBonus', l: 'Khí Huyết', ic: 'fa-heart-pulse', col: 'text-rose-400' },
+        { k: 'mpBonus', l: 'Pháp Lực', ic: 'fa-droplet', col: 'text-cyan-400' },
+        { k: 'critBonus', l: 'Bạo Kích', ic: 'fa-burst', col: 'text-orange-400', pct: '%' },
+        { k: 'dodgeBonus', l: 'Né Tránh', ic: 'fa-wind', col: 'text-teal-400', pct: '%' },
+        { k: 'speedBonus', l: 'Tốc Độ', ic: 'fa-gauge-high', col: 'text-yellow-400' },
+        { k: 'rateBonus', l: 'Tu Luyện', ic: 'fa-arrow-up', col: 'text-purple-400', pct: '%' }
+    ];
+    const statLines = fields.filter(f => item[f.k]).map(f => `
+        <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-2 flex items-center justify-between text-xs shadow-inner">
+            <span class="text-slate-200 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid ${f.ic} ${f.col} text-[11px]"></i> ${f.l}</span>
+            <span class="text-yellow-300 font-mono font-black text-xs drop-shadow">+${item[f.k]}${f.pct || ''}</span>
+        </div>
+    `).join('');
+
+    // Actions Cluster with High Contrast CTA classes
+    let actionButtonsHtml = '';
+    if (item.slot) {
+        if (item.equipped) {
+            actionButtonsHtml = `
+                <button type="button" onclick="handleInventoryItemClick('${item.id}'); inspectInventoryItem('${item.id}');" class="btn-cta-danger w-full py-2.5 px-3 rounded-xl font-xianxia font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-shield-halved"></i> Tháo Trang Bị
+                </button>
+            `;
+        } else {
+            actionButtonsHtml = `
+                <button type="button" onclick="handleInventoryItemClick('${item.id}'); inspectInventoryItem('${item.id}');" class="btn-cta-gold w-full py-2.5 px-3 rounded-xl font-xianxia font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-khanda"></i> Trang Bị Ngay
+                </button>
+            `;
+        }
+    } else if (item.type === 'Đan Dược' || item.effect) {
+        actionButtonsHtml = `
+            <button type="button" onclick="handleInventoryItemClick('${item.id}'); inspectInventoryItem('${item.id}');" class="btn-cta-emerald w-full py-2.5 px-3 rounded-xl font-xianxia font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer">
+                <i class="fa-solid fa-flask"></i> Dược Dụng (Dùng 1)
+            </button>
+        `;
+    } else if (item.type === 'Bí Tịch' && item.skillId) {
+        actionButtonsHtml = `
+            <button type="button" onclick="handleInventoryItemClick('${item.id}');" class="btn-cta-cyan w-full py-2.5 px-3 rounded-xl font-xianxia font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer">
+                <i class="fa-solid fa-book-open"></i> Lĩnh Ngộ Công Pháp
+            </button>
+        `;
+    }
+
+    if (!item.equipped) {
+        actionButtonsHtml += `
+            <button type="button" onclick="recycleSingleItem('${item.id}')" class="w-full mt-2 py-1.5 px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 hover:text-white border border-rose-500/60 text-xs font-xianxia font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <i class="fa-solid fa-recycle text-rose-400"></i> Phân Giải Món Này
+            </button>
+        `;
+    }
+
+    panel.innerHTML = `
+        <!-- Header Đài Giám Định có nút Đóng -->
+        <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-amber-500/40 shrink-0">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 font-xianxia font-black text-sm uppercase tracking-widest drop-shadow-[0_0_10px_rgba(245,158,11,0.6)] flex items-center gap-1.5">
+                🔮 Đài Giám Định
+            </span>
+            <button type="button" onclick="navigateTo('main-screen')" class="w-7 h-7 rounded-xl bg-rose-950/90 hover:bg-rose-700 border border-rose-500/80 hover:border-rose-300 text-rose-200 hover:text-white flex items-center justify-center font-bold text-xs transition-all shadow-[0_0_10px_rgba(244,63,94,0.4)] active:scale-95 cursor-pointer" title="Đóng về Màn Hình Chính">
+                ✕
+            </button>
+        </div>
+
+        <!-- Khung Phóng To 72x72 & Tên Bảo Vật -->
+        <div class="flex flex-col items-center text-center p-3 rounded-2xl bg-slate-900/80 border border-slate-700/80 shadow-inner shrink-0">
+            <div class="w-[72px] h-[72px] rounded-2xl flex items-center justify-center relative mb-2.5 rpg-rarity-${r} shadow-[0_0_22px_rgba(245,158,11,0.35)]">
+                ${previewHtml}
+                <span class="absolute -bottom-1.5 -right-1.5 text-[11px] text-yellow-300 font-mono font-black bg-slate-950 px-2 py-0.5 rounded-full border border-amber-400 shadow-md">x${countNum}</span>
+            </div>
+            <h3 class="font-xianxia font-black text-sm sm:text-base ${rarityColor} tracking-wider drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">${item.name}</h3>
+            <div class="flex items-center gap-2 mt-1">
+                <span class="text-[11px] font-xianxia font-bold ${rarityColor} px-2.5 py-0.5 rounded-full bg-slate-950 border border-amber-500/40">[${rarityName}]</span>
+                <span class="text-[11px] text-yellow-200 font-mono font-semibold">${item.type || (item.slot ? 'Trang Bị' : 'Vật Phẩm')}</span>
+            </div>
+        </div>
+
+        <!-- So Sánh Lực Chiến -->
+        ${powerCompareHtml}
+
+        <!-- Thuộc Tính Cộng Thêm -->
+        ${statLines ? `
+            <div class="my-2.5 shrink-0">
+                <span class="text-xs font-xianxia font-bold uppercase tracking-widest text-yellow-300 block mb-1.5 drop-shadow">✦ Thuộc Tính Bảo Vật ✦</span>
+                <div class="grid grid-cols-2 gap-1.5">
+                    ${statLines}
+                </div>
+            </div>
+        ` : ''}
+
+        <!-- Mô Tả Truyền Thuyết (Lore) -->
+        <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 my-2.5 shrink-0">
+            <p class="font-serif italic text-xs text-slate-200 leading-relaxed text-justify">
+                "${item.desc || 'Bảo vật thiên địa tạo hóa, ẩn chứa linh vận kỳ diệu.'}"
+            </p>
+        </div>
+
+        <!-- Cụm Nút Thao Tác Đáy Cột -->
+        <div class="mt-auto pt-3 border-t border-amber-500/30 shrink-0">
+            ${actionButtonsHtml}
+        </div>
+    `;
+
+    panel.hidden = false;
+    document.querySelectorAll('#rpg-inventory-grid [data-item-id]').forEach(card => {
+        const isCurrent = card.dataset.itemId === itemId;
+        card.setAttribute('aria-pressed', String(isCurrent));
+        if (isCurrent) {
+            card.classList.add('ring-2', 'ring-yellow-300', 'border-yellow-300', 'shadow-[0_0_20px_rgba(253,224,71,0.7)]');
+        } else {
+            card.classList.remove('ring-2', 'ring-yellow-300', 'border-yellow-300', 'shadow-[0_0_20px_rgba(253,224,71,0.7)]');
+        }
+    });
+}
+window.inspectInventoryItem = inspectInventoryItem;
+
 function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', content = null, filter = currentInventoryFilter) {
     currentCharacterTab = activeTab;
     let host = content;
@@ -3906,9 +4402,10 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
         const isTargeted = Boolean(activeEquipTarget && activeEquipTarget.slotKey === slotKey);
 
         if (!item) {
+            const emptyGhostSvg = getXianxiaItemSVG('', 1, slotKey, slotLabel);
             return `
                 <div id="equip-slot-${slotKey}"
-                     class="rpg-equip-slot equipment-slot rpg-slot-empty ${isTargeted ? 'is-targeting-slot border-amber-700 bg-stone-900/80 shadow-[0_0_10px_rgba(180,83,9,0.3)]' : 'border-stone-700 bg-stone-900/60 hover:border-amber-900/50'} relative flex flex-col items-center justify-center w-12 h-12 rounded-lg border border-dashed cursor-pointer group transition-all"
+                     class="rpg-equip-slot equipment-slot rpg-slot-empty ${isTargeted ? 'is-targeting-slot border-amber-400 bg-amber-950/40 shadow-[0_0_15px_rgba(245,158,11,0.5)] ring-2 ring-amber-400' : 'border-amber-500/25 bg-slate-900/80 hover:border-amber-400/60 hover:bg-slate-850'} relative flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-dashed cursor-pointer group transition-all"
                      data-drop-zone="equipment"
                      data-slot="${slotKey}"
                      title="Ô ${slotLabel} Trống"
@@ -3916,21 +4413,26 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
                      onmouseenter="showSlotEmptyTooltip(event, '${slotLabel}')"
                      onmousemove="moveItemTooltip(event)"
                      onmouseleave="hideItemTooltip()">
-                    <i class="fa-solid ${defaultIcon} ${isTargeted ? 'text-amber-500' : 'text-stone-500'} text-sm group-hover:text-stone-300 transition pointer-events-none"></i>
-                    <span class="text-[8.5px] font-mono leading-tight ${isTargeted ? 'text-amber-400 font-bold' : 'text-stone-400 font-medium'} mt-0.5 pointer-events-none">${slotLabel}</span>
-                    ${isTargeted ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-600 shadow-[0_0_6px_#d97706] border border-stone-950 animate-ping"></span>' : ''}
+                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-b from-amber-500/5 to-transparent pointer-events-none"></div>
+                    <div class="opacity-40 group-hover:opacity-80 transition-opacity">
+                        ${emptyGhostSvg}
+                    </div>
+                    <span class="text-[9px] font-xianxia font-semibold leading-tight ${isTargeted ? 'text-amber-300 font-bold' : 'text-slate-300'} mt-0.5 pointer-events-none tracking-wider">${slotLabel}</span>
+                    ${isTargeted ? '<span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b] border-2 border-slate-950 animate-ping"></span>' : ''}
                 </div>
             `;
         }
         const rarityClass = `rpg-rarity-${Math.min(6, Math.max(1, item.rarity || 1))}`;
+        const safeName = (item.name || '').replace(/'/g, "\\'");
+        const safeType = (item.type || '').replace(/'/g, "\\'");
         const hasEquipImage = item.image || (item.icon && (item.icon.includes('/') || item.icon.includes('.')));
         const equipIconHtml = hasEquipImage 
-            ? `<img src="${item.image || item.icon}" alt="${item.name}" class="w-6 h-6 object-contain pointer-events-none group-hover:scale-110 transition-transform" onerror="this.src=DEFAULT_IMG_FALLBACK">`
-            : `<i class="fa-solid ${item.icon || defaultIcon} text-sm relative z-10 text-stone-300 group-hover:scale-110 transition-transform pointer-events-none"></i>`;
+            ? `<img src="${item.image || item.icon}" alt="${item.name}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain pointer-events-none group-hover:scale-115 transition-transform drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" onerror="this.outerHTML=getXianxiaItemSVG('${safeType}', ${item.rarity || 1}, '${slotKey}', '${safeName}')">`
+            : getXianxiaItemSVG(item.type, item.rarity, slotKey, item.name);
 
         return `
             <div id="equip-slot-${slotKey}"
-                 class="rpg-equip-slot equipment-slot ${rarityClass} ${isTargeted ? 'is-targeting-slot border-amber-600 bg-stone-900' : 'border-stone-700 bg-stone-900/90 hover:border-amber-900/60'} relative flex flex-col items-center justify-center w-12 h-12 rounded-lg border cursor-pointer group shadow-md transition-all"
+                 class="rpg-equip-slot equipment-slot ${rarityClass} ${isTargeted ? 'is-targeting-slot border-amber-300 bg-amber-950/60 ring-2 ring-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.6)]' : 'border-amber-400/40 bg-slate-900/90 hover:border-amber-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)]'} relative flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 cursor-pointer group shadow-lg transition-all"
                  draggable="true"
                  data-drop-zone="equipment"
                  data-slot="${slotKey}"
@@ -3942,16 +4444,16 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
                  onmouseenter="showItemTooltip(event, '${item.id}')"
                  onmousemove="moveItemTooltip(event)"
                  onmouseleave="hideItemTooltip()">
-                <div class="absolute inset-0 rounded-lg bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-t from-slate-950/80 via-transparent to-white/10 pointer-events-none"></div>
                 ${equipIconHtml}
-                <span class="text-[8.5px] font-mono font-medium text-stone-300 truncate max-w-[42px] relative z-10 mt-0.5 pointer-events-none">${slotLabel}</span>
-                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${isTargeted ? 'bg-amber-600 shadow-[0_0_6px_#d97706]' : 'bg-stone-500'} border border-stone-950" title="${isTargeted ? 'Đang chờ đổi trang bị' : 'Đang trang bị'}"></span>
+                <span class="text-[9px] font-xianxia font-bold text-amber-200 truncate max-w-[50px] relative z-10 mt-0.5 pointer-events-none tracking-wider drop-shadow">${slotLabel}</span>
+                <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full ${isTargeted ? 'bg-amber-400 shadow-[0_0_10px_#f59e0b]' : 'bg-emerald-400 shadow-[0_0_8px_#10b981]'} border-2 border-slate-950" title="${isTargeted ? 'Đang chờ đổi trang bị' : 'Đang trang bị'}"></span>
             </div>
         `;
     };
 
     // Filter counts for inventory
-    const allAvailable = state.inventory.filter(i => i.count > 0);
+    const allAvailable = state.inventory.filter(i => (i.count > 0 || i.quantity > 0));
     const allCount = allAvailable.length;
     const equipCount = allAvailable.filter(i => i.slot || i.type === 'Pháp Bảo').length;
     const pillCount = allAvailable.filter(i => i.type === 'Đan Dược').length;
@@ -3977,18 +4479,21 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
         filteredItems = allAvailable.filter(i => i.type !== 'Đan Dược' && !i.slot && i.type !== 'Pháp Bảo' && i.type !== 'weapon' && i.type !== 'secondary_weapon');
     }
 
-    // Grid rendering với cú pháp template chuẩn xác 100% của người dùng
+    // Grid rendering với cú pháp template chuẩn xác
     const renderedItemsHtml = filteredItems.map(item => {
         const rarityClass = `rpg-rarity-${Math.min(6, Math.max(1, item.rarity || 1))}`;
+        const safeName = (item.name || '').replace(/'/g, "\\'");
+        const safeType = (item.type || '').replace(/'/g, "\\'");
+        const safeSlot = (item.slot || '').replace(/'/g, "\\'");
         const hasImage = item.image || (item.icon && (item.icon.includes('/') || item.icon.includes('.')));
         const iconHtml = hasImage 
-            ? `<img src="${item.image || item.icon}" alt="${item.name}" class="w-8 h-8 object-contain pointer-events-none group-hover:scale-110 transition-transform" onerror="this.src=DEFAULT_IMG_FALLBACK">`
-            : `<i class="fa-solid ${item.icon || 'fa-box'} text-base sm:text-lg text-slate-200 group-hover:scale-110 group-hover:text-amber-400 transition-all pointer-events-none"></i>`;
+            ? `<img src="${item.image || item.icon}" alt="${item.name}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain pointer-events-none group-hover:scale-115 transition-transform drop-shadow" onerror="this.outerHTML=getXianxiaItemSVG('${safeType}', ${item.rarity || 1}, '${safeSlot}', '${safeName}')">`
+            : getXianxiaItemSVG(item.type, item.rarity, item.slot, item.name);
         const countNum = item.count || item.quantity || 1;
 
         return `
             <div id="inv-item-${item.id}"
-                 class="relative bg-stone-900/90 border border-stone-800 rounded-lg p-1 sm:p-1.5 flex flex-col items-center justify-center cursor-pointer hover:border-amber-900/60 transition group ${rarityClass} aspect-square overflow-hidden"
+                 class="relative bg-slate-900/90 border-2 border-slate-700/60 rounded-xl p-1 sm:p-1.5 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400/80 transition-all group ${rarityClass} aspect-square overflow-hidden shadow-md hover:shadow-[0_0_15px_rgba(245,158,11,0.35)]"
                  draggable="true"
                  data-item-id="${item.id}"
                  data-item-type="${item.type || ''}"
@@ -3998,12 +4503,14 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
                  onmouseenter="showItemTooltip(event, '${item.id}')"
                  onmousemove="moveItemTooltip(event)"
                  onmouseleave="hideItemTooltip()"
-                 onclick="handleItemClick('${item.id}')">
-                <div class="absolute inset-0 rounded-lg bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+                 role="button" tabindex="0" aria-pressed="false"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();inspectInventoryItem('${item.id}')}"
+                 onclick="inspectInventoryItem('${item.id}')">
+                <div class="absolute inset-0 rounded-xl bg-gradient-to-t from-black/80 via-transparent to-white/5 pointer-events-none"></div>
                 ${iconHtml}
                 <span class="hidden">${item.name}</span>
-                ${item.equipped ? `<span class="absolute top-1 left-1 w-2 h-2 rounded-full bg-amber-600 shadow-[0_0_6px_#d97706]" title="Đang trang bị"></span>` : ''}
-                <span class="absolute bottom-0.5 right-1 text-[10px] text-amber-400 font-mono font-bold leading-none pointer-events-none drop-shadow select-none">x${countNum}</span>
+                ${item.equipped ? `<span class="absolute top-1 left-1 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] border border-slate-950" title="Đang trang bị"></span>` : ''}
+                <span class="absolute bottom-1 right-1.5 text-[10px] text-amber-300 font-mono font-bold leading-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)] select-none bg-slate-950/80 px-1 py-0.2 rounded border border-amber-500/20">x${countNum}</span>
             </div>
         `;
     }).join('');
@@ -4011,283 +4518,369 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
     const totalSlots = Math.max(32, Math.ceil(filteredItems.length / 8) * 8);
     const emptyCount = totalSlots - filteredItems.length;
     const emptySlotsHtml = Array.from({ length: emptyCount }).map(() => `
-        <div class="relative bg-stone-900/40 border border-stone-800/40 rounded-lg p-1 sm:p-1.5 flex items-center justify-center aspect-square pointer-events-none">
-            <span class="w-1.5 h-1.5 rounded-full bg-stone-700/40"></span>
+        <div class="relative bg-slate-900/30 border border-slate-800/40 rounded-xl p-1 sm:p-1.5 flex items-center justify-center aspect-square pointer-events-none">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-700/30"></span>
         </div>
     `).join('');
 
-    // Tiêu đề trang cho Cột Phải (Thay thế hoàn toàn hàng nút Tab thừa Túi Đồ / Công Pháp / Căn Cơ)
-    const characterSectionHeaders = {
-        inventory: '📦 TÚI ĐỒ',
-        skills: '📜 CÔNG PHÁP TÀNG KINH CÁC',
-        root: '🌿 CĂN CƠ LINH CĂN',
-        artifact: '⚔️ PHÁP BẢO BẢN MỆNH',
-        talisman: '🧧 HỌA PHÙ CÁC',
-        pet: '🦊 LINH THÚ HỘ TỘC',
-        companion: '💞 ĐẠO LỮ ĐỒNG TU',
-        avatar: '🧘 PHÂN THẦN HÓA THÂN'
-    };
-    const rightHeaderTitle = characterSectionHeaders[activeTab] || '📦 TÚI ĐỒ';
-    const topModalTitleEl = document.getElementById('hub-modal-title');
-    if (topModalTitleEl && document.getElementById('hub-modal-backdrop')?.dataset?.activeHub === 'character') {
-        topModalTitleEl.textContent = rightHeaderTitle;
-    }
-
     const renderInvFilterBtn = (tabKey, label, count) => `
         <button type="button" onclick="setInventoryFilter('${tabKey}')"
-                class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === tabKey ? 'bg-stone-800 text-amber-500 border border-amber-900/50 shadow-sm' : 'bg-stone-900/60 text-stone-400 hover:text-stone-200 border border-transparent'}">
-            ${label} <span class="text-[10px] opacity-75 font-mono">(${count})</span>
+                class="px-3 py-1.5 rounded-xl text-xs font-serif font-bold whitespace-nowrap transition-all ${filter === tabKey ? 'bg-gradient-to-r from-amber-500/30 via-yellow-400/25 to-amber-500/30 text-amber-200 border-2 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.35)]' : 'bg-slate-900/70 text-slate-400 hover:text-amber-200 border border-slate-800 hover:border-slate-700'}">
+            ${label} <span class="text-[10px] opacity-85 font-mono text-amber-300">(${count})</span>
         </button>
     `;
 
-    // Render TRỤ CỘT 1: TWO-COLUMN LAYOUT (Mạt Pháp Tu Tiên - Earthy Stone & Amber)
-    host.innerHTML = `
-        <div class="rpg-split-container flex flex-col lg:flex-row gap-5 p-1 select-none">
-            <!-- CỘT TRÁI (35% - 40%): BẢN NGUYÊN TU SĨ (Sticky Weathered Stone Panel) -->
-            <div class="w-full lg:w-[38%] shrink-0 flex flex-col bg-stone-950/80 backdrop-blur-md border border-stone-800 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] p-3 sm:p-4 lg:sticky lg:top-0 h-fit font-sans text-stone-300">
-                <!-- Header Kicker (Weathered Xianxia Title) -->
-                <div class="border-b border-stone-800 pb-2 mb-3 flex items-center justify-between">
-                    <span class="text-amber-600 font-serif font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                        <i class="fa-solid fa-scroll text-amber-700"></i> Bản Nguyên Tu Sĩ
+    // Render BẢN NGUYÊN TU SĨ (Cột 1)
+    const renderCultivatorColumn = () => `
+        <div id="char-col-cultivator" style="background: linear-gradient(180deg, rgba(17, 28, 50, 0.98), rgba(10, 16, 32, 0.99)); border: 1.5px solid rgba(234, 179, 8, 0.5); box-shadow: 0 0 35px rgba(0,0,0,0.85), inset 0 0 25px rgba(234,179,8,0.05);" class="w-full ${activeTab === 'inventory' ? 'lg:w-[340px]' : 'lg:w-[38%]'} shrink-0 flex flex-col rounded-3xl p-3.5 sm:p-4 font-sans text-slate-100 overflow-y-auto custom-inventory-scrollbar">
+            <!-- Header Kicker -->
+            <div class="border-b border-amber-500/25 pb-2.5 mb-3 flex items-center justify-between">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 font-xianxia font-black text-sm uppercase tracking-widest flex items-center gap-2 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                    <i class="fa-solid fa-scroll text-amber-400"></i> Bản Nguyên Tu Sĩ
+                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-xianxia font-bold text-amber-200 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-600/25 border border-amber-400/80 shadow-[0_0_10px_rgba(245,158,11,0.35)]">
+                        ${currentRealm.name}
                     </span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-mono text-stone-300 px-2 py-0.5 rounded bg-stone-800 border border-stone-600 shadow-sm">
-                            ${currentRealm.name}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Center Area: Avatar Đả Tọa Dọc Căn Giữa Bao Bọc Bởi 6 Ô Trang Bị Phong Hóa -->
-                <div class="relative w-full flex items-center justify-between gap-1 sm:gap-2 py-2">
-                    <!-- Trái (3 ô): Vũ Khí, Áo Giáp, Ngọc Bội -->
-                    <div class="flex flex-col justify-around gap-2.5 sm:gap-3 z-20 shrink-0">
-                        ${renderEquipSlot('weapon', 'Vũ Khí', 'fa-khanda')}
-                        ${renderEquipSlot('armor', 'Áo Giáp', 'fa-shirt')}
-                        ${renderEquipSlot('talisman', 'Ngọc Bội', 'fa-gem')}
-                    </div>
-
-                    <!-- Giữa: Avatar Đả Tọa Nữ Tu Trong Suốt Lơ Lửng (Không Khung Nền) -->
-                    <div class="relative z-10 flex flex-col items-center justify-center flex-1 min-w-0 px-1">
-                        <div class="relative z-10 max-w-full flex justify-center">
-                            <img id="char-modal-avatar-img"
-                                 src="./assets/images/image_11.png"
-                                 alt="Bản Thể Nữ Tu"
-                                 class="w-48 h-48 object-contain drop-shadow-[0_0_10px_rgba(103,232,249,0.5)] select-none pointer-events-none transition-transform duration-300"
-                                 onerror="this.src='./assets/images/nu_tu_trong_suot.png';" />
-                        </div>
-                        <div class="mt-1.5 text-center pointer-events-none">
-                            ${state.equippedTitle ? `<span class="text-[9.5px] font-mono text-amber-300 font-bold px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/40 inline-block mb-0.5 shadow-[0_0_8px_rgba(245,158,11,0.3)]">[${state.equippedTitle}]</span>` : ''}
-                            <span class="text-xs font-serif font-bold text-amber-400 truncate max-w-[140px] block">${state.player?.name || 'Tiêu Dao Tử'}</span>
-                        </div>
-                    </div>
-
-                    <!-- Phải (3 ô): Vũ Khí Phụ, Giới Chỉ, Phi Hài -->
-                    <div class="flex flex-col justify-around gap-2.5 sm:gap-3 z-20 shrink-0">
-                        ${renderEquipSlot('artifact', 'Vũ Khí Phụ', 'fa-shield-halved')}
-                        ${renderEquipSlot('ring', 'Giới Chỉ', 'fa-ring')}
-                        ${renderEquipSlot('boots', 'Phi Hài', 'fa-shoe-prints')}
-                    </div>
-                </div>
-
-                <!-- Bảng Lực Chiến (Combat Power) Phong Cách Đá Trầm Mặc -->
-                <div id="rpg-char-cp-box" class="flex items-center justify-between px-3.5 py-2 rounded-lg bg-stone-900/90 border border-stone-700/80 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)] my-2.5 transition-all">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-shield-halved text-amber-700 text-sm"></i>
-                        <span class="text-xs uppercase tracking-wider text-amber-600 font-serif font-bold">LỰC CHIẾN</span>
-                    </div>
-                    <span id="rpg-char-combat-power" class="font-mono font-extrabold text-xl sm:text-2xl text-amber-500 tracking-wider select-none">
-                        ${combatPower.toLocaleString('vi-VN')}
-                    </span>
-                </div>
-
-                <!-- Nút Trang Bị Nhanh Duy Nhất Cột Trái -->
-                <button id="btn-quick-equip" type="button" onclick="quickEquip()" class="w-full py-2 px-3 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-500/50 hover:border-amber-400 font-serif font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[inset_0_0_10px_rgba(0,0,0,0.6)] active:scale-95 transition-all mb-3 group cursor-pointer" title="Tự động đồng bộ & trang bị vật phẩm tối ưu">
-                    <i class="fa-solid fa-bolt text-amber-400 group-hover:scale-110 transition-transform"></i>
-                    <span>Trang Bị Nhanh</span>
-                </button>
-
-                <!-- 3 Thanh Trạng Thái (HP Đỏ Máu Bầm / MP Xanh Biển Sẫm / Đạo Tâm) -->
-                ${(() => {
-                    const hpCurrent = Math.min(state.hp, effectiveStats.maxHp);
-                    const hpMax = effectiveStats.maxHp;
-                    const hpPercent = Math.min(100, Math.max(0, Math.round((hpCurrent / hpMax) * 100)));
-
-                    const mpCurrent = Math.min(state.mp || 0, effectiveStats.maxMp);
-                    const mpMax = effectiveStats.maxMp;
-                    const mpPercent = Math.min(100, Math.max(0, Math.round((mpCurrent / mpMax) * 100)));
-
-                    const daoTamCurrent = Math.min(100, Math.max(0, Math.round(state.daoTam ?? 100)));
-
-                    return `
-                        <!-- THANH KHÍ HUYẾT (HP - Đỏ Máu Bầm) -->
-                        <div class="mb-2">
-                            <div class="flex justify-between items-center text-xs mb-1">
-                                <span class="text-stone-400 font-mono flex items-center gap-1.5"><i class="fa-solid fa-heart-pulse text-rose-500 text-[10px]"></i> ❤️ Khí Huyết</span>
-                                <span class="text-rose-400/90 font-mono font-bold text-[11px]">${hpCurrent.toLocaleString('vi-VN')} / ${hpMax.toLocaleString('vi-VN')} (${hpPercent}%)</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-stone-900 border border-stone-700/80 rounded-sm overflow-hidden">
-                                <div class="h-full bg-rose-800 transition-all duration-300" style="width: ${hpPercent}%;"></div>
-                            </div>
-                        </div>
-
-                        <!-- THANH PHÁP LỰC (MP - Xanh Nước Biển Sẫm) -->
-                        <div class="mb-2">
-                            <div class="flex justify-between items-center text-xs mb-1">
-                                <span class="text-stone-400 font-mono flex items-center gap-1.5"><i class="fa-solid fa-droplet text-cyan-400 text-[10px]"></i> 💧 Pháp Lực</span>
-                                <span class="text-cyan-400/90 font-mono font-bold text-[11px]">${mpCurrent.toLocaleString('vi-VN')} / ${mpMax.toLocaleString('vi-VN')} (${mpPercent}%)</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-stone-900 border border-stone-700/80 rounded-sm overflow-hidden">
-                                <div class="h-full bg-cyan-800 transition-all duration-300" style="width: ${mpPercent}%;"></div>
-                            </div>
-                        </div>
-
-                        <!-- THANH ĐẠO TÂM & TÂM MA -->
-                        <div class="mb-3">
-                            <div class="flex justify-between items-center text-xs mb-1">
-                                <span class="text-stone-400 font-mono flex items-center gap-1.5"><i class="fa-solid fa-yin-yang text-stone-300 text-[10px]"></i> ☯️ Đạo Tâm / Tâm Ma</span>
-                                <span class="text-stone-300 font-mono font-bold text-[11px]">${daoTamCurrent} / ${100 - daoTamCurrent}</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-stone-900 border border-stone-700/80 rounded-sm overflow-hidden">
-                                <div class="h-full ${daoTamCurrent > 70 ? 'bg-emerald-600' : (daoTamCurrent >= 30 ? 'bg-amber-600' : 'bg-rose-700')} transition-all duration-300" style="width: ${daoTamCurrent}%;"></div>
-                            </div>
-                            <!-- NÚT TRẢM TÂM MA TRONG MODAL -->
-                            <button type="button"
-                                    id="btn-tram-tam-ma-modal"
-                                    onclick="challengeTamMa()"
-                                    ${(100 - daoTamCurrent) < 50 ? 'disabled' : ''}
-                                    class="w-full mt-2 py-1.5 px-3 rounded-lg font-serif font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${(100 - daoTamCurrent) >= 50
-                                        ? 'bg-gradient-to-r from-rose-950 via-red-900 to-rose-950 text-rose-200 border border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.4)] hover:brightness-125 cursor-pointer active:scale-95 animate-pulse'
-                                        : 'opacity-40 bg-stone-900/60 text-stone-500 border border-stone-800 cursor-not-allowed'}"
-                                    title="${(100 - daoTamCurrent) >= 50 ? 'Khiêu chiến ảo ảnh Tâm Ma, thanh tẩy thần hồn!' : 'Tâm Ma chưa đủ lớn để hóa hình (Cần Tâm Ma ≥ 50)'}">
-                                <i class="fa-solid fa-skull text-xs ${(100 - daoTamCurrent) >= 50 ? 'text-rose-400' : 'text-stone-600'}"></i>
-                                <span>Trảm Tâm Ma ${(100 - daoTamCurrent) >= 50 ? `(${100 - daoTamCurrent})` : ''}</span>
-                            </button>
-                        </div>
-                    `;
-                })()}
-
-                <!-- BẢNG THUỘC TÍNH (Weathered Stone Grid) -->
-                <div class="border-t border-stone-800 pt-2">
-                    <div class="text-[11px] uppercase tracking-wider text-amber-600 font-serif font-bold mb-2 flex items-center justify-between">
-                        <span>Thuộc Tính Chiến Đạo</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1.5 text-xs">
-                        <!-- Công Kích -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-bolt text-amber-500 text-[10px]"></i> ⚔️ Công Kích</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${effectiveStats.atk.toLocaleString('vi-VN')}</span>
-                        </div>
-                        <!-- Phòng Ngự -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-shield text-sky-400 text-[10px]"></i> 🛡️ Phòng Ngự</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${effectiveStats.def.toLocaleString('vi-VN')}</span>
-                        </div>
-                        <!-- Bạo Kích -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-burst text-orange-500 text-[10px]"></i> 💥 Bạo Kích</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${effectiveStats.crit}%</span>
-                        </div>
-                        <!-- Né Tránh -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-wind text-teal-400 text-[10px]"></i> 💨 Né Tránh</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${state.spiritualRoot?.mutations?.wind ? '50%' : (state.dodge || 5) + '%'}</span>
-                        </div>
-                        <!-- Tốc Độ -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-gauge-high text-yellow-400 text-[10px]"></i> ⚡ Tốc Độ</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${effectiveStats.spd || (100 + (state.realmStage || 0) * 15)}</span>
-                        </div>
-                        <!-- Xuyên Giáp -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-crosshairs text-purple-400 text-[10px]"></i> 🏹 Xuyên Giáp</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${effectiveStats.armorIgnore || 0}%</span>
-                        </div>
-                        <!-- Thọ Nguyên -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-hourglass-half text-amber-400 text-[10px]"></i> ⏳ Thọ Nguyên</span>
-                            <span class="text-stone-200 font-mono font-bold text-[11px]">${Math.floor(state.ageYears)} / ${maxLifespan}n</span>
-                        </div>
-                        <!-- Linh Thạch -->
-                        <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-1.5 flex items-center justify-between shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]">
-                            <span class="text-stone-400 text-[11px] flex items-center gap-1"><i class="fa-solid fa-coins text-amber-500 text-[10px]"></i> 💎 Linh Thạch</span>
-                            <span class="text-amber-500 font-mono font-bold text-[11px]">${(state.stones || 0).toLocaleString('vi-VN')}</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- CỘT PHẢI (60% - 65%): KHÔNG GIAN LƯU TRỮ (Cuộn dọc độc lập) -->
-            <div class="w-full lg:w-[62%] flex-1 flex flex-col min-w-0 bg-stone-950/80 backdrop-blur-md border border-stone-800 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] p-3 sm:p-4 lg:p-5 relative overflow-hidden min-h-[500px]">
-                <!-- Tiêu đề Trang (Page Header) thay thế hoàn toàn hàng nút Tab thừa -->
-                <div class="page-header-title">
-                    <h2>${rightHeaderTitle}</h2>
+            <!-- Paper-Doll Stage with Spiritual Meridians -->
+            <div class="relative w-full flex items-center justify-between gap-1.5 sm:gap-2.5 py-2 overflow-visible">
+                <!-- Mạch Linh Khí (Spiritual Meridian Lines) SVG Flowing to Dan Tian -->
+                <svg viewBox="0 0 320 220" class="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="meridianLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+                            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.5"/>
+                        </linearGradient>
+                        <linearGradient id="meridianRight" x1="100%" y1="0%" x2="0%" y2="0%">
+                            <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8"/>
+                            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.5"/>
+                        </linearGradient>
+                        <radialGradient id="dantianGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#fde047" stop-opacity="0.95"/>
+                            <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.5"/>
+                            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M 45 40 Q 100 80 160 135" fill="none" stroke="url(#meridianLeft)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <path d="M 45 110 Q 100 120 160 135" fill="none" stroke="url(#meridianLeft)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <path d="M 45 180 Q 100 160 160 135" fill="none" stroke="url(#meridianLeft)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <path d="M 275 40 Q 220 80 160 135" fill="none" stroke="url(#meridianRight)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <path d="M 275 110 Q 220 120 160 135" fill="none" stroke="url(#meridianRight)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <path d="M 275 180 Q 220 160 160 135" fill="none" stroke="url(#meridianRight)" stroke-width="1.5" stroke-dasharray="4 3" class="meridian-flow"/>
+                    <circle cx="160" cy="135" r="8" fill="url(#dantianGlow)"/>
+                    <circle cx="160" cy="135" r="3" fill="#ffffff" class="animate-ping"/>
+                </svg>
+
+                <!-- Trái (3 ô): Vũ Khí, Áo Giáp, Ngọc Bội -->
+                <div class="flex flex-col justify-around gap-2.5 sm:gap-3.5 z-20 shrink-0">
+                    ${renderEquipSlot('weapon', 'Vũ Khí', 'fa-khanda')}
+                    ${renderEquipSlot('armor', 'Áo Giáp', 'fa-shirt')}
+                    ${renderEquipSlot('talisman', 'Ngọc Bội', 'fa-gem')}
                 </div>
 
-                <!-- Vùng Nội Dung Cuộn Dọc Độc Lập -->
-                <div id="char-right-tab-content" class="flex-1 overflow-y-auto max-h-[560px] custom-inventory-scrollbar pr-1">
-                    ${activeTab === 'inventory' ? `
-                        <!-- Smart Slot Contextual Guidance Banner -->
+                <!-- Giữa: Avatar Đả Tọa Nữ Tu Lơ Lửng với Hào Quang Tiên Trận -->
+                <div class="relative z-10 flex flex-col items-center justify-center flex-1 min-w-0 px-1">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-45">
+                        <div class="w-52 h-52 rounded-full border border-cyan-400/30 border-dashed animate-spin-slow"></div>
+                        <div class="absolute w-40 h-40 rounded-full border border-amber-400/25 animate-pulse"></div>
+                    </div>
+
+                    <div class="relative z-10 max-w-full flex justify-center">
+                        <img id="char-modal-avatar-img"
+                             src="./assets/images/image_11.png"
+                             alt="Bản Thể Nữ Tu"
+                             class="w-48 h-48 object-contain avatar-breathing select-none pointer-events-none transition-transform duration-300 hover:scale-105"
+                             onerror="this.src='./assets/images/nu_tu_trong_suot.png';" />
+                    </div>
+                    <div class="mt-1.5 text-center pointer-events-none relative z-10">
+                        ${state.equippedTitle ? `<span class="text-[10px] font-xianxia text-amber-200 font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 border border-amber-400/60 inline-block mb-1 shadow-[0_0_10px_rgba(245,158,11,0.4)]">[${state.equippedTitle}]</span>` : ''}
+                        <span class="text-sm font-xianxia font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 truncate max-w-[150px] block drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">${state.player?.name || 'Tiêu Dao Tử'}</span>
+                    </div>
+                </div>
+
+                <!-- Phải (3 ô): Vũ Khí Phụ, Giới Chỉ, Phi Hài -->
+                <div class="flex flex-col justify-around gap-2.5 sm:gap-3.5 z-20 shrink-0">
+                    ${renderEquipSlot('artifact', 'Vũ Khí Phụ', 'fa-shield-halved')}
+                    ${renderEquipSlot('ring', 'Giới Chỉ', 'fa-ring')}
+                    ${renderEquipSlot('boots', 'Phi Hài', 'fa-shoe-prints')}
+                </div>
+            </div>
+
+            <!-- Bảng Lực Chiến (Combat Power) Kim Bảng Tiên Lực -->
+            <div id="rpg-char-cp-box" class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900/95 to-amber-950/80 border-2 border-amber-400/80 shadow-[0_0_25px_rgba(245,158,11,0.35),inset_0_0_15px_rgba(245,158,11,0.15)] my-2.5 transition-all">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 text-sm shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <span class="text-xs uppercase tracking-widest text-amber-300 font-xianxia font-black">LỰC CHIẾN</span>
+                </div>
+                <span id="rpg-char-combat-power" class="font-mono font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 tracking-wider select-none drop-shadow-[0_0_12px_rgba(245,158,11,0.7)]">
+                    ${combatPower.toLocaleString('vi-VN')}
+                </span>
+            </div>
+
+            <!-- Nút Trang Bị Nhanh Kim Bài Hoàng Kim -->
+            <button id="btn-quick-equip" type="button" onclick="quickEquip()" class="btn-cta-gold w-full py-2.5 px-3 rounded-xl hover:brightness-110 font-xianxia font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-3 group cursor-pointer" title="Tự động đồng bộ & trang bị vật phẩm tối ưu">
+                <i class="fa-solid fa-bolt group-hover:scale-125 transition-transform"></i>
+                <span>Trang Bị Nhanh</span>
+            </button>
+
+            <!-- 3 Thanh Trạng Thái (HP Huyết Tinh / MP Lam Ngọc / Đạo Tâm Thái Cực) -->
+            ${(() => {
+                const hpCurrent = Math.min(state.hp, effectiveStats.maxHp);
+                const hpMax = effectiveStats.maxHp;
+                const hpPercent = Math.min(100, Math.max(0, Math.round((hpCurrent / hpMax) * 100)));
+
+                const mpCurrent = Math.min(state.mp || 0, effectiveStats.maxMp);
+                const mpMax = effectiveStats.maxMp;
+                const mpPercent = Math.min(100, Math.max(0, Math.round((mpCurrent / mpMax) * 100)));
+
+                const daoTamCurrent = Math.min(100, Math.max(0, Math.round(state.daoTam ?? 100)));
+
+                return `
+                    <!-- THANH KHÍ HUYẾT (HP - Huyết Tinh Hồng Ngọc) -->
+                    <div class="mb-2">
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-rose-300 font-mono flex items-center gap-1.5"><i class="fa-solid fa-heart-pulse text-rose-400 text-[10px]"></i> ❤️ Khí Huyết</span>
+                            <span class="text-rose-300 font-mono font-bold text-[11px] drop-shadow">${hpCurrent.toLocaleString('vi-VN')} / ${hpMax.toLocaleString('vi-VN')} (${hpPercent}%)</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-950 border border-rose-500/40 rounded-full overflow-hidden p-0.5 shadow-inner">
+                            <div class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-rose-600 rounded-full shadow-[0_0_10px_rgba(225,29,72,0.6)] transition-all duration-300" style="width: ${hpPercent}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- THANH PHÁP LỰC (MP - Lam Ngọc Đại Dương) -->
+                    <div class="mb-2">
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-cyan-300 font-mono flex items-center gap-1.5"><i class="fa-solid fa-droplet text-cyan-400 text-[10px]"></i> 💧 Pháp Lực</span>
+                            <span class="text-cyan-300 font-mono font-bold text-[11px] drop-shadow">${mpCurrent.toLocaleString('vi-VN')} / ${mpMax.toLocaleString('vi-VN')} (${mpPercent}%)</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-950 border border-cyan-500/40 rounded-full overflow-hidden p-0.5 shadow-inner">
+                            <div class="h-full bg-gradient-to-r from-cyan-600 via-sky-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-300" style="width: ${mpPercent}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- THANH ĐẠO TÂM & TÂM MA -->
+                    <div class="mb-3">
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-emerald-300 font-mono flex items-center gap-1.5"><i class="fa-solid fa-yin-yang text-emerald-400 text-[10px]"></i> ☯️ Đạo Tâm / Tâm Ma</span>
+                            <span class="text-emerald-300 font-mono font-bold text-[11px] drop-shadow">${daoTamCurrent} / ${100 - daoTamCurrent}</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-950 border border-emerald-500/40 rounded-full overflow-hidden p-0.5 shadow-inner">
+                            <div class="h-full ${daoTamCurrent > 70 ? 'bg-gradient-to-r from-emerald-600 to-teal-400' : (daoTamCurrent >= 30 ? 'bg-gradient-to-r from-amber-600 to-yellow-500' : 'bg-gradient-to-r from-red-700 to-rose-600')} rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-300" style="width: ${daoTamCurrent}%;"></div>
+                        </div>
+                        <!-- NÚT TRẢM TÂM MA TRONG MODAL -->
+                        <button type="button"
+                                id="btn-tram-tam-ma-modal"
+                                onclick="challengeTamMa()"
+                                ${(100 - daoTamCurrent) < 50 ? 'disabled' : ''}
+                                class="w-full mt-2 py-1.5 px-3 rounded-xl font-xianxia font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${(100 - daoTamCurrent) >= 50
+                                    ? 'bg-gradient-to-r from-rose-900 via-red-700 to-rose-900 text-white border-2 border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] hover:brightness-125 cursor-pointer active:scale-95 animate-pulse'
+                                    : 'opacity-40 bg-slate-900/60 text-slate-500 border border-slate-800 cursor-not-allowed'}"
+                                title="${(100 - daoTamCurrent) >= 50 ? 'Khiêu chiến ảo ảnh Tâm Ma, thanh tẩy thần hồn!' : 'Tâm Ma chưa đủ lớn để hóa hình (Cần Tâm Ma ≥ 50)'}">
+                            <i class="fa-solid fa-skull text-xs ${(100 - daoTamCurrent) >= 50 ? 'text-rose-300' : 'text-slate-600'}"></i>
+                            <span>Trảm Tâm Ma ${(100 - daoTamCurrent) >= 50 ? `(${100 - daoTamCurrent})` : ''}</span>
+                        </button>
+                    </div>
+                `;
+            })()}
+
+            <!-- BẢNG THUỘC TÍNH (Phiến Ngọc Tiên Gia) -->
+            <div class="border-t border-amber-500/25 pt-2.5">
+                <div class="text-[11px] uppercase tracking-widest text-amber-300 font-xianxia font-bold mb-2 flex items-center justify-between">
+                    <span>✦ Thuộc Tính Chiến Đạo ✦</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <!-- Công Kích -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-bolt text-amber-400 text-[10px]"></i> ⚔️ Công Kích</span>
+                        <span class="text-amber-200 font-mono font-bold text-[11px]">${effectiveStats.atk.toLocaleString('vi-VN')}</span>
+                    </div>
+                    <!-- Phòng Ngự -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-shield text-sky-400 text-[10px]"></i> 🛡️ Phòng Ngự</span>
+                        <span class="text-cyan-200 font-mono font-bold text-[11px]">${effectiveStats.def.toLocaleString('vi-VN')}</span>
+                    </div>
+                    <!-- Bạo Kích -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-burst text-orange-400 text-[10px]"></i> 💥 Bạo Kích</span>
+                        <span class="text-orange-200 font-mono font-bold text-[11px]">${effectiveStats.crit}%</span>
+                    </div>
+                    <!-- Né Tránh -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-wind text-teal-400 text-[10px]"></i> 💨 Né Tránh</span>
+                        <span class="text-emerald-200 font-mono font-bold text-[11px]">${state.spiritualRoot?.mutations?.wind ? '50%' : (state.dodge || 5) + '%'}</span>
+                    </div>
+                    <!-- Tốc Độ -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-gauge-high text-yellow-400 text-[10px]"></i> ⚡ Tốc Độ</span>
+                        <span class="text-yellow-200 font-mono font-bold text-[11px]">${effectiveStats.spd || (100 + (state.realmStage || 0) * 15)}</span>
+                    </div>
+                    <!-- Xuyên Giáp -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-crosshairs text-purple-400 text-[10px]"></i> 🏹 Xuyên Giáp</span>
+                        <span class="text-purple-200 font-mono font-bold text-[11px]">${effectiveStats.armorIgnore || 0}%</span>
+                    </div>
+                    <!-- Thọ Nguyên -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-hourglass-half text-amber-400 text-[10px]"></i> ⏳ Thọ Nguyên</span>
+                        <span class="text-amber-200 font-mono font-bold text-[11px]">${Math.floor(state.ageYears)} / ${maxLifespan}n</span>
+                    </div>
+                    <!-- Linh Thạch -->
+                    <div class="bg-slate-900/80 border border-slate-700/70 hover:border-amber-400/50 rounded-xl p-2 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                        <span class="text-slate-300 text-[11px] flex items-center gap-1"><i class="fa-solid fa-coins text-amber-400 text-[10px]"></i> 💎 Linh Thạch</span>
+                        <span class="text-amber-300 font-mono font-bold text-[11px]">${(state.stones || 0).toLocaleString('vi-VN')}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Nếu là tab Túi Đồ ('inventory'): Render BỐ CỤC 3 CỘT ĐẲNG CẤP CHUẨN MỘNG HUYỄN PHI TIÊN
+    if (activeTab === 'inventory') {
+        host.innerHTML = `
+            <div class="rpg-split-container xianxia-3col-master flex flex-col lg:flex-row gap-4 p-1 select-none w-full h-full">
+                <!-- CỘT 1 (Trái ~340px): BẢN NGUYÊN TU SĨ -->
+                ${renderCultivatorColumn()}
+
+                <!-- CỘT 2 (Giữa flex-1): CÀN KHÔN BẢO NANG -->
+                <div id="char-col-inventory" style="background: linear-gradient(180deg, rgba(17, 28, 50, 0.98), rgba(10, 16, 32, 0.99)); border: 1.5px solid rgba(234, 179, 8, 0.5); box-shadow: 0 0 35px rgba(0,0,0,0.85), inset 0 0 25px rgba(234,179,8,0.05);" class="flex-1 min-w-0 flex flex-col rounded-3xl p-3.5 sm:p-4 relative overflow-hidden">
+                    <!-- Hàng 1: Header Túi Đồ -->
+                    <div class="page-header-title pb-2.5 mb-2.5 border-b border-amber-500/25 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">☯️</span>
+                            <h2 class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 font-xianxia font-black text-sm sm:text-base uppercase tracking-widest drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] flex items-center gap-2">
+                                CÀN KHÔN BẢO NANG
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-mono text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full shadow-inner">
+                                ${allCount} loại bảo vật
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Vùng Nội Dung Túi Đồ -->
+                    <div id="char-right-tab-content" class="flex-1 flex flex-col overflow-hidden min-h-0">
                         ${activeEquipTarget ? `
-                            <div class="smart-slot-banner flex items-center justify-between p-2 sm:p-2.5 mb-2.5 rounded-xl animate-pulse">
-                                <div class="flex items-center gap-2 text-xs text-amber-200">
-                                    <i class="fa-solid fa-bullseye text-amber-400 text-sm animate-spin-slow"></i>
-                                    <span>Đang chọn ô <b class="text-amber-300 font-bold">${activeEquipTarget.slotLabel}</b> — Chọn vật phẩm bên dưới để trang bị!</span>
+                            <div class="smart-slot-banner flex items-center justify-between p-2.5 sm:p-3 mb-2.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 border-2 border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-pulse shrink-0">
+                                <div class="flex items-center gap-2 text-xs text-amber-200 font-xianxia">
+                                    <i class="fa-solid fa-bullseye text-amber-300 text-sm animate-spin-slow"></i>
+                                    <span>Đang chọn ô <b class="text-yellow-300 font-black">${activeEquipTarget.slotLabel}</b> — Chọn vật phẩm bên dưới để trang bị!</span>
                                 </div>
-                                <button type="button" onclick="cancelEquipTargeting()" class="px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-stone-300 text-[11px] border border-amber-500/40 hover:border-amber-400 transition flex items-center gap-1 shadow-sm shrink-0">
+                                <button type="button" onclick="cancelEquipTargeting()" class="px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-200 text-xs border border-amber-400/60 hover:border-amber-300 transition-all flex items-center gap-1.5 shadow-md shrink-0 active:scale-95 font-serif">
                                     <i class="fa-solid fa-xmark text-amber-400"></i> Hủy
                                 </button>
                             </div>
                         ` : ''}
 
-                        <!-- Sub-tabs: Tất cả | Trang Bị | Đan Dược | Nguyên Liệu -->
-                        <div class="flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-stone-800/80 overflow-x-auto select-none">
+                        <!-- Hàng 2: Thanh Phân Loại Tab Trải Rộng 100% Không Cắt Chữ -->
+                        <div class="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-amber-500/20 overflow-x-auto select-none shrink-0 custom-inventory-scrollbar">
                             <div class="flex items-center gap-2 shrink-0">
                                 ${renderInvFilterBtn('all', 'Tất cả', allCount)}
                                 ${renderInvFilterBtn('equipment', 'Trang Bị', equipCount)}
                                 ${renderInvFilterBtn('pill', 'Đan Dược', pillCount)}
                                 ${renderInvFilterBtn('material', 'Nguyên Liệu', matCount)}
                                 ${isSlotFilter ? `
-                                    <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-sm flex items-center gap-1.5">
-                                        <i class="fa-solid fa-filter text-amber-400"></i> ${activeEquipTarget?.slotLabel || targetSlotKey} <span class="text-[10px] font-mono">(${filteredItems.length})</span>
+                                    <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-serif font-bold whitespace-nowrap bg-amber-500/20 text-amber-200 border-2 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.35)] flex items-center gap-1.5">
+                                        <i class="fa-solid fa-filter text-amber-400"></i> ${activeEquipTarget?.slotLabel || targetSlotKey} <span class="text-[10px] font-mono text-amber-300">(${filteredItems.length})</span>
                                     </button>
                                 ` : ''}
                             </div>
                         </div>
 
-                        <!-- Inventory Grid: 5-8 Cột Vật Phẩm Nén Gọn Hiện Đại -->
-                        <div id="rpg-inventory-grid" data-drop-zone="inventory" class="inventory-grid grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5 sm:gap-2 p-1">
+                        <!-- Hàng 3: Thanh Tìm Kiếm, Lọc & Nút Phân Giải Nguyên Liệu Sang Trọng -->
+                        <div class="inventory-toolbar flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-slate-900/80 border border-amber-500/25 mb-2.5 shrink-0">
+                            <div class="relative flex-1 min-w-[150px]">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                                <input id="inventory-search" type="search" placeholder="🔍 Tìm tên vật phẩm..." oninput="refineInventoryView()" aria-label="Tìm vật phẩm trong túi đồ" class="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950/90 border border-slate-700/80 focus:border-amber-400 text-xs text-slate-100 placeholder-slate-400 focus:outline-none transition-all shadow-inner">
+                            </div>
+                            <select id="inventory-order" onchange="refineInventoryView()" aria-label="Sắp xếp túi đồ" class="py-1.5 px-3 rounded-xl bg-slate-950/90 border border-slate-700/80 text-xs text-amber-200 focus:border-amber-400 focus:outline-none cursor-pointer">
+                                <option value="default">Thứ tự hiện tại</option>
+                                <option value="rarity">Phẩm chất cao trước</option>
+                                <option value="name">Tên vật phẩm A-Z</option>
+                            </select>
+                            <button type="button" onclick="cleanOrRecycleMaterials()" class="btn-cta-danger py-1.5 px-3 rounded-xl text-xs font-xianxia font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap" title="Phân giải nguyên liệu dư thừa thành Linh Thạch">
+                                <i class="fa-solid fa-recycle"></i>
+                                <span>♻️ Phân Giải Nguyên Liệu</span>
+                            </button>
+                            <span id="inventory-search-result" role="status" class="text-[10px] font-mono text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-1 rounded-lg ml-auto hidden sm:inline-block">${filteredItems.length} loại</span>
+                        </div>
+
+                        <!-- Hàng 4: Lưới Vật Phẩm (7-8 cột) Chiếm Trọn Chiều Cao Còn Lại -->
+                        <div id="rpg-inventory-grid" data-drop-zone="inventory" class="inventory-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5 sm:gap-2 p-1 flex-1 overflow-y-auto custom-inventory-scrollbar max-h-[500px]">
                             ${renderedItemsHtml}
                             ${emptySlotsHtml}
                         </div>
-                    ` : `
+                    </div>
+                </div>
+
+                <!-- CỘT 3 (Phải ~310px): ĐÀI GIÁM ĐỊNH PHÁP BẢO -->
+                <aside id="inventory-inspector" style="background: linear-gradient(180deg, rgba(17, 28, 50, 0.98), rgba(10, 16, 32, 0.99)); border: 1.5px solid rgba(234, 179, 8, 0.5); box-shadow: 0 0 35px rgba(0,0,0,0.85), inset 0 0 25px rgba(234,179,8,0.05);" class="w-full lg:w-[310px] shrink-0 flex flex-col rounded-3xl p-3.5 sm:p-4 overflow-y-auto custom-inventory-scrollbar" aria-label="Đài giám định pháp bảo">
+                </aside>
+            </div>
+        `;
+
+        // Render Inspector (Cột 3)
+        const inspectorPanel = document.getElementById('inventory-inspector');
+        if (inspectorPanel) {
+            if (inspectedInventoryItemId && state.inventory.some(i => i.id === inspectedInventoryItemId && (i.count > 0 || i.quantity > 0))) {
+                inspectInventoryItem(inspectedInventoryItemId);
+            } else {
+                renderEmptyInspector(inspectorPanel);
+            }
+        }
+    } else {
+        // Nếu là tab Công Pháp: Dành trọn 100% diện tích cho Tàng Kinh Các (Loại bỏ cột Bản Nguyên Tu Sĩ theo Mệnh Lệnh Số 1)
+        if (activeTab === 'skills' || activeTab === 'cong-phap') {
+            if (typeof renderSkillsHub === 'function') {
+                renderSkillsHub(host);
+                return;
+            }
+        }
+
+        // Non-inventory character sub-tabs (root, artifact, pet...)
+        const characterSectionHeaders = {
+            skills: '📜 CÔNG PHÁP TÀNG KINH CÁC',
+            root: '🌿 CĂN CƠ LINH CĂN',
+            artifact: '⚔️ PHÁP BẢO BẢN MỆNH',
+            talisman: '🧧 HỌA PHÙ CÁC',
+            pet: '🦊 LINH THÚ HỘ TỘC',
+            companion: '💞 ĐẠO LỮ ĐỒNG TU',
+            avatar: '🧘 PHÂN THẦN HÓA THÂN'
+        };
+        const rightHeaderTitle = characterSectionHeaders[activeTab] || '📜 TU TIÊN CƠ DUYÊN';
+
+        host.innerHTML = `
+            <div class="rpg-split-container flex flex-col lg:flex-row gap-5 p-1 select-none w-full">
+                ${renderCultivatorColumn()}
+
+                <div class="w-full lg:w-[62%] flex-1 flex flex-col min-w-0 rounded-3xl p-3.5 sm:p-4 lg:p-5 relative overflow-hidden min-h-[500px] border-2 border-amber-500/40 bg-gradient-to-b from-slate-950/95 via-indigo-950/70 to-slate-950/95 shadow-[0_0_35px_rgba(0,0,0,0.85),inset_0_0_30px_rgba(245,158,11,0.06)]">
+                    <div class="page-header-title pb-2.5 mb-3 border-b border-amber-500/25 flex items-center justify-between">
+                        <h2 class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 font-xianxia font-black text-sm sm:text-base uppercase tracking-widest drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] flex items-center gap-2">
+                            <i class="fa-solid fa-scroll text-amber-400"></i> ${rightHeaderTitle}
+                        </h2>
+                    </div>
+                    <div id="char-right-tab-content" class="flex-1 overflow-y-auto max-h-[560px] custom-inventory-scrollbar pr-1">
                         <div id="char-subtab-container" class="w-full"></div>
-                    `}
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    // Render non-inventory subtabs inside right column
-    if (activeTab !== 'inventory') {
         const subContainer = document.getElementById('char-subtab-container');
         if (subContainer) {
-            if (activeTab === 'skills') {
-                renderSkillsHub(subContainer);
-            } else if (activeTab === 'root') {
-                renderFoundationHub('linh_can', subContainer);
-            } else if (activeTab === 'artifact') {
-                renderArtifactHub(subContainer);
-            } else if (activeTab === 'talisman') {
-                renderTalismanHub(subContainer);
-            } else if (activeTab === 'pet') {
-                renderPetHub(subContainer);
-            } else if (activeTab === 'companion') {
-                renderCompanionHub(subContainer);
-            } else if (activeTab === 'avatar') {
-                renderAvatarHub(subContainer);
-            } else if (activeTab === 'achievement') {
-                renderAchievementHub(subContainer);
-            }
+            if (activeTab === 'skills') renderSkillsHub(subContainer);
+            else if (activeTab === 'root') renderFoundationHub('linh_can', subContainer);
+            else if (activeTab === 'artifact') renderArtifactHub(subContainer);
+            else if (activeTab === 'talisman') renderTalismanHub(subContainer);
+            else if (activeTab === 'pet') renderPetHub(subContainer);
+            else if (activeTab === 'companion') renderCompanionHub(subContainer);
+            else if (activeTab === 'avatar') renderAvatarHub(subContainer);
+            else if (activeTab === 'achievement') renderAchievementHub(subContainer);
         }
     }
 
@@ -7750,145 +8343,865 @@ window.unlockDivineTechnique = unlockDivineTechnique;
 
 let currentSkillsSubTab = 'manuals'; // 'manuals' | 'divine'
 
-function switchSkillsSubTab(tab) {
-    currentSkillsSubTab = tab;
-    const container = document.getElementById('hub-modal-content');
-    if (container) renderSkillsHub(container);
+// ============================================================================
+// HỆ THỐNG CÔNG PHÁP TÀNG KINH CÁC V2 (QUỶ CỐC BÁT HOANG - 3 PHÂN KHU ĐỘC LẬP)
+// ============================================================================
+
+const SKILL_MASTERY_RANKS_V2 = [
+    { level: 1, name: 'Sơ Khởi', mult: 1.0, isBottleneck: false },
+    { level: 2, name: 'Nhập Môn', mult: 1.2, isBottleneck: false },
+    { level: 3, name: 'Tích Lũy', mult: 1.4, isBottleneck: true, reqFragments: 2 },
+    { level: 4, name: 'Tiểu Thành', mult: 1.8, isBottleneck: false },
+    { level: 5, name: 'Quán Thông', mult: 2.2, isBottleneck: false },
+    { level: 6, name: 'Xuất Chúng', mult: 2.7, isBottleneck: true, reqFragments: 3 },
+    { level: 7, name: 'Đại Thành', mult: 3.5, isBottleneck: false },
+    { level: 8, name: 'Đăng Phong', mult: 4.4, isBottleneck: false },
+    { level: 9, name: 'Tạo Cực', mult: 5.5, isBottleneck: true, reqFragments: 5 },
+    { level: 10, name: 'Viên Mãn', mult: 7.0, isBottleneck: false }
+];
+
+let currentSkillsFilter = 'ALL'; // 'ALL', 'passive', 'active', 'equipped', 'fragments'
+let currentSkillsTierFilter = 'ALL'; // 'ALL', 'pham', 'linh', 'huyen', 'dia', 'thien', 'tien'
+let skillsSearchQuery = '';
+let selectedSkillId = null;
+let useBreakthroughPill = false;
+
+function ensureLearnedSkillsInit() {
+    if (!Array.isArray(state.learnedSkills)) state.learnedSkills = [];
+    if (!Array.isArray(state.equippedSkills)) state.equippedSkills = [];
+    if (!Array.isArray(state.equippedPassiveSkills)) {
+        state.equippedPassiveSkills = state.equippedSkills.filter(id => {
+            const s = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(x => x.id === id);
+            return s && (s.type === 'TamPhap' || s.type === 'TheThuat' || s.type === 'BiThuat');
+        }).slice(0, 4);
+    }
+    if (!Array.isArray(state.equippedActiveSkills)) {
+        state.equippedActiveSkills = state.equippedSkills.filter(id => {
+            const s = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(x => x.id === id);
+            return s && (s.type === 'VuKy' || s.type === 'ThanPhap');
+        }).slice(0, 4);
+    }
+
+    if (state.learnedSkills.length === 0) {
+        state.learnedSkills.push(
+            { id: 'tp_dan_khi', level: 1, fragments: 0, pity: 0 },
+            { id: 'tp_tho_nap', level: 1, fragments: 0, pity: 0 },
+            { id: 'vk_thanh_phong', level: 1, fragments: 0, pity: 0 }
+        );
+        if (state.equippedPassiveSkills.length === 0) state.equippedPassiveSkills.push('tp_dan_khi');
+        if (state.equippedActiveSkills.length === 0) state.equippedActiveSkills.push('vk_thanh_phong');
+        state.equippedSkills = [...state.equippedPassiveSkills, ...state.equippedActiveSkills];
+    } else {
+        state.learnedSkills.forEach(entry => {
+            if (typeof entry === 'string') {
+                const sId = entry;
+                const idx = state.learnedSkills.indexOf(entry);
+                state.learnedSkills[idx] = { id: sId, level: 1, fragments: 0, pity: 0 };
+            } else {
+                if (!entry.level) entry.level = 1;
+                if (entry.fragments === undefined) entry.fragments = 0;
+                if (entry.pity === undefined) entry.pity = 0;
+            }
+        });
+    }
 }
-window.switchSkillsSubTab = switchSkillsSubTab;
+
+function getUnlockedSlotCounts(realmIndex = state.realmIndex || 0) {
+    let passiveSlots = 1;
+    let activeSlots = 1;
+    if (realmIndex < 2) {
+        passiveSlots = 1; activeSlots = 1;
+    } else if (realmIndex < 4) {
+        passiveSlots = 2; activeSlots = 2;
+    } else if (realmIndex === 4) {
+        passiveSlots = 3; activeSlots = 3;
+    } else {
+        passiveSlots = 4; activeSlots = 4;
+    }
+    return { passiveSlots, activeSlots };
+}
+
+function selectSkillForInspection(skillId) {
+    selectedSkillId = skillId;
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.selectSkillForInspection = selectSkillForInspection;
+
+function setSkillFilterTab(tab) {
+    currentSkillsFilter = tab;
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.setSkillFilterTab = setSkillFilterTab;
+
+function setSkillTierFilter(tier) {
+    currentSkillsTierFilter = tier;
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.setSkillTierFilter = setSkillTierFilter;
+
+function handleSkillSearchInput(val) {
+    skillsSearchQuery = (val || '').trim().toLowerCase();
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.handleSkillSearchInput = handleSkillSearchInput;
+
+function toggleUseBreakthroughPill() {
+    useBreakthroughPill = !useBreakthroughPill;
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.toggleUseBreakthroughPill = toggleUseBreakthroughPill;
+
+function toggleEquipSkill(skillId) {
+    ensureLearnedSkillsInit();
+    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    if (!skill) return;
+
+    const isPassive = (skill.type === 'TamPhap' || skill.type === 'TheThuat' || skill.type === 'BiThuat' || skill.category === 'tam_phap' || skill.category === 'the_thuat' || skill.category === 'bi_thuat');
+    const list = isPassive ? state.equippedPassiveSkills : state.equippedActiveSkills;
+    const { passiveSlots, activeSlots } = getUnlockedSlotCounts(state.realmIndex || 0);
+    const maxSlots = isPassive ? passiveSlots : activeSlots;
+
+    const curIdx = list.indexOf(skillId);
+    if (curIdx !== -1) {
+        list.splice(curIdx, 1);
+        if (typeof playSound === 'function') playSound('whoosh');
+        if (typeof addLog === 'function') addLog(`Đã tháo công pháp [${skill.name}] khỏi Pháp Vị.`, 'text-slate-400');
+    } else {
+        if (list.length >= maxSlots) {
+            const replaced = list.shift();
+            list.push(skillId);
+            const repSkill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === replaced);
+            if (typeof addLog === 'function') addLog(`Pháp Vị đã đầy. Đã thay thế [${repSkill?.name || replaced}] bằng [${skill.name}]!`, 'text-amber-300');
+        } else {
+            list.push(skillId);
+            if (typeof addLog === 'function') addLog(`Đã ngự dụng [${skill.name}] vào Chu Thiên Pháp Vị!`, 'text-emerald-300');
+        }
+        if (typeof playSound === 'function') playSound('bell');
+    }
+
+    state.equippedSkills = [...state.equippedPassiveSkills, ...state.equippedActiveSkills];
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.toggleEquipSkill = toggleEquipSkill;
+
+function attemptUpgradeSkillMastery(skillId) {
+    ensureLearnedSkillsInit();
+    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    if (!skill) return;
+
+    const owned = state.learnedSkills.find(s => s.id === skillId);
+    if (!owned) return;
+
+    const curLevel = owned.level || 1;
+    if (curLevel >= 10) {
+        if (typeof addLog === 'function') addLog(`[${skill.name}] đã đạt đến cảnh giới Viên Mãn tối cao (Tầng 10)!`, 'text-amber-400');
+        return;
+    }
+
+    const curRank = SKILL_MASTERY_RANKS_V2[curLevel - 1];
+    if (curRank.isBottleneck) {
+        attemptBreakthroughSkillMastery(skillId);
+        return;
+    }
+
+    const tierMultipliers = { pham: 1, linh: 2.5, huyen: 6, dia: 15, thien: 40, tien: 100 };
+    const tierMult = tierMultipliers[skill.tier] || 1;
+    const reqExp = Math.round(300 * curLevel * tierMult);
+
+    const playerExp = Number(state.exp) || 0;
+    if (playerExp < reqExp) {
+        if (typeof addLog === 'function') addLog(`⚠️ Tu Vi không đủ để tham ngộ! (Cần ${reqExp.toLocaleString('vi-VN')} Tu Vi, hiện có ${playerExp.toLocaleString('vi-VN')}).`, 'text-rose-400');
+        return;
+    }
+
+    const baseRates = [90, 80, 70, 60, 50, 40, 30, 20];
+    const baseRate = baseRates[curLevel - 1] || 40;
+    const pity = owned.pity || 0;
+    const pillBonus = useBreakthroughPill ? 25 : 0;
+
+    if (useBreakthroughPill) {
+        const pillItem = state.inventory ? state.inventory.find(i => (i.id === 'ngo_dao_dan' || i.name?.includes('Ngộ Đạo') || i.name?.includes('Luyện Thần')) && (i.count > 0 || i.quantity > 0)) : null;
+        if (pillItem) {
+            pillItem.count = (pillItem.count || pillItem.quantity || 1) - 1;
+            if (pillItem.count <= 0) state.inventory = state.inventory.filter(x => x !== pillItem);
+        } else {
+            if ((state.stones || 0) < 500) {
+                if (typeof addLog === 'function') addLog(`⚠️ Không có Ngộ Đạo Đan và không đủ 500 Linh Thạch để ngưng tụ đan khí!`, 'text-rose-400');
+                return;
+            }
+            state.stones -= 500;
+        }
+    }
+
+    state.exp -= reqExp;
+    const finalRate = Math.min(100, baseRate + pity + pillBonus);
+    const roll = Math.random() * 100;
+
+    if (roll < finalRate) {
+        owned.level += 1;
+        owned.pity = 0;
+        const nextRank = SKILL_MASTERY_RANKS_V2[owned.level - 1];
+        if (typeof playSound === 'function') playSound('bell');
+        if (typeof spawnFloatingText === 'function') {
+            spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `Đốn Ngộ Thành Công: Tầng ${owned.level}!`, 'text-amber-300 font-bold');
+        }
+        if (typeof addLog === 'function') {
+            addLog(`🌟 [Đốn Ngộ Thần Công] Lĩnh ngộ thành công! [${skill.name}] đột phá lên Tầng ${owned.level} • ${nextRank.name}!`, 'text-amber-300 font-bold');
+        }
+    } else {
+        owned.pity = (owned.pity || 0) + 15;
+        if (typeof playSound === 'function') playSound('fail');
+        
+        if (useBreakthroughPill) {
+            if (typeof addLog === 'function') {
+                addLog(`💨 Tham ngộ [${skill.name}] chưa thông suốt. Nhờ có dược lực Ngộ Đạo Đan hộ thể, thần hồn bình an! Đạo Tâm Cảm Ngộ +15% (Hiện có ${owned.pity}% pity).`, 'text-sky-300');
+            }
+        } else {
+            state.daoTam = Math.max(0, (state.daoTam ?? 100) - 2);
+            state.hp = Math.max(1, Math.round(state.hp * 0.98));
+            if (typeof addLog === 'function') {
+                addLog(`⚡ [Tẩu Hỏa Nhập Ma] Tâm thần dao động, tham ngộ thất bại! Tổn hao khí huyết, Tâm Ma sinh sôi (+2)! Đạo Tâm Cảm Ngộ +15% (Lần sau dễ ngộ hơn).`, 'text-rose-400');
+            }
+        }
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.attemptUpgradeSkillMastery = attemptUpgradeSkillMastery;
+
+function attemptBreakthroughSkillMastery(skillId) {
+    ensureLearnedSkillsInit();
+    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    if (!skill) return;
+
+    const owned = state.learnedSkills.find(s => s.id === skillId);
+    if (!owned) return;
+
+    const curLevel = owned.level || 1;
+    const curRank = SKILL_MASTERY_RANKS_V2[curLevel - 1];
+    if (!curRank.isBottleneck) return;
+
+    const reqFrags = curRank.reqFragments || 2;
+    const ownedFrags = owned.fragments || 0;
+
+    if (ownedFrags < reqFrags) {
+        if (typeof addLog === 'function') {
+            addLog(`⚠️ Bình cảnh khó vượt! Cần thêm ${reqFrags - ownedFrags} Tàn Quyển [${skill.name}] để hợp nhất tâm pháp đột phá!`, 'text-rose-400');
+        }
+        return;
+    }
+
+    owned.fragments -= reqFrags;
+    owned.level += 1;
+    owned.pity = 0;
+
+    const nextRank = SKILL_MASTERY_RANKS_V2[owned.level - 1];
+    if (typeof playSound === 'function') playSound('levelup');
+    if (typeof spawnFloatingText === 'function') {
+        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `BÌNH CẢNH PHÁ TOÁI: TẦNG ${owned.level}!`, 'text-yellow-300 font-black text-xl');
+    }
+    if (typeof addLog === 'function') {
+        addLog(`🌈 [PHÁ CẢNH VIÊN MÃN] Dung hợp ${reqFrags} Tàn Quyển thành công! [${skill.name}] đột phá bình cảnh, bước vào cảnh giới [${nextRank.name}] (Tầng ${owned.level})!`, 'text-yellow-300 font-bold');
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+
+    const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
+    if (host) renderSkillsHub(host);
+}
+window.attemptBreakthroughSkillMastery = attemptBreakthroughSkillMastery;
+
+// Hàm thêm công pháp hoặc chuyển hóa tàn quyển nếu đã có
+function addLearnedSkillOrFragment(skillId, count = 1) {
+    ensureLearnedSkillsInit();
+    let owned = state.learnedSkills.find(s => s.id === skillId);
+    const tmpl = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    if (!tmpl) return;
+
+    if (!owned) {
+        owned = { id: skillId, level: 1, fragments: Math.max(0, count - 1), pity: 0 };
+        state.learnedSkills.push(owned);
+        if (typeof addLog === 'function') addLog(`✨ Lĩnh ngộ công pháp mới: [${tmpl.name}]!`, 'text-amber-300 font-bold');
+    } else {
+        owned.fragments = (owned.fragments || 0) + count;
+        if (typeof addLog === 'function') addLog(`🧩 Nhận được tàn quyển trùng lặp: +${count} Tàn Quyển [${tmpl.name}] (Hiện có ${owned.fragments})!`, 'text-emerald-300 font-bold');
+    }
+    if (typeof saveGameState === 'function') saveGameState();
+}
+window.addLearnedSkillOrFragment = addLearnedSkillOrFragment;
+
+
+// ============================================================================
+// HÀM RENDER CHÍNH CHO TÀNG KINH CÁC (3 PHÂN KHU ĐỘC LẬP CHUẨN QUỶ CỐC BÁT HOANG)
+// ============================================================================
 
 function renderSkillsHub(content) {
     if (!content) return;
-    const skills = Array.isArray(state.skills) ? state.skills : [];
-    const divineList = typeof DIVINE_TECHNIQUES_CONFIG !== 'undefined' ? DIVINE_TECHNIQUES_CONFIG : [];
-    const unlockedDivine = Array.isArray(state.divineTechniquesUnlocked) ? state.divineTechniquesUnlocked : [];
+    ensureLearnedSkillsInit();
 
-    const getRankName = (lvl) => {
-        if (lvl <= 2) return 'Sơ Khởi';
-        if (lvl <= 4) return 'Tiểu Thành';
-        if (lvl <= 6) return 'Đại Thành';
-        if (lvl <= 9) return 'Viên Mãn';
-        return 'Hóa Cảnh';
+    const skillsDataSource = (typeof SKILLS_DATA !== 'undefined' && Array.isArray(SKILLS_DATA)) ? SKILLS_DATA : [];
+    const realmIndex = Number(state.realmIndex) || 0;
+    const currentRealm = (typeof REALMS !== 'undefined' && REALMS[realmIndex]) ? REALMS[realmIndex] : { name: 'Luyện Khí' };
+
+    const { passiveSlots, activeSlots } = getUnlockedSlotCounts(realmIndex);
+
+    // Tính tổng chỉ số vĩnh viễn "Vạn Pháp Quy Tông"
+    let totalFlatAtk = 0, totalFlatDef = 0, totalFlatHp = 0, totalFlatMp = 0, totalFlatExp = 0, totalCrit = 0;
+    state.learnedSkills.forEach(owned => {
+        const tmpl = skillsDataSource.find(s => s.id === owned.id);
+        if (!tmpl) return;
+        const lvl = owned.level || 1;
+        const rankCfg = SKILL_MASTERY_RANKS_V2[lvl - 1] || SKILL_MASTERY_RANKS_V2[0];
+        const mult = rankCfg.mult || 1.0;
+        const stats = tmpl.stats || {};
+
+        if (stats.atk) totalFlatAtk += Math.round(stats.atk * mult);
+        if (stats.def) totalFlatDef += Math.round(stats.def * mult);
+        if (stats.hp) totalFlatHp += Math.round(stats.hp * mult);
+        if (stats.maxMp) totalFlatMp += Math.round(stats.maxMp * mult);
+        if (stats.expPerSec) totalFlatExp += Math.round(stats.expPerSec * mult);
+        if (stats.critRate) totalCrit += Number((stats.critRate * 100 * mult).toFixed(1));
+    });
+
+    // Helper map phẩm cấp (High Contrast)
+    const tierMeta = {
+        pham: { name: 'Phàm Phẩm', color: 'text-slate-100', border: 'border-slate-300/80', bg: 'bg-slate-800/90', slipClass: 'slip-pham' },
+        linh: { name: 'Linh Phẩm', color: 'text-emerald-300', border: 'border-emerald-400', bg: 'bg-emerald-950/80', slipClass: 'slip-linh' },
+        huyen: { name: 'Huyền Phẩm', color: 'text-sky-300', border: 'border-sky-400', bg: 'bg-sky-950/80', slipClass: 'slip-huyen' },
+        dia: { name: 'Địa Phẩm', color: 'text-purple-300', border: 'border-purple-400', bg: 'bg-purple-950/80', slipClass: 'slip-dia' },
+        thien: { name: 'Thiên Phẩm', color: 'text-yellow-300 font-bold', border: 'border-yellow-400', bg: 'bg-amber-950/90 shadow-[0_0_15px_rgba(250,204,21,0.4)]', slipClass: 'slip-thien' },
+        tien: { name: 'Tiên Phẩm', color: 'text-pink-300 font-bold', border: 'border-pink-400', bg: 'bg-pink-950/90 shadow-[0_0_18px_rgba(244,114,182,0.45)]', slipClass: 'slip-tien' }
+    };
+
+    // Helper map hệ ngũ hành (High Contrast)
+    const elemMeta = {
+        kim: { name: 'Kim', icon: 'fa-shield-halved', color: 'text-amber-300' },
+        moc: { name: 'Mộc', icon: 'fa-leaf', color: 'text-emerald-300' },
+        thuy: { name: 'Thủy', icon: 'fa-droplet', color: 'text-cyan-300' },
+        hoa: { name: 'Hỏa', icon: 'fa-fire-flame-curved', color: 'text-rose-400' },
+        tho: { name: 'Thổ', icon: 'fa-mountain', color: 'text-amber-500' },
+        loi: { name: 'Lôi', icon: 'fa-bolt', color: 'text-purple-300' },
+        phong: { name: 'Phong', icon: 'fa-wind', color: 'text-teal-300' },
+        bang: { name: 'Băng', icon: 'fa-snowflake', color: 'text-sky-200' },
+        vo_he: { name: 'Vô Hệ', icon: 'fa-yin-yang', color: 'text-yellow-300' }
+    };
+
+    // Chuẩn bị danh sách theo filter
+    let displayList = state.learnedSkills.map(owned => {
+        const tmpl = skillsDataSource.find(s => s.id === owned.id) || {
+            id: owned.id,
+            name: owned.id,
+            type: 'TamPhap',
+            tier: 'pham',
+            element: 'vo_he',
+            desc: 'Công pháp tiên gia truyền thế.',
+            effect: '+Tăng tu vi'
+        };
+        const isPassive = (tmpl.type === 'TamPhap' || tmpl.type === 'TheThuat' || tmpl.type === 'BiThuat' || tmpl.category === 'tam_phap' || tmpl.category === 'the_thuat' || tmpl.category === 'bi_thuat');
+        const isEquipped = state.equippedPassiveSkills.includes(tmpl.id) || state.equippedActiveSkills.includes(tmpl.id) || state.equippedSkills.includes(tmpl.id);
+        const rankCfg = SKILL_MASTERY_RANKS_V2[(owned.level || 1) - 1] || SKILL_MASTERY_RANKS_V2[0];
+        return {
+            ...tmpl,
+            level: owned.level || 1,
+            fragments: owned.fragments || 0,
+            pity: owned.pity || 0,
+            isPassive,
+            isEquipped,
+            rankCfg
+        };
+    });
+
+    // Thống kê đếm tab
+    const allCount = displayList.length;
+    const passiveCount = displayList.filter(s => s.isPassive).length;
+    const activeCount = displayList.filter(s => !s.isPassive).length;
+    const equippedCount = displayList.filter(s => s.isEquipped).length;
+    const fragCount = displayList.filter(s => s.fragments > 0).length;
+
+    // Lọc theo subtab
+    if (currentSkillsFilter === 'passive') {
+        displayList = displayList.filter(s => s.isPassive);
+    } else if (currentSkillsFilter === 'active') {
+        displayList = displayList.filter(s => !s.isPassive);
+    } else if (currentSkillsFilter === 'equipped') {
+        displayList = displayList.filter(s => s.isEquipped);
+    } else if (currentSkillsFilter === 'fragments') {
+        displayList = displayList.filter(s => s.fragments > 0);
+    }
+
+    // Lọc theo phẩm chất
+    if (currentSkillsTierFilter !== 'ALL') {
+        displayList = displayList.filter(s => s.tier === currentSkillsTierFilter);
+    }
+
+    // Lọc theo từ khóa tìm kiếm
+    if (skillsSearchQuery) {
+        displayList = displayList.filter(s => (s.name || '').toLowerCase().includes(skillsSearchQuery));
+    }
+
+    // Chọn cuốn mặc định nếu chưa chọn hoặc cuốn đang chọn bị biến mất
+    if (!selectedSkillId || !displayList.some(s => s.id === selectedSkillId)) {
+        selectedSkillId = displayList[0]?.id || state.learnedSkills[0]?.id || null;
+    }
+
+    const currentSelectedSkill = displayList.find(s => s.id === selectedSkillId) || state.learnedSkills.map(o => {
+        const t = skillsDataSource.find(x => x.id === o.id);
+        return t ? { ...t, level: o.level, fragments: o.fragments, pity: o.pity, rankCfg: SKILL_MASTERY_RANKS_V2[(o.level || 1) - 1] } : null;
+    }).filter(Boolean)[0] || null;
+
+    // Helper render ô Chu Thiên Pháp Vị (Sáng rõ, sắc nét, tương phản cao)
+    const renderChuThienSlot = (slotIdx, isPassiveType) => {
+        const maxSlots = isPassiveType ? passiveSlots : activeSlots;
+        const list = isPassiveType ? state.equippedPassiveSkills : state.equippedActiveSkills;
+        const isUnlocked = slotIdx < maxSlots;
+        const assignedId = list[slotIdx];
+        const assignedSkill = assignedId ? skillsDataSource.find(s => s.id === assignedId) : null;
+        const assignedOwned = assignedId ? state.learnedSkills.find(s => s.id === assignedId) : null;
+
+        if (!isUnlocked) {
+            const unlockRealmNames = ['Trúc Cơ', 'Kim Đan', 'Hóa Thần', 'Luyện Hư'];
+            const reqName = unlockRealmNames[slotIdx] || 'Luyện Hư';
+            return `
+                <div class="chu-thien-slot flex flex-col items-center justify-center p-1.5 rounded-xl border border-dashed border-slate-600/70 bg-slate-900/70 opacity-60 cursor-not-allowed min-w-[70px] sm:min-w-[80px] h-[72px]" title="Chưa mở khóa. Cần đạt ${reqName} Kỳ!">
+                    <i class="fa-solid fa-lock text-slate-400 text-xs mb-1"></i>
+                    <span class="text-[9px] font-mono text-slate-300 font-bold text-center leading-tight">Mở ở<br><span class="text-amber-300">${reqName}</span></span>
+                </div>
+            `;
+        }
+
+        if (!assignedSkill) {
+            return `
+                <div onclick="setSkillFilterTab('${isPassiveType ? 'passive' : 'active'}')" class="chu-thien-slot flex flex-col items-center justify-center p-1.5 rounded-xl border-2 border-dashed border-amber-400/70 bg-slate-900/90 hover:bg-slate-800 hover:border-yellow-300 cursor-pointer min-w-[70px] sm:min-w-[80px] h-[72px] transition group shadow-[inset_0_0_12px_rgba(245,158,11,0.15)]" title="Ô Trống - Chạm để chọn công pháp lắp vào">
+                    <i class="fa-solid fa-plus text-yellow-400 group-hover:scale-125 group-hover:text-yellow-200 text-sm mb-1 transition drop-shadow"></i>
+                    <span class="text-[10px] font-xianxia font-bold text-yellow-300 group-hover:text-yellow-100 tracking-wider">Trống</span>
+                </div>
+            `;
+        }
+
+        const tierCfg = tierMeta[assignedSkill.tier] || tierMeta.pham;
+        const elemCfg = elemMeta[assignedSkill.element] || elemMeta.vo_he;
+        const curLvl = assignedOwned?.level || 1;
+
+        return `
+            <div onclick="selectSkillForInspection('${assignedSkill.id}')" class="chu-thien-slot relative flex flex-col items-center justify-between p-1.5 rounded-xl border-2 ${tierCfg.border} ${tierCfg.bg} hover:border-yellow-300 cursor-pointer min-w-[70px] sm:min-w-[80px] h-[72px] transition shadow-[0_0_14px_rgba(0,0,0,0.85)] group" title="${assignedSkill.name} (Tầng ${curLvl}) - Bấm để xem chi tiết">
+                <div class="flex items-center justify-between w-full px-0.5 pointer-events-none">
+                    <span class="text-[10px] ${elemCfg.color} font-bold drop-shadow"><i class="fa-solid ${elemCfg.icon}"></i></span>
+                    <span class="text-[9px] font-mono font-black text-yellow-300 px-1 rounded bg-black/60 border border-yellow-400/40">T${curLvl}</span>
+                </div>
+                <div class="text-sm ${tierCfg.color} pointer-events-none group-hover:scale-115 transition drop-shadow">
+                    <i class="fa-solid fa-scroll"></i>
+                </div>
+                <span class="text-[9px] font-xianxia font-black text-white truncate max-w-[68px] pointer-events-none text-center drop-shadow">
+                    ${assignedSkill.name}
+                </span>
+                <button type="button" onclick="event.stopPropagation(); toggleEquipSkill('${assignedSkill.id}')" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center border border-white shadow-md transition opacity-0 group-hover:opacity-100" title="Tháo khỏi ô">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        `;
     };
 
     content.innerHTML = `
-        <div class="space-y-4">
-            <header class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-slate-900 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-400/60 flex items-center justify-center text-cyan-300 text-xl shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                        <i class="fa-solid fa-scroll"></i>
-                    </div>
+        <div class="skills-master-container flex flex-col w-full h-full max-h-[86vh] rounded-3xl border-2 border-amber-400/80 bg-gradient-to-b from-slate-900/98 via-blue-950/95 to-slate-950/98 shadow-[0_0_45px_rgba(0,0,0,0.9),0_0_25px_rgba(234,179,8,0.2),inset_0_0_30px_rgba(56,189,248,0.08)] overflow-hidden p-3.5 sm:p-4 select-none font-sans">
+            <!-- ==========================================
+                 HEADER CHÍNH: TÀNG KINH CÁC (HIGH CONTRAST & TÍCH HỢP NÚT ĐÓNG ✕)
+            =========================================== -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b-2 border-amber-400/40 shrink-0">
+                <div class="flex items-center gap-3">
+                    <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 border border-yellow-200 flex items-center justify-center text-slate-950 shadow-[0_0_16px_rgba(250,204,21,0.6)]">
+                        <i class="fa-solid fa-scroll text-base"></i>
+                    </span>
                     <div>
-                        <h3 class="font-serif font-bold text-slate-100 text-base">📜 TÀNG KINH CÁC • CÔNG PHÁP & THẦN THÔNG</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Tham ngộ tuyệt học huyền công, thức tỉnh Bản Mệnh Thần Thông chấn nhiếp bát hoang.</p>
+                        <div class="flex items-center gap-2.5">
+                            <h2 class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-300 to-amber-300 font-xianxia font-black text-base sm:text-lg uppercase tracking-widest drop-shadow-[0_2px_8px_rgba(234,179,8,0.5)]">
+                                TÀNG KINH CÁC • THẦN THÔNG CÔNG PHÁP
+                            </h2>
+                            <span class="text-xs font-xianxia font-black text-yellow-300 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                                ${currentRealm.name}
+                            </span>
+                        </div>
+                        <p class="text-xs text-sky-200 hidden sm:block font-medium mt-0.5">Tham ngộ tuyệt học huyền công, ngự dụng Chu Thiên Pháp Vị chấn nhiếp bát hoang.</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="switchSkillsSubTab('manuals')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${currentSkillsSubTab === 'manuals' ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/50 shadow-md' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'}">
-                        <i class="fa-solid fa-book-open mr-1"></i>Công Pháp (${skills.length})
-                    </button>
-                    <button type="button" onclick="switchSkillsSubTab('divine')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${currentSkillsSubTab === 'divine' ? 'bg-amber-950 text-amber-300 border border-amber-500/50 shadow-md' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'}">
-                        <i class="fa-solid fa-bolt-lightning mr-1"></i>Bản Mệnh Thần Thông (${unlockedDivine.length}/${divineList.length})
+
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono text-yellow-300 bg-amber-950/60 border border-amber-400/60 px-2.5 py-1 rounded-xl shadow hidden md:inline-block">
+                        Đã Lĩnh Ngộ: <b class="text-white font-black">${allCount}</b> Bản
+                    </span>
+                    <!-- Nút Đóng Modal Tích Hợp Gọn Gàng -->
+                    <button type="button"
+                            onclick="if(typeof closeHubModal==='function') closeHubModal(); navigateTo('main-screen');"
+                            class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-rose-950/90 border-2 border-amber-400/80 hover:border-rose-400 text-yellow-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-[0_0_12px_rgba(234,179,8,0.4)] active:scale-95 group"
+                            title="Đóng về Màn Hình Chính">
+                        <i class="fa-solid fa-xmark text-base group-hover:scale-125 transition-transform"></i>
                     </button>
                 </div>
-            </header>
+            </div>
 
-            ${currentSkillsSubTab === 'manuals' ? `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    ${skills.map(sk => {
-                        const lvl = Number(sk.level) || 1;
-                        const cost = (sk.cost || 100) * lvl;
-                        const rankLabel = getRankName(lvl);
-                        const canAfford = (state.stones || 0) >= cost;
+            <!-- ==========================================
+                 PHÂN KHU 1: CHU THIÊN PHÁP VỊ (THANH TRÊN CÙNG - TÁCH BIỆT RÕ RÀNG)
+            =========================================== -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 rounded-2xl bg-gradient-to-r from-slate-900/95 via-blue-950/80 to-slate-900/95 border-2 border-amber-400/60 shadow-[0_4px_20px_rgba(0,0,0,0.7),inset_0_0_15px_rgba(234,179,8,0.08)] shrink-0 mb-3">
+                <!-- Khối Trái (4 Ô): Tâm Pháp Bị Động -->
+                <div class="lg:col-span-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-xianxia font-black text-yellow-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                            <i class="fa-solid fa-yin-yang text-amber-400"></i> Tâm Pháp (Bị Động)
+                        </span>
+                        <span class="text-[11px] font-mono text-sky-200 font-bold bg-slate-950/60 px-2 py-0.5 rounded border border-slate-700">Mở: ${passiveSlots}/4 ô</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        ${renderChuThienSlot(0, true)}
+                        ${renderChuThienSlot(1, true)}
+                        ${renderChuThienSlot(2, true)}
+                        ${renderChuThienSlot(3, true)}
+                    </div>
+                </div>
 
-                        return `
-                            <article class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/40 transition flex flex-col justify-between space-y-3 shadow-md">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-12 h-12 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center justify-center text-cyan-300 text-xl shrink-0">
-                                        <i class="fa-solid ${sk.id === 'skill_breath' ? 'fa-om' : sk.id === 'skill_sword' ? 'fa-khanda' : sk.id === 'skill_body' ? 'fa-shield-halved' : sk.id === 'skill_thunder' ? 'fa-bolt' : 'fa-wind'}"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex justify-between items-start">
-                                            <h4 class="font-bold text-slate-100 text-sm font-serif truncate">${sk.name}</h4>
-                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 shrink-0 ml-2">
-                                                Tầng ${lvl} • ${rankLabel}
-                                            </span>
-                                        </div>
-                                        <p class="text-xs text-slate-400 mt-1 line-clamp-2">${sk.desc}</p>
-                                    </div>
-                                </div>
+                <!-- Khối Giữa (4 Ô): Vũ Kỹ Xuất Chiến Chủ Động -->
+                <div class="lg:col-span-5 flex flex-col justify-between border-t lg:border-t-0 lg:border-l-2 border-amber-400/40 pt-2.5 lg:pt-0 lg:pl-3">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-xianxia font-black text-rose-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                            <i class="fa-solid fa-khanda text-rose-400"></i> Vũ Kỹ Xuất Chiến (Chủ Động)
+                        </span>
+                        <span class="text-[11px] font-mono text-sky-200 font-bold bg-slate-950/60 px-2 py-0.5 rounded border border-slate-700">Mở: ${activeSlots}/4 ô</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        ${renderChuThienSlot(0, false)}
+                        ${renderChuThienSlot(1, false)}
+                        ${renderChuThienSlot(2, false)}
+                        ${renderChuThienSlot(3, false)}
+                    </div>
+                </div>
 
-                                <div class="space-y-2 pt-1 border-t border-slate-800/80">
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="text-slate-400 font-mono">Tiêu hao:</span>
-                                        <span class="font-mono ${canAfford ? 'text-amber-400' : 'text-rose-400'} font-bold">
-                                            ${cost.toLocaleString('vi-VN')} Linh Thạch
+                <!-- Khối Phải: Vạn Pháp Quy Tông (Cộng Thẳng Vĩnh Viễn) -->
+                <div class="lg:col-span-2 flex flex-col justify-between border-t lg:border-t-0 lg:border-l-2 border-amber-400/40 pt-2.5 lg:pt-0 lg:pl-3 bg-gradient-to-br from-amber-950/40 via-yellow-950/30 to-slate-950/70 rounded-xl p-2 border border-amber-400/30">
+                    <div class="text-[11px] font-xianxia font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                        <i class="fa-solid fa-infinity text-yellow-300"></i> Vạn Pháp Quy Tông
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 text-[11px] font-mono font-bold mt-1.5">
+                        <span class="text-rose-300 truncate drop-shadow">+[${totalFlatAtk.toLocaleString('vi-VN')}] Công</span>
+                        <span class="text-sky-300 truncate drop-shadow">+[${totalFlatDef.toLocaleString('vi-VN')}] Thủ</span>
+                        <span class="text-emerald-300 truncate drop-shadow">+[${totalFlatHp.toLocaleString('vi-VN')}] HP</span>
+                        <span class="text-yellow-300 truncate drop-shadow">+[${totalFlatExp}/s] Tu Vi</span>
+                    </div>
+                    <span class="text-[9px] text-sky-300 italic font-semibold text-center mt-1 leading-none drop-shadow">✦ Cộng vĩnh viễn dù không lắp</span>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 PHẦN THÂN: PHÂN KHU 2 (LƯỚI THẺ TRÚC) & PHÂN KHU 3 (ĐÀI THAM NGỘ)
+            =========================================== -->
+            <div class="flex flex-col lg:flex-row gap-3.5 flex-1 min-h-0 overflow-hidden">
+                <!-- ==========================================
+                     PHÂN KHU 2: KỆ THẺ TRÚC DỰNG ĐỨNG (~65%)
+                =========================================== -->
+                <div class="w-full lg:w-[65%] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/80 to-slate-950/95 border-2 border-amber-400/60 p-3 overflow-hidden shadow-[0_6px_25px_rgba(0,0,0,0.75),inset_0_0_20px_rgba(56,189,248,0.05)]">
+                    <!-- Hàng Công Cụ Lọc Tabs -->
+                    <div class="flex items-center justify-between gap-2 overflow-x-auto pb-2 shrink-0 custom-inventory-scrollbar">
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="setSkillFilterTab('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'ALL' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
+                                Tất Cả <span class="text-[11px] text-yellow-300 font-mono font-bold">(${allCount})</span>
+                            </button>
+                            <button type="button" onclick="setSkillFilterTab('passive')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'passive' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
+                                ☯️ Tâm Pháp <span class="text-[11px] text-yellow-300 font-mono font-bold">(${passiveCount})</span>
+                            </button>
+                            <button type="button" onclick="setSkillFilterTab('active')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'active' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
+                                ⚔️ Vũ Kỹ <span class="text-[11px] text-yellow-300 font-mono font-bold">(${activeCount})</span>
+                            </button>
+                            <button type="button" onclick="setSkillFilterTab('equipped')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'equipped' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
+                                🔥 Đang Trang Bị <span class="text-[11px] text-yellow-300 font-mono font-bold">(${equippedCount})</span>
+                            </button>
+                            <button type="button" onclick="setSkillFilterTab('fragments')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'fragments' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
+                                🧩 Tàn Quyển <span class="text-[11px] text-yellow-300 font-mono font-bold">(${fragCount})</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hàng Search & Filter Phẩm Chất -->
+                    <div class="flex items-center gap-2.5 py-2 shrink-0">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-amber-300 text-xs"></i>
+                            <input type="text"
+                                   id="skills-search-input"
+                                   value="${skillsSearchQuery}"
+                                   oninput="handleSkillSearchInput(this.value)"
+                                   placeholder="Tìm tên công pháp thần thông..."
+                                   class="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border-2 border-amber-400/60 focus:border-yellow-300 rounded-xl text-white outline-none transition placeholder-slate-400 shadow-inner font-medium" />
+                        </div>
+                        <select onchange="setSkillTierFilter(this.value)" class="text-xs bg-slate-950 border-2 border-amber-400/60 text-yellow-300 font-bold rounded-xl px-3 py-2 outline-none cursor-pointer shadow-inner">
+                            <option value="ALL" ${currentSkillsTierFilter === 'ALL' ? 'selected' : ''}>✦ Tất Cả Phẩm</option>
+                            <option value="pham" ${currentSkillsTierFilter === 'pham' ? 'selected' : ''}>Phàm Phẩm</option>
+                            <option value="linh" ${currentSkillsTierFilter === 'linh' ? 'selected' : ''}>Linh Phẩm</option>
+                            <option value="huyen" ${currentSkillsTierFilter === 'huyen' ? 'selected' : ''}>Huyền Phẩm</option>
+                            <option value="dia" ${currentSkillsTierFilter === 'dia' ? 'selected' : ''}>Địa Phẩm</option>
+                            <option value="thien" ${currentSkillsTierFilter === 'thien' ? 'selected' : ''}>Thiên Phẩm</option>
+                            <option value="tien" ${currentSkillsTierFilter === 'tien' ? 'selected' : ''}>Tiên Phẩm</option>
+                        </select>
+                    </div>
+
+                    <!-- Lưới Thẻ Trúc Dựng Đứng (Vertical Bamboo Slips Grid) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 custom-inventory-scrollbar mt-1.5 content-start">
+                        ${displayList.length === 0 ? `
+                            <div class="col-span-full py-14 text-center text-slate-300">
+                                <i class="fa-solid fa-book-open text-4xl mb-3 text-amber-400/50"></i>
+                                <p class="text-sm font-serif font-bold text-yellow-200">Chưa lĩnh ngộ công pháp nào phù hợp bộ lọc.</p>
+                            </div>
+                        ` : displayList.map(item => {
+                            const isSelected = item.id === selectedSkillId;
+                            const tierCfg = tierMeta[item.tier] || tierMeta.pham;
+                            const elemCfg = elemMeta[item.element] || elemMeta.vo_he;
+                            const curLvl = item.level || 1;
+                            const rankName = item.rankCfg?.name || 'Sơ Khởi';
+                            const reqFrags = item.rankCfg?.reqFragments || (item.rankCfg?.isBottleneck ? 2 : 1);
+
+                            return `
+                                <div onclick="selectSkillForInspection('${item.id}')"
+                                     class="bamboo-slip-card ${tierCfg.slipClass} ${isSelected ? 'is-selected' : ''} flex flex-col justify-between"
+                                     title="${item.name} (${tierCfg.name})">
+                                    <!-- Đầu Thẻ: Badge Phẩm Chất & Icon Hệ -->
+                                    <div class="flex items-start justify-between w-full pointer-events-none">
+                                        <span class="text-[10px] font-xianxia font-black px-2 py-0.5 rounded ${tierCfg.bg} ${tierCfg.color} border-2 ${tierCfg.border} shadow-sm">
+                                            ${tierCfg.name}
+                                        </span>
+                                        <span class="text-xs ${elemCfg.color} font-black flex items-center gap-1 drop-shadow" title="Hệ ${elemCfg.name}">
+                                            <i class="fa-solid ${elemCfg.icon}"></i>
                                         </span>
                                     </div>
-                                    <button type="button" onclick="upgradeSkill('${sk.id}')" class="w-full py-2 rounded-xl ${canAfford ? 'bg-cyan-950/80 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/50' : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'} text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md">
-                                        <i class="fa-solid fa-arrow-up"></i> Lĩnh Ngộ Nâng Tầng
-                                    </button>
-                                </div>
-                            </article>
-                        `;
-                    }).join('')}
-                </div>
-            ` : `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    ${divineList.map(dt => {
-                        const isUnlocked = unlockedDivine.includes(dt.id);
-                        const reqSkill = skills.find(s => s.id === dt.reqSkillId);
-                        const curSkillLvl = reqSkill?.level || 1;
-                        const skillMet = curSkillLvl >= dt.reqSkillLevel;
-                        const canStones = (state.stones || 0) >= dt.costStones;
-                        const canJade = (state.immortalJade || 0) >= dt.costJade;
-                        const canUnlock = skillMet && canStones && canJade && !isUnlocked;
 
-                        return `
-                            <article class="p-4 rounded-xl bg-slate-950/80 border ${isUnlocked ? 'border-amber-500/50 bg-amber-950/10' : 'border-slate-800'} transition flex flex-col justify-between space-y-3 shadow-md">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-12 h-12 rounded-xl ${dt.bg || 'bg-slate-900'} border ${dt.border || 'border-slate-700'} flex items-center justify-center ${dt.color || 'text-amber-400'} text-xl shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
-                                        <i class="fa-solid ${dt.icon || 'fa-bolt'}"></i>
+                                    ${item.isEquipped ? `
+                                        <div class="my-0.5 text-center pointer-events-none">
+                                            <span class="text-[9px] font-xianxia font-black text-slate-950 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 border-2 border-white px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(250,204,21,0.8)] inline-block">
+                                                ⚡ ĐANG VẬN CHUYỂN
+                                            </span>
+                                        </div>
+                                    ` : ''}
+
+                                    <!-- Thân Thẻ: Tên Công Pháp Cổ Phong & Icon Thần Thoại -->
+                                    <div class="flex flex-col items-center justify-center my-auto py-1 pointer-events-none">
+                                        <div class="w-11 h-11 rounded-xl bg-slate-950/80 border-2 ${tierCfg.border} flex items-center justify-center text-xl ${tierCfg.color} mb-1.5 shadow-lg">
+                                            <i class="fa-solid ${item.isPassive ? 'fa-book-journal-whills' : 'fa-khanda'}"></i>
+                                        </div>
+                                        <h3 class="font-xianxia-title text-xs sm:text-[13px] text-yellow-200 text-center leading-tight drop-shadow max-w-[110px] truncate">
+                                            ${item.name}
+                                        </h3>
+                                        <span class="text-[10px] text-sky-200 font-bold mt-1 font-sans">${item.isPassive ? '☯️ Tâm Pháp' : '⚔️ Vũ Kỹ'}</span>
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex justify-between items-start">
-                                            <div class="flex items-center gap-1.5">
-                                                <h4 class="font-bold text-slate-100 text-sm font-serif truncate">${dt.name}</h4>
-                                                ${isUnlocked ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 font-mono">★ ĐÃ NGỘ</span>' : ''}
+
+                                    <!-- Chân Thẻ: Cảnh Giới Tầng X/10 & Tiến Độ Tàn Quyển -->
+                                    <div class="w-full pt-2 border-t-2 border-slate-700/80 pointer-events-none">
+                                        <div class="flex items-center justify-between text-[10px] font-mono mb-1">
+                                            <span class="text-yellow-300 font-black drop-shadow">T${curLvl} • ${rankName}</span>
+                                            <span class="text-white font-bold">${curLvl}/10</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-[9px] font-mono">
+                                            <span class="text-sky-300 font-bold">🧩 ${item.fragments}/${reqFrags}</span>
+                                            <div class="w-11 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-600">
+                                                <div class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style="width: ${Math.min(100, Math.round((item.fragments / reqFrags) * 100))}%;"></div>
                                             </div>
                                         </div>
-                                        <p class="text-xs text-slate-300 mt-1">${dt.desc}</p>
                                     </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- ==========================================
+                     PHÂN KHU 3: ĐÀI THAM NGỘ & ĐỘT PHÁ BÍ TỊCH (~35% - TƯƠNG PHẢN CAO)
+                =========================================== -->
+                <div class="w-full lg:w-[35%] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900/98 via-blue-950/95 to-slate-950/98 border-2 border-amber-400/80 p-3.5 sm:p-4 pb-8 shadow-[0_8px_30px_rgba(0,0,0,0.85),inset_0_0_25px_rgba(234,179,8,0.12)] overflow-y-auto custom-inventory-scrollbar">
+                    ${!currentSelectedSkill ? `
+                        <div class="flex flex-col items-center justify-center my-auto text-slate-300 text-center py-12">
+                            <i class="fa-solid fa-scroll text-5xl mb-3 text-amber-400/50"></i>
+                            <p class="text-sm font-serif font-bold text-yellow-200">Chọn một Thẻ Trúc bên trái để tham ngộ huyền cơ.</p>
+                        </div>
+                    ` : (() => {
+                        const sk = currentSelectedSkill;
+                        const tierCfg = tierMeta[sk.tier] || tierMeta.pham;
+                        const elemCfg = elemMeta[sk.element] || elemMeta.vo_he;
+                        const curLvl = sk.level || 1;
+                        const isMax = curLvl >= 10;
+                        const rankCfg = sk.rankCfg || SKILL_MASTERY_RANKS_V2[curLvl - 1] || SKILL_MASTERY_RANKS_V2[0];
+                        const isBottleneck = rankCfg.isBottleneck;
+                        const reqFrags = rankCfg.reqFragments || (isBottleneck ? 2 : 1);
+                        const ownedFrags = sk.fragments || 0;
+
+                        const tierMultipliers = { pham: 1, linh: 2.5, huyen: 6, dia: 15, thien: 40, tien: 100 };
+                        const tierMult = tierMultipliers[sk.tier] || 1;
+                        const reqExp = Math.round(300 * curLvl * tierMult);
+                        const playerExp = Number(state.exp) || 0;
+
+                        const baseRates = [90, 80, 70, 60, 50, 40, 30, 20];
+                        const baseRate = baseRates[curLvl - 1] || 40;
+                        const pity = sk.pity || 0;
+                        const pillBonus = useBreakthroughPill ? 25 : 0;
+                        const totalRate = Math.min(100, baseRate + pity + pillBonus);
+
+                        return `
+                            <!-- Tiêu Đề Chi Tiết & Phẩm Cấp -->
+                            <div class="flex items-start gap-3.5 pb-3 border-b-2 border-amber-400/40 shrink-0">
+                                <div class="w-14 h-14 rounded-2xl bg-slate-900 border-2 ${tierCfg.border} flex items-center justify-center text-2xl ${tierCfg.color} shadow-[0_0_18px_rgba(0,0,0,0.8)] shrink-0">
+                                    <i class="fa-solid ${sk.isPassive ? 'fa-book-journal-whills' : 'fa-khanda'}"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-xianxia-title text-base sm:text-lg font-black text-yellow-300 truncate drop-shadow">
+                                        ${sk.name}
+                                    </h3>
+                                    <div class="flex items-center gap-2 text-xs text-white mt-1.5 flex-wrap font-bold">
+                                        <span class="px-2 py-0.5 rounded font-mono text-[10px] ${tierCfg.bg} ${tierCfg.border} border-2 ${tierCfg.color}">${tierCfg.name}</span>
+                                        <span class="${elemCfg.color} font-mono text-[11px]"><i class="fa-solid ${elemCfg.icon}"></i> Hệ ${elemCfg.name}</span>
+                                        <span class="text-sky-300 text-[11px] font-sans">• ${sk.isPassive ? 'Tâm Pháp' : 'Vũ Kỹ'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Nút Thao Tác Hành Động Chính: Lắp Vào / Tháo Xuống (CTA) -->
+                            <div class="py-3 border-b-2 border-amber-400/30 shrink-0">
+                                <button type="button"
+                                        onclick="toggleEquipSkill('${sk.id}')"
+                                        class="w-full py-2.5 px-3 rounded-xl ${sk.isEquipped ? 'btn-cta-danger' : 'btn-cta-gold'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 text-xs font-black shadow-lg">
+                                    <i class="fa-solid ${sk.isEquipped ? 'fa-arrow-down-to-bracket' : 'fa-bolt'}"></i>
+                                    <span>${sk.isEquipped ? 'Tháo Khỏi Chu Thiên Pháp Vị' : 'Lắp Vào Chu Thiên Pháp Vị'}</span>
+                                </button>
+                            </div>
+
+                            <!-- Thuộc Tính Vĩnh Viễn & Hiệu Ứng Xuất Chiến (High Contrast Cards) -->
+                            <div class="space-y-2.5 py-3 border-b-2 border-amber-400/30 text-xs">
+                                <div class="bg-slate-950/80 border-2 border-amber-400/40 rounded-xl p-3 space-y-1.5 shadow-md">
+                                    <div class="text-xs font-xianxia font-black text-yellow-300 flex items-center gap-1.5 drop-shadow">
+                                        <i class="fa-solid fa-infinity text-yellow-400"></i> Thuộc Tính Vĩnh Viễn (Tầng ${curLvl})
+                                    </div>
+                                    <p class="text-xs text-white leading-relaxed font-sans font-medium">
+                                        ${sk.effect || '+Tăng tu vi và chiến lực toàn diện.'}
+                                    </p>
                                 </div>
 
-                                <div class="space-y-2 pt-1 border-t border-slate-800/80 text-xs">
-                                    <div class="flex justify-between items-center text-[11px] text-slate-400">
-                                        <span>Yêu cầu: [${reqSkill?.name || 'Công Pháp'}]</span>
-                                        <span class="${skillMet ? 'text-emerald-400 font-bold' : 'text-rose-400'} font-mono">Tầng ${curSkillLvl}/${dt.reqSkillLevel}</span>
+                                <div class="bg-indigo-950/70 border-2 border-sky-400/40 rounded-xl p-3 space-y-1 shadow-md">
+                                    <div class="text-xs font-xianxia font-black text-sky-300 flex items-center gap-1.5 drop-shadow">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-sky-400"></i> Hiệu Ứng Khi Lắp Xuất Chiến
                                     </div>
-                                    ${!isUnlocked ? `
-                                        <div class="flex justify-between items-center text-[11px] text-slate-400">
-                                            <span>Tiêu hao:</span>
-                                            <span class="font-mono text-amber-300">${dt.costStones.toLocaleString('vi-VN')} LT • 💎 ${dt.costJade} Ngọc</span>
-                                        </div>
-                                        <button type="button" onclick="unlockDivineTechnique('${dt.id}')" class="w-full py-2 rounded-xl ${canUnlock ? 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-stone-950 font-bold shadow-[0_0_12px_rgba(245,158,11,0.3)] animate-pulse' : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'} text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
-                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Thức Tỉnh Thần Thông
-                                        </button>
-                                    ` : `
-                                        <button disabled class="w-full py-2 rounded-xl bg-amber-950/60 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center justify-center gap-1.5">
-                                            <i class="fa-solid fa-check-double"></i> Đang Ngự Dụng Bản Mệnh
-                                        </button>
-                                    `}
+                                    <p class="text-xs text-sky-100 leading-relaxed font-sans font-medium">
+                                        ${sk.isPassive ? 'Kích hoạt 100% dòng kinh mạch, hỗ trợ hấp thu linh khí và hộ thể.' : 'Kích hoạt kỹ năng chiến đấu trong trận pháp, tung đòn đánh uy lực theo hệ ngũ hành.'}
+                                    </p>
                                 </div>
-                            </article>
+
+                                <p class="text-xs text-amber-200/90 italic font-serif px-1">
+                                    "${sk.desc || 'Công pháp tuyệt truyền trong nhân gian, người hữu duyên mới có thể lĩnh hội.'}"
+                                </p>
+                            </div>
+
+                            <!-- CƠ CHẾ TAM HỢP THAM NGỘ (10 TẦNG) -->
+                            <div class="pt-3 space-y-3 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-xianxia font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                                        <i class="fa-solid fa-fire text-yellow-400"></i> Tam Hợp Tham Ngộ
+                                    </span>
+                                    <span class="text-xs font-mono font-black text-yellow-300 bg-black/60 px-2 py-0.5 rounded border border-yellow-400/50">
+                                        Tầng ${curLvl}/10 • ${rankCfg.name}
+                                    </span>
+                                </div>
+
+                                ${isMax ? `
+                                    <div class="p-4 rounded-xl bg-gradient-to-r from-amber-950 via-yellow-950 to-amber-950 border-2 border-yellow-400 text-center shadow-[0_0_25px_rgba(250,204,21,0.5)]">
+                                        <i class="fa-solid fa-crown text-3xl text-yellow-300 mb-1 animate-bounce drop-shadow"></i>
+                                        <h4 class="font-xianxia font-black text-base text-yellow-200">HÓA CẢNH VIÊN MÃN (MAX)</h4>
+                                        <p class="text-xs text-white mt-1 font-medium">Công pháp đã tu luyện tới cực hạn thiên đạo, uy lực đạt 100% tiềm năng!</p>
+                                    </div>
+                                ` : isBottleneck ? `
+                                    <!-- Mốc Bình Cảnh Cần Tàn Quyển (3C) -->
+                                    <div class="p-3.5 rounded-xl bg-gradient-to-b from-purple-950/80 via-slate-900/95 to-slate-950/98 border-2 border-purple-400 space-y-3 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-xianxia font-black text-purple-300 flex items-center gap-1.5 drop-shadow">
+                                                <i class="fa-solid fa-lock-open text-purple-300"></i> Bình Cảnh Đột Phá (T${curLvl} ➜ T${curLvl + 1})
+                                            </span>
+                                            <span class="font-mono text-xs font-black ${ownedFrags >= reqFrags ? 'text-emerald-300 bg-emerald-950/60 border border-emerald-400 px-2 py-0.5 rounded' : 'text-rose-300 bg-rose-950/60 border border-rose-400 px-2 py-0.5 rounded'}">
+                                                🧩 ${ownedFrags}/${reqFrags} Tàn Quyển
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-white font-sans font-medium leading-relaxed">
+                                            Cần tiêu hao <b class="text-yellow-300">${reqFrags} Tàn Quyển [${sk.name}]</b> để dung hợp chân quyết, phá vỡ bình cảnh bước vào giai đoạn kế tiếp!
+                                        </p>
+                                        <button type="button"
+                                                onclick="attemptBreakthroughSkillMastery('${sk.id}')"
+                                                ${ownedFrags < reqFrags ? 'disabled' : ''}
+                                                class="w-full py-3 px-3 rounded-xl ${ownedFrags >= reqFrags ? 'btn-cta-breakthrough cursor-pointer' : 'bg-slate-800 text-slate-400 border border-slate-600 cursor-not-allowed opacity-60'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-xs font-black shadow-lg">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                            <span>${ownedFrags >= reqFrags ? 'Đột Phá Bình Cảnh (100% Thành Công)' : `Thiếu ${reqFrags - ownedFrags} Tàn Quyển`}</span>
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <!-- Nâng Tầng Thường Tiêu Hao Tu Vi (3A) & Tỷ Lệ (3B) -->
+                                    <div class="p-3.5 rounded-xl bg-slate-950 border-2 border-amber-400/60 space-y-2.5 shadow-md">
+                                        <!-- Tiêu Hao Tu Vi (3A) -->
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-sky-200 font-mono font-bold">Tiêu hao Tu Vi:</span>
+                                            <span class="font-mono font-black text-xs ${playerExp >= reqExp ? 'text-yellow-300' : 'text-rose-400'}">
+                                                ${reqExp.toLocaleString('vi-VN')} / ${playerExp.toLocaleString('vi-VN')}
+                                            </span>
+                                        </div>
+
+                                        <!-- Xác Suất Thành Công & Pity (3B) -->
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-sky-200 font-mono font-bold">Tỷ lệ đốn ngộ:</span>
+                                            <span class="font-mono font-black text-sm text-emerald-300 flex items-center gap-1.5 drop-shadow">
+                                                ${totalRate}%
+                                                ${pity > 0 ? `<span class="text-xs text-yellow-300 font-bold">(+${pity}% Pity)</span>` : ''}
+                                            </span>
+                                        </div>
+
+                                        <!-- Checkbox Ngộ Đạo Đan -->
+                                        <label class="flex items-center gap-2.5 text-xs text-white font-medium cursor-pointer pt-2 border-t border-slate-700">
+                                            <input type="checkbox"
+                                                   ${useBreakthroughPill ? 'checked' : ''}
+                                                   onchange="toggleUseBreakthroughPill()"
+                                                   class="rounded accent-yellow-400 cursor-pointer w-4 h-4" />
+                                            <span>Dùng Ngộ Đạo Đan (+25% Tỷ Lệ & Miễn Phản Phệ)</span>
+                                        </label>
+
+                                        ${!useBreakthroughPill ? `
+                                            <p class="text-[11px] text-rose-300 font-mono font-bold">
+                                                ⚠️ Thất bại tăng +2 Tâm Ma, giảm nhẹ HP (Thất bại nhận +15% Pity cảm ngộ).
+                                            </p>
+                                        ` : `
+                                            <p class="text-[11px] text-sky-200 font-mono font-bold">
+                                                🛡️ Đan khí hộ thể, thất bại không tổn thương thần hồn!
+                                            </p>
+                                        `}
+
+                                        <button type="button"
+                                                onclick="attemptUpgradeSkillMastery('${sk.id}')"
+                                                ${playerExp < reqExp ? 'disabled' : ''}
+                                                class="w-full mt-2 py-3 px-3 rounded-xl ${playerExp >= reqExp ? 'btn-cta-fire cursor-pointer' : 'bg-slate-800 text-slate-400 border border-slate-600 cursor-not-allowed opacity-60'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-xs font-black shadow-lg">
+                                            <i class="fa-solid fa-fire text-sm"></i>
+                                            <span>Tham Ngộ Lên Tầng ${curLvl + 1}</span>
+                                        </button>
+                                    </div>
+                                `}
+                            </div>
                         `;
-                    }).join('')}
+                    })()}
                 </div>
-            `}
+            </div>
         </div>
     `;
 }
 window.renderSkillsHub = renderSkillsHub;
+
 
 // ==========================================
 // 4.16. HỆ THỐNG DỊ TƯỢNG THIÊN ĐỊA (CELESTIAL OMENS SYSTEM)
@@ -10459,13 +11772,29 @@ window.closeTamMaBattleModal = closeTamMaBattleModal;
 // HỆ THỐNG LỊCH LUYỆN BẢN ĐỒ THẾ GIỚI & AUTO-COMBAT (STAGE 5)
 // ==========================================
 
+function normalizeInventoryEntry(entry) {
+    const nested = entry.id && typeof entry.id === 'object' ? entry.id
+        : entry.name && typeof entry.name === 'object' ? entry.name : null;
+    const item = nested ? { ...entry, ...nested, count: entry.count ?? entry.quantity ?? nested.count ?? 1 } : { ...entry };
+    const rarityLevels = { Common: 1, Uncommon: 2, Rare: 3, Epic: 4, Legendary: 5, Mythic: 6 };
+    item.rarity = rarityLevels[item.rarity] || item.rarity;
+    if (item.type === 'Material') item.type = 'Nguyên Liệu';
+    if (item.type === 'Consumable' && item.category === 'Pill') item.type = 'Đan Dược';
+    if (item.type === 'Equipment') item.type = 'Trang Bị';
+    return item;
+}
+
 function addItemToInventory(itemId, count = 1) {
-    if (count <= 0) return;
+    count = Number(count);
+    if (!Number.isFinite(count) || count <= 0) return;
+    const suppliedItem = itemId && typeof itemId === 'object' ? normalizeInventoryEntry(itemId) : null;
+    if (suppliedItem) itemId = suppliedItem.id;
+    if (typeof itemId !== 'string' || !itemId) return;
     let item = state.inventory.find(i => i.id === itemId);
     if (item) {
         item.count = (Number(item.count) || 0) + count;
     } else {
-        const defaultItem = DEFAULT_STATE.inventory?.find(i => i.id === itemId);
+        const defaultItem = suppliedItem || DEFAULT_STATE.inventory?.find(i => i.id === itemId);
         if (defaultItem) {
             item = structuredClone(defaultItem);
             item.count = count;

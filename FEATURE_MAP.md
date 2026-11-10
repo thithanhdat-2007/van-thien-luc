@@ -4,13 +4,15 @@
 
 | Phần người dùng yêu cầu | File điều khiển chính | Nguồn liên quan khi cần |
 | --- | --- | --- |
-| Trấn Yêu Tháp | `js/features/demon_tower.js` | Nút mở `tran_yeu_thap_v4.html` trong iframe toàn màn hình. Engine và dữ liệu của mẫu v4 nằm trong trang đó, chưa đồng bộ save chính. `#modal-tran-yeu-thap` và hệ tháp trong `js/app.js` là các bản cũ |
+| Trấn Yêu Tháp | `js/features/demon_tower.js` | Nút mở `tran_yeu_thap_v4.html` trong iframe toàn màn hình. Đã đồng bộ 2 chiều với save chính (`window.state`): chỉ số nhân vật, cảnh giới, Linh Thạch, Tu Vi, tầng tháp, túi đồ chiến lợi phẩm và lưu trữ tự động. `#modal-tran-yeu-thap` và hệ tháp trong `js/app.js` là các bản cũ |
 | Độ kiếp | `js/features/tribulation.js` | `js/tribulation_visuals.js`, `js/tribulation_system.js`, `#modal-do-kiep` |
 | Gia viên | `js/features/estate.js` | `js/dong_phu_ecosystem.js`, `js/cave.js`, `#modal-gia-vien` |
 | Luyện đan | `js/features/alchemy.js` | `js/alchemy_data.js`, `#modal-luyen-dan` |
 | Luyện khí | `js/features/forging.js` | `js/equipment_data.js`, `#modal-luyen-khi` |
 | Khuê phòng, đạo lữ | `js/features/chamber.js` | `#modal-khue-phong` |
 | Bản Nguyên Tu Sĩ | `js/features/character.js` | `#hud-left`, `.origin-dashboard` trong `style.css` |
+| Túi Đồ & Bản Nguyên (3 Cột) | `js/app.js` (`renderCharacterHub`) | `#page-inventory`, `js/app.js`, `style.css` (Bố cục 3 Cột: Bản Nguyên Tu Sĩ, Càn Khôn Bảo Nang, Đài Giám Định) |
+| Công Pháp • Tàng Kinh Các | `js/app.js` (`renderSkillsHub`) | `js/skills_data.js`, `#page-skills`, `style.css` (3 Phân Khu: Chu Thiên Pháp Vị, Thẻ Trúc Dựng Đứng, Đài Tham Ngộ Tam Hợp) |
 | Thanh tài nguyên trên | `js/features/topbar.js` | `#global-top-resource-bar` |
 | Menu, đóng/mở popup chung | `main.js` | `js/features/bootstrap.js`, router trong `js/app.js` |
 | Khởi động, nối các tính năng | `js/features/bootstrap.js` | Thứ tự script cuối `index.html` |
@@ -18,6 +20,8 @@
 | Định nghĩa gameplay và save | `js/data.js` | `js/realms_data.js`, các file dữ liệu chuyên biệt hiện có |
 
 ## Cách tìm nhanh
+
+Trấn Yêu Tháp V4 đã tách nội dung sang `js/tower_data.js`, nạp trước engine. Điều kiện thường chỉnh đặt tại `TOWER_RULES`. Đọc `TOWER_EDITING.md` để biết trường cần cung cấp, phạm vi file và cách kiểm tra. Tháp đã đồng bộ 2 chiều đầy đủ với game chính (`window.state`).
 
 ```powershell
 rg -n "openDemonTowerModal|handleChallengeClick" js/features/demon_tower.js

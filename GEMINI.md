@@ -12,6 +12,11 @@
 
 ## Giữ đúng việc được giao
 
+- Với Trấn Yêu Tháp, đọc `TOWER_EDITING.md`. Sửa dữ liệu tại `js/tower_data.js`, xác định caller trong engine trước khi đổi điều kiện.
+- Khi nhận yêu cầu chỉnh sửa, nêu phần cần sửa, dữ liệu cần có và file dự kiến chạm. Chỉ hỏi phần chưa rõ có ảnh hưởng kết quả.
+- Không sửa model, hiệu ứng, gameplay hoặc module lân cận chỉ vì đang mở cùng file. Nếu cần mở rộng phạm vi, giải thích phụ thuộc cụ thể trước.
+- Sau thay đổi dữ liệu, đối chiếu tooltip/mô tả và thử chức năng thực tế. Không ghi đè thay đổi agent khác hoặc gộp các tối ưu ngoài yêu cầu.
+
 - Người dùng yêu cầu Trấn Yêu Tháp thì bắt đầu ở `js/features/demon_tower.js`. Chỉ sửa vùng HTML/CSS/data của tháp nếu cần cho chính yêu cầu đó.
 - Khi sửa thanh Tu Vi hoặc bảng chỉ số, bảo tồn ảnh, animation, kích thước, màu và hiệu ứng độ kiếp. Khi sửa độ kiếp, bảo tồn các tính năng còn lại.
 - Không tự thiết kế lại giao diện, thay công thức, đổi dữ liệu save, đổi icon hoặc tối ưu tính năng ngoài yêu cầu.

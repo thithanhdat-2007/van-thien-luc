@@ -382,7 +382,7 @@
                             <div class="hud-glass rounded-2xl p-2.5 border-cyan-500/45">
                                 <div class="flex justify-between items-center text-xs mb-1">
                                     <span class="font-xianxia font-bold text-cyan-300 text-sm flex items-center gap-1.5">
-                                        <span>🗡️</span> Tiêu Dao Kiếm Tiên • <span id="hero-element-tag" class="text-amber-300">Kim Kiếm Ý</span>
+                                        <span id="hero-display-name"><span>🗡️</span> Tiêu Dao Kiếm Tiên • </span><span id="hero-element-tag" class="text-amber-300">Kim Kiếm Ý</span>
                                     </span>
                                     <div class="flex items-center gap-1.5">
                                         <span id="hero-shield-badge" class="hidden text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/25 text-amber-200 border border-amber-400/60 font-bold animate-pulse">
@@ -460,20 +460,23 @@
                         <!-- Thanh Pháp Bảo Chủ Động (3 Thượng Cổ Chí Bảo Bấm Tung Chiêu Tức Thì) & Log -->
                         <div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-slate-950/85 border border-amber-500/30 backdrop-blur-md text-xs">
                             <div class="flex items-center gap-1.5 shrink-0">
-                                <span class="text-[11px] font-bold text-amber-300">🏺 Pháp Bảo Chủ Động:</span>
-                                <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn 3 hiệp">
-                                    🔔 [1] Đông Hoàng Chung
+                                <span class="text-[11px] font-bold text-amber-300">🏺 Pháp Bảo:</span>
+                                <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn 3 hiệp (Phím 1)">
+                                    <span>🔔 Đông Hoàng Chung</span>
+                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-amber-300 border border-amber-500/40">[1]</kbd>
                                 </button>
-                                <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95" title="Triệu hồi 4 thanh Tru Tiên Tứ Kiếm bắn tia hủy diệt liên tục">
-                                    🩸 [2] Tru Tiên Tứ Kiếm
+                                <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Triệu hồi 4 thanh Tru Tiên Tứ Kiếm bắn tia hủy diệt liên tục (Phím 2)">
+                                    <span>🩸 Tru Tiên Kiếm</span>
+                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-rose-300 border border-rose-500/40">[2]</kbd>
                                 </button>
-                                <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95" title="Phóng Thái Cực Hỗn Độn Luân nghiền nát 40% Yêu Cang & hồi đầy Kiếm Nguyên">
-                                    ☯️ [3] Hỗn Độn Thái Cực Luân
+                                <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Phóng Thái Cực Hỗn Độn Luân nghiền nát 40% Yêu Cang & hồi đầy Kiếm Nguyên (Phím 3)">
+                                    <span>☯️ Thái Cực Luân</span>
+                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-cyan-300 border border-cyan-500/40">[3]</kbd>
                                 </button>
                             </div>
 
-                            <div id="combat-log-stream" class="flex-1 truncate font-mono text-amber-200 h-5 overflow-hidden text-right">
-                                🗡️ Phím tắt: [1][2][3] Tung Pháp Bảo
+                            <div id="combat-log-stream" class="flex-1 truncate font-mono text-amber-200/90 h-5 overflow-hidden text-right text-[11px]">
+                                ⚡ [Space] Khai Chiến • [T] Tự Leo • [X] Tốc Độ • [Q] Đổi Tab • [C] Quét • [1-3] Pháp Bảo
                             </div>
                         </div>
 
@@ -497,11 +500,11 @@
                                 <!-- BƯỚC 1: CHỌN HỆ KHẮC CHẾ -->
                                 <div class="flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-xl border border-slate-800">
                                     <span class="text-[10px] font-bold text-amber-300 mr-0.5">Hệ:</span>
-                                    <button onclick="selectHeroElement('Kim')" id="elem-btn-Kim" class="px-2 py-1 rounded-lg border-2 border-amber-400 bg-amber-500/25 text-amber-200 text-[11px] font-bold transition" title="Kim khắc Mộc">⚔️ Kim</button>
-                                    <button onclick="selectHeroElement('Moc')" id="elem-btn-Moc" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-emerald-300 text-[11px] opacity-75 hover:opacity-100 transition" title="Mộc khắc Thủy">🌿 Mộc</button>
-                                    <button onclick="selectHeroElement('Thuy')" id="elem-btn-Thuy" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-cyan-300 text-[11px] opacity-75 hover:opacity-100 transition" title="Thủy khắc Hỏa">❄️ Thủy</button>
-                                    <button onclick="selectHeroElement('Hoa')" id="elem-btn-Hoa" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-rose-300 text-[11px] opacity-75 hover:opacity-100 transition" title="Hỏa khắc Lôi">🔥 Hỏa</button>
-                                    <button onclick="selectHeroElement('Loi')" id="elem-btn-Loi" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-purple-300 text-[11px] opacity-75 hover:opacity-100 transition" title="Lôi khắc Kim">🌩️ Lôi</button>
+                                    <button onclick="selectHeroElement('Kim')" id="elem-btn-Kim" class="px-2 py-1 rounded-lg border-2 border-amber-400 bg-amber-500/25 text-amber-200 text-[11px] font-bold transition" title="⚔️ Hệ Kim: Khắc chế Hệ Mộc (+35% Sát Thương) | Bị Hệ Hỏa khắc">⚔️ Kim</button>
+                                    <button onclick="selectHeroElement('Moc')" id="elem-btn-Moc" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-emerald-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🌿 Hệ Mộc: Khắc chế Hệ Thủy (+35% Sát Thương) | Bị Hệ Kim khắc">🌿 Mộc</button>
+                                    <button onclick="selectHeroElement('Thuy')" id="elem-btn-Thuy" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-cyan-300 text-[11px] opacity-75 hover:opacity-100 transition" title="❄️ Hệ Thủy: Khắc chế Hệ Hỏa (+35% Sát Thương) | Bị Hệ Lôi khắc">❄️ Thủy</button>
+                                    <button onclick="selectHeroElement('Hoa')" id="elem-btn-Hoa" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-rose-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🔥 Hệ Hỏa: Khắc chế Hệ Lôi (+35% Sát Thương) | Bị Hệ Thủy khắc">🔥 Hỏa</button>
+                                    <button onclick="selectHeroElement('Loi')" id="elem-btn-Loi" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-purple-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🌩️ Hệ Lôi: Khắc chế Hệ Kim (+35% Sát Thương) | Bị Hệ Hỏa khắc">🌩️ Lôi</button>
                                 </div>
 
                                 <!-- BƯỚC 2: TAM THỨC THẦN THÔNG CỦA CÔNG PHÁP (BẤM ĐỂ TUNG CHIÊU NGAY HOẶC ĐẶT LÀM TUYỆT KỸ) -->
@@ -511,17 +514,21 @@
 
                                 <!-- BƯỚC 3: NÚT KHAI CHIẾN & TỐC ĐỘ -->
                                 <div class="flex items-center gap-1.5">
-                                    <button onclick="toggleCombatSpeed()" id="btn-speed" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300">
-                                        1x
+                                    <button onclick="toggleCombatSpeed()" id="btn-speed" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1" title="Tốc độ trận đấu: 1x / 2x / 3x (Phím X)">
+                                        <span id="speed-label">1x</span>
+                                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[X]</kbd>
                                     </button>
 
-                                    <label class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs cursor-pointer">
-                                        <input type="checkbox" id="chk-auto-climb" class="accent-amber-500 rounded cursor-pointer">
-                                        <span class="text-slate-200 font-semibold">Tự Leo</span>
+                                    <label id="auto-climb-label" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs cursor-pointer select-none transition-all duration-200 hover:border-amber-500/50" title="Tự động leo tiếp tầng sau khi thắng (Phím T)">
+                                        <input type="checkbox" id="chk-auto-climb" class="accent-emerald-500 rounded cursor-pointer w-3.5 h-3.5">
+                                        <span id="auto-climb-status-dot" class="hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        <span id="auto-climb-text" class="text-slate-300 font-semibold">Tự Leo: TẮT</span>
+                                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[T]</kbd>
                                     </label>
 
-                                    <button id="btn-fight" onclick="startOrStopCombat()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95">
-                                        🗡️ KHIÊU CHIẾN (T.20)
+                                    <button id="btn-fight" onclick="startOrStopCombat()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5" title="Khai chiến hoặc dừng giao đấu (Phím Space)">
+                                        <span>🗡️ KHIÊU CHIẾN (T.20)</span>
+                                        <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>
                                     </button>
                                 </div>
 
@@ -537,25 +544,44 @@
             <aside class="col-span-3 flex flex-col xianxia-card rounded-2xl overflow-hidden min-h-0">
 
                 <div class="grid grid-cols-3 p-1.5 bg-slate-950 border-b border-amber-500/25 gap-1 shrink-0">
-                    <button onclick="switchRightSidebarTab('floors')" id="tab-btn-floors" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-gradient-to-r from-amber-500/25 to-rose-500/20 text-amber-300 border border-amber-400/60 shadow transition">
-                        🗼 1. Tầng (50)
+                    <button onclick="switchRightSidebarTab('floors')" id="tab-btn-floors" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-gradient-to-r from-amber-500/25 to-rose-500/20 text-amber-300 border border-amber-400/60 shadow transition flex items-center justify-center gap-1" title="Xem 50 tầng tháp (Bấm hoặc nhấn [Q] đổi Tab)">
+                        <span>🗼 Tầng (50)</span>
+                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-amber-300/80 border border-amber-500/30">[Q]</kbd>
                     </button>
-                    <button onclick="switchRightSidebarTab('manuals')" id="tab-btn-manuals" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-amber-200 transition">
-                        📜 2. Công Pháp (30)
+                    <button onclick="switchRightSidebarTab('manuals')" id="tab-btn-manuals" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-amber-200 transition flex items-center justify-center gap-1" title="Tàng Kinh Các (Bấm hoặc nhấn [Q] đổi Tab)">
+                        <span>📜 Công Pháp</span>
                     </button>
-                    <button onclick="switchRightSidebarTab('bag')" id="tab-btn-bag" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200 transition relative">
-                        🎒 3. Túi Đồ
+                    <button onclick="switchRightSidebarTab('bag')" id="tab-btn-bag" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200 transition relative flex items-center justify-center gap-1" title="Túi Đồ & Hồn Thể (Bấm hoặc nhấn [Q] đổi Tab)">
+                        <span>🎒 Túi Đồ</span>
                         <span id="bag-count-badge" class="ml-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/25 text-emerald-300 text-[10px] font-mono">3</span>
                     </button>
                 </div>
 
                 <!-- TAB 1: CHỌN TẦNG & CÀN QUÉT -->
                 <div id="sidebar-tab-floors" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <!-- Thanh tiến độ leo tháp & Nhảy tầng nhanh -->
+                    <div class="px-2.5 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
+                        <div class="flex items-center gap-1.5 text-slate-300">
+                            <span class="text-amber-400">🗼</span>
+                            <span class="text-[11px] font-medium">Tiến Độ Leo Tháp:</span>
+                            <span id="climb-progress-badge" class="font-mono font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30 text-[10px]">19/50 (38%)</span>
+                        </div>
+                        <button onclick="jumpToHighestFloor()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/25 via-rose-500/20 to-amber-500/25 hover:brightness-110 border border-amber-400/60 text-amber-200 text-xs font-xianxia font-bold flex items-center gap-1 transition active:scale-95" title="Tiến thẳng tới tầng kế tiếp cần vượt">
+                            🚀 Tầng Kế Tiếp
+                        </button>
+                    </div>
+
                     <div class="p-2.5 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between shrink-0">
                         <span class="text-xs text-slate-300 font-medium">Nhận thưởng tầng đã qua:</span>
-                        <button onclick="sweepClearedFloor()" class="px-3 py-1.5 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-400/60 text-emerald-200 font-bold text-xs transition active:scale-95">
-                            ⚡ Càn Quét Ngay
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="sweepClearedFloor(1)" class="px-2.5 py-1 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-400/60 text-emerald-200 font-bold text-xs transition active:scale-95 flex items-center gap-1" title="Càn quét 1 lần tầng cao nhất (Phím C)">
+                                <span>⚡ Quét x1</span>
+                                <kbd class="font-mono text-[9px] text-emerald-300 opacity-80 px-1 py-0.2 rounded bg-black/40 border border-emerald-500/30">[C]</kbd>
+                            </button>
+                            <button onclick="sweepClearedFloor(5)" class="px-2.5 py-1 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-400/60 text-cyan-200 font-bold text-xs transition active:scale-95" title="Càn quét nhanh 5 lần">
+                                ⚡ Quét x5
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-5 gap-1 p-2 bg-slate-950/90 border-b border-slate-800 shrink-0 text-[10px] font-bold">
@@ -644,718 +670,178 @@
             </aside>
 
         </main>
+
+        <!-- ==================== BẢNG ĐẠI THẮNG TRẢM YÊU VƯƠNG (VICTORY MODAL) ==================== -->
+        <div id="tower-victory-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div class="relative w-full max-w-lg rounded-3xl bg-gradient-to-b from-slate-900 via-indigo-950/95 to-slate-950 border border-amber-400/80 p-6 text-center shadow-[0_0_60px_rgba(245,158,11,0.45)] animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+                <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="relative w-20 h-20 mx-auto mb-2">
+                    <div class="absolute inset-0 rounded-full bg-amber-500/35 blur-xl animate-pulse"></div>
+                    <div class="relative w-20 h-20 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-amber-700 flex items-center justify-center text-4xl shadow-[0_0_35px_rgba(245,158,11,0.85)] border-2 border-yellow-200">
+                        🏆
+                    </div>
+                </div>
+
+                <div class="text-[11px] font-mono tracking-widest text-amber-300 uppercase mb-0.5 flex items-center justify-center gap-1.5">
+                    <span>✨ THIÊN ĐẠO CHỨNG MINH</span> • <span>TRẢM YÊU ĐẠI THẮNG ✨</span>
+                </div>
+                <h2 id="victory-floor-title" class="font-xianxia text-2xl xl:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.7)]">
+                    VƯỢT THÀNH CÔNG TẦNG 20
+                </h2>
+                <p id="victory-boss-desc" class="text-xs text-slate-300 mt-1 italic">
+                    Yêu Ma đã đền tội dưới kiếm trận vạn tiễn quy tông!
+                </p>
+
+                <!-- Thống kê chiến tích giao đấu -->
+                <div class="my-3 px-3 py-2 rounded-xl bg-slate-950/80 border border-amber-500/30 flex items-center justify-around text-center text-xs">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-medium">⏱️ Hiệp Đấu</div>
+                        <div id="victory-stat-turns" class="font-mono font-bold text-amber-300 text-sm">3 Hiệp</div>
+                    </div>
+                    <div class="h-6 w-px bg-slate-800"></div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-medium">💥 Sát Thương Cực Đại</div>
+                        <div id="victory-stat-max-dmg" class="font-mono font-bold text-rose-300 text-sm">850,000</div>
+                    </div>
+                    <div class="h-6 w-px bg-slate-800"></div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-medium">⚡ Liên Kích Tối Đa</div>
+                        <div id="victory-stat-max-combo" class="font-mono font-bold text-cyan-300 text-sm">6 Hits</div>
+                    </div>
+                </div>
+
+                <!-- Thống kê phần thưởng -->
+                <div class="my-3 p-3 rounded-2xl bg-slate-950/90 border border-amber-500/25 grid grid-cols-2 gap-2 text-left text-xs">
+                    <div class="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <span class="text-xl">💎</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400">Linh Thạch</div>
+                            <div id="victory-reward-lt" class="font-mono font-bold text-amber-300 text-sm">+320,000</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                        <span class="text-xl">✨</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400">Tu Vi</div>
+                            <div id="victory-reward-tv" class="font-mono font-bold text-cyan-300 text-sm">+960,000</div>
+                        </div>
+                    </div>
+
+                    <!-- Bảo vật rơi -->
+                    <div id="victory-loot-box" class="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-purple-500/15 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                        <div class="flex items-center gap-2.5">
+                            <span id="victory-loot-icon" class="text-2xl p-1.5 rounded-lg bg-slate-900 border border-purple-400/40">🎁</span>
+                            <div>
+                                <div class="text-[10px] text-slate-400">Bảo Vật Rơi (Đã cất vào Túi Đồ)</div>
+                                <div id="victory-loot-name" class="font-bold text-purple-200 text-sm">Đạo Cụ</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span id="victory-loot-rarity" class="text-xs px-2.5 py-1 rounded-lg bg-purple-600/30 border border-purple-400/60 text-purple-200 font-bold">Thiên Giai</span>
+                            <button id="btn-victory-use-item" onclick="useItemFromVictoryModal()" class="px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/60 text-cyan-200 text-xs font-bold transition active:scale-95" title="Dùng đan dược tăng ngay thuộc tính">
+                                ✨ Dùng Ngay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Phong ấn yêu hồn -->
+                    <div id="victory-soul-row" class="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-rose-500/15 border border-rose-400/50 shadow-[0_0_15px_rgba(244,63,94,0.2)] text-left">
+                        <div class="flex items-center gap-2.5">
+                            <span id="victory-soul-icon" class="text-2xl p-1.5 rounded-lg bg-slate-900 border border-rose-400/40">👹</span>
+                            <div>
+                                <div class="text-[10px] text-slate-400">Thu Phục Yêu Hồn (Luyện Yêu Hồ)</div>
+                                <div id="victory-soul-name" class="font-bold text-rose-300 text-sm">Hồn Yêu Vương</div>
+                            </div>
+                        </div>
+                        <button id="btn-victory-devour-soul" onclick="devourSoulFromVictoryModal()" class="px-2.5 py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 border border-rose-400/60 text-rose-200 text-xs font-bold transition active:scale-95" title="Luyện hóa ngay tăng vĩnh viễn Kiếm Công">
+                            🏺 Luyện Hóa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cột mốc đại cảnh giới (chỉ hiện khi vừa trảm boss mốc 10, 20, 30, 40, 50) -->
+                <div id="victory-milestone-banner" class="hidden mb-3 p-2.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-600/25 border-2 border-amber-400/80 shadow-[0_0_25px_rgba(245,158,11,0.5)] flex items-center justify-between animate-pulse">
+                    <div class="text-left flex items-center gap-2">
+                        <span class="text-2xl">⚡</span>
+                        <div>
+                            <div class="text-[10px] text-amber-300 font-bold tracking-wider uppercase">MỞ KHÓA ĐỘT PHÁ ĐẠI CẢNH GIỚI</div>
+                            <div id="victory-milestone-name" class="font-xianxia font-black text-white text-xs xl:text-sm">Đột Phá Kim Đan Sơ Kỳ</div>
+                        </div>
+                    </div>
+                    <button id="btn-victory-breakthrough" onclick="breakthroughFromVictoryModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-yellow-300 via-amber-500 to-amber-600 text-slate-950 font-xianxia font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition">
+                        🌌 ĐỘT PHÁ NGAY
+                    </button>
+                </div>
+
+                <!-- Nút hành động -->
+                <div class="grid grid-cols-3 gap-2 mt-4">
+                    <button onclick="closeVictoryModal()" class="py-2.5 px-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition active:scale-95" title="Đóng bảng về giao diện tháp (Esc)">
+                        📦 Thu Nhận <span class="text-[10px] text-slate-400 block font-normal">(Esc)</span>
+                    </button>
+                    <button onclick="sweepFromVictoryModal()" class="py-2.5 px-2 rounded-xl border border-emerald-500/50 bg-emerald-600/20 hover:bg-emerald-600/35 text-xs font-bold text-emerald-300 transition active:scale-95" title="Càn quét nhận thêm thưởng (Phím C)">
+                        ⚡ Càn Quét <span class="text-[10px] text-emerald-400/70 block font-normal">(Phím C)</span>
+                    </button>
+                    <button id="btn-victory-next-floor" onclick="proceedToNextFloorFromModal()" class="py-2.5 px-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:brightness-110 text-xs font-xianxia font-bold text-white shadow-[0_0_20px_rgba(245,158,11,0.6)] transition active:scale-95" title="Khiêu chiến tầng tiếp theo ngay (Space/Enter)">
+                        🗡️ Khiêu Chiến Tiếp <span class="text-[10px] text-amber-200 block font-normal">(Space / Enter)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== BẢNG TRỌNG THƯƠNG THẤT BẠI (DEFEAT MODAL) ==================== -->
+        <div id="tower-defeat-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div class="relative w-full max-w-md rounded-2xl bg-gradient-to-b from-stone-950 via-rose-950/80 to-black border border-rose-600/60 p-6 text-center shadow-[0_0_60px_rgba(225,29,72,0.4)] animate-in fade-in zoom-in-95 duration-300">
+                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-rose-700 to-red-950 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(225,29,72,0.8)] border border-rose-500/80">
+                    🩸
+                </div>
+                <div class="text-[11px] font-mono tracking-widest text-rose-400 uppercase mb-1">KHÍ HUYẾT NGHỊCH CHUYỂN</div>
+                <h2 id="defeat-floor-title" class="font-xianxia text-xl xl:text-2xl font-black text-rose-400 drop-shadow-[0_0_15px_rgba(225,29,72,0.8)]">
+                    TRỌNG THƯƠNG LÙI BƯỚC!
+                </h2>
+                <p id="defeat-boss-desc" class="text-xs text-slate-300 mt-1 italic">
+                    Yêu Ma ma uy cái thế, kiếm nguyên tổn hao khó lòng chống đỡ!
+                </p>
+
+                <!-- Chỉ dẫn vượt ải -->
+                <div class="my-4 p-3.5 rounded-xl bg-black/70 border border-rose-500/30 text-left space-y-2 text-xs">
+                    <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 border-b border-rose-500/20 pb-1">
+                        <span>💡</span> BÍ QUYẾT LẬT KÈO VƯỢT ẢI:
+                    </div>
+                    <div class="flex items-start gap-2 text-slate-300 text-[11px]">
+                        <span class="text-amber-400 font-bold shrink-0">1.</span>
+                        <span><b>Ôn Dưỡng Kiếm Trận:</b> Tiêu hao Linh Thạch đúc thêm Phi Kiếm (+25,000 Kiếm Công).</span>
+                    </div>
+                    <div class="flex items-start gap-2 text-slate-300 text-[11px]">
+                        <span class="text-cyan-400 font-bold shrink-0">2.</span>
+                        <span><b>Khắc Chế Ngũ Hành:</b> Đổi Kiếm Ý khắc hệ Yêu Vương để tăng <b>+35% Sát Thương</b>.</span>
+                    </div>
+                    <div class="flex items-start gap-2 text-slate-300 text-[11px]">
+                        <span class="text-purple-400 font-bold shrink-0">3.</span>
+                        <span><b>Tế Pháp Bảo [1][2][3]:</b> Dùng Đông Hoàng Chung hộ thể hoặc Huyễn Ảnh Thuẫn né đòn.</span>
+                    </div>
+                </div>
+
+                <!-- Nút hành động -->
+                <div class="flex items-center gap-2 mt-4">
+                    <button onclick="closeDefeatModal()" class="flex-1 py-2 px-3 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition active:scale-95">
+                        🚪 Rút Khỏi Tháp <span class="text-[10px] text-slate-400 block font-normal">(Esc)</span>
+                    </button>
+                    <button onclick="retryFloorFromDefeatModal()" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-700 via-red-600 to-amber-600 hover:brightness-110 text-xs font-xianxia font-bold text-white shadow-[0_0_20px_rgba(225,29,72,0.6)] transition active:scale-95">
+                        🩹 Dưỡng Thương & Thử Lại <span class="text-[10px] text-amber-200 block font-normal">(Space / Enter)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ==================== ENGINE VẠN KIẾM THẦN TUYỆT V2 (6 ĐẠI THẦN THÔNG + 4 THIÊN TƯỢNG) ==================== -->
+    <!-- Dữ liệu sửa tại js/tower_data.js. Quy trình sửa tại TOWER_EDITING.md. -->
+    <script src="./js/tower_data.js"></script>
     <script>
         /**
          * 1. HỆ THỐNG NGŨ HÀNH KIẾM Ý & TƯƠNG KHẮC
          */
-        const ELEMENTS = {
-            Kim: { name: "Kim Kiếm Ý", icon: "⚔️", color: "#fde047", glow: "#f59e0b", counters: "Moc", desc: "Sắc bén tuyệt đối, khắc chế Mộc Yêu" },
-            Moc: { name: "Mộc Kiếm Ý", icon: "🌿", color: "#6ee7b7", glow: "#10b981", counters: "Thuy", desc: "Sinh cơ bất tuyệt, khắc chế Thủy Yêu" },
-            Thuy: { name: "Thủy Kiếm Ý", icon: "❄️", color: "#7dd3fc", glow: "#06b6d4", counters: "Hoa", desc: "Hàn băng thấu cốt, khắc chế Hỏa Yêu" },
-            Hoa: { name: "Hỏa Kiếm Ý", icon: "🔥", color: "#fda4af", glow: "#e11d48", counters: "Loi", desc: "Phần thiên liệt diễm, khắc chế Lôi Yêu" },
-            Loi: { name: "Lôi Kiếm Ý", icon: "🌩️", color: "#d8b4fe", glow: "#9333ea", counters: "Kim", desc: "Thiên phạt thần lôi, khắc chế Kim Yêu" }
-        };
-        const ELEMENT_KEYS = Object.keys(ELEMENTS);
-
-        /**
-         * 2. HỆ THỐNG BÁT ĐẠI ĐẠO THỐNG CÔNG PHÁP & 24 TUYỆT KỸ THẦN THÔNG CHUẨN THẾ GIỚI TU TIÊN
-         * Mỗi Công Pháp thuộc 1 Đạo Đồ (Kiếm Đạo, Lôi Đạo, Dị Hỏa Đạo, Hàn Băng Đạo, Âm Dương Đại Đạo, Ma Đạo, Thể Tu Phật Đạo, Tinh Thần Đạo)
-         * và sở hữu 3 Thức:
-         * - Thức 1 (Tiểu Thần Thông - Tự động xuất chiêu 35% mỗi hiệp hoặc bấm tay)
-         * - Thức 2 (Đại Thần Thông - Tự động xuất chiêu 25% mỗi hiệp hoặc bấm tay)
-         * - Thức 3 (Tuyệt Thế Tiên Thuật / Cấm Thuật - Bùng nổ khi đầy 100 Kiếm Nguyên hoặc bấm tay)
-         */
-        const CULTIVATION_MANUALS = [
-            {
-                id: "thanh_lien_kiem_dien",
-                name: "《Thanh Liên Kiếm Điển》",
-                shortName: "Thanh Liên Kiếm",
-                tier: "Tiên Phẩm Kiếm Đạo",
-                rarity: "Tien",
-                element: "Kim",
-                icon: "🗡️",
-                passiveDesc: "Kiếm Tâm Thông Minh: +25% Bạo Thương & +4 Phi Kiếm Hộ Thể",
-                skills: [
-                    {
-                        id: 0,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Thanh Liên Kiếm Khí",
-                        subtitle: "THẬP NHỊ PHẨM KIẾM LIÊN • TỰ SINH BẤT DIỆT",
-                        icon: "🪷",
-                        desc: "Ngưng tụ 12 cánh hoa sen kiếm khí sắc lẹm xoay tít cắt nát hộ thể của Yêu Vương (190% Kiếm Công).",
-                        mult: 1.9,
-                        toughnessBreak: 25,
-                        color: "#fde047",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#06b6d4",
-                        sealChar: "劍蓮",
-                        vfxType: "swordrain"
-                    },
-                    {
-                        id: 1,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Vạn Kiếm Quy Tông",
-                        subtitle: "THÁI ẤT KIM QUANG • VẠN KIẾM TỀ PHI",
-                        icon: "🐉",
-                        desc: "Hàng vạn đạo Thái Ất Kim Kiếm từ hư không trút xuống như mưa sao băng, hồi 18% Khí Huyết (310% Kiếm Công).",
-                        mult: 3.1,
-                        healRatio: 0.18,
-                        toughnessBreak: 45,
-                        color: "#fbbf24",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#ea580c",
-                        sealChar: "萬劍",
-                        vfxType: "swordrain"
-                    },
-                    {
-                        id: 2,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Nhất Kiếm Khai Thiên Môn",
-                        subtitle: "TIÊN GIỚI THẦN PHẠT • TRẢM ĐỨT CỔ KIM",
-                        icon: "🌌",
-                        desc: "Cấm thuật Kiếm Đạo tối thượng! Xẻ đôi bầu trời, triệu hồi Nam Thiên Môn giáng đòn hủy diệt 460% Kiếm Công!",
-                        mult: 4.6,
-                        toughnessBreak: 80,
-                        color: "#e879f9",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#d946ef",
-                        boltColor3: "#38bdf8",
-                        sealChar: "開天",
-                        vfxType: "heavensplit"
-                    }
-                ]
-            },
-            {
-                id: "tu_tieu_loi_kinh",
-                name: "《Tử Tiêu Thần Lôi Chân Kinh》",
-                shortName: "Tử Tiêu Lôi Kinh",
-                tier: "Thiên Giai Cực Phẩm • Lôi Đạo",
-                rarity: "Thien",
-                element: "Loi",
-                icon: "🌩️",
-                passiveDesc: "Thiên Phạt Đại Đạo: Đòn đánh kèm Lôi Điện phá +35% Yêu Cang của Boss",
-                skills: [
-                    {
-                        id: 3,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Ngũ Lôi Chính Pháp",
-                        subtitle: "CỬU THIÊN ĐẠO LÔI • TÀ MA PHỤC TRƯNG",
-                        icon: "⚡",
-                        desc: "Triệu hồi 5 đạo Thiên Lôi Ngũ Hành liên tiếp đánh thẳng vào thiên linh cái của Yêu Vương (210% Kiếm Công).",
-                        mult: 2.1,
-                        toughnessBreak: 38,
-                        color: "#c084fc",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#a855f7",
-                        boltColor3: "#6366f1",
-                        sealChar: "五雷",
-                        vfxType: "thunder"
-                    },
-                    {
-                        id: 4,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Cửu Thiên Lôi Long Khiếu",
-                        subtitle: "LÔI ĐẾ CHÂN HÌNH • THẦN LONG GIÁNG THẾ",
-                        icon: "🐲",
-                        desc: "Hóa Lôi Điện thành Thái Cổ Lôi Long dài trăm trượng cắn nát thần hồn Yêu Vương (330% Kiếm Công).",
-                        mult: 3.3,
-                        toughnessBreak: 55,
-                        color: "#a855f7",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#9333ea",
-                        boltColor3: "#38bdf8",
-                        sealChar: "雷龍",
-                        vfxType: "thunder"
-                    },
-                    {
-                        id: 5,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Tử Tiêu Thần Lôi Diệt Thế Kiếp",
-                        subtitle: "HỒNG MÔNG THIÊN PHẠT • THẬP CỬU CHÂU LÔI",
-                        icon: "🌩️",
-                        desc: "Kéo mây đen Lôi Trì bao phủ toàn tháp, giáng Cự Kiếm Thần Lôi hủy thiên diệt địa (440% Kiếm Công + Phá Cang).",
-                        mult: 4.4,
-                        toughnessBreak: 85,
-                        color: "#d8b4fe",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#a855f7",
-                        boltColor3: "#ec4899",
-                        sealChar: "雷滅",
-                        vfxType: "thunder"
-                    }
-                ]
-            },
-            {
-                id: "phan_quyet_di_hoa",
-                name: "《Phần Quyết • Dị Hỏa Bảng》",
-                shortName: "Phần Quyết Dị Hỏa",
-                tier: "Tiên Phẩm Hỏa Đạo",
-                rarity: "Tien",
-                element: "Hoa",
-                icon: "🔥",
-                passiveDesc: "Thôn Phệ Dị Hỏa: Thiêu đốt vạn vật, tăng +30% Sát Thương Hỏa Hệ",
-                skills: [
-                    {
-                        id: 6,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Đế Viêm Liệt Thiên Chưởng",
-                        subtitle: "CỐT LINH LÃNH HỎA • BÁT CỰC BĂNG VIÊM",
-                        icon: "☄️",
-                        desc: "Chưởng lực mang theo Dị Hỏa tạo thành cột lửa xoáy xuyên thủng lồng ngực Yêu Vương (215% Kiếm Công).",
-                        mult: 2.15,
-                        toughnessBreak: 30,
-                        color: "#fb7185",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f43f5e",
-                        boltColor3: "#f59e0b",
-                        sealChar: "帝炎",
-                        vfxType: "phoenix"
-                    },
-                    {
-                        id: 7,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Chu Tước Phần Thiên Dực",
-                        subtitle: "THÁI CỔ THẦN CẦM • LIỆT DIỄM BẤT TỬ",
-                        icon: "🦅",
-                        desc: "Triệu hồi Chân Linh Chu Tước sải cánh lửa vạn dặm lao xuyên qua trận địa địch (350% Kiếm Công).",
-                        mult: 3.5,
-                        toughnessBreak: 50,
-                        color: "#f43f5e",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#e11d48",
-                        boltColor3: "#fbbf24",
-                        sealChar: "朱雀",
-                        vfxType: "phoenix"
-                    },
-                    {
-                        id: 8,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Phật Nộ Hỏa Liên (Tam Sắc Dị Hỏa)",
-                        subtitle: "DỊ HỎA DUNG HỢP • HỦY THIÊN DIỆT ĐỊA",
-                        icon: "🌺",
-                        desc: "Dung hợp Thanh Liên Địa Tâm Hỏa, Vẫn Lạc Tâm Viêm & Tịnh Liên Yêu Hỏa thành Hỏa Liên phát nổ siêu tân tinh (480% Công)!",
-                        mult: 4.8,
-                        toughnessBreak: 75,
-                        color: "#fb923c",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f43f5e",
-                        boltColor3: "#10b981",
-                        sealChar: "火蓮",
-                        vfxType: "firelotus"
-                    }
-                ]
-            },
-            {
-                id: "thai_hu_huyen_bang",
-                name: "《Thái Hư Huyền Băng Lục》",
-                shortName: "Huyền Băng Lục",
-                tier: "Thiên Giai • Hàn Băng Đạo",
-                rarity: "Huyen",
-                element: "Thuy",
-                icon: "❄️",
-                passiveDesc: "Băng Tâm Tuyết Phách: Tăng +15% Thân Pháp Né Tránh & làm chậm Yêu Vương",
-                skills: [
-                    {
-                        id: 9,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Hàn Băng Tinh Thứ",
-                        subtitle: "BẮC MINH HÀN KHÍ • VẠN TIỄN XUYÊN TÂM",
-                        icon: "🧊",
-                        desc: "Ngưng kết hàng trăm mũi giáo băng sắc bén bắn xuyên hộ giáp Yêu Vương (195% Kiếm Công).",
-                        mult: 1.95,
-                        toughnessBreak: 28,
-                        color: "#38bdf8",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#0284c7",
-                        boltColor3: "#67e8f9",
-                        sealChar: "寒冰",
-                        vfxType: "icepillar"
-                    },
-                    {
-                        id: 10,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Tuyệt Thế Băng Liên Kiếm",
-                        subtitle: "THÁI HƯ HÀN BĂNG • VẠN VẬT ĐÓNG BĂNG",
-                        icon: "❄️",
-                        desc: "Nở rộ Băng Liên Hoa vạn trượng đóng băng hư không, trảm 320% Kiếm Công và hồi 15% Khí Huyết.",
-                        mult: 3.2,
-                        healRatio: 0.15,
-                        toughnessBreak: 45,
-                        color: "#7dd3fc",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#38bdf8",
-                        boltColor3: "#0284c7",
-                        sealChar: "冰蓮",
-                        vfxType: "icepillar"
-                    },
-                    {
-                        id: 11,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Vĩnh Hằng Băng Phong Thế Giới",
-                        subtitle: "TUYỆT ĐỐI ĐỘ KHÔNG • THỜI KHÔNG ĐÓNG BĂNG",
-                        icon: "🏔️",
-                        desc: "Triệu hồi 12 Cột Băng Tinh Thái Cổ trồi lên từ mặt đất giam cầm và nghiền nát Yêu Vương (430% Kiếm Công)!",
-                        mult: 4.3,
-                        toughnessBreak: 70,
-                        color: "#67e8f9",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#06b6d4",
-                        boltColor3: "#3b82f6",
-                        sealChar: "冰封",
-                        vfxType: "icepillar"
-                    }
-                ]
-            },
-            {
-                id: "thai_thuong_am_duong",
-                name: "《Thái Thượng Hỗn Độn Âm Dương Kinh》",
-                shortName: "Hỗn Độn Âm Dương",
-                tier: "Tiên Phẩm • Đại Đạo Pháp Tắc",
-                rarity: "Tien",
-                element: "Moc",
-                icon: "☯️",
-                passiveDesc: "Hỗn Độn Sinh Diệt: Chuyển hóa 20% sát thương thành Khí Huyết bản thân",
-                skills: [
-                    {
-                        id: 12,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Lưỡng Nghi Sinh Diệt Kiếm",
-                        subtitle: "ÂM DƯƠNG NGHỊCH LUÂN • CÀN KHÔN ĐẢO CHUYỂN",
-                        icon: "☯️",
-                        desc: "Hai luồng Hắc Bạch Kiếm Khí xoắn ốc vào nhau xé toạc phòng ngự của Yêu Vương (205% Kiếm Công).",
-                        mult: 2.05,
-                        toughnessBreak: 32,
-                        color: "#34d399",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#10b981",
-                        boltColor3: "#f59e0b",
-                        sealChar: "兩儀",
-                        vfxType: "taiji"
-                    },
-                    {
-                        id: 13,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Thái Cực Hỗn Độn Diệt Thế Luân",
-                        subtitle: "HỖN ĐỘN ÂM DƯƠNG • NGHIỀN NÁT CÀN KHÔN",
-                        icon: "🎡",
-                        desc: "Phóng Cối Xay Thái Cực Âm Dương nghiền nát 65% Yêu Cang của Boss, gây 360% Công và hồi 18% HP!",
-                        mult: 3.6,
-                        healRatio: 0.18,
-                        toughnessBreak: 65,
-                        color: "#10b981",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#10b981",
-                        boltColor3: "#f59e0b",
-                        sealChar: "太極",
-                        vfxType: "taiji"
-                    },
-                    {
-                        id: 14,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Đại Hoang Phiên Thiên Thủ Ấn",
-                        subtitle: "CHƯỞNG PHỦ THƯƠNG KHUNG • CHẤN ÁP VẠN CỔ",
-                        icon: "🖐️",
-                        desc: "Ngưng tụ Bàn Tay Tiên Đạo khổng lồ che khuất bầu trời, từ chín tầng mây vỗ thẳng xuống đè bẹp Yêu Vương (470% Công)!",
-                        mult: 4.7,
-                        toughnessBreak: 90,
-                        color: "#fbbf24",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#10b981",
-                        sealChar: "翻天",
-                        vfxType: "giantpalm"
-                    }
-                ]
-            },
-            {
-                id: "thon_thien_ma_cong",
-                name: "《Thôn Thiên Ma Công • Huyết Hải Kinh》",
-                shortName: "Thôn Thiên Ma Công",
-                tier: "Tiên Phẩm Ma Đạo • Cấm Thuật",
-                rarity: "Tien",
-                element: "Hoa",
-                icon: "🩸",
-                passiveDesc: "Thôn Phệ Bản Nguyên: Hút 30% Sinh Mệnh và Linh Lực của mục tiêu mỗi khi Bạo Kích",
-                skills: [
-                    {
-                        id: 15,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Vạn Hồn Phệ Thể Quyết",
-                        subtitle: "BÁCH QUỶ DẠ HÀNH • THÔN HỒN ĐOẠT PHÁCH",
-                        icon: "💀",
-                        desc: "Phóng thích hàng vạn oán hồn từ Vạn Hồn Phiên lao vào cắn xé và hút máu Yêu Vương (210% Công + Hồi 12% HP).",
-                        mult: 2.1,
-                        healRatio: 0.12,
-                        toughnessBreak: 30,
-                        color: "#f43f5e",
-                        boltColor1: "#fda4af",
-                        boltColor2: "#e11d48",
-                        boltColor3: "#7e22ce",
-                        sealChar: "噬魂",
-                        vfxType: "blackhole"
-                    },
-                    {
-                        id: 16,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Minh Hà Huyết Hải Đại Trận",
-                        subtitle: "HUYẾT HẢI BẤT KHÔ • MINH HÀ BẤT TỬ",
-                        icon: "🩸",
-                        desc: "Mở ra Tu La Huyết Hải nhấn chìm Yêu Vương, gây 345% Kiếm Công và hấp thu 25% Khí Huyết!",
-                        mult: 3.45,
-                        healRatio: 0.25,
-                        toughnessBreak: 50,
-                        color: "#e11d48",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#be123c",
-                        boltColor3: "#9333ea",
-                        sealChar: "血海",
-                        vfxType: "blackhole"
-                    },
-                    {
-                        id: 17,
-                        stance: "Thức 3 • Tuyệt Thế Ma Thuật",
-                        name: "Thôn Thiên Hắc Động • Vạn Hóa Quy Khư",
-                        subtitle: "THÔN THIÊN PHỆ ĐỊA • VẠN VẬT HÓA HƯ VÔ",
-                        icon: "🕳️",
-                        desc: "Triệu hồi Hắc Động Thôn Thiên nuốt chửng ánh sáng và không gian, nghiền vụn Yêu Vương (485% Công + Hút 30% HP)!",
-                        mult: 4.85,
-                        healRatio: 0.30,
-                        toughnessBreak: 85,
-                        color: "#a855f7",
-                        boltColor1: "#fda4af",
-                        boltColor2: "#9333ea",
-                        boltColor3: "#e11d48",
-                        sealChar: "吞天",
-                        vfxType: "blackhole"
-                    }
-                ]
-            },
-            {
-                id: "bat_diet_kim_than",
-                name: "《Cửu Chuyển Bất Diệt Kim Thân Quyết》",
-                shortName: "Bất Diệt Kim Thân",
-                tier: "Thiên Giai Cực Phẩm • Phật Đạo Thể Tu",
-                rarity: "Thien",
-                element: "Kim",
-                icon: "卍",
-                passiveDesc: "Kim Cương Bất Hoại: Tăng +40% Phòng Thủ và Phản Chấn sát thương",
-                skills: [
-                    {
-                        id: 18,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Đại Nhật Như Lai Kim Cương Quyền",
-                        subtitle: "NHẤT QUYỀN PHÁ VẠN PHÁP • KIM QUANG PHỔ CHIẾU",
-                        icon: "👊",
-                        desc: "Đấm ra một quyền Kim Cương rực sáng như mặt trời đập nát hộ thuẫn Yêu Vương (220% Công).",
-                        mult: 2.2,
-                        toughnessBreak: 45,
-                        color: "#fde047",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#d97706",
-                        sealChar: "金剛",
-                        vfxType: "buddha"
-                    },
-                    {
-                        id: 19,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Lục Tự Đại Minh Chú • Phục Ma Ấn",
-                        subtitle: "ÁN MA NI BÁT MÊ HỒNG • TRẤN ÁP VẠN TÀ",
-                        icon: "🔔",
-                        desc: "Phóng Ấn Chữ Vạn 卍 khổng lồ bằng vàng ròng trấn áp Yêu Vương, gây 350% Công và kích hoạt Kim Chung hộ thể!",
-                        mult: 3.5,
-                        toughnessBreak: 65,
-                        color: "#fbbf24",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#fef08a",
-                        sealChar: "卍鎮",
-                        vfxType: "buddha"
-                    },
-                    {
-                        id: 20,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Vạn Phật Triều Tông • Như Lai Thần Chưởng",
-                        subtitle: "PHẬT QUANG PHỔ CHIẾU • VẠN MA QUY TÔNG",
-                        icon: "🙏",
-                        desc: "Pháp Tướng Kim Thân vạn trượng giáng Chưởng Ấn Chữ Vạn 卍 kèm Cột Kim Quang thanh tẩy toàn bộ Yêu Tháp (465% Công)!",
-                        mult: 4.65,
-                        healRatio: 0.20,
-                        toughnessBreak: 95,
-                        color: "#fef08a",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#fbbf24",
-                        boltColor3: "#f59e0b",
-                        sealChar: "如來",
-                        vfxType: "giantpalm"
-                    }
-                ]
-            },
-            {
-                id: "dai_dien_tinh_than",
-                name: "《Đại Diễn Tinh Thần Biến》",
-                shortName: "Tinh Thần Biến",
-                tier: "Tiên Phẩm • Vũ Trụ Tinh Hà Đạo",
-                rarity: "Tien",
-                element: "Thuy",
-                icon: "🌠",
-                passiveDesc: "Chu Thiên Tinh Lực: Hấp thu ánh sao vũ trụ, mỗi hiệp hồi thêm +15 Kiếm Nguyên",
-                skills: [
-                    {
-                        id: 21,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Bắc Đẩu Thất Tinh Kiếm Trận",
-                        subtitle: "THẤT TINH LIÊN CHÂU • TINH QUANG TRẢM YÊU",
-                        icon: "✨",
-                        desc: "Kết nối 7 ngôi sao Bắc Đẩu bắn ra luồng cực quang tinh hà xuyên thấu Yêu Vương (215% Công).",
-                        mult: 2.15,
-                        toughnessBreak: 35,
-                        color: "#818cf8",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#6366f1",
-                        boltColor3: "#38bdf8",
-                        sealChar: "北斗",
-                        vfxType: "meteor"
-                    },
-                    {
-                        id: 22,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Chu Thiên Tinh Đấu Vẫn Thạch",
-                        subtitle: "QUẦN TINH RƠI RỤNG • THIÊN BĂNG ĐỊA LIỆT",
-                        icon: "☄️",
-                        desc: "Triệu hồi mưa Vẫn Thạch Ngôi Sao bốc cháy từ ngoài vũ trụ nện thẳng vào trận địa Yêu Vương (365% Công).",
-                        mult: 3.65,
-                        toughnessBreak: 60,
-                        color: "#60a5fa",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#3b82f6",
-                        boltColor3: "#a855f7",
-                        sealChar: "星隕",
-                        vfxType: "meteor"
-                    },
-                    {
-                        id: 23,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Thuật",
-                        name: "Tinh Hà Đảo Huyền • Hồng Mông Sáng Thế",
-                        subtitle: "VŨ TRỤ SỤP ĐỔ • VẠN TINH QUY NHẤT",
-                        icon: "🌌",
-                        desc: "Kéo cả dải Ngân Hà và hàng chục ngôi sao khổng lồ giáng xuống nghiền nát không gian Trấn Yêu Tháp (500% Công)!",
-                        mult: 5.0,
-                        toughnessBreak: 100,
-                        color: "#c084fc",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#818cf8",
-                        boltColor3: "#38bdf8",
-                        sealChar: "星河",
-                        vfxType: "meteor"
-                    }
-                ]
-            },
-            {
-                id: "thoi_khong_luan_hoi",
-                name: "《Thời Không Luân Hồi Tiên Kinh》",
-                shortName: "Thời Không Luân Hồi",
-                tier: "Chí Tôn Tiên Đế Pháp • Thời Không Đạo",
-                rarity: "Tien",
-                element: "Loi",
-                icon: "⏳",
-                passiveDesc: "Vạn Cổ Tuế Nguyệt: Bẻ cong thời không, tăng +25% Né Tránh & đóng băng thời gian",
-                skills: [
-                    {
-                        id: 24,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Tuế Nguyệt Như Đao • Trảm Thọ Nguyên",
-                        subtitle: "NHẤT ĐAO TRẢM VẠN NĂM • THỌ NGUYÊN KHÔ KIỆT",
-                        icon: "⏳",
-                        desc: "Vung lưỡi đao Thời Gian tước đoạt sinh cơ và thọ nguyên của Yêu Vương (240% Kiếm Công).",
-                        mult: 2.4,
-                        toughnessBreak: 40,
-                        color: "#38bdf8",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#38bdf8",
-                        boltColor3: "#fbbf24",
-                        sealChar: "歲月",
-                        vfxType: "timestop"
-                    },
-                    {
-                        id: 25,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Thời Không Ngưng Đọng • Tĩnh Chỉ Pháp Tắc",
-                        subtitle: "VẠN VẬT ĐỨNG YÊN • DUY NGÃ ĐỘC TÔN",
-                        icon: "🕰️",
-                        desc: "Đóng băng toàn bộ dòng chảy thời gian và không gian, triệu hồi Pháp Luân Thời Gian cắt nát mục tiêu (385% Công)!",
-                        mult: 3.85,
-                        toughnessBreak: 70,
-                        color: "#67e8f9",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#22d3ee",
-                        boltColor3: "#a855f7",
-                        sealChar: "靜止",
-                        vfxType: "timestop"
-                    },
-                    {
-                        id: 26,
-                        stance: "Thức 3 • Tuyệt Thế Tiên Đế Thuật",
-                        name: "Lục Đạo Luân Hồi Bàn • Chung Cực Phán Quyết",
-                        subtitle: "THIÊN ĐẠO • A TU LA • NHÂN • SÚC SINH • NGẠ QUỶ • ĐỊA NGỤC",
-                        icon: "☸️",
-                        desc: "Triệu hồi Bánh Xe Lục Đạo Luân Hồi khổng lồ xoay chuyển giữa hư không, đày thần hồn Yêu Vương vào vĩnh kiếp (520% Công)!",
-                        mult: 5.2,
-                        healRatio: 0.25,
-                        toughnessBreak: 100,
-                        color: "#fde047",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#f59e0b",
-                        boltColor3: "#a855f7",
-                        sealChar: "輪迴",
-                        vfxType: "reincarnation"
-                    }
-                ]
-            },
-            {
-                id: "thao_tu_kiem_quyet",
-                name: "《Thảo Tự Kiếm Quyết • Vạn Cổ Kiếm Đế》",
-                shortName: "Thảo Tự Kiếm Quyết",
-                tier: "Thái Cổ Thập Hung Bảo Thuật • Cực Đạo Kiếm Ý",
-                rarity: "Tien",
-                element: "Moc",
-                icon: "🌿",
-                passiveDesc: "Nhất Thảo Trảm Thiên: Một cọng cỏ hóa Cực Đạo Đế Kiếm, +45% Bạo Thương",
-                skills: [
-                    {
-                        id: 27,
-                        stance: "Thức 1 • Tiểu Thần Thông",
-                        name: "Nhất Diệp Trảm Thiên Khung",
-                        subtitle: "THẢO MỘC GIAI BINH • KIẾM KHÍ XUNG TIÊU",
-                        icon: "🍃",
-                        desc: "Một chiếc lá xanh biếc hóa thành Thần Kiếm sắc bén cắt đứt không gian và hộ thể Yêu Cang (250% Công).",
-                        mult: 2.5,
-                        toughnessBreak: 45,
-                        color: "#34d399",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#10b981",
-                        boltColor3: "#fde047",
-                        sealChar: "一葉",
-                        vfxType: "grasscut"
-                    },
-                    {
-                        id: 28,
-                        stance: "Thức 2 • Đại Thần Thông",
-                        name: "Cửu Diệp Kiếm Thảo • Phá Diệt Thập Phương",
-                        subtitle: "CỬU DIỆP KHAI THIÊN • VẠN CỔ KIẾM MANG",
-                        icon: "🌱",
-                        desc: "Cửu Diệp Kiếm Thảo vươn lên giữa tinh không, 9 phiến lá rung động bắn ra 9 đạo Cực Quang chém nát thiên địa (400% Công).",
-                        mult: 4.0,
-                        healRatio: 0.20,
-                        toughnessBreak: 75,
-                        color: "#10b981",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#34d399",
-                        boltColor3: "#38bdf8",
-                        sealChar: "九葉",
-                        vfxType: "grasscut"
-                    },
-                    {
-                        id: 29,
-                        stance: "Thức 3 • Vạn Cổ Cấm Kỵ Tiên Thuật",
-                        name: "Nhất Chu Thảo Trảm Tận Nhật Nguyệt Tinh Thần",
-                        subtitle: "MỘT CỌNG CỎ CHÉM RỤNG MẶT TRỜI, MẶT TRĂNG VÀ VẠN VÌ SAO!",
-                        icon: "🌿",
-                        desc: "Tuyệt học tối thượng! Một cọng cỏ mảnh mai hóa thành Đại Đạo Chi Kiếm chém đôi cả Nhật, Nguyệt, Tinh Thần trên bầu trời (560% Công)!",
-                        mult: 5.6,
-                        healRatio: 0.25,
-                        toughnessBreak: 100,
-                        color: "#6ee7b7",
-                        boltColor1: "#ffffff",
-                        boltColor2: "#10b981",
-                        boltColor3: "#fde047",
-                        sealChar: "斬星",
-                        vfxType: "grasscut"
-                    }
-                ]
-            }
-        ];
-
-        // Gộp toàn bộ 30 Kỹ Năng Thần Thông từ 10 Bộ Công Pháp vào ULTIMATE_SKILLS để truy xuất tức thì
-        const ULTIMATE_SKILLS = CULTIVATION_MANUALS.flatMap(m => m.skills.map(s => ({
-            ...s,
-            manualId: m.id,
-            manualName: m.name,
-            manualElement: m.element
-        })));
-
-        /**
-         * 3. KHO VẬT PHẨM RỚT TRỰC TIẾP TRONG 50 TẦNG HẠ GIỚI
-         */
-        const LOOT_DATABASE = {
-            t1: [
-                { id: "dan_tu_khi", name: "Tụ Khí Đan", icon: "💊", rarity: "Linh", type: "Consumable", statBoost: { atk: 4500, hp: 25000 }, desc: "Uống vào tăng ngay +4,500 Kiếm Công & +25,000 HP" },
-                { id: "manh_thanh_kiem", name: "Thanh Vân Cổ Kiếm", icon: "🗡️", rarity: "Huyen", type: "Equip", statBoost: { atk: 9000, crit: 2 }, desc: "Luyện hóa tăng +9,000 Kiếm Công & +2% Bạo Kích" }
-            ],
-            t2: [
-                { id: "dan_truc_co", name: "Huyết Long Bảo Đan", icon: "🩸", rarity: "Huyen", type: "Consumable", statBoost: { atk: 16000, def: 5000, hp: 85000 }, desc: "Tăng +16,000 Kiếm Công, +5,000 Thủ & +85,000 HP" },
-                { id: "phap_bao_kim_chung", name: "Đông Hoàng Hộ Tâm Chung", icon: "🔔", rarity: "Dia", type: "Equip", statBoost: { def: 12000, eva: 3 }, desc: "Tăng +12,000 Phòng Thủ & +3% Thân Pháp Né Tránh" },
-                { id: "bi_tich_loi_quyet", name: "Thanh Liên Kiếm Điển", icon: "📜", rarity: "Thien", type: "SkillBook", statBoost: { atk: 28000, crit: 5 }, desc: "Lĩnh ngộ tăng +28,000 Kiếm Công & +5% Bạo Kích" }
-            ],
-            t3: [
-                { id: "dan_kim_dan", name: "Cửu Chuyển Kim Đan", icon: "🔮", rarity: "Dia", type: "Consumable", statBoost: { atk: 45000, hp: 220000 }, desc: "Tăng +45,000 Kiếm Công & +220,000 Khí Huyết" },
-                { id: "kiem_thai_co", name: "Tru Tiên Kiếm Phôi", icon: "⚔️", rarity: "Thien", type: "Equip", statBoost: { atk: 75000, crit: 6 }, desc: "Tăng +75,000 Kiếm Công & +6% Bạo Kích" }
-            ],
-            t4: [
-                { id: "dan_nguyen_anh", name: "Nguyên Anh Hóa Thần Đan", icon: "👑", rarity: "Thien", type: "Consumable", statBoost: { atk: 120000, def: 45000, hp: 600000 }, desc: "Tăng +120K Công, +45K Thủ & +600K HP" },
-                { id: "long_lin_giap", name: "Hắc Long Nghịch Lân Giáp", icon: "🛡️", rarity: "Tien", type: "Equip", statBoost: { def: 95000, eva: 5 }, desc: "Tăng +95,000 Phòng Thủ & +5% Né Tránh" }
-            ],
-            t5: [
-                { id: "hong_mong_khi", name: "Hồng Mông Tử Khí", icon: "🌌", rarity: "Tien", type: "Consumable", statBoost: { atk: 350000, def: 120000, hp: 1800000, crit: 8 }, desc: "Chí bảo Hạ Giới! Tăng toàn diện thuộc tính chuẩn bị Phi Thăng!" }
-            ]
-        };
-
-        /**
-         * 4. KHỞI TẠO 50 TẦNG TRẤN YÊU THÁP
-         */
-        const DEMON_NAMES = [
-            "Hắc Phong Lang Yêu", "Huyết Nhãn Độc Chu", "Thiết Giáp Cự Hùng", "Âm Phong Lệ Quỷ", "Xích Luyện Xà Yêu",
-            "Bạch Cốt Khô Lâu", "Thực Nhân Thảo Yêu", "Huyền Băng Ác Giao", "Liệt Hỏa Thạch Nhân", "Cửu U Minh Báo"
-        ];
-        const MILESTONE_BOSSES = {
-            10: { name: "Xích Viêm Yêu Vương", realmUnlock: "Trúc Cơ Kỳ", element: "Hoa", desc: "Bá chủ tầng 10. Trảm sát để đột phá Trúc Cơ Kỳ!" },
-            20: { name: "Huyết Dực Ma Hoàng", realmUnlock: "Kim Đan Kỳ", element: "Moc", desc: "Đại Yêu Vương tầng 20. Trảm sát để kết tụ Kim Đan!" },
-            30: { name: "Cửu U Minh Long", realmUnlock: "Nguyên Anh Kỳ", element: "Thuy", desc: "Cổ Long trấn giữ tầng 30. Trảm sát để phá đan thành Anh!" },
-            40: { name: "Thái Cổ Thao Thiết", realmUnlock: "Hóa Thần Kỳ", element: "Loi", desc: "Hung thú thượng cổ tầng 40. Vượt qua để bước vào Hóa Thần!" },
-            50: { name: "Thiên Đạo Chấp Pháp Sứ", realmUnlock: "Phi Thăng Linh Giới", element: "Kim", desc: "Thủ hộ giả cuối cùng của Hạ Giới! Chiến thắng sẽ mở Thiên Môn Phi Thăng Linh Giới!" }
-        };
-
-        const TOWER_50_FLOORS = [];
-        for (let f = 1; f <= 50; f++) {
-            const tier = Math.ceil(f / 10);
-            const isBoss = f % 10 === 0;
-            const scale = Math.pow(1.17, f - 1);
-
-            const hp = Math.round(65000 * scale * (isBoss ? 1.65 : 1));
-            const atk = Math.round(11500 * scale * (isBoss ? 1.35 : 1));
-            const def = Math.round(2800 * scale * (isBoss ? 1.25 : 1));
-            const crit = isBoss ? 22 : 12;
-            const eva = isBoss ? 10 : 5;
-            const cp = Math.round(hp + atk * 5 + def * 4);
-            const element = isBoss ? MILESTONE_BOSSES[f].element : ELEMENT_KEYS[(f - 1) % 5];
-
-            TOWER_50_FLOORS.push({
-                floor: f,
-                tier: tier,
-                isMilestone: isBoss,
-                element: element,
-                name: isBoss ? MILESTONE_BOSSES[f].name : `${DEMON_NAMES[(f - 1) % 10]} (Tầng ${f})`,
-                realmUnlock: isBoss ? MILESTONE_BOSSES[f].realmUnlock : null,
-                milestoneDesc: isBoss ? MILESTONE_BOSSES[f].desc : null,
-                hp, atk, def, crit, eva, cp,
-                drops: LOOT_DATABASE[`t${tier}`]
-            });
-        }
 
         /**
          * 5. TRẠNG THÁI NGƯỜI CHƠI & ĐẤU TRƯỜNG V2
@@ -1372,6 +858,9 @@
             combatSpeed: 1,
             inCombat: false,
             combatTimer: null,
+            battleTurns: 0,
+            maxDamageDealt: 0,
+            maxCombo: 0,
 
             skyTheme: 'cosmic', // 'cosmic' | 'bloodmoon' | 'thunder' | 'immortal'
             wingsEnabled: true,
@@ -1419,6 +908,126 @@
                 { ...LOOT_DATABASE.t2[2], count: 1 }
             ]
         };
+
+        /**
+         * 5.1 ĐỒNG BỘ DỮ LIỆU VỚI GAME CHÍNH (VẠN CỔ TU TIÊN)
+         */
+        function syncWithParent(payload) {
+            if (!payload) return;
+            try {
+                if (window.parent && window.parent !== window) {
+                    if (typeof window.parent.handleTowerSyncMessage === 'function') {
+                        window.parent.handleTowerSyncMessage(payload);
+                    }
+                    window.parent.postMessage({
+                        type: 'van-thien-luc:tower-sync',
+                        payload: payload
+                    }, '*');
+                }
+            } catch (err) {
+                console.warn('[DemonTower V4] syncWithParent error:', err);
+            }
+        }
+
+        function applyMainGameData(data) {
+            if (!data) return;
+            try {
+                if (data.linhThach !== undefined) gameState.linhThach = Number(data.linhThach) || 0;
+                if (data.tuVi !== undefined) gameState.tuVi = Number(data.tuVi) || 0;
+                if (data.realmName) gameState.realmName = String(data.realmName);
+                if (data.highestCleared !== undefined) gameState.highestCleared = Math.max(0, Number(data.highestCleared) || 0);
+
+                if (data.selectedFloor !== undefined) {
+                    gameState.selectedFloor = Math.max(1, Math.min(50, Number(data.selectedFloor) || 1));
+                } else if (data.highestCleared !== undefined) {
+                    gameState.selectedFloor = Math.max(1, Math.min(50, gameState.highestCleared + 1));
+                }
+
+                if (data.selectedTier !== undefined) {
+                    gameState.selectedTier = Math.max(1, Math.min(5, Number(data.selectedTier) || 1));
+                } else {
+                    gameState.selectedTier = Math.ceil(gameState.selectedFloor / 10) || 1;
+                }
+
+                if (data.hero) {
+                    if (data.hero.maxHp) {
+                        gameState.hero.maxHp = Number(data.hero.maxHp);
+                        gameState.hero.hp = Number(data.hero.hp || data.hero.maxHp);
+                    }
+                    if (data.hero.atk) gameState.hero.atk = Number(data.hero.atk);
+                    if (data.hero.def) gameState.hero.def = Number(data.hero.def);
+                    if (data.hero.crit !== undefined) gameState.hero.crit = Number(data.hero.crit);
+                    if (data.hero.critDmg !== undefined) gameState.hero.critDmg = Number(data.hero.critDmg);
+                    if (data.hero.eva !== undefined) gameState.hero.eva = Number(data.hero.eva);
+                    if (data.hero.element) gameState.hero.element = String(data.hero.element);
+                    if (data.hero.swordCount) gameState.hero.swordCount = Number(data.hero.swordCount);
+                }
+
+                const heroName = data.characterName || data.playerName;
+                if (heroName) {
+                    const nameEl = document.getElementById('hero-display-name');
+                    if (nameEl) nameEl.innerHTML = `<span>🗡️</span> ${heroName} • `;
+                }
+
+                if (data.activeManualId) gameState.activeManualId = data.activeManualId;
+                if (data.selectedUltId !== undefined) gameState.selectedUltId = data.selectedUltId;
+                if (Array.isArray(data.capturedSouls) && data.capturedSouls.length > 0) {
+                    gameState.capturedSouls = data.capturedSouls;
+                }
+                if (Array.isArray(data.lootBag) && data.lootBag.length > 0) {
+                    gameState.lootBag = data.lootBag;
+                }
+                if (data.activeGuardian) {
+                    gameState.activeGuardian = data.activeGuardian;
+                    const guardEl = document.getElementById('guardian-spirit-name');
+                    if (guardEl) {
+                        guardEl.innerHTML = `<span>${data.activeGuardian.icon || '🐺'}</span> ${data.activeGuardian.name}`;
+                    }
+                }
+
+                // Update UI elements
+                const ltEl = document.getElementById('ui-linh-thach');
+                if (ltEl) ltEl.textContent = fmt(gameState.linhThach);
+                const tvEl = document.getElementById('ui-tu-vi');
+                if (tvEl) tvEl.textContent = fmt(gameState.tuVi);
+                const clrEl = document.getElementById('ui-cleared-badge');
+                if (clrEl) clrEl.textContent = `Đã vượt: ${gameState.highestCleared}/50 Tầng`;
+                const rlmEl = document.getElementById('header-realm-tag');
+                if (rlmEl) rlmEl.textContent = `Cảnh Giới: ${gameState.realmName}`;
+                const swdEl = document.getElementById('ui-sword-count-top');
+                if (swdEl) swdEl.textContent = gameState.hero.swordCount;
+
+                if (typeof selectTierGroup === 'function') selectTierGroup(gameState.selectedTier);
+                if (typeof selectFloor === 'function') selectFloor(gameState.selectedFloor);
+                if (typeof renderLootBag === 'function') renderLootBag();
+                if (typeof renderCapturedSouls === 'function') renderCapturedSouls();
+                if (typeof updateClimbProgressHUD === 'function') updateClimbProgressHUD();
+            } catch (err) {
+                console.warn('[DemonTower V4] applyMainGameData error:', err);
+            }
+        }
+
+        function tryDirectSyncFromParent() {
+            try {
+                if (window.parent && window.parent !== window && typeof window.parent.getTowerSyncPayload === 'function') {
+                    const p = window.parent.getTowerSyncPayload();
+                    if (p) {
+                        applyMainGameData(p);
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('[DemonTower V4] tryDirectSyncFromParent error:', e);
+            }
+            return false;
+        }
+
+        window.addEventListener('message', (event) => {
+            if (!event.data) return;
+            if (event.data.type === 'van-thien-luc:tower-init-data') {
+                applyMainGameData(event.data.data);
+            }
+        });
 
         /**
          * 6. ÂM LUẬT KIẾM HIỆP SYNTHESIZER
@@ -1647,6 +1256,31 @@
         function cancelTowerEffects() {
             towerEffectTimers.forEach(timerId => window.clearTimeout(timerId));
             towerEffectTimers.clear();
+            // Dọn sạch các mảng hạt hiệu ứng thừa để giải phóng bộ nhớ
+            canvasProjectiles.length = 0;
+            canvasCrescents.length = 0;
+            canvasLaserBeams.length = 0;
+            canvasLightningArcs.length = 0;
+            canvasSpaceCracks.length = 0;
+            canvasCalligraphy.length = 0;
+            canvasParticles.length = 0;
+            canvasShockwaves.length = 0;
+            canvasSlashes.length = 0;
+            canvasColossalSwords.length = 0;
+            canvasPhoenixes.length = 0;
+            canvasTaijiWheels.length = 0;
+            canvasHeavenSplits.length = 0;
+            canvasGiantPalms.length = 0;
+            canvasFireLotuses.length = 0;
+            canvasBlackHoles.length = 0;
+            canvasBuddhaSeals.length = 0;
+            canvasIcePillars.length = 0;
+            canvasMeteors.length = 0;
+            canvasReincarnationWheels.length = 0;
+            canvasCelestialPlanets.length = 0;
+            canvasTribulationEyes.length = 0;
+            canvasGlassShards.length = 0;
+            if (typeof heroAnim !== 'undefined' && heroAnim.afterimages) heroAnim.afterimages.length = 0;
         }
         let canvasCelestialPlanets = [];
         let canvasTribulationEyes = [];
@@ -1949,7 +1583,7 @@
 
             if (slot === 1) {
                 // Đông Hoàng Chung: Kim Chung Tráo Hộ Thể + Hồi Máu
-                gameState.shieldBellTurns = 4;
+                gameState.shieldBellTurns = TOWER_RULES.bellShieldTurns;
                 document.getElementById('hero-shield-badge').classList.remove('hidden');
                 const heal = Math.round(gameState.hero.maxHp * 0.25);
                 gameState.hero.hp = Math.min(gameState.hero.maxHp, gameState.hero.hp + heal);
@@ -3182,11 +2816,69 @@
             resize();
             window.addEventListener('resize', resize);
 
-            // Phím tắt 1, 2, 3 cho 3 Pháp Bảo Chủ Động
+            // Phím tắt chiến đấu & thao tác: 1, 2, 3 (Pháp Bảo), Space (Chiến/Dừng), Q (Chuyển Tab), C (Càn Quét nhanh)
             window.addEventListener('keydown', (e) => {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+                const vModal = document.getElementById('tower-victory-modal');
+                const isVictoryOpen = vModal && !vModal.classList.contains('hidden');
+                const dModal = document.getElementById('tower-defeat-modal');
+                const isDefeatOpen = dModal && !dModal.classList.contains('hidden');
+
+                if (isVictoryOpen) {
+                    if (e.code === 'Space' || e.key === 'Enter') {
+                        e.preventDefault();
+                        proceedToNextFloorFromModal();
+                        return;
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeVictoryModal();
+                        return;
+                    }
+                    if (e.key === 'c' || e.key === 'C') {
+                        e.preventDefault();
+                        sweepFromVictoryModal();
+                        return;
+                    }
+                }
+
+                if (isDefeatOpen) {
+                    if (e.code === 'Space' || e.key === 'Enter') {
+                        e.preventDefault();
+                        retryFloorFromDefeatModal();
+                        return;
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeDefeatModal();
+                        return;
+                    }
+                }
+
                 if (e.key === '1') castActiveArtifact(1);
                 if (e.key === '2') castActiveArtifact(2);
                 if (e.key === '3') castActiveArtifact(3);
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    startOrStopCombat();
+                }
+                if (e.key === 'q' || e.key === 'Q') {
+                    toggleNextRightSidebarTab();
+                }
+                if (e.key === 'c' || e.key === 'C') {
+                    sweepClearedFloor(1);
+                }
+                if (e.key === 't' || e.key === 'T') {
+                    const autoChk = document.getElementById('chk-auto-climb');
+                    if (autoChk) {
+                        autoChk.checked = !autoChk.checked;
+                        autoChk.dispatchEvent(new Event('change'));
+                    }
+                }
+                if (e.key === 'x' || e.key === 'X') {
+                    toggleCombatSpeed();
+                }
             });
 
             ambientDust = [];
@@ -3238,7 +2930,7 @@
             let renderFrameId = null;
             let idleRenderTimer = null;
             let lastRenderTimestamp = 0;
-            const renderInterval = 1000 / 60;
+            const renderInterval = 1000 / TOWER_RULES.targetFps;
             let nextRenderTimestamp = 0;
             const wakeEffects = () => {
                 effectsActiveUntil = performance.now() + 2200;
@@ -4479,7 +4171,7 @@
         }
 
         function forgeSwordUpgrade() {
-            const cost = 100000;
+            const cost = TOWER_RULES.forgeSwordCost;
             if (gameState.linhThach < cost) {
                 addLog(`<span class="text-rose-400">⚠️ Cần 100,000 Linh Thạch để Ôn Dưỡng Kiếm Trận! Hãy Càn Quét hoặc vượt tầng để thu thập thêm.</span>`);
                 return;
@@ -4503,6 +4195,13 @@
 
             const fObj = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor);
             if (fObj) updateArenaHUD(fObj);
+
+            syncWithParent({
+                action: 'forge_sword',
+                linhThachCost: cost,
+                linhThachTotal: gameState.linhThach,
+                swordCount: gameState.hero.swordCount
+            });
         }
 
         function incrementCombo() {
@@ -4526,10 +4225,16 @@
          */
         function selectTierGroup(tierNum) {
             gameState.selectedTier = tierNum;
+            const tierThemes = { 1: 'cosmic', 2: 'immortal', 3: 'thunder', 4: 'bloodmoon', 5: 'bloodmoon' };
+            if (tierThemes[tierNum]) {
+                gameState.skyTheme = tierThemes[tierNum];
+            }
+
             for (let i = 1; i <= 5; i++) {
                 const btn = document.getElementById(`tier-btn-${i}`);
+                if (!btn) continue;
                 if (i === tierNum) {
-                    btn.className = "py-1.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 transition font-bold";
+                    btn.className = "py-1.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 transition font-bold shadow-[0_0_10px_rgba(245,158,11,0.25)]";
                 } else {
                     btn.className = "py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 transition";
                 }
@@ -4539,6 +4244,7 @@
 
         function renderFloorList() {
             const box = document.getElementById('floor-list-container');
+            if (!box) return;
             const floors = TOWER_50_FLOORS.filter(f => f.tier === gameState.selectedTier).slice().reverse();
 
             box.innerHTML = floors.map(f => {
@@ -4549,6 +4255,7 @@
 
                 let cardStyle = "border-slate-800/90 bg-slate-900/50 hover:border-slate-700";
                 if (isSelected) cardStyle = "border-amber-400 bg-gradient-to-r from-amber-500/20 via-rose-500/15 to-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
+                else if (isLocked) cardStyle = "border-slate-800/40 bg-slate-950/40 opacity-50 cursor-not-allowed";
                 else if (f.isMilestone) cardStyle = "border-rose-500/40 bg-rose-950/20";
                 else if (isCleared) cardStyle = "border-emerald-500/25 bg-emerald-950/10";
 
@@ -4585,12 +4292,49 @@
             }).join('');
         }
 
+        function jumpToHighestFloor() {
+            if (gameState.inCombat) stopCombat();
+            const nextF = Math.min(50, gameState.highestCleared + 1);
+            const tier = Math.ceil(nextF / 10);
+            selectTierGroup(tier);
+            selectFloor(nextF);
+        }
+
+        function updateClimbProgressHUD() {
+            const badge = document.getElementById('climb-progress-badge');
+            if (badge) {
+                const pct = Math.round((gameState.highestCleared / 50) * 100);
+                badge.textContent = `${gameState.highestCleared}/50 (${pct}%)`;
+            }
+            const headerCleared = document.getElementById('ui-cleared-badge');
+            if (headerCleared) {
+                headerCleared.textContent = `Đã vượt: ${gameState.highestCleared}/50 Tầng`;
+            }
+        }
+
         function selectFloor(floorNum) {
             if (gameState.inCombat) return;
+
+            // Kiểm tra phong ấn tầng
+            if (floorNum > gameState.highestCleared + 1) {
+                playSound('bell');
+                spawnFloatingText('hero-stage-anchor', '🔒 TẦNG NÀY ĐANG BỊ PHONG ẤN!', 'dodge');
+                addLog(`<span class="text-rose-400 font-bold">🔒 [Phong Ấn Trấn Yêu]</span> Tầng ${floorNum} chưa mở cửa! Hãy vượt Tầng ${gameState.highestCleared + 1} trước.`);
+                return;
+            }
+
             const fObj = TOWER_50_FLOORS.find(x => x.floor === floorNum);
             if (!fObj) return;
 
             gameState.selectedFloor = floorNum;
+            gameState.selectedTier = Math.ceil(floorNum / 10);
+
+            // Đồng bộ thiên tượng theo tầng
+            const tierThemes = { 1: 'cosmic', 2: 'immortal', 3: 'thunder', 4: 'bloodmoon', 5: 'bloodmoon' };
+            if (tierThemes[gameState.selectedTier]) {
+                gameState.skyTheme = tierThemes[gameState.selectedTier];
+            }
+
             gameState.hero.hp = gameState.hero.maxHp;
             gameState.hero.mp = 0;
             gameState.bossEnragedVisual = false;
@@ -4598,8 +4342,13 @@
             gameState.comboCount = 0;
             document.getElementById('combo-counter-box').classList.add('hidden');
 
+            playSound('sword');
+            triggerCameraZoom(1.04, 300);
+            spawnFloatingText('hero-stage-anchor', `🗼 TIẾN VÀO TẦNG ${floorNum}!`, 'dodge');
+
             updateArenaHUD(fObj);
             renderFloorList();
+            updateClimbProgressHUD();
         }
 
         function updateArenaHUD(fObj) {
@@ -4617,13 +4366,17 @@
             if (counterEl) {
                 if (heroElem.counters === fObj.element) {
                     counterEl.className = "text-xs text-emerald-400 font-bold animate-pulse";
-                    counterEl.textContent = `⚡ Khắc Chế (+35% Sát Thương)!`;
-                } else if (bossElem.counters === gameState.hero.element) {
-                    counterEl.className = "text-xs text-rose-400 font-bold";
-                    counterEl.textContent = `⚠️ Bị Yêu Vương Khắc Hệ!`;
+                    counterEl.innerHTML = `⚡ Đang Khắc Chế [${bossElem.name}] (+35% Sát Thương)!`;
                 } else {
-                    counterEl.className = "text-xs text-slate-400";
-                    counterEl.textContent = `☯️ Cân Bằng (Chọn khắc hệ để +35% Công)`;
+                    const counterKey = Object.keys(ELEMENTS).find(k => ELEMENTS[k].counters === fObj.element) || 'Kim';
+                    const targetElem = ELEMENTS[counterKey];
+                    if (bossElem.counters === gameState.hero.element) {
+                        counterEl.className = "text-xs text-rose-400 font-bold flex items-center gap-1.5 flex-wrap";
+                        counterEl.innerHTML = `⚠️ Bị Khắc Hệ! <button onclick="selectHeroElement('${counterKey}')" class="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/60 text-amber-200 text-[10px] font-bold animate-pulse transition">⚡ Đổi sang ${targetElem.name} để lật kèo</button>`;
+                    } else {
+                        counterEl.className = "text-xs text-slate-300 flex items-center gap-1.5 flex-wrap";
+                        counterEl.innerHTML = `<span>☯️ Cân Bằng:</span> <button onclick="selectHeroElement('${counterKey}')" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/60 text-amber-200 text-[10px] font-bold transition">⚡ Đổi sang ${targetElem.name} (+35% Công)</button>`;
+                    }
                 }
             }
 
@@ -4642,7 +4395,7 @@
             document.getElementById('boss-hud-name').textContent = `👹 ${fObj.name}`;
             document.getElementById('boss-stats-mini').textContent = `Bạo: ${fObj.crit}% | Né: ${fObj.eva}%`;
 
-            document.getElementById('btn-fight').textContent = `🗡️ KHIÊU CHIẾN (T.${fObj.floor})`;
+            updateFightButtonUI(gameState.inCombat);
 
             document.getElementById('loot-table-floor').textContent = fObj.floor;
             const dropBox = document.getElementById('floor-drop-preview');
@@ -4711,6 +4464,7 @@
          */
         function spawnFloatingText(anchorId, text, type = 'normal') {
             const anchor = document.getElementById(anchorId);
+            if (!anchor) return;
             const el = document.createElement('div');
 
             let styleClass = "floating-dmg dmg-normal text-lg text-slate-100 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]";
@@ -4731,6 +4485,12 @@
             el.style.top = `34%`;
             el.textContent = text;
             anchor.appendChild(el);
+
+            // Giới hạn tối đa 12 số sát thương bay đồng thời để tránh tràn DOM
+            while (anchor.children.length > 12 && anchor.firstElementChild) {
+                anchor.firstElementChild.remove();
+            }
+
             setTimeout(() => el.remove(), 1100);
         }
 
@@ -4928,6 +4688,18 @@
             }
         }
 
+        function toggleNextRightSidebarTab() {
+            const tabs = ['floors', 'manuals', 'bag'];
+            const tabFloors = document.getElementById('sidebar-tab-floors');
+            const tabManuals = document.getElementById('sidebar-tab-manuals');
+            let currentTab = 'floors';
+            if (tabFloors && tabFloors.classList.contains('hidden')) {
+                currentTab = (tabManuals && !tabManuals.classList.contains('hidden')) ? 'manuals' : 'bag';
+            }
+            const nextIdx = (tabs.indexOf(currentTab) + 1) % tabs.length;
+            switchRightSidebarTab(tabs[nextIdx]);
+        }
+
         function showCinematicBanner(text, duration = 2200) {
             const b = document.getElementById('cinematic-banner');
             if (!b) return;
@@ -4943,7 +4715,7 @@
             if (gameState.domainActive) return;
 
             gameState.domainActive = true;
-            gameState.domainTicksLeft = 5;
+            gameState.domainTicksLeft = TOWER_RULES.domainTurns;
             playSound('bell');
             triggerScreenShake('ult');
             triggerCameraZoom(1.1, 600);
@@ -4959,27 +4731,18 @@
         }
 
         /**
-         * 11. CORE COMBAT LOOP V2
+         * 11. CORE COMBAT LOOP V2 & AUTO CONTINUATION
          */
         let nextCombatTurn = null;
         let combatTurnBusy = false;
         function playCombatTurn() {
             if (combatTurnBusy || !gameState.inCombat || !nextCombatTurn) return;
-            combatTurnBusy = true;
-            const button = document.getElementById('btn-fight');
-            button.disabled = true;
-            button.textContent = '⚔️ ĐANG GIAO CHIẾN';
             nextCombatTurn();
-            setTimeout(() => {
-                combatTurnBusy = false;
-                button.disabled = false;
-                if (gameState.inCombat) button.textContent = '⚔️ HIỆP TIẾP THEO';
-            }, 820);
         }
 
         function startOrStopCombat() {
             if (gameState.inCombat) {
-                playCombatTurn();
+                stopCombat("Đạo hữu chủ động thu kiếm lùi bước.");
                 return;
             }
 
@@ -4987,6 +4750,10 @@
             if (!fObj) return;
 
             gameState.inCombat = true;
+            combatTurnBusy = false;
+            gameState.battleTurns = 0;
+            gameState.maxDamageDealt = 0;
+            gameState.maxCombo = 0;
             gameState.hero.hp = gameState.hero.maxHp;
             gameState.bossEnragedVisual = false;
             gameState.bossBrokenVisual = false;
@@ -4999,9 +4766,7 @@
             gameState.liveBossBrokenTurns = 0;
             let bossEnraged = false;
 
-            const btn = document.getElementById('btn-fight');
-            btn.textContent = "⏹️ DỪNG CHIẾN";
-            btn.className = "px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/40 font-xianxia font-bold text-xs xl:text-sm tracking-wider transition";
+            updateFightButtonUI(true);
 
             const heroElem = ELEMENTS[gameState.hero.element] || ELEMENTS.Kim;
             const isElementAdvantage = heroElem.counters === fObj.element;
@@ -5010,10 +4775,31 @@
 
             const runTick = () => {
                 if (!gameState.inCombat) return;
+                gameState.battleTurns++;
 
                 const h = gameState.hero;
                 const elemMult = (ELEMENTS[h.element]?.counters === fObj.element) ? 1.35 : 1.0;
                 const comboBonusMult = 1 + Math.min(1.5, gameState.comboCount * 0.02);
+
+                // Cơ chế Uy Áp Nghiền Ép (Aura Crush) khi Kiếm Lực ta áp đảo hoàn toàn (ratio >= 2.0x)
+                const myCp = getHeroCP();
+                const cpRatio = myCp / Math.max(1, fObj.cp);
+                if (cpRatio >= 2.0 && gameState.battleTurns === 1) {
+                    gameState.liveBossToughness = 0;
+                    const crushDmg = Math.round(fObj.hp * 1.5);
+                    gameState.liveBossHp = 0;
+                    gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, crushDmg);
+                    incrementCombo();
+                    fireCanvasSwordQi(true, '#fde047', 15, true);
+                    triggerScreenShake('ult');
+                    playSound('thunder');
+                    spawnFloatingText('boss-stage-anchor', `💥 UY ÁP NGHIỀN ÉP! -${fmt(crushDmg)}!`, 'ult');
+                    showCinematicBanner(`⚡ KIẾM LỰC ÁP ĐẢO (${cpRatio.toFixed(1)}x) • UY ÁP NGHIỀN ÉP! ⚡`, 1800);
+                    addLog(`<span class="text-amber-300 font-bold">💥 [UY ÁP NGHIỀN ÉP]</span> Kiếm Lực Tiêu Dao Tử (${fmt(myCp)}) áp đảo hoàn toàn ${fObj.name} (${fmt(fObj.cp)} - gấp ${cpRatio.toFixed(1)} lần)! Vạn Kiếm Quy Tông trảm sát tức khắc!`);
+                    updateBarsUI(h.hp, h.maxHp, h.mp, 0, gameState.liveBossMaxHp, 0, 0, true);
+                    triggerFatalFinisher(fObj, () => handleVictory(fObj));
+                    return;
+                }
 
                 const isBossBroken = gameState.liveBossBrokenTurns > 0;
                 if (isBossBroken) {
@@ -5034,6 +4820,8 @@
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - domainDmg);
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 30);
                     incrementCombo();
+                    gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, domainDmg);
+                    gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
                     spawnFloatingText('boss-stage-anchor', `🗡️ KIẾM TRẬN -${fmt(domainDmg)}`, 'dodge');
 
                     if (gameState.domainTicksLeft <= 0) {
@@ -5070,6 +4858,8 @@
 
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
                     gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 15);
+                    gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
+                    gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
 
                     spawnFloatingText('boss-stage-anchor', `${ult.icon} ${ult.name.toUpperCase()} -${fmt(finalDmg)}!`, 'ult');
                     addLog(`<span class="text-cyan-300 font-bold">🌌 [${currentManual.shortName} • Cấm Thuật]</span> Thi triển <strong>${ult.name}</strong> giáng xuống ${fObj.name} gây <span class="text-amber-300 font-bold">${fmt(finalDmg)}</span> sát thương!`);
@@ -5089,7 +4879,6 @@
                         addLog(`💨 ${fObj.name} hóa huyết ảnh <strong>NÉ TRÁNH</strong> luồng phi kiếm!`);
                     } else {
                         incrementCombo();
-                        // Tự động thi triển Thức 1 (Tiểu Thần Thông) hoặc Thức 2 (Đại Thần Thông) của Công Pháp đang vận chuyển!
                         const rollStance = Math.random();
                         let activeStanceSkill = null;
                         if (rollStance < 0.28) {
@@ -5114,6 +4903,8 @@
                         h.mp = Math.min(100, h.mp + (isCrit ? 36 : 28));
                         gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 18);
                         bossAnim.hitFlash = 4;
+                        gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
+                        gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
 
                         if (activeStanceSkill) {
                             playHeavenlyLightningVFX(activeStanceSkill, 'boss');
@@ -5148,11 +4939,11 @@
                     if (canvas) {
                         spawnCalligraphySeal('破', canvas.width * 0.77, canvas.height * 0.45, '#fde047');
                     }
-                    showCinematicBanner('💥 HỘ THỂ YÊU CANG VỠ VỤN! 100% BẠO KÍCH TRONG 3 HIỆP! 💥', 2200);
+                    showCinematicBanner('💥 HỘ THỂ YÊU CANG VỠ VỤN! 100% BẠO KÍCH & CHOÁNG TRONG 3 HIỆP! 💥', 2200);
                     addLog(`<span class="text-amber-300 font-bold">🔔 [PHÁ YÊU CANG]</span> Yêu Cang của ${fObj.name} đã vỡ nát! Mọi đòn kiếm tiếp theo <strong>100% BẠO KÍCH</strong>!`);
                 }
 
-                if (!bossEnraged && gameState.liveBossHp > 0 && (gameState.liveBossHp / gameState.liveBossMaxHp) <= 0.35) {
+                if (!bossEnraged && gameState.liveBossHp > 0 && (gameState.liveBossHp / gameState.liveBossMaxHp) <= TOWER_RULES.enrageHpRatio) {
                     bossEnraged = true;
                     gameState.bossEnragedVisual = true;
                     playSound('thunder');
@@ -5168,52 +4959,54 @@
                 );
 
                 if (gameState.liveBossHp <= 0) {
-                    handleVictory(fObj);
+                    triggerFatalFinisher(fObj, () => handleVictory(fObj));
                     return;
                 }
 
-                // LƯỢT 2: YÊU VƯƠNG PHẢN KÍCH
-            setTimeout(() => {
+                // LƯỢT 2: YÊU VƯƠNG PHẢN KÍCH (CÓ XÁC SUẤT BỊ CHOÁNG NẾU VỠ CANG)
+                setTimeout(() => {
                     if (!gameState.inCombat) return;
 
-                    const heroDodged = (Math.random() * 100) < h.eva;
-                    if (heroDodged) {
-                        heroAnim.dodgeOffset = -45;
-
-                        h.mp = Math.min(100, h.mp + 15);
-                        spawnFloatingText('hero-stage-anchor', '✨ NGỰ PHONG NÉ!', 'dodge');
-                        addLog(`<span class="text-cyan-300">✨ [Ngự Phong Thân Pháp]</span> Đạo hữu đạp phi kiếm lướt nhẹ, <strong>NÉ TRÁNH</strong> đòn của ${fObj.name}!`);
+                    const isStunned = isBossBroken && (Math.random() < 0.65);
+                    if (isStunned) {
+                        spawnFloatingText('boss-stage-anchor', '💫 CHOÁNG VÁNG!', 'dodge');
+                        addLog(`<span class="text-amber-300 font-bold">💫 [CHOÁNG VÁNG]</span> ${fObj.name} chịu nội thương do vỡ Cang, lảo đảo không thể xuất chiêu phản công!`);
                     } else {
-                        const isBossCrit = (Math.random() * 100) < fObj.crit;
-                        const mult = (isBossCrit ? 1.65 : 1) * (bossEnraged ? 1.35 : 1);
+                        const heroDodged = (Math.random() * 100) < h.eva;
+                        if (heroDodged) {
+                            heroAnim.dodgeOffset = -45;
+                            h.mp = Math.min(100, h.mp + 15);
+                            spawnFloatingText('hero-stage-anchor', '✨ NGỰ PHONG NÉ!', 'dodge');
+                            addLog(`<span class="text-cyan-300">✨ [Ngự Phong Thân Pháp]</span> Đạo hữu đạp phi kiếm lướt nhẹ, <strong>NÉ TRÁNH</strong> đòn của ${fObj.name}!`);
+                        } else {
+                            const isBossCrit = (Math.random() * 100) < fObj.crit;
+                            const mult = (isBossCrit ? 1.65 : 1) * (bossEnraged ? 1.35 : 1);
 
-                        const rawBossDmg = Math.max(fObj.atk * 0.18, fObj.atk - h.def * 0.9) * mult;
-                        let bossDmg = Math.round(rawBossDmg * (0.9 + Math.random() * 0.2));
+                            const rawBossDmg = Math.max(fObj.atk * 0.18, fObj.atk - h.def * 0.9) * mult;
+                            let bossDmg = Math.round(rawBossDmg * (0.9 + Math.random() * 0.2));
 
-                        // Nếu có Đông Hoàng Chung Hộ Thể, giảm 55% sát thương và phản chấn!
-                        if (gameState.shieldBellTurns > 0) {
-                            gameState.shieldBellTurns--;
-                            bossDmg = Math.round(bossDmg * 0.45);
-                            const reflectDmg = Math.round(h.atk * 0.45);
-                            gameState.liveBossHp = Math.max(0, gameState.liveBossHp - reflectDmg);
-                            spawnFloatingText('boss-stage-anchor', `🔔 PHẢN CHẤN -${fmt(reflectDmg)}`, 'crit');
-                            if (gameState.shieldBellTurns <= 0) {
-                                document.getElementById('hero-shield-badge').classList.add('hidden');
+                            // Nếu có Đông Hoàng Chung Hộ Thể, giảm 55% sát thương và phản chấn!
+                            if (gameState.shieldBellTurns > 0) {
+                                gameState.shieldBellTurns--;
+                                bossDmg = Math.round(bossDmg * 0.45);
+                                const reflectDmg = Math.round(h.atk * 0.45);
+                                gameState.liveBossHp = Math.max(0, gameState.liveBossHp - reflectDmg);
+                                spawnFloatingText('boss-stage-anchor', `🔔 PHẢN CHẤN -${fmt(reflectDmg)}`, 'crit');
+                                if (gameState.shieldBellTurns <= 0) {
+                                    document.getElementById('hero-shield-badge').classList.add('hidden');
+                                }
                             }
+
+                            h.hp = Math.max(0, h.hp - bossDmg);
+                            h.mp = Math.min(100, h.mp + 20);
+                            gameState.liveBossMp = 0;
+                            heroAnim.hitFlash = 4;
+                            spawnFloatingText('hero-stage-anchor', `-${fmt(bossDmg)}`, 'boss-hit');
                         }
 
-                        h.hp = Math.max(0, h.hp - bossDmg);
-                        h.mp = Math.min(100, h.mp + 20);
-                        gameState.liveBossMp = 0;
-                        heroAnim.hitFlash = 4;
-
-
-
-
-                        spawnFloatingText('hero-stage-anchor', `-${fmt(bossDmg)}`, 'boss-hit');
+                        addLog(`<span class="text-rose-300">${fObj.name} kết thúc lượt phản công. Khí Huyết còn ${fmt(h.hp)} / ${fmt(h.maxHp)}.</span>`);
                     }
 
-                    addLog(`<span class="text-rose-300">${fObj.name} kết thúc lượt phản công. Khí Huyết còn ${fmt(h.hp)} / ${fmt(h.maxHp)}.</span>`);
                     updateBarsUI(
                         h.hp, h.maxHp, h.mp,
                         gameState.liveBossHp, gameState.liveBossMaxHp, gameState.liveBossMp,
@@ -5221,41 +5014,86 @@
                     );
 
                     if (gameState.liveBossHp <= 0) {
-                        handleVictory(fObj);
+                        triggerFatalFinisher(fObj, () => handleVictory(fObj));
                         return;
                     }
                     if (h.hp <= 0) {
                         handleDefeat(fObj);
+                        return;
                     }
-                }, Math.round(330 / gameState.combatSpeed));
+
+                    // TỰ ĐỘNG NỐI TIẾP HIỆP CHIẾN ĐẤU TIẾP THEO
+                    if (gameState.inCombat) {
+                        const nextTurnDelay = Math.max(160, Math.round((TOWER_RULES.turnDurationMs - 330) / (gameState.combatSpeed || 1)));
+                        clearTimeout(gameState.combatTimer);
+                        gameState.combatTimer = setTimeout(() => {
+                            if (gameState.inCombat) runTick();
+                        }, nextTurnDelay);
+                    }
+                }, Math.round(330 / (gameState.combatSpeed || 1)));
 
             };
 
             nextCombatTurn = runTick;
-            playCombatTurn();
+            runTick();
         }
 
         function stopCombat(reason) {
             nextCombatTurn = null;
-            clearInterval(gameState.combatTimer);
+            clearTimeout(gameState.combatTimer);
+            gameState.combatTimer = null;
+            combatTurnBusy = false;
             cancelTowerEffects();
             gameState.inCombat = false;
             gameState.domainActive = false;
             gameState.bossEnragedVisual = false;
             gameState.bossBrokenVisual = false;
             document.getElementById('arena-viewport').classList.remove('domain-active-bg');
-            const btn = document.getElementById('btn-fight');
-            btn.textContent = `🗡️ KHIÊU CHIẾN (T.${gameState.selectedFloor})`;
-            btn.className = "px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.6)] transition active:scale-95";
+            updateFightButtonUI(false);
             if (reason) addLog(`<span class="text-slate-400">⏹️ ${reason}</span>`);
         }
 
         /**
-         * 12. XỬ LÝ THẮNG, CÀN QUÉT, RỚT ĐỒ & LUYỆN YÊU HỒ
+         * 12. HIỆU ỨNG TRẢM SÁT DỨT ĐIỂM & ĐẠI THẮNG
          */
+        function triggerFatalFinisher(fObj, onComplete) {
+            if (!fObj) {
+                if (onComplete) onComplete();
+                return;
+            }
+            gameState.liveBossHp = 0;
+            playSound('thunder');
+            playSound('bell');
+            triggerScreenShake('ult');
+            triggerCameraZoom(1.15, 450);
+
+            fireCanvasSwordQi(true, '#fde047', 15, true);
+
+            const canvas = document.getElementById('combat-canvas');
+            if (canvas) {
+                spawnCalligraphySeal('斬', canvas.width * 0.77, canvas.height * 0.45, '#f59e0b');
+            }
+
+            bossAnim.hitFlash = 12;
+            bossAnim.dodgeOffset = 55;
+
+            spawnFloatingText('boss-stage-anchor', '⚔️ TRẢM SÁT DỨT ĐIỂM! 💥', 'ult');
+            showCinematicBanner(`⚔️ VẠN KIẾM QUY TÔNG • TRẢM SÁT ${fObj.name.toUpperCase()}! ⚔️`, 1800);
+            addLog(`<span class="text-amber-300 font-bold">⚡ [TRẢM SÁT KẾT LIỄU]</span> Vạn kiếm tề xuất, chém vỡ ma đan của <strong>${fObj.name}</strong>, hoàn tất đồ ma!`);
+
+            const finishDelay = Math.round(550 / (gameState.combatSpeed || 1));
+            setTimeout(() => {
+                if (onComplete) onComplete();
+            }, finishDelay);
+        }
+
         function handleVictory(fObj) {
             stopCombat();
             playSound('bell');
+
+            // Sau chiến thắng: Khí Huyết hồi phục toàn bộ nhờ hấp thu linh khí thiên địa
+            gameState.hero.hp = gameState.hero.maxHp;
+            gameState.hero.mp = 0;
 
             const ltGain = fObj.floor * 16000;
             const tvGain = fObj.floor * 48000;
@@ -5289,36 +5127,98 @@
 
             renderFloorList();
             updateArenaHUD(fObj);
+            updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, 0, fObj.hp, 0, 100, false);
+
+            syncWithParent({
+                action: 'victory',
+                floor: fObj.floor,
+                highestCleared: gameState.highestCleared,
+                linhThachGained: ltGain,
+                tuViGained: tvGain,
+                linhThachTotal: gameState.linhThach,
+                tuViTotal: gameState.tuVi,
+                droppedItem: droppedItem,
+                newSoul: newSoul,
+                capturedSouls: gameState.capturedSouls,
+                lootBag: gameState.lootBag,
+                selectedFloor: gameState.selectedFloor,
+                selectedTier: gameState.selectedTier
+            });
 
             if (document.getElementById('chk-auto-climb').checked && fObj.floor < 50) {
+                const nextF = fObj.floor + 1;
+                const nextFObj = TOWER_50_FLOORS.find(x => x.floor === nextF);
+
+                // Điểm dừng an toàn: Tự động dừng Leo Tháp nếu tầng tiếp theo là Boss Cột Mốc và lực chiến ta chưa bằng đối phương
+                if (nextFObj && nextFObj.isMilestone && getHeroCP() < nextFObj.cp) {
+                    document.getElementById('chk-auto-climb').checked = false;
+                    updateAutoClimbUI();
+                    showCinematicBanner(`⚠️ DỪNG LEO TỰ ĐỘNG TẠI CỘT MỐC TẦNG ${nextF}! MA UY CỰC THỊNH!`, 3200);
+                    addLog(`<span class="text-amber-300 font-bold">⚠️ [Cột Mốc Hiểm Địa]</span> Tầng ${nextF} là Cột Mốc <strong>${nextFObj.name}</strong> (${nextFObj.realmUnlock})! Kiếm Lực đạo hữu chưa áp đảo đối thủ, hệ thống tự động dừng Tự Leo để bảo toàn sinh mệnh.`);
+                    showVictoryModal(fObj, droppedItem, newSoul, ltGain, tvGain);
+                    return;
+                }
+
+                showCinematicBanner(`🏆 ĐẠI THẮNG TẦNG ${fObj.floor}! TIẾN LÊN TẦNG ${nextF}... ⚡`, 1600);
+                spawnFloatingText('hero-stage-anchor', `+${fmtShort(ltGain)} LT  +${fmtShort(tvGain)} TV`, 'heal');
+                addLog(`<span class="text-emerald-300 font-bold">⚡ [Tự Động Leo Tháp]</span> Đã vượt Tầng ${fObj.floor}! Thu hoạch <strong>+${fmt(ltGain)} LT</strong>, <strong>+${fmt(tvGain)} TV</strong> & nhận <strong>${droppedItem.name}</strong>.`);
+
+                const delay = Math.round(950 / (gameState.combatSpeed || 1));
                 setTimeout(() => {
-                    const nextF = fObj.floor + 1;
                     gameState.selectedTier = Math.ceil(nextF / 10);
                     selectTierGroup(gameState.selectedTier);
                     selectFloor(nextF);
-                    addLog('Đã chọn tầng tiếp theo. Bấm Khiêu Chiến để bắt đầu từng hiệp.');
-                }, 950);
+                    addLog(`<span class="text-amber-300 font-bold">⚡ [Tự Động Leo Tháp]</span> Tiến vào Tầng ${nextF}... Khai trận trảm ma!`);
+                    setTimeout(() => {
+                        if (document.getElementById('chk-auto-climb').checked && !gameState.inCombat) {
+                            startOrStopCombat();
+                        }
+                    }, Math.round(450 / (gameState.combatSpeed || 1)));
+                }, delay);
+            } else {
+                showVictoryModal(fObj, droppedItem, newSoul, ltGain, tvGain);
             }
         }
 
-        function sweepClearedFloor() {
+        function sweepClearedFloor(times = 1) {
+            if (gameState.highestCleared <= 0) {
+                addLog(`<span class="text-rose-400">⚠️ Chưa vượt tầng nào! Hãy khiêu chiến vượt tầng 1 trước khi Càn Quét.</span>`);
+                return;
+            }
+            const count = Math.max(1, Math.min(10, Number(times) || 1));
             const sweepF = Math.max(1, gameState.highestCleared);
             const fObj = TOWER_50_FLOORS.find(x => x.floor === sweepF);
             if (!fObj) return;
 
-            const ltGain = fObj.floor * 12000;
-            const tvGain = fObj.floor * 35000;
+            const ltGain = fObj.floor * 12000 * count;
+            const tvGain = fObj.floor * 35000 * count;
             gameState.linhThach += ltGain;
             gameState.tuVi += tvGain;
             document.getElementById('ui-linh-thach').textContent = fmt(gameState.linhThach);
             document.getElementById('ui-tu-vi').textContent = fmt(gameState.tuVi);
 
-            const droppedItem = fObj.drops[Math.floor(Math.random() * fObj.drops.length)];
-            addItemToLootBag(droppedItem);
+            let lastDrop = null;
+            for (let i = 0; i < count; i++) {
+                const droppedItem = fObj.drops[Math.floor(Math.random() * fObj.drops.length)];
+                addItemToLootBag(droppedItem);
+                lastDrop = droppedItem;
+            }
 
             playSound('bell');
-            spawnFloatingText('hero-stage-anchor', `⚡ CÀN QUÉT T.${sweepF} +${fmtShort(ltGain)} LT!`, 'heal');
-            addLog(`<span class="text-emerald-300 font-bold">⚡ [Càn Quét Tầng ${sweepF}]</span> Thu về <strong>+${fmt(ltGain)} Linh Thạch</strong>, <strong>+${fmt(tvGain)} Tu Vi</strong> & <strong>${droppedItem.icon} [${droppedItem.name}]</strong>!`);
+            spawnFloatingText('hero-stage-anchor', `⚡ CÀN QUÉT x${count} T.${sweepF} +${fmtShort(ltGain)} LT!`, 'heal');
+            addLog(`<span class="text-emerald-300 font-bold">⚡ [Càn Quét x${count} Tầng ${sweepF}]</span> Thu về <strong>+${fmt(ltGain)} Linh Thạch</strong>, <strong>+${fmt(tvGain)} Tu Vi</strong> & <strong>${count} Đạo Cụ</strong>!`);
+
+            syncWithParent({
+                action: 'sweep',
+                floor: sweepF,
+                count: count,
+                linhThachGained: ltGain,
+                tuViGained: tvGain,
+                linhThachTotal: gameState.linhThach,
+                tuViTotal: gameState.tuVi,
+                droppedItem: lastDrop,
+                lootBag: gameState.lootBag
+            });
         }
 
         function renderCapturedSouls() {
@@ -5369,6 +5269,11 @@
             renderCapturedSouls();
             const fObj = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor);
             if (fObj) updateArenaHUD(fObj);
+
+            syncWithParent({
+                action: 'soul_devoured',
+                capturedSouls: gameState.capturedSouls
+            });
         }
 
         function equipGuardianSoul(soulId) {
@@ -5390,11 +5295,203 @@
             addLog(`<span class="text-cyan-300 font-bold">🐺 [Khế Ước Hộ Pháp]</span> Đã thu phục <strong>${gameState.activeGuardian.name}</strong> trợ chiến!`);
 
             renderCapturedSouls();
+
+            syncWithParent({
+                action: 'guardian_equipped',
+                activeGuardian: gameState.activeGuardian,
+                capturedSouls: gameState.capturedSouls
+            });
         }
 
         function handleDefeat(fObj) {
             stopCombat();
-            addLog(`<span class="text-rose-400 font-bold">⚠️ [TRỌNG THƯƠNG LÙI BƯỚC]</span> Không địch lại ${fObj.name}! Hãy bấm <strong>Pháp Bảo Chủ Động [1][2][3]</strong> hoặc <strong>Đúc Kiếm</strong> để lật kèo!`);
+            const chk = document.getElementById('chk-auto-climb');
+            if (chk && chk.checked) {
+                chk.checked = false;
+                updateAutoClimbUI();
+            }
+            playSound('thunder');
+            triggerScreenShake('ult');
+            addLog(`<span class="text-rose-400 font-bold">⚠️ [TRỌNG THƯƠNG LÙI BƯỚC]</span> Không địch lại ${fObj.name}!`);
+            showDefeatModal(fObj);
+        }
+
+        function showVictoryModal(fObj, droppedItem, newSoul, ltGain, tvGain) {
+            const modal = document.getElementById('tower-victory-modal');
+            if (!modal) return;
+
+            const fTitle = document.getElementById('victory-floor-title');
+            if (fTitle) fTitle.textContent = `VƯỢT THÀNH CÔNG TẦNG ${fObj.floor}`;
+            const bDesc = document.getElementById('victory-boss-desc');
+            if (bDesc) bDesc.textContent = `Đã trảm sát [${fObj.name}], ma uy tan biến, thu hoạch vô lượng cơ duyên!`;
+            const ltEl = document.getElementById('victory-reward-lt');
+            if (ltEl) ltEl.textContent = `+${fmt(ltGain)}`;
+            const tvEl = document.getElementById('victory-reward-tv');
+            if (tvEl) tvEl.textContent = `+${fmt(tvGain)}`;
+
+            currentVictoryItem = droppedItem;
+            currentVictorySoul = newSoul;
+
+            // Cập nhật thống kê chiến tích
+            const turnsEl = document.getElementById('victory-stat-turns');
+            if (turnsEl) turnsEl.textContent = `${gameState.battleTurns || 1} Hiệp`;
+            const maxDmgEl = document.getElementById('victory-stat-max-dmg');
+            if (maxDmgEl) maxDmgEl.textContent = fmt(gameState.maxDamageDealt || Math.round(gameState.hero.atk * 1.5));
+            const maxComboEl = document.getElementById('victory-stat-max-combo');
+            if (maxComboEl) maxComboEl.textContent = `${Math.max(1, gameState.maxCombo || 1)} Hits`;
+
+            // Reset trạng thái nút Dùng Ngay & Luyện Hóa
+            const useItemBtn = document.getElementById('btn-victory-use-item');
+            if (useItemBtn) {
+                useItemBtn.textContent = '✨ Dùng Ngay';
+                useItemBtn.disabled = false;
+                useItemBtn.className = "px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/60 text-cyan-200 text-xs font-bold transition active:scale-95";
+            }
+            const devourSoulBtn = document.getElementById('btn-victory-devour-soul');
+            if (devourSoulBtn) {
+                devourSoulBtn.textContent = '🏺 Luyện Hóa';
+                devourSoulBtn.disabled = false;
+                devourSoulBtn.className = "px-2.5 py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 border border-rose-400/60 text-rose-200 text-xs font-bold transition active:scale-95";
+            }
+
+            const lootIcon = document.getElementById('victory-loot-icon');
+            const lootName = document.getElementById('victory-loot-name');
+            const lootRarity = document.getElementById('victory-loot-rarity');
+            const lootBox = document.getElementById('victory-loot-box');
+            if (droppedItem) {
+                if (lootIcon) lootIcon.textContent = droppedItem.icon || '🎁';
+                if (lootName) lootName.textContent = droppedItem.name || 'Bảo Vật';
+                if (lootRarity) {
+                    const rarityLabels = { Tien: 'Tiên Phẩm', Thien: 'Thiên Giai', Dia: 'Địa Giai' };
+                    lootRarity.textContent = rarityLabels[droppedItem.rarity] || 'Kỳ Bảo';
+                }
+                if (lootBox) {
+                    if (droppedItem.rarity === 'Tien') {
+                        lootBox.className = "col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.35)]";
+                        if (lootRarity) lootRarity.className = "text-xs px-2.5 py-1 rounded-lg bg-amber-600/35 border border-amber-400 text-amber-200 font-bold";
+                    } else if (droppedItem.rarity === 'Thien') {
+                        lootBox.className = "col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-purple-500/15 border border-purple-400/70 shadow-[0_0_15px_rgba(168,85,247,0.3)]";
+                        if (lootRarity) lootRarity.className = "text-xs px-2.5 py-1 rounded-lg bg-purple-600/30 border border-purple-400/60 text-purple-200 font-bold";
+                    } else {
+                        lootBox.className = "col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/70 shadow-[0_0_15px_rgba(6,182,212,0.3)]";
+                        if (lootRarity) lootRarity.className = "text-xs px-2.5 py-1 rounded-lg bg-cyan-600/30 border border-cyan-400/60 text-cyan-200 font-bold";
+                    }
+                }
+            }
+
+            const soulRow = document.getElementById('victory-soul-row');
+            if (newSoul && soulRow) {
+                soulRow.classList.remove('hidden');
+                const sIcon = document.getElementById('victory-soul-icon');
+                if (sIcon) sIcon.textContent = newSoul.icon || '👹';
+                const sName = document.getElementById('victory-soul-name');
+                if (sName) sName.textContent = `${newSoul.name} (+${fmt(newSoul.atkBonus)} Công)`;
+            } else if (soulRow) {
+                soulRow.classList.add('hidden');
+            }
+
+            // Banner cột mốc cảnh giới (Tầng 10, 20, 30, 40, 50)
+            const milestoneBanner = document.getElementById('victory-milestone-banner');
+            if (milestoneBanner) {
+                if (fObj.isMilestone && fObj.realmUnlock) {
+                    milestoneBanner.classList.remove('hidden');
+                    const mName = document.getElementById('victory-milestone-name');
+                    if (mName) mName.textContent = `Đột Phá ${fObj.realmUnlock.toUpperCase()} (+Phi Kiếm & Thuộc Tính)`;
+                } else {
+                    milestoneBanner.classList.add('hidden');
+                }
+            }
+
+            const nextBtn = document.getElementById('btn-victory-next-floor');
+            if (nextBtn) {
+                if (fObj.floor >= 50) {
+                    nextBtn.innerHTML = '🏆 ĐÃ PHÁ ĐỈNH THÁP';
+                    nextBtn.disabled = true;
+                } else {
+                    nextBtn.innerHTML = `🗡️ Khiêu Chiến Tầng ${fObj.floor + 1} <span class="text-[10px] text-amber-200 block font-normal">(Space / Enter)</span>`;
+                    nextBtn.disabled = false;
+                }
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        let currentVictoryItem = null;
+        let currentVictorySoul = null;
+
+        function closeVictoryModal() {
+            const modal = document.getElementById('tower-victory-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function sweepFromVictoryModal() {
+            sweepClearedFloor(1);
+            spawnFloatingText('hero-stage-anchor', '⚡ ĐÃ CÀN QUÉT THÊM!', 'heal');
+        }
+
+        function useItemFromVictoryModal() {
+            if (!currentVictoryItem) return;
+            const item = currentVictoryItem;
+            useLootItem(item.id);
+            const btn = document.getElementById('btn-victory-use-item');
+            if (btn) {
+                btn.textContent = '✓ Đã Luyện Hóa';
+                btn.disabled = true;
+                btn.className = "px-2.5 py-1 rounded-lg bg-emerald-600/30 border border-emerald-400 text-emerald-200 font-bold text-xs";
+            }
+        }
+
+        function devourSoulFromVictoryModal() {
+            if (!currentVictorySoul) return;
+            const s = currentVictorySoul;
+            devourDemonSoul(s.id);
+            const btn = document.getElementById('btn-victory-devour-soul');
+            if (btn) {
+                btn.textContent = `✓ Đã Luyện Hóa (+${fmtShort(s.atkBonus)})`;
+                btn.disabled = true;
+                btn.className = "px-2.5 py-1 rounded-lg bg-emerald-600/30 border border-emerald-400 text-emerald-200 font-bold text-xs";
+            }
+        }
+
+        function breakthroughFromVictoryModal() {
+            closeVictoryModal();
+            claimMilestoneBreakthrough();
+        }
+
+        function proceedToNextFloorFromModal() {
+            closeVictoryModal();
+            if (gameState.selectedFloor < 50) {
+                const nextF = gameState.selectedFloor + 1;
+                gameState.selectedTier = Math.ceil(nextF / 10);
+                selectTierGroup(gameState.selectedTier);
+                selectFloor(nextF);
+                setTimeout(() => {
+                    if (!gameState.inCombat) startOrStopCombat();
+                }, 300);
+            }
+        }
+
+        function showDefeatModal(fObj) {
+            const modal = document.getElementById('tower-defeat-modal');
+            if (!modal) return;
+            const fTitle = document.getElementById('defeat-floor-title');
+            if (fTitle) fTitle.textContent = `TRỌNG THƯƠNG TẠI TẦNG ${fObj.floor}!`;
+            const bDesc = document.getElementById('defeat-boss-desc');
+            if (bDesc) bDesc.textContent = `[${fObj.name}] ma uy hung hãn vượt tầm kiếm lực hiện tại. Hãy củng cố tu vi hoặc đổi chiến thuật!`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeDefeatModal() {
+            const modal = document.getElementById('tower-defeat-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function retryFloorFromDefeatModal() {
+            closeDefeatModal();
+            healHeroFull();
+            setTimeout(() => {
+                if (!gameState.inCombat) startOrStopCombat();
+            }, 300);
         }
 
         function addItemToLootBag(itemTemplate) {
@@ -5431,6 +5528,11 @@
             renderLootBag();
             const fObj = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor);
             if (fObj) updateArenaHUD(fObj);
+
+            syncWithParent({
+                action: 'loot_updated',
+                lootBag: gameState.lootBag
+            });
         }
 
         function useAllLootItems() {
@@ -5459,6 +5561,11 @@
             renderLootBag();
             const fObj = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor);
             if (fObj) updateArenaHUD(fObj);
+
+            syncWithParent({
+                action: 'loot_updated',
+                lootBag: gameState.lootBag
+            });
         }
 
         function renderLootBag() {
@@ -5639,9 +5746,61 @@
             }).join('');
         }
 
+        function updateFightButtonUI(isFighting) {
+            const btn = document.getElementById('btn-fight');
+            if (!btn) return;
+            if (isFighting) {
+                btn.className = "px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/50 font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.3)] transition active:scale-95 flex items-center justify-center gap-1.5";
+                btn.innerHTML = `<span>⏹️ DỪNG CHIẾN</span> <kbd class="px-1.5 py-0.5 rounded bg-black/50 text-[10px] font-mono text-rose-300 border border-rose-500/40">Space</kbd>`;
+            } else {
+                btn.className = "px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5";
+                btn.innerHTML = `<span>🗡️ KHIÊU CHIẾN (T.${gameState.selectedFloor})</span> <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>`;
+            }
+        }
+
+        function updateAutoClimbUI() {
+            const chk = document.getElementById('chk-auto-climb');
+            const label = document.getElementById('auto-climb-label');
+            const dot = document.getElementById('auto-climb-status-dot');
+            const text = document.getElementById('auto-climb-text');
+            if (!chk || !label || !text) return;
+
+            if (chk.checked) {
+                label.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-400/80 text-emerald-200 text-xs cursor-pointer select-none shadow-[0_0_15px_rgba(16,185,129,0.35)] transition-all duration-200";
+                if (dot) dot.classList.remove('hidden');
+                text.textContent = "Tự Leo: BẬT";
+            } else {
+                label.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs cursor-pointer select-none transition-all duration-200 hover:border-amber-500/50";
+                if (dot) dot.classList.add('hidden');
+                text.textContent = "Tự Leo: TẮT";
+            }
+        }
+
+        function updateSpeedBtnUI() {
+            const btn = document.getElementById('btn-speed');
+            const val = document.getElementById('speed-label');
+            if (!btn) return;
+            if (val) val.textContent = `${gameState.combatSpeed || 1}x`;
+            else btn.textContent = `${gameState.combatSpeed || 1}x`;
+
+            if (gameState.combatSpeed === 2) {
+                btn.className = "px-2.5 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-400/80 text-xs font-mono font-bold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.4)] transition active:scale-95 flex items-center gap-1";
+                btn.title = "Tốc độ trận đấu: 2x (Bấm hoặc nhấn [X] để đổi)";
+            } else if (gameState.combatSpeed === 3) {
+                btn.className = "px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-400/80 text-xs font-mono font-bold text-rose-300 shadow-[0_0_14px_rgba(244,63,94,0.5)] transition active:scale-95 flex items-center gap-1";
+                btn.title = "Tốc độ trận đấu: 3x Cực Tốc (Bấm hoặc nhấn [X] để đổi)";
+            } else {
+                btn.className = "px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1";
+                btn.title = "Tốc độ trận đấu: 1x Tiêu Chuẩn (Bấm hoặc nhấn [X] để đổi)";
+            }
+        }
+
         function toggleCombatSpeed() {
-            gameState.combatSpeed = gameState.combatSpeed === 1 ? 2 : 1;
-            document.getElementById('btn-speed').textContent = `${gameState.combatSpeed}x`;
+            if (gameState.combatSpeed === 1) gameState.combatSpeed = 2;
+            else if (gameState.combatSpeed === 2) gameState.combatSpeed = 3;
+            else gameState.combatSpeed = 1;
+            updateSpeedBtnUI();
+            spawnFloatingText('hero-stage-anchor', `⚡ TỐC ĐỘ ${gameState.combatSpeed}X!`, 'ult');
         }
 
         function healHeroFull() {
@@ -5684,6 +5843,20 @@
 
         function closeTowerPopup() {
             if (gameState.inCombat) stopCombat();
+            cancelTowerEffects();
+            closeVictoryModal();
+            closeDefeatModal();
+            syncWithParent({
+                action: 'close',
+                highestCleared: gameState.highestCleared,
+                selectedFloor: gameState.selectedFloor,
+                selectedTier: gameState.selectedTier,
+                capturedSouls: gameState.capturedSouls,
+                lootBag: gameState.lootBag,
+                activeManualId: gameState.activeManualId,
+                selectedUltId: gameState.selectedUltId,
+                activeGuardian: gameState.activeGuardian
+            });
             if (window.parent !== window) {
                 window.parent.postMessage({ type: 'van-thien-luc:tower-close' }, '*');
                 return;
@@ -5700,10 +5873,35 @@
             renderManualSelectorBar();
             renderActiveManualSkillsBar();
             renderManualsCompendium();
-            selectTierGroup(2);
-            renderLootBag();
-            renderCapturedSouls();
-            selectFloor(20);
+
+            const synced = tryDirectSyncFromParent();
+            if (!synced) {
+                selectTierGroup(2);
+                renderLootBag();
+                renderCapturedSouls();
+                selectFloor(20);
+            }
+
+            updateClimbProgressHUD();
+
+            const autoChk = document.getElementById('chk-auto-climb');
+            if (autoChk) {
+                autoChk.addEventListener('change', (e) => {
+                    updateAutoClimbUI();
+                    if (e.target.checked && !gameState.inCombat) {
+                        startOrStopCombat();
+                    }
+                });
+                updateAutoClimbUI();
+            }
+            updateSpeedBtnUI();
+            updateFightButtonUI(false);
+
+            if (window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'van-thien-luc:tower-ready' }, '*');
+                } catch (e) {}
+            }
         };
     </script>
 </body>

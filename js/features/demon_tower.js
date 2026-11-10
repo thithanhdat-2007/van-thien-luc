@@ -103,9 +103,179 @@
 
     let towerV4Frame = null;
 
-    window.addEventListener('message', (event) => {
-        if (towerV4Frame && event.source === towerV4Frame.contentWindow && event.data?.type === 'van-thien-luc:tower-close') {
+    function getTowerSyncPayload() {
+        const s = window.state || {};
+        const effStats = (typeof window.getEffectiveStats === 'function')
+            ? window.getEffectiveStats()
+            : { atk: s.atk || 148000, def: s.def || 42000, maxHp: s.maxHp || 850000, crit: s.crit || 35 };
+
+        const currentRealm = (typeof window.REALMS !== 'undefined' && Array.isArray(window.REALMS))
+            ? (window.REALMS[s.realmIndex] || window.REALMS[0])
+            : { name: "Luyện Khí Kỳ" };
+
+        const savedTower = s.demonTower || s.towerData || {};
+        const currentFloor = Math.max(1, Math.floor(Number(s.towerFloor) || 1));
+        const highestCleared = Math.max(
+            0,
+            Number(savedTower.highestCleared ?? (currentFloor - 1))
+        );
+        const selectedFloor = Math.min(50, Math.max(1, Number(savedTower.selectedFloor || currentFloor)));
+        const selectedTier = Math.min(5, Math.max(1, Math.ceil(selectedFloor / 10)));
+
+        let elem = 'Kim';
+        if (s.spiritualRoot?.element) {
+            const elKey = String(s.spiritualRoot.element).toLowerCase();
+            if (elKey.includes('wood') || elKey.includes('mộc')) elem = 'Moc';
+            else if (elKey.includes('water') || elKey.includes('thủy')) elem = 'Thuy';
+            else if (elKey.includes('fire') || elKey.includes('hỏa')) elem = 'Hoa';
+            else if (elKey.includes('earth') || elKey.includes('thổ')) elem = 'Tho';
+            else elem = 'Kim';
+        }
+
+        return {
+            characterName: s.characterName || s.name || "Tiêu Dao Tử",
+            playerName: s.characterName || s.name || "Tiêu Dao Tử",
+            realmName: currentRealm?.name || "Luyện Khí Kỳ",
+            linhThach: Number(s.stones) || 0,
+            tuVi: Number(s.exp) || 0,
+            highestCleared: highestCleared,
+            selectedFloor: selectedFloor,
+            selectedTier: selectedTier,
+            hero: {
+                maxHp: Math.max(1000, Math.round(Number(effStats.maxHp || s.maxHp || 1000))),
+                hp: Math.max(1, Math.round(Number(s.hp || effStats.maxHp || s.maxHp || 1000))),
+                mp: 0,
+                maxMp: 100,
+                atk: Math.max(100, Math.round(Number(effStats.atk || s.atk || 100))),
+                def: Math.max(50, Math.round(Number(effStats.def || s.def || 50))),
+                crit: Math.min(85, Math.max(5, Math.round(Number(effStats.crit || s.crit || 10)))),
+                critDmg: Number(effStats.critMultiplier || 2.0),
+                eva: Math.min(60, Math.max(5, Math.round(Number(effStats.dodge || effStats.eva || 10)))),
+                element: elem,
+                swordCount: Math.min(36, Math.max(6, 6 + Math.floor((s.realmIndex || 0) * 1.5)))
+            },
+            activeManualId: savedTower.activeManualId || "thanh_lien_kiem_dien",
+            selectedUltId: savedTower.selectedUltId ?? 2,
+            capturedSouls: Array.isArray(savedTower.capturedSouls) ? savedTower.capturedSouls : [],
+            lootBag: Array.isArray(savedTower.lootBag) ? savedTower.lootBag : [],
+            activeGuardian: savedTower.activeGuardian || null
+        };
+    }
+
+    function sendTowerSyncData() {
+        if (!towerV4Frame || !towerV4Frame.contentWindow) return;
+        const payload = getTowerSyncPayload();
+        try {
+            towerV4Frame.contentWindow.postMessage({
+                type: 'van-thien-luc:tower-init-data',
+                data: payload
+            }, '*');
+        } catch (e) {
+            console.warn('[DemonTower] sendTowerSyncData error:', e);
+        }
+    }
+
+    function handleTowerSyncMessage(payload) {
+        if (!payload || !window.state) return;
+        const s = window.state;
+
+        // 1. Linh Thạch
+        if (payload.linhThachGained && payload.linhThachGained > 0) {
+            if (typeof window.addSpiritStones === 'function') {
+                window.addSpiritStones(payload.linhThachGained);
+            } else {
+                s.stones = (Number(s.stones) || 0) + payload.linhThachGained;
+            }
+        } else if (payload.linhThachCost && payload.linhThachCost > 0) {
+            s.stones = Math.max(0, (Number(s.stones) || 0) - payload.linhThachCost);
+        }
+
+        // 2. Tu Vi
+        if (payload.tuViGained && payload.tuViGained > 0) {
+            if (typeof window.addExp === 'function') {
+                window.addExp(payload.tuViGained);
+            } else {
+                s.exp = (Number(s.exp) || 0) + payload.tuViGained;
+            }
+        }
+
+        // 3. Tiến trình Tầng Tháp
+        if (payload.floor) {
+            const nextFloor = payload.floor + 1;
+            s.towerFloor = Math.max(Number(s.towerFloor) || 1, nextFloor);
+            if (payload.floor >= 50) {
+                s.hasClearedTower50 = true;
+            }
+        }
+        if (payload.highestCleared !== undefined) {
+            s.towerFloor = Math.max(Number(s.towerFloor) || 1, payload.highestCleared + 1);
+            if (payload.highestCleared >= 50) {
+                s.hasClearedTower50 = true;
+            }
+        }
+
+        // 4. Lưu dữ liệu tháp độc lập vào state.demonTower
+        if (!s.demonTower || typeof s.demonTower !== 'object') s.demonTower = {};
+        if (payload.highestCleared !== undefined) s.demonTower.highestCleared = payload.highestCleared;
+        if (payload.selectedFloor !== undefined) s.demonTower.selectedFloor = payload.selectedFloor;
+        if (payload.selectedTier !== undefined) s.demonTower.selectedTier = payload.selectedTier;
+        if (payload.capturedSouls) s.demonTower.capturedSouls = payload.capturedSouls;
+        if (payload.lootBag) s.demonTower.lootBag = payload.lootBag;
+        if (payload.activeManualId) s.demonTower.activeManualId = payload.activeManualId;
+        if (payload.selectedUltId !== undefined) s.demonTower.selectedUltId = payload.selectedUltId;
+        if (payload.activeGuardian) s.demonTower.activeGuardian = payload.activeGuardian;
+
+        // 5. Thêm vật phẩm rơi vào Túi đồ chính của nhân vật
+        if (payload.droppedItem && payload.droppedItem.name) {
+            if (!Array.isArray(s.inventory)) s.inventory = [];
+            const drop = payload.droppedItem;
+            const existing = s.inventory.find(i => i.id === drop.id || i.name === drop.name);
+            if (existing) {
+                existing.count = (Number(existing.count) || 1) + 1;
+            } else {
+                s.inventory.push({
+                    id: drop.id || `tower_item_${Date.now()}`,
+                    name: drop.name,
+                    icon: drop.icon || '🎁',
+                    type: drop.type || 'Đạo Cụ Trấn Yêu',
+                    quality: drop.rarity === 'Tien' ? 'legendary' : (drop.rarity === 'Thien' ? 'epic' : 'rare'),
+                    desc: drop.desc || 'Chiến lợi phẩm đoạt được từ Trấn Yêu Tháp',
+                    count: 1
+                });
+            }
+        }
+
+        // 6. Ghi nhật ký vào Thiên Cơ Nhật Ký
+        if (payload.action === 'victory') {
+            if (typeof window.addLog === 'function') {
+                const dropTxt = payload.droppedItem ? ` & nhặt được [${payload.droppedItem.name}]` : '';
+                window.addLog(`🗼 [Trấn Yêu Tháp] Trảm diệt Yêu Ma tầng ${payload.floor}! Thu hoạch +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi${dropTxt}.`, 'reward');
+            }
+        } else if (payload.action === 'sweep') {
+            if (typeof window.addLog === 'function') {
+                window.addLog(`⚡ [Trấn Yêu Tháp] Càn quét tầng ${payload.floor}! Thu về +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi.`, 'reward');
+            }
+        }
+
+        // 7. Đồng bộ HUD và lưu save chính
+        if (typeof window.updateHUD === 'function') window.updateHUD();
+        if (typeof window.updateUI === 'function') window.updateUI();
+        if (typeof window.saveGameState === 'function') window.saveGameState();
+
+        // 8. Nếu là lệnh đóng tháp
+        if (payload.action === 'close') {
             closeDemonTowerModal();
+        }
+    }
+
+    window.addEventListener('message', (event) => {
+        if (!event.data) return;
+        if (event.data.type === 'van-thien-luc:tower-close') {
+            closeDemonTowerModal();
+        } else if (event.data.type === 'van-thien-luc:tower-ready') {
+            sendTowerSyncData();
+        } else if (event.data.type === 'van-thien-luc:tower-sync') {
+            handleTowerSyncMessage(event.data.payload);
         }
     });
 
@@ -118,6 +288,11 @@
         towerV4Frame.title = 'Trấn Yêu Tháp';
         towerV4Frame.src = './tran_yeu_thap_v4.html';
         towerV4Frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483646;background:#020307;';
+        
+        towerV4Frame.onload = () => {
+            setTimeout(sendTowerSyncData, 120);
+        };
+
         document.body.appendChild(towerV4Frame);
         document.body.classList.add('tower-v4-active');
     }
@@ -438,6 +613,8 @@
     window.fullHealPlayer = fullHealPlayer;
     window.updateArenaUI = updateArenaUI;
     window.towerPlayer = towerPlayer;
+    window.getTowerSyncPayload = getTowerSyncPayload;
+    window.handleTowerSyncMessage = handleTowerSyncMessage;
     globalThis.openDemonTowerModal = openDemonTowerModal;
     globalThis.closeDemonTowerModal = closeDemonTowerModal;
     globalThis.handleChallengeClick = handleChallengeClick;
@@ -445,4 +622,6 @@
     globalThis.fullHealPlayer = fullHealPlayer;
     globalThis.updateArenaUI = updateArenaUI;
     globalThis.towerPlayer = towerPlayer;
+    globalThis.getTowerSyncPayload = getTowerSyncPayload;
+    globalThis.handleTowerSyncMessage = handleTowerSyncMessage;
 })();
