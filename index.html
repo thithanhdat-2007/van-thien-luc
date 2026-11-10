@@ -2,7 +2,7 @@
 <html lang="vi" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vấn Thiên Lục - Càn Khôn Tịch Diệt</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -275,14 +275,6 @@
     </header>
 
     
-
-    <!-- Thanh Tu Vi rút gọn cho màn hình Mobile -->
-    <div id="hud-mobile-exp" class="md:hidden fixed top-[52px] left-0 right-0 z-20 bg-slate-900/40 backdrop-blur-md px-4 py-1 border-b border-slate-700/50 flex items-center gap-2">
-        <div class="cultivation-progress flex-1 h-1.5 bg-slate-950/60 rounded-sm overflow-hidden border border-slate-700/50">
-            <div id="exp-bar-mobile" class="cultivation-progress__fill h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-sm transition-all duration-300" style="width: 0%;"></div>
-        </div>
-        <span id="exp-text-mobile" class="text-[10px] text-slate-200 font-mono font-semibold whitespace-nowrap">0%</span>
-    </div>
 
     <!-- ==========================================================
          MAIN SCREEN 3-COLUMN FLEXBOX: TRÁI - GIỮA - PHẢI (#main-content)
@@ -2112,17 +2104,6 @@
     gap: 1.25rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
-}
-
-@media (max-width: 1100px) {
-    #modal-gia-vien .estate-nodes-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-}
-@media (max-width: 650px) {
-    #modal-gia-vien .estate-nodes-grid {
-        grid-template-columns: 1fr !important;
-    }
 }
 
 /* ==========================================================================

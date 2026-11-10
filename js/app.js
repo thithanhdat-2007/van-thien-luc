@@ -6941,10 +6941,7 @@ function updateHUD() {
             document.querySelector('.cultivation-progress-panel')?.classList.toggle('is-bottleneck', isBottleneck);
             (document.getElementById('tu-vi-bar') || document.getElementById('primary-actions'))?.classList.toggle('is-bottleneck', isBottleneck);
             expBarDesktop?.classList.toggle('is-bottleneck', isBottleneck);
-            document.getElementById('exp-text-mobile').textContent = `${percent}%`;
-            const expBarMobile = document.getElementById('exp-bar-mobile');
-            expBarMobile.style.width = `${percent}%`;
-            [expBarDesktop, expBarMobile].forEach(bar => bar && bar.classList.toggle('is-near-full', percent >= 85));
+            expBarDesktop?.classList.toggle('is-near-full', percent >= 85);
 
             document.getElementById('spirit-stones').textContent = state.stones.toLocaleString();
             const spiritPool = document.getElementById('spirit-pool');
@@ -7682,7 +7679,7 @@ window.toggleThienCoNhatKy = toggleThienCoNhatKy;
 
 function toggleImmersionMode() {
             immersionMode = !immersionMode;
-            const hudIds = ['hud-top', 'hud-mobile-exp', 'hud-left', 'hud-right', 'hud-bottom', 'bottom-nav', 'tester-toolbar'];
+            const hudIds = ['hud-top', 'hud-left', 'hud-right', 'hud-bottom', 'bottom-nav', 'tester-toolbar'];
             const restoreBtn = document.getElementById('btn-restore-hud');
 
             if (immersionMode) {
@@ -14338,28 +14335,7 @@ function renderAchievementHub(content) {
 }
 window.renderAchievementHub = renderAchievementHub;
 
-function initializeResponsiveUX() {
-    if (window.matchMedia('(max-width: 767px)').matches) {
-        [
-            ['left-card-body', 'left-toggle-icon'],
-            ['right-card-body', 'right-toggle-icon']
-        ].forEach(([bodyId, iconId]) => {
-            const body = document.getElementById(bodyId);
-            const icon = document.getElementById(iconId);
-            const trigger = document.querySelector(`[aria-controls="${bodyId}"]`);
-            const sidebar = body?.closest('.pc-sidebar, .sidebar-container, #hud-left, #hud-right, #left-sidebar, #right-sidebar, aside');
-            sidebar?.classList.add('collapsed');
-            body?.classList.add('hidden');
-            icon?.classList.add('rotate-180');
-            trigger?.setAttribute('aria-expanded', 'false');
-        });
-    }
-
-    document.addEventListener('pointerdown', (event) => {
-        if (!event.target.closest('button, [role="button"]')) return;
-        if (navigator.vibrate) navigator.vibrate(8);
-    }, { passive: true });
-
+function initializeKeyboardUX() {
     document.addEventListener('keydown', (event) => {
         if (cutsceneState.inProgress) {
             if (event.key === 'Escape') {
@@ -14571,7 +14547,7 @@ window.catchUpBackgroundProgress = catchUpBackgroundProgress;
 
 window.onload = function() {
     const offline = loadGameState();
-    initializeResponsiveUX();
+    initializeKeyboardUX();
     initializeAutomationControls();
     if (typeof initTsParticles === 'function') initTsParticles();
     

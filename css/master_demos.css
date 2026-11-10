@@ -420,28 +420,6 @@
         }
 
         /* Responsive Breakpoints */
-        @media (max-width: 900px) {
-            .qi-pool-card {
-                min-width: 190px;
-            }
-            .global-topbar {
-                padding: 0 10px;
-                gap: 8px;
-            }
-        }
-
-        @media (max-width: 680px) {
-            .global-topbar {
-                height: auto;
-                flex-wrap: wrap;
-                padding: 8px;
-                justify-content: center;
-            }
-            .qi-pool-card {
-                min-width: 100%;
-                order: 3;
-            }
-        }
 
 /* ==========================================================================
    PHẦN 2: CHARACTER STATS PROFILE STYLES (#hud-left)
@@ -644,12 +622,6 @@
             gap: 16px;
         }
 
-        @media (max-width: 640px) {
-            .core-bars-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .bar-container {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -710,12 +682,6 @@
             gap: 14px;
         }
 
-        @media (max-width: 640px) {
-            .combat-stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
         .combat-stat-tile {
             background: var(--bg-card);
             border: 1px solid rgba(255, 255, 255, 0.07);
@@ -774,12 +740,6 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             margin-bottom: 14px;
-        }
-
-        @media (max-width: 480px) {
-            .elements-display-row {
-                grid-template-columns: repeat(3, 1fr);
-            }
         }
 
         .element-slot {
@@ -1118,13 +1078,6 @@
             padding: 0 4rem 2rem 4rem;
         }
 
-        @media (max-width: 768px) {
-            .battle-arena-stage {
-                height: 380px;
-                padding: 0 1rem 1.5rem 1rem;
-            }
-        }
-
         /* Mặt sàn đá ngầm Bát Quái dưới chân (Arena Ground Shadow Platform) */
         .stage-ground-plane {
             position: absolute;
@@ -1246,16 +1199,6 @@
             z-index: 5;
         }
 
-        @media (max-width: 768px) {
-            .sprite-entity-img {
-                width: 160px;
-                height: 210px;
-            }
-            .floating-hp-container {
-                width: 140px;
-            }
-        }
-
         /* Phản chiếu bóng dưới chân sàn */
         .sprite-ground-reflection {
             width: 140px;
@@ -1362,12 +1305,10 @@
             gap: 1rem;
         }
 
-        @media (min-width: 900px) {
-            .stage-lower-console {
+        .stage-lower-console {
                 grid-template-columns: 62% 38%;
                 align-items: stretch;
             }
-        }
 
         /* KHUNG NHẬT KÝ CHIẾN ĐẤU (SCROLLABLE COMBAT LOG BOX) */
         .combat-log-card {

@@ -144,14 +144,12 @@
             width: 100%;
         }
 
-        @media (min-width: 1024px) {
-            .forging-container {
+        .forging-container {
                 grid-template-columns: 46% 54%;
                 align-items: stretch;
                 height: calc(100vh - 65px);
                 overflow: hidden;
             }
-        }
 
         /* Cột Trái & Cột Phải */
         .forging-panel {
@@ -921,13 +919,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
         }
 
-        @media (max-width: 1024px) {
-            .alchemy-top-bar {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-        }
-
         .alchemist-badge {
             display: flex;
             align-items: center;
@@ -1106,14 +1097,12 @@
             width: 100%;
         }
 
-        @media (min-width: 1024px) {
-            .alchemy-viewport {
+        .alchemy-viewport {
                 grid-template-columns: 46% 54%;
                 height: calc(100vh - 82px);
                 align-items: stretch;
                 overflow: hidden;
             }
-        }
 
         .panel-box {
             background: var(--bg-panel);
@@ -1684,14 +1673,12 @@
             width: 100%;
         }
 
-        @media (min-width: 1024px) {
-            .chamber-viewport {
+        .chamber-viewport {
                 grid-template-columns: 46% 54%;
                 height: calc(100vh - 75px);
                 align-items: stretch;
                 overflow: hidden;
             }
-        }
 
         .chamber-panel {
             background: var(--bg-panel);
@@ -2189,7 +2176,7 @@
         .vault-pill--tuvi { border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
 
         /* ==========================================================================
-           BỐ CỤC CHÍNH (ARENA STAGE: 3 CỘT PC / STACK TRÊN MOBILE)
+           BỐ CỤC CHÍNH (ARENA STAGE: 3 CỘT PC)
            ========================================================================== */
         .tower-viewport {
             flex: 1;
@@ -2209,12 +2196,10 @@
             gap: 1.25rem;
         }
 
-        @media (min-width: 1024px) {
-            .arena-container {
+        .arena-container {
                 grid-template-columns: 29% 42% 29%;
                 align-items: stretch;
             }
-        }
 
         .fighter-card {
             background: var(--bg-arena);

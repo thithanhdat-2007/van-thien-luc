@@ -49,31 +49,6 @@ globalThis.closeDongPhuModal = closeDongPhuModal;
 
 
     function initMainScreenSafeguards() {
-        const bottomMenu = document.getElementById('bottom-menu');
-        if (bottomMenu) {
-            bottomMenu.style.setProperty('display', 'flex', 'important');
-            bottomMenu.style.setProperty('z-index', '10005', 'important');
-            bottomMenu.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.style.setProperty('display', 'inline-flex', 'important');
-                btn.style.setProperty('visibility', 'visible', 'important');
-                btn.style.setProperty('opacity', '1', 'important');
-            });
-        }
-
-        const updatePanelDisplays = () => {
-            const isDesktop = window.innerWidth >= 1025;
-            const rightPanel = document.getElementById('right-panel');
-            if (rightPanel) {
-                rightPanel.style.setProperty('display', isDesktop ? 'flex' : 'none', 'important');
-            }
-            const leftPanel = document.getElementById('left-panel');
-            if (leftPanel) {
-                leftPanel.style.setProperty('display', isDesktop ? 'flex' : 'none', 'important');
-            }
-        };
-        updatePanelDisplays();
-        window.addEventListener('resize', updatePanelDisplays);
-
         const topBar = document.getElementById('top-bar');
         if (topBar) {
             topBar.style.setProperty('display', 'flex', 'important');
