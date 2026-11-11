@@ -173,6 +173,38 @@
         estateIdleTimer = setInterval(runIdleProductionTick, 1000);
     }
 
+    function catchUpEstateProgress(seconds) {
+        if (!seconds || seconds <= 0) return;
+        const capped = Math.min(86400, seconds);
+        const lieuNhuYen = COMPANIONS_LIST.find(c => c.id === 'companion_1');
+        const hasAutoClaimPerk = lieuNhuYen && lieuNhuYen.affectionLevel >= 5;
+
+        ESTATE_NODES.forEach(node => {
+            const hasCompanion = Boolean(node.assignedCompanionId);
+            const multiplier = hasCompanion ? 1.5 : 1.0;
+            const ratePerSecond = (node.baseProductionRate / 60) * multiplier;
+            const produced = ratePerSecond * capped;
+
+            if (hasAutoClaimPerk) {
+                const total = Math.floor(node.currentAmount + produced);
+                if (total > 0) {
+                    if (node.resourceType === 'tuVi') playerState.tuVi += total;
+                    else if (node.resourceType === 'herbs') playerState.herbs += total;
+                    else if (node.resourceType === 'ores') playerState.ores += total;
+                    else if (node.resourceType === 'linhThach') playerState.linhThach += total;
+                }
+                node.currentAmount = 0;
+            } else {
+                node.currentAmount = Math.min(node.capacity, node.currentAmount + produced);
+            }
+        });
+
+        const modal = document.getElementById('modal-gia-vien');
+        if (modal && modal.style.display !== 'none' && !modal.classList.contains('hidden')) {
+            updateEstateUI();
+        }
+    }
+
     function getUpgradeCost(node) {
         return Math.round(node.upgradeBaseCost * Math.pow(1.65, node.level - 1));
     }
@@ -249,6 +281,85 @@
         if (typeof window.saveGameState === 'function') window.saveGameState();
     }
 
+    function spawnLootMagnetEffect(startRect, targetEl, iconChar = '💎', count = 8) {
+        if (typeof document === 'undefined') return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (targetEl) {
+                targetEl.classList.remove('currency-card-flash');
+                void targetEl.offsetWidth;
+                targetEl.classList.add('currency-card-flash');
+            }
+            return;
+        }
+
+        const startX = startRect ? (startRect.left + startRect.width / 2) : (window.innerWidth / 2);
+        const startY = startRect ? (startRect.top + startRect.height / 2) : (window.innerHeight / 2);
+
+        const targetRect = targetEl ? targetEl.getBoundingClientRect() : { left: window.innerWidth / 2, top: 20, width: 40, height: 20 };
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+
+        const particleCount = Math.min(12, Math.max(4, count));
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'loot-magnet-particle pointer-events-none fixed z-[999999] select-none text-sm';
+            particle.textContent = iconChar;
+            particle.style.left = `${startX}px`;
+            particle.style.top = `${startY}px`;
+            particle.style.transform = `translate(-50%, -50%) scale(0.6)`;
+            particle.style.opacity = '1';
+            document.body.appendChild(particle);
+
+            const duration = 500 + i * 40;
+            const curveOffset = (Math.random() - 0.5) * 120;
+            const startTime = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+
+            function flyStep(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(1, elapsed / duration);
+                const t = progress;
+                const ctrlX = (startX + endX) / 2 + curveOffset;
+                const ctrlY = Math.min(startY, endY) - 50 - Math.random() * 20;
+
+                const curX = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * ctrlX + Math.pow(t, 2) * endX;
+                const curY = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * ctrlY + Math.pow(t, 2) * endY;
+                const scale = t < 0.2 ? (0.6 + t * 3) : (1.2 - (t - 0.2) * 0.5);
+
+                particle.style.left = `${curX.toFixed(1)}px`;
+                particle.style.top = `${curY.toFixed(1)}px`;
+                particle.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(2)})`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(flyStep);
+                } else {
+                    particle.remove();
+                    if (i === particleCount - 1 && targetEl) {
+                        targetEl.classList.remove('currency-card-flash');
+                        void targetEl.offsetWidth;
+                        targetEl.classList.add('currency-card-flash');
+                        if (typeof window.playSound === 'function') {
+                            window.playSound('ding');
+                        }
+                    }
+                }
+            }
+
+            setTimeout(() => requestAnimationFrame(flyStep), i * 30);
+        }
+    }
+
+    function getLootConfigForResourceType(resType) {
+        const typeMap = {
+            gold: { selector: '.vault-pill--gold', icon: '🪙' },
+            spirit_stones: { selector: '.vault-pill--gold', icon: '🪙' },
+            tu_vi: { selector: '.vault-pill--tuvi', icon: '⚡' },
+            herb: { selector: '.vault-pill--herb', icon: '🌿' },
+            ore: { selector: '.vault-pill--ore', icon: '💎' }
+        };
+        return typeMap[resType] || { selector: '.vault-pill--gold', icon: '💎' };
+    }
+
     function claimSingleNode(nodeId) {
         const node = ESTATE_NODES.find(n => n.id === nodeId);
         if (!node) return;
@@ -259,16 +370,42 @@
             return;
         }
 
+        // Trigger Loot Magnet visual effect
+        const btnEl = document.querySelector(`[onclick*="claimSingleNode('${nodeId}')"]`);
+        const cfg = getLootConfigForResourceType(node.resourceType);
+        const targetPill = document.querySelector(cfg.selector);
+        if (btnEl && targetPill) {
+            spawnLootMagnetEffect(btnEl.getBoundingClientRect(), targetPill, cfg.icon, 8);
+        }
+
         addResourceToPlayer(node.resourceType, amountToClaim);
         node.currentAmount -= amountToClaim;
 
         showEstateToast(`💎 Đã thu nạp +${amountToClaim.toLocaleString()} ${node.resourceName}!`);
+        if (typeof window.addLog === 'function') {
+            window.addLog(`🏡 <span class="text-emerald-300 font-bold">[Động Phủ Thu Nạp]</span> Đã thu hoạch <strong>+${amountToClaim.toLocaleString()} ${node.resourceName}</strong> từ ${node.name}!`, 'text-emerald-300');
+        }
         updateEstateUI();
     }
 
     function claimAllEstateResources(isAuto = false) {
         let totalClaimed = 0;
         const summary = [];
+
+        // Trigger Loot Magnet visual effects for all active nodes
+        if (!isAuto) {
+            const btnAll = document.getElementById('btn-claim-all');
+            const startRect = btnAll ? btnAll.getBoundingClientRect() : null;
+            ESTATE_NODES.forEach(n => {
+                if (n.currentAmount > 0) {
+                    const cfg = getLootConfigForResourceType(n.resourceType);
+                    const targetPill = document.querySelector(cfg.selector);
+                    if (targetPill) {
+                        spawnLootMagnetEffect(startRect, targetPill, cfg.icon, 6);
+                    }
+                }
+            });
+        }
 
         ESTATE_NODES.forEach(node => {
             const amount = Math.floor(node.currentAmount);
@@ -287,8 +424,14 @@
 
         if (isAuto) {
             showEstateToast(`🌸 [Liễu Như Yên Tự Động Thu Hoạch]: ${summary.join(', ')}!`);
+            if (typeof window.addLog === 'function') {
+                window.addLog(`🌸 <span class="text-pink-300 font-bold">[Đạo Lữ Thu Hoạch]</span> Liễu Như Yên đã tự động thu gom toàn bộ sản lượng Động Phủ: ${summary.join(', ')}!`, 'text-pink-300');
+            }
         } else {
             showEstateToast(`✨ Thu thập tất cả thành công: ${summary.join(', ')}!`);
+            if (typeof window.addLog === 'function') {
+                window.addLog(`🏡 <span class="text-emerald-300 font-bold">[Động Phủ Đại Thu Hoạch]</span> Đã thu gom toàn bộ sản vật 4 Linh Trận: <strong>${summary.join(', ')}</strong>!`, 'text-emerald-300');
+            }
         }
 
         updateEstateUI();
@@ -552,4 +695,6 @@
     globalThis.ESTATE_NODES = ESTATE_NODES;
     globalThis.COMPANIONS_LIST = COMPANIONS_LIST;
     window.initEstateIdleLoop = initEstateIdleLoop;
+    window.catchUpEstateProgress = catchUpEstateProgress;
+    globalThis.catchUpEstateProgress = catchUpEstateProgress;
 })();

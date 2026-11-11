@@ -51,15 +51,38 @@
     let combatTimer = null;
     let isAutoClimbOn = false;
 
+    const BOSS_TIER_NAMES = [
+        "U Ảnh Ám Lang", "Độc Vĩ Hắc Hạt", "Xích Diễm Ma Bọ",
+        "Thiết Giáp Cự Chu", "Băng Tinh Ma Báo", "Huyết Nhãn Khôi Lỗi",
+        "Âm Phong Dơi Quỷ", "Hắc Thủy Mãng Xà", "Cửu U Ma Thú"
+    ];
+    const MILESTONE_BOSS_TITLES = {
+        10: "Xích Diễm Huyết Lang Vương (Đại Yêu Vương)",
+        20: "Huyết Dực Ma Hoàng (Đại Ma Hoàng)",
+        30: "Cửu U Ma Tôn (Thượng Cổ Ma Thần)",
+        40: "Vạn Độc Ma Quân (Chí Tôn Ma Đạo)",
+        50: "Vô Cực Huyết Ma Thần (Bất Hủ Ma Tổ)"
+    };
+
     function createFloorBoss(floor) {
         const baseHp = 30000 + (floor * 3500);
         const baseAtk = 3000 + (floor * 300);
         const baseDef = 1800 + (floor * 200);
         const cp = Math.round((baseAtk * 2) + (baseDef * 1.5) + (baseHp * 0.1));
 
+        let bossName = MILESTONE_BOSS_TITLES[floor];
+        if (!bossName) {
+            if (floor % 10 === 0) {
+                bossName = `Thái Cổ Ma Hoàng (Tầng ${floor})`;
+            } else {
+                const subIndex = ((floor - 1) % BOSS_TIER_NAMES.length);
+                bossName = `${BOSS_TIER_NAMES[subIndex]} (Tầng ${floor})`;
+            }
+        }
+
         return {
             floor: floor,
-            name: `Huyết Dực Bọ Hung (Tầng ${floor})`,
+            name: bossName,
             maxHp: baseHp,
             hp: baseHp,
             atk: baseAtk,
@@ -393,6 +416,7 @@
         if (Math.random() < defender.dodgeRate) {
             appendLog(`💨 [Né Tránh] ${defender.name} nhanh như chớp né tránh công kích!`, 'log-entry--dodge');
             triggerFloatingDamage('Né Tránh!', 'damage-number-pop--dodge', isPlayer ? 'boss' : 'player');
+            triggerSpriteDodge(isPlayer ? 'boss' : 'player');
             return;
         }
 
@@ -415,12 +439,12 @@
         defender.hp = Math.max(0, defender.hp - finalDmg);
         updateHPDisplays();
 
-        // Hiệu ứng Sprite chớp đỏ mờ & rung nhẹ
-        triggerSpriteHurt(isPlayer ? 'boss' : 'player');
+        // Hiệu ứng Sprite chớp đỏ mờ, rung nhẹ & kiếm khí vệt chém
+        triggerSpriteHurt(isPlayer ? 'boss' : 'player', isCrit);
 
-        // Floating Damage Number
+        // Floating Damage Number với vật lý trọng lực
         if (isCrit) {
-            triggerFloatingDamage(`CRIT! -${finalDmg.toLocaleString()}`, 'damage-number-pop--crit', isPlayer ? 'boss' : 'player');
+            triggerFloatingDamage(`⚡ BẠO KÍCH! -${finalDmg.toLocaleString()}`, 'damage-number-pop--crit', isPlayer ? 'boss' : 'player');
             appendLog(`💥 [Bạo Kích] ${attacker.name} đánh trúng tử huyệt, bạo kích <b>${finalDmg.toLocaleString()}</b> sát thương!`, 'log-entry--crit');
         } else {
             triggerFloatingDamage(`-${finalDmg.toLocaleString()}`, 'damage-number-pop--normal', isPlayer ? 'boss' : 'player');
@@ -456,17 +480,78 @@
 
     function triggerAttackDash(target) {
         const img = document.getElementById(target === 'player' ? 'player-sprite-img' : 'boss-sprite-img');
-        if (!img) return;
-        const animClass = target === 'player' ? 'player-attack-dash' : 'boss-attack-dash';
-        img.classList.add(animClass);
-        setTimeout(() => img.classList.remove(animClass), 460);
+        if (img) {
+            const animClass = target === 'player' ? 'player-attack-dash' : 'boss-attack-dash';
+            img.classList.add(animClass);
+            setTimeout(() => img.classList.remove(animClass), 460);
+        }
+        if (typeof window.triggerRigCombatAnim === 'function') {
+            window.triggerRigCombatAnim(target === 'player' ? '#player-model-rig' : '#boss-model-rig', 'lunge', target === 'boss');
+        }
     }
 
-    function triggerSpriteHurt(target) {
+    function spawnSlashArcTrail(target, isCrit) {
+        const slot = document.getElementById(target === 'player' ? 'player-stage-slot' : 'boss-stage-slot');
+        if (!slot) return;
+        const angle = target === 'player' ? (25 + Math.random() * 20) : (-25 - Math.random() * 20);
+        const slashSvg = document.createElement('div');
+        slashSvg.className = 'slash-arc-trail';
+        slashSvg.style.setProperty('--slash-angle', `${angle}deg`);
+        const strokeColor = isCrit ? '#facc15' : '#38bdf8';
+        const glowColor = isCrit ? '#ef4444' : '#0284c7';
+        slashSvg.innerHTML = `
+            <svg viewBox="0 0 200 200" fill="none" style="width:100%;height:100%;overflow:visible;">
+                <path d="M 20,40 Q 100,100 180,160" stroke="${glowColor}" stroke-width="12" stroke-linecap="round" opacity="0.6" filter="blur(4px)" />
+                <path d="M 20,40 Q 100,100 180,160" stroke="${strokeColor}" stroke-width="5" stroke-linecap="round" />
+                <path d="M 25,45 Q 100,100 175,155" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        `;
+        slot.appendChild(slashSvg);
+        setTimeout(() => slashSvg.remove(), 340);
+    }
+
+    function triggerSpriteHurt(target, isCrit = false) {
         const img = document.getElementById(target === 'player' ? 'player-sprite-img' : 'boss-sprite-img');
-        if (!img) return;
-        img.classList.add('sprite-hurt-flash');
-        setTimeout(() => img.classList.remove('sprite-hurt-flash'), 360);
+        const slot = document.getElementById(target === 'player' ? 'player-stage-slot' : 'boss-stage-slot');
+        if (img) {
+            img.classList.add('sprite-hurt-flash');
+            setTimeout(() => img.classList.remove('sprite-hurt-flash'), 360);
+        }
+        if (slot) {
+            const pushClass = target === 'player' ? 'target-pushback-player' : 'target-pushback-boss';
+            slot.classList.add(pushClass);
+            setTimeout(() => slot.classList.remove(pushClass), 380);
+        }
+        spawnSlashArcTrail(target, isCrit);
+
+        if (isCrit) {
+            // 60ms Hit-Stop tạo trọng lực va chạm
+            const modal = document.getElementById('modal-tran-yeu-thap');
+            if (modal) {
+                modal.classList.add('tower-hit-stop');
+                setTimeout(() => modal.classList.remove('tower-hit-stop'), 60);
+            }
+            if (typeof window.triggerCameraTrauma === 'function') {
+                window.triggerCameraTrauma(0.5, 'modal-tran-yeu-thap');
+            }
+            if (window.soundSystem?.play) {
+                window.soundSystem.play('break');
+            }
+        } else {
+            if (window.soundSystem?.play) {
+                window.soundSystem.play('hit');
+            }
+        }
+
+        if (typeof window.triggerRigCombatAnim === 'function') {
+            window.triggerRigCombatAnim(target === 'player' ? '#player-model-rig' : '#boss-model-rig', 'hit', target === 'boss');
+        }
+    }
+
+    function triggerSpriteDodge(target) {
+        if (typeof window.triggerRigCombatAnim === 'function') {
+            window.triggerRigCombatAnim(target === 'player' ? '#player-model-rig' : '#boss-model-rig', 'dodge', target === 'boss');
+        }
     }
 
     function triggerFloatingDamage(text, cssClass, target) {
@@ -474,9 +559,11 @@
         if (!anchor) return;
         const pop = document.createElement('div');
         pop.className = `damage-number-pop ${cssClass}`;
+        const randomDx = (Math.random() - 0.5) * 44;
+        pop.style.setProperty('--dx', `${randomDx}px`);
         pop.textContent = text;
         anchor.appendChild(pop);
-        setTimeout(() => pop.remove(), 1200);
+        setTimeout(() => pop.remove(), 1250);
     }
 
     function appendLog(html, className) {
@@ -598,6 +685,27 @@
         }
 
         updateHPDisplays();
+
+        // Đồng bộ tiến hóa ngoại hình 5-layer Model Rig
+        if (typeof window.getCultivatorVisualConfig === 'function') {
+            const pConfig = window.getCultivatorVisualConfig(window.state?.realm || 'Luyện Khí', window.state?.gender);
+            const pPedestal = document.getElementById('player-rig-pedestal');
+            const pBackAura = document.getElementById('player-rig-back-aura');
+            const pWeapon = document.getElementById('player-rig-weapon');
+            if (pPedestal) pPedestal.innerHTML = pConfig.pedestalSvg || '';
+            if (pBackAura) pBackAura.innerHTML = pConfig.backAuraSvg || '';
+            if (pWeapon) pWeapon.innerHTML = pConfig.weaponSvg || '';
+        }
+
+        if (typeof window.getMonsterVisualConfig === 'function') {
+            const bConfig = window.getMonsterVisualConfig(towerCurrentFloor, towerCurrentBoss?.name);
+            const bPedestal = document.getElementById('boss-rig-pedestal');
+            const bBackAura = document.getElementById('boss-rig-back-aura');
+            const bWeapon = document.getElementById('boss-rig-weapon');
+            if (bPedestal) bPedestal.innerHTML = bConfig.pedestalSvg || '';
+            if (bBackAura) bBackAura.innerHTML = bConfig.backAuraSvg || '';
+            if (bWeapon) bWeapon.innerHTML = bConfig.weaponSvg || '';
+        }
     }
 
     function fullHealPlayer() {

@@ -144,6 +144,16 @@
                 if (estateComp) estateComp.affectionLevel = newRank.level;
             }
 
+            // Cập nhật buff thụ động vào state người chơi
+            if (window.state) {
+                if (!window.state.companionBuffs) window.state.companionBuffs = {};
+                if (comp.id === 'companion_1') window.state.companionBuffs.hpPercent = newRank.level * 2;
+                else if (comp.id === 'companion_2') window.state.companionBuffs.atkPercent = newRank.level * 2;
+                else if (comp.id === 'companion_3') window.state.companionBuffs.defPercent = newRank.level * 2;
+                if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+                if (typeof window.updateHUD === 'function') window.updateHUD();
+            }
+
             // Thông báo thăng cấp hảo cảm nếu vượt mốc
             if (newRank.level > prevRank.level) {
                 showXianxiaToast(`💖 TÌNH CẢM THĂNG HOA! Quan hệ với [${comp.name}] đạt cảnh giới [${newRank.title}] (Cấp ${newRank.level})!`, "success");
@@ -198,6 +208,10 @@
             // Ghi nhận timestamp hồi chiêu
             playerState.lastDualCultivationTime = Date.now();
 
+            if (typeof window.addLog === 'function') {
+                window.addLog(`🌸 <span class="text-pink-300 font-bold">[Âm Dương Song Tu]</span> Cùng đạo lữ <strong>${comp.name}</strong> giao hòa tâm thần, chu thiên tuần hoàn! Thu hoạch <strong>+${gainedExp.toLocaleString('vi-VN')} Tu Vi</strong>!`, 'text-pink-300');
+            }
+
             if (typeof window.updateHUD === 'function') window.updateHUD();
             if (typeof window.saveGameState === 'function') window.saveGameState();
 
@@ -220,16 +234,28 @@
             const rewardBox = document.getElementById('dual-reward-amount-box');
             const resultText = document.getElementById('dual-result-text');
 
-            rewardBox.textContent = `+${gainedExp.toLocaleString('vi-VN')} Tu Vi Linh Lực!`;
-            if (breakthroughSuccess) {
-                resultText.innerHTML = `🌟 MA ĐẠO THẦN UY! Nhờ âm dương giao hòa cùng [${comp.name}], ngươi may mắn kích phát cảm ngộ, <b>ĐỘT PHÁ BÌNH CẢNH THÀNH CÔNG</b> mà không cần Đan dược!`;
-            } else {
-                resultText.textContent = `Ngươi cùng [${comp.name}] tâm thần hòa hợp, đôi bên vận chuyển chu thiên, linh lực như thủy triều dâng trào!`;
+            if (rewardBox) {
+                rewardBox.innerHTML = `
+                    <div class="dual-taiji-core mb-2 flex items-center justify-center">
+                        <i class="fa-solid fa-yin-yang text-5xl text-amber-300 animate-spin" style="animation-duration: 10s; filter: drop-shadow(0 0 18px rgba(245,158,11,0.7));"></i>
+                    </div>
+                    <span>+${gainedExp.toLocaleString('vi-VN')} Tu Vi Linh Lực!</span>
+                `;
             }
+            if (resultText) {
+                if (breakthroughSuccess) {
+                    resultText.innerHTML = `🌟 MA ĐẠO THẦN UY! Nhờ âm dương giao hòa cùng [${comp.name}], ngươi may mắn kích phát cảm ngộ, <b>ĐỘT PHÁ BÌNH CẢNH THÀNH CÔNG</b> mà không cần Đan dược!`;
+                } else {
+                    resultText.textContent = `Ngươi cùng [${comp.name}] tâm thần hòa hợp, đôi bên vận chuyển chu thiên, âm dương bổ khuyết, linh lực như thủy triều dâng trào!`;
+                }
+            }
+
+            if (window.soundSystem?.play) window.soundSystem.play('guzheng');
+            else if (typeof window.playSound === 'function') window.playSound('bell');
 
             // Sinh cánh hoa đào rơi
             generatePetals();
-            overlay.classList.add('is-active');
+            if (overlay) overlay.classList.add('is-active');
         }
 
         function closeDualAnimation() {

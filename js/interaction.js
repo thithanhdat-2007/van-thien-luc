@@ -624,22 +624,136 @@
                 return;
             }
 
-            const pad = 14;
-            let left = e.clientX + pad;
-            let top = e.clientY + pad;
-            const tipW = tooltip.offsetWidth || 260;
-            const tipH = tooltip.offsetHeight || 180;
+            const pad = 12;
+            const tipW = tooltip.offsetWidth || 280;
+            const tipH = tooltip.offsetHeight || 220;
+
+            let left = e.clientX + 16;
+            let top = e.clientY + 16;
 
             if (left + tipW > window.innerWidth - pad) {
-                left = e.clientX - tipW - pad;
+                left = e.clientX - tipW - 16;
             }
             if (top + tipH > window.innerHeight - pad) {
-                top = e.clientY - tipH - pad;
+                top = e.clientY - tipH - 16;
             }
 
-            tooltip.style.left = `${Math.max(pad, left)}px`;
-            tooltip.style.top = `${Math.max(pad, top)}px`;
+            left = Math.max(pad, Math.min(window.innerWidth - tipW - pad, left));
+            top = Math.max(pad, Math.min(window.innerHeight - tipH - pad, top));
+
+            tooltip.style.left = `${Math.round(left)}px`;
+            tooltip.style.top = `${Math.round(top)}px`;
         });
+
+        // Khởi động Parallax chiều sâu không gian
+        initParallaxVFX();
+
+        // 5. TƯƠNG TÁC TỤ KHÍ KHI CHẠM NHÂN VẬT (Avatar Qi Tap & Guzheng Synesthesia)
+        const charAvatar = document.getElementById('char-main-img') || document.getElementById('player-avatar');
+        if (charAvatar) {
+            charAvatar.addEventListener('pointerdown', (e) => {
+                if (typeof window.triggerQiBurst === 'function') {
+                    window.triggerQiBurst(e.clientX, e.clientY);
+                }
+                if (typeof window.playSound === 'function') {
+                    window.playSound('guzheng');
+                }
+                if (typeof window.addExp === 'function') {
+                    const bonusExp = Math.max(1, Math.round((window.state?.spiritRate || 5) * 0.5));
+                    window.addExp(bonusExp);
+                }
+                const floating = document.getElementById('floating-text-container');
+                if (floating) {
+                    const span = document.createElement('span');
+                    span.className = 'inline-block text-xs font-mono font-bold text-amber-300 animate-bounce pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]';
+                    span.textContent = '+Linh Khí';
+                    floating.appendChild(span);
+                    setTimeout(() => span.remove(), 800);
+                }
+            });
+        }
+    }
+
+    /**
+     * Parallax Chuẩn Tiên Hiệp 3D (Depth-of-Field Parallax Controller)
+     * Nhẹ nhàng, êm dịu, không giật lag (Lerp 0.06 / requestAnimationFrame)
+     */
+    function initParallaxVFX() {
+        if (typeof window === 'undefined') return;
+        const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) return;
+
+        const bgArt = document.getElementById('scene-bg-art');
+        const mistLayer = document.getElementById('tsparticles');
+        const charInner = document.getElementById('char-main-img');
+        if (!bgArt) return;
+
+        let targetX = 0, targetY = 0;
+        let currentBgX = 0, currentBgY = 0;
+        let currentMistX = 0, currentMistY = 0;
+        let currentCharX = 0, currentCharY = 0;
+        let isTicking = false;
+        let idleTimer = null;
+
+        function updateParallax() {
+            const lerpFactor = 0.06;
+            currentBgX += (targetX * -14 - currentBgX) * lerpFactor;
+            currentBgY += (targetY * -8 - currentBgY) * lerpFactor;
+
+            currentMistX += (targetX * -22 - currentMistX) * lerpFactor;
+            currentMistY += (targetY * -12 - currentMistY) * lerpFactor;
+
+            currentCharX += (targetX * 5 - currentCharX) * lerpFactor;
+            currentCharY += (targetY * 3 - currentCharY) * lerpFactor;
+
+            if (bgArt) {
+                bgArt.style.transform = `translate3d(${currentBgX.toFixed(2)}px, ${currentBgY.toFixed(2)}px, 0) scale(1.035)`;
+            }
+            if (mistLayer) {
+                mistLayer.style.transform = `translate3d(${currentMistX.toFixed(2)}px, ${currentMistY.toFixed(2)}px, 0)`;
+            }
+            if (charInner) {
+                charInner.style.transform = `translate3d(${currentCharX.toFixed(2)}px, ${currentCharY.toFixed(2)}px, 0)`;
+            }
+
+            const delta = Math.abs(currentBgX - targetX * -14) + Math.abs(currentBgY - targetY * -8);
+            if (delta > 0.05) {
+                requestAnimationFrame(updateParallax);
+            } else {
+                isTicking = false;
+            }
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            const w = window.innerWidth || 1280;
+            const h = window.innerHeight || 800;
+            targetX = (e.clientX - w / 2) / (w / 2);
+            targetY = (e.clientY - h / 2) / (h / 2);
+
+            if (!isTicking) {
+                isTicking = true;
+                requestAnimationFrame(updateParallax);
+            }
+
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                targetX = 0;
+                targetY = 0;
+                if (!isTicking) {
+                    isTicking = true;
+                    requestAnimationFrame(updateParallax);
+                }
+            }, 3000);
+        }, { passive: true });
+
+        window.addEventListener('mouseleave', () => {
+            targetX = 0;
+            targetY = 0;
+            if (!isTicking) {
+                isTicking = true;
+                requestAnimationFrame(updateParallax);
+            }
+        }, { passive: true });
     }
 
     // Khởi chạy khi tài liệu tải xong

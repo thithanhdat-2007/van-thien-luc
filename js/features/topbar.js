@@ -35,8 +35,18 @@
      */
     function updateTopResourceBar(data) {
         if (!data) return;
-        const setTextIfChanged = (element, value) => {
-            if (element && element.textContent !== value) element.textContent = value;
+        const setTextIfChanged = (element, value, triggerFlash = false) => {
+            if (element && element.textContent !== value) {
+                element.textContent = value;
+                if (triggerFlash) {
+                    const card = element.closest('.currency-card');
+                    if (card) {
+                        card.classList.remove('currency-card-flash');
+                        void card.offsetWidth;
+                        card.classList.add('currency-card-flash');
+                    }
+                }
+            }
         };
         const setWidthIfChanged = (element, value) => {
             if (element && element.style.width !== value) element.style.width = value;
@@ -45,11 +55,11 @@
         // 1. Cập nhật Tiền tệ
         if (typeof data.stones !== 'undefined') {
             const elStones = document.getElementById('top-spirit-stones');
-            setTextIfChanged(elStones, formatNumber(data.stones));
+            setTextIfChanged(elStones, formatNumber(data.stones), true);
         }
         if (typeof data.jade !== 'undefined') {
             const elJade = document.getElementById('top-immortal-jade');
-            setTextIfChanged(elJade, formatNumber(data.jade));
+            setTextIfChanged(elJade, formatNumber(data.jade), true);
         }
 
         // 2. Cập nhật Khối Linh Khí / Tu Vi

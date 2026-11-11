@@ -122,9 +122,8 @@
 
         const avatarImg = document.getElementById('tribulation-avatar-img');
         if (avatarImg) {
-            avatarImg.src = (typeof window.getPlayerAvatarUrl === 'function' && window.getPlayerAvatarUrl())
-                || gState?.player?.avatar_url || gState?.avatar_url || gState?.avatar
-                || './assets/images/image_11.png';
+            // Keep the original female cultivator artwork for this scene.
+            avatarImg.src = window.DEFAULT_CULTIVATION_AVATAR || './assets/images/image_11.png';
         }
 
         const shieldNum = document.getElementById('trib-shield-num');
@@ -379,6 +378,9 @@
 
         // Nổi sát thương
         spawnFloatingDamage(`-${strikeDamage.toLocaleString()} HP`);
+        if (typeof window.addLog === 'function') {
+            window.addLog(`⚡ <span class="text-amber-400 font-bold">[Thiên Kiếp Giáng Lâm]</span> Đạo lôi thứ <strong>${cur}/${total}</strong> oanh tạc hộ thể chân khí (-${strikeDamage.toLocaleString()} HP)!`, 'text-amber-300');
+        }
 
         // Kiểm tra sống chết
         if (doKiepState.currentShield <= 0) {
@@ -387,6 +389,9 @@
             if (stateDesc) {
                 stateDesc.textContent = '💀 Chân khí vỡ vụn, đạo cơ chấn động!';
                 stateDesc.style.color = '#ef4444';
+            }
+            if (typeof window.addLog === 'function') {
+                window.addLog(`💀 <span class="text-rose-400 font-bold">[Độ Kiếp Bất Thành]</span> Chân khí hộ thể vỡ nát, đạo cơ chấn động trước uy áp thiên lôi!`, 'text-rose-400');
             }
 
             doKiepState.strikeTimer = setTimeout(() => {
@@ -402,6 +407,9 @@
             if (stateDesc) {
                 stateDesc.textContent = 'Đã vượt qua lôi kiếp, đang kết toán bình cảnh...';
                 stateDesc.style.color = '#34d399';
+            }
+            if (typeof window.addLog === 'function') {
+                window.addLog(`✨ <span class="text-emerald-300 font-bold">[Độ Kiếp Viên Mãn]</span> Vượt qua toàn bộ <strong>${total} đạo lôi kiếp</strong>! Bình cảnh giải trừ, đạo cơ thăng hoa!`, 'text-emerald-300');
             }
 
             doKiepState.strikeTimer = setTimeout(() => {

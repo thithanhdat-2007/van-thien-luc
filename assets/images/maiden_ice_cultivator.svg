@@ -1,0 +1,335 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-260 -430 520 580" role="img" aria-label="Nữ tu băng hệ đả tọa">
+<defs>
+<radialGradient id="maidenBackAura" cx="50%" cy="48%" r="50%">
+                        <stop id="aura-stop-1" offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                        <stop id="aura-stop-2" offset="32%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                        <stop id="aura-stop-3" offset="68%" stop-color="#6366f1" stop-opacity="0.22"/>
+                        <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+                    </radialGradient>
+
+                    <!-- BỘ GRADIENT & FILTER CHUYÊN DỤNG CHO MODEL 2D ANIME CEL-SHADING ĐỘC QUYỀN -->
+                    <linearGradient id="waterWaveCrestGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="45%" stop-color="#e0f2fe"/>
+                        <stop offset="82%" stop-color="#7dd3fc"/>
+                        <stop offset="100%" stop-color="#0284c7"/>
+                    </linearGradient>
+
+                    <linearGradient id="waterWaveShadowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f0f9ff"/>
+                        <stop offset="50%" stop-color="#bae6fd"/>
+                        <stop offset="100%" stop-color="#38bdf8"/>
+                    </linearGradient>
+
+                    <linearGradient id="hanfuOuterSleeveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop id="hanfu-s-1" offset="0%" stop-color="#ffffff"/>
+                        <stop id="hanfu-s-2" offset="52%" stop-color="#e0f2fe"/>
+                        <stop id="hanfu-s-3" offset="88%" stop-color="#93c5fd"/>
+                        <stop offset="100%" stop-color="#60a5fa"/>
+                    </linearGradient>
+
+                    <linearGradient id="hanfuDeepFoldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop id="hanfu-f-1" offset="0%" stop-color="#bae6fd"/>
+                        <stop id="hanfu-f-2" offset="60%" stop-color="#60a5fa"/>
+                        <stop id="hanfu-f-3" offset="100%" stop-color="#2563eb"/>
+                    </linearGradient>
+
+                    <linearGradient id="animePorcelainSkin" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fffcfb"/>
+                        <stop offset="65%" stop-color="#ffefe8"/>
+                        <stop offset="100%" stop-color="#fbd5c8"/>
+                    </linearGradient>
+
+                    <linearGradient id="animeHairGloss" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#090d16"/>
+                        <stop offset="38%" stop-color="#1e293b"/>
+                        <stop offset="52%" stop-color="#0f172a"/>
+                        <stop offset="100%" stop-color="#03050a"/>
+                    </linearGradient>
+
+                    <radialGradient id="dantianSpiritFlameGrad" cx="50%" cy="62%" r="55%">
+                        <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+                        <stop id="flame-core-stop" offset="38%" stop-color="#67e8f9" stop-opacity="0.95"/>
+                        <stop id="flame-outer-stop" offset="75%" stop-color="#0284c7" stop-opacity="0.65"/>
+                        <stop offset="100%" stop-color="#1e3a8a" stop-opacity="0"/>
+                    </radialGradient>
+
+                    <!-- Viền Sticker Trắng Sắc Nét Ôm Trọn Model 2D Chuẩn Ảnh Mẫu -->
+                    <filter id="animeStickerGlow" x="-25%" y="-25%" width="150%" height="150%">
+                        <feMorphology in="SourceAlpha" operator="dilate" radius="3.2" result="dilated"/>
+                        <feFlood flood-color="#ffffff" flood-opacity="0.96" result="whiteStroke"/>
+                        <feComposite in="whiteStroke" in2="dilated" operator="in" result="stickerOutline"/>
+                        <feGaussianBlur in="dilated" stdDeviation="6" result="outerBlur"/>
+                        <feFlood flood-color="#38bdf8" flood-opacity="0.45" result="cyanGlowColor"/>
+                        <feComposite in="cyanGlowColor" in2="outerBlur" operator="in" result="cyanAura"/>
+                        <feMerge>
+                            <feMergeNode in="cyanAura"/>
+                            <feMergeNode in="stickerOutline"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+
+                    <style>
+                        @keyframes rigTorsoBreathe {
+                            0%, 100% { transform: translateY(0px) scaleY(1); }
+                            50% { transform: translateY(-2.8px) scaleY(1.012); }
+                        }
+                        @keyframes rigHeadFloat {
+                            0%, 100% { transform: translateY(0px) rotate(0deg); }
+                            50% { transform: translateY(-3.5px) rotate(-0.6deg); }
+                        }
+                        @keyframes rigHairBillow {
+                            0%, 100% { transform: rotate(0deg) skewX(0deg); }
+                            50% { transform: rotate(-2.2deg) skewX(-3.5deg) scaleX(1.025); }
+                        }
+                        @keyframes rigRibbonWave {
+                            0%, 100% { transform: rotate(0deg) translateY(0px); }
+                            50% { transform: rotate(3.2deg) translateY(-4px); }
+                        }
+                        @keyframes rigFlamePulse {
+                            0%, 100% { transform: scale(1) translateY(0px); opacity: 0.92; }
+                            50% { transform: scale(1.12, 1.18) translateY(-3px); opacity: 1; }
+                        }
+                        @keyframes rigWaveSurge {
+                            0%, 100% { transform: scaleX(1) scaleY(1); }
+                            50% { transform: scaleX(1.025) scaleY(1.04); }
+                        }
+                        @keyframes rigPetalDrift {
+                            0%, 100% { transform: translateY(0px) rotate(0deg); }
+                            50% { transform: translateY(-8px) rotate(12deg); }
+                        }
+                        .rig-torso { animation: rigTorsoBreathe 3.6s ease-in-out infinite; transform-origin: 0px 60px; }
+                        .rig-head { animation: rigHeadFloat 3.6s ease-in-out infinite; transform-origin: 0px -55px; }
+                        .rig-hair-flow { animation: rigHairBillow 3.2s ease-in-out infinite; transform-origin: 15px -95px; }
+                        .rig-ribbon-flow { animation: rigRibbonWave 2.6s ease-in-out infinite; transform-origin: 20px -105px; }
+                        .rig-spirit-flame { animation: rigFlamePulse 1.5s ease-in-out infinite; transform-origin: 0px 16px; }
+                        .rig-water-lotus { animation: rigWaveSurge 3.8s ease-in-out infinite; transform-origin: 0px 115px; }
+                        .rig-petals { animation: rigPetalDrift 4.2s ease-in-out infinite; }
+                    </style>
+<filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+<filter id="divineBloom" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<style>.hidden { display: none; } @media (prefers-reduced-motion: reduce) { .rig-torso, .rig-head, .rig-hair-flow, .rig-ribbon-flow, .rig-spirit-flame, .rig-water-lotus, .rig-petals { animation: none !important; } }</style>
+<g id="maiden-master-group" class="maiden-float" transform="translate(0, -155) scale(1.18)">
+                        <!-- Bóng đổ và Đĩa Ánh Sáng Trắng-Lam lót dưới Băng Liên Tọa -->
+                        <ellipse cx="0" cy="152" rx="176" ry="26" fill="#020617" opacity="0.78" filter="url(#softGlow)"/>
+                        <ellipse cx="0" cy="144" rx="156" ry="21" fill="#bae6fd" opacity="0.88" filter="url(#softGlow)"/>
+                        <ellipse cx="0" cy="140" rx="140" ry="15" fill="#ffffff" opacity="0.98"/>
+
+                        <!-- MODEL 2D ANIME NỮ TU BĂNG HỆ ĐỘC QUYỀN (RIGGED CEL-SHADED ILLUSTRATION) -->
+                        <g id="maiden-png-artwork" filter="url(#animeStickerGlow)">
+                            <!-- Vầng hào quang Băng Liên mờ ảo phía sau lưng -->
+                            <circle cx="0" cy="-15" r="155" fill="url(#maidenBackAura)" style="mix-blend-mode: screen;" pointer-events="none"/>
+
+                            <!-- LỚP 1: DẢI LỤA TRẮNG & SUỐI TÓC ĐEN BAY PHẤP PHỚI SANG BÊN PHẢI (RIGGED HAIR & RIBBONS) -->
+                            <g class="rig-ribbon-flow">
+                                <!-- Dải lụa tiên trắng-lam bay vút sang góc phải trên như ảnh mẫu -->
+                                <path d="M18,-132 C62,-146 118,-138 158,-112 C178,-98 192,-104 202,-115 C186,-88 158,-86 126,-102 C88,-122 52,-124 18,-122 Z" fill="#ffffff" stroke="#1e3a5f" stroke-width="1.4"/>
+                                <path d="M24,-105 C78,-112 136,-92 178,-62 C194,-50 208,-54 216,-64 C198,-38 168,-40 132,-64 C94,-88 58,-96 24,-96 Z" fill="url(#waterWaveShadowGrad)" stroke="#1e3a5f" stroke-width="1.4"/>
+                                <!-- Dải lụa bên trái bay nhẹ -->
+                                <path d="M-22,-126 C-58,-132 -92,-112 -114,-82 C-92,-96 -58,-112 -22,-116 Z" fill="#e0f2fe" stroke="#1e3a5f" stroke-width="1.3"/>
+                            </g>
+
+                            <g class="rig-hair-flow">
+                                <!-- Tóc đen dài bay thành nhiều lọn sắc nét sang bên phải -->
+                                <path d="M12,-120 C68,-116 128,-88 176,-42 C142,-52 104,-68 62,-72 C112,-46 154,-12 184,24 C142,4 98,-18 54,-32 C98,2 132,38 148,72 C108,48 68,18 32,-8 L-38,-8 C-62,18 -88,48 -112,72 C-102,34 -82,-8 -54,-46 C-42,-88 -24,-116 12,-120 Z" fill="url(#animeHairGloss)" stroke="#0f172a" stroke-width="1.6" stroke-linejoin="round"/>
+                                <!-- Các lọn tóc mảnh bay tách rời tạo độ phiêu -->
+                                <path d="M58,-96 C108,-88 152,-64 188,-32" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+                                <path d="M72,-62 C122,-48 162,-18 194,14" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+                                <path d="M-44,-72 C-76,-42 -98,-4 -116,36" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+                            </g>
+
+                            <!-- LỚP 2: ĐÀI SÓNG NƯỚC BĂNG ĐÀO THỦY LIÊN TẦNG HẬU & HAI BÊN (BACK & SIDE WATER LOTUS CRESTS) -->
+                            <g class="rig-water-lotus" stroke="#1e3a5f" stroke-width="1.5" stroke-linejoin="round">
+                                <!-- Ngọn sóng lớn vươn cao bên trái -->
+                                <path d="M-88,92 C-148,78 -196,36 -192,-18 C-178,18 -144,42 -102,52 C-146,24 -168,-14 -152,-52 C-138,-14 -106,18 -64,34 Z" fill="url(#waterWaveShadowGrad)"/>
+                                <path d="M-104,106 C-162,96 -208,62 -212,18 C-188,48 -148,68 -96,74 Z" fill="url(#waterWaveCrestGrad)"/>
+                                <!-- Ngọn sóng lớn vươn cao bên phải -->
+                                <path d="M88,92 C148,78 196,36 192,-18 C178,18 144,42 102,52 C146,24 168,-14 152,-52 C138,-14 106,18 64,34 Z" fill="url(#waterWaveShadowGrad)"/>
+                                <path d="M104,106 C162,96 208,62 212,18 C188,48 148,68 96,74 Z" fill="url(#waterWaveCrestGrad)"/>
+                                <!-- Bọt sóng trắng uốn lượn hai bên sườn -->
+                                <path d="M-192,-18 C-182,-2 -164,14 -142,24 L-152,36 C-176,22 -190,4 -192,-18 Z" fill="#ffffff"/>
+                                <path d="M192,-18 C182,-2 164,14 142,24 L152,36 C176,22 190,4 192,-18 Z" fill="#ffffff"/>
+                            </g>
+
+                            <!-- LỚP 3: THÂN TRÊN, ĐẠO BÀO HÁN PHỤC NHIỀU LỚP & ĐÔI TAY KẾT ẤN (RIGGED TORSO & HANFU) -->
+                            <g class="rig-torso">
+                                <!-- Hai ống tay áo Quảng Tụ xòe rộng sang hai bên như cánh sen -->
+                                <g stroke="#1e3a5f" stroke-width="1.6" stroke-linejoin="round">
+                                    <!-- Tay áo lớn bên trái -->
+                                    <path d="M-34,-44 C-68,-26 -108,8 -136,52 C-144,68 -132,92 -106,96 C-78,100 -52,82 -34,54 Z" fill="url(#hanfuOuterSleeveGrad)"/>
+                                    <!-- Nếp gấp bóng đổ cel-shading trên tay áo trái -->
+                                    <path d="M-46,-18 C-74,6 -102,38 -118,68 C-98,76 -74,68 -52,48 Z" fill="url(#hanfuDeepFoldGrad)" stroke="none"/>
+                                    <path d="M-52,-12 C-78,14 -98,42 -112,68 M-40,4 C-64,28 -82,52 -92,76" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+
+                                    <!-- Tay áo lớn bên phải -->
+                                    <path d="M34,-44 C68,-26 108,8 136,52 C144,68 132,92 106,96 C78,100 52,82 34,54 Z" fill="url(#hanfuOuterSleeveGrad)"/>
+                                    <!-- Nếp gấp bóng đổ cel-shading trên tay áo phải -->
+                                    <path d="M46,-18 C74,6 102,38 118,68 C98,76 74,68 52,48 Z" fill="url(#hanfuDeepFoldGrad)" stroke="none"/>
+                                    <path d="M52,-12 C78,14 98,42 112,68 M40,4 C64,28 82,52 92,76" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+                                </g>
+
+                                <!-- Chân xếp bằng Đả Tọa & Tà váy Hán Phục trải rộng trên đài sen -->
+                                <g stroke="#1e3a5f" stroke-width="1.6" stroke-linejoin="round">
+                                    <!-- Hai đầu gối xếp bằng trong tà váy lụa trắng-lam -->
+                                    <path d="M-126,102 C-138,76 -96,56 -42,58 L42,58 C96,56 138,76 126,102 C112,126 62,134 0,134 C-62,134 -112,126 -126,102 Z" fill="url(#hanfuOuterSleeveGrad)"/>
+                                    <!-- Bóng đổ nếp gấp váy dưới hai đầu gối -->
+                                    <path d="M-114,98 C-86,78 -48,76 -16,92 C-48,112 -88,116 -114,98 Z" fill="url(#hanfuDeepFoldGrad)" stroke="none"/>
+                                    <path d="M114,98 C86,78 48,76 16,92 C48,112 88,116 114,98 Z" fill="url(#hanfuDeepFoldGrad)" stroke="none"/>
+                                    <!-- Tà áo chính diện rủ giữa hai chân (Quần Điệp) -->
+                                    <path d="M-38,48 L38,48 L52,126 C18,136 -18,136 -52,126 Z" fill="#ffffff"/>
+                                    <path d="M-28,52 L28,52 L36,124 C12,130 -12,130 -36,124 Z" fill="url(#waterWaveShadowGrad)"/>
+                                    <!-- Đường nét nếp vải tinh xảo trên đùi và tà áo -->
+                                    <path d="M-98,88 C-68,76 -38,82 -18,96 M98,88 C68,76 38,82 18,96 M-14,56 L-20,120 M14,56 L20,120 M0,54 L0,126" fill="none" stroke="#1e3a5f" stroke-width="1.2"/>
+                                </g>
+
+                                <!-- Thân áo Giao Lĩnh 3 lớp trước ngực & Đai lưng Băng Lam -->
+                                <g stroke="#1e3a5f" stroke-width="1.5" stroke-linejoin="round">
+                                    <path d="M-36,-48 C-42,-18 -34,16 -30,48 L30,48 C34,16 42,-18 36,-48 Z" fill="#ffffff"/>
+                                    <!-- Viền cổ áo Giao Lĩnh màu xanh băng lam chuẩn ảnh mẫu -->
+                                    <path d="M-24,-52 L4,-8 L-8,-8 L-30,-48 Z" fill="#7dd3fc"/>
+                                    <path d="M24,-52 L-12,4 L0,4 L30,-48 Z" fill="#7dd3fc"/>
+                                    <path d="M-18,-52 L0,-16 L18,-52" fill="#e0f2fe"/>
+                                    <!-- Đai lưng lụa buộc cao dưới ngực -->
+                                    <path d="M-32,18 C-12,24 12,24 32,18 L34,34 C12,40 -12,40 -34,34 Z" fill="#bae6fd"/>
+                                    <path d="M-32,24 C-12,30 12,30 32,24" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                                </g>
+
+                                <!-- Vết thương & Vết máu trên áo khi Trọng Thương (<50% HP) -->
+                                <g id="maiden-injured-overlay" opacity="0">
+                                    <path d="M-12,-14 Q6,-2 -4,18 Q12,12 18,32" stroke="#e11d48" stroke-width="3" stroke-linecap="round" fill="none"/>
+                                    <circle cx="8" cy="22" r="4.5" fill="#e11d48"/>
+                                    <circle cx="-14" cy="36" r="3.2" fill="#be123c"/>
+                                </g>
+
+                                <!-- LỚP 4: ĐÔI TAY NGỌC KẾT ẤN (TAY PHẢI DỰNG KIẾM CHỈ TRƯỚC NGỰC, TAY TRÁI NÂNG LINH HỎA Ở ĐAN ĐIỀN) -->
+                                <!-- Cánh tay trái & bàn tay trái đặt ngang nâng Linh Hỏa ở Đan Điền -->
+                                <g stroke="#1e3a5f" stroke-width="1.4" stroke-linejoin="round">
+                                    <!-- Ống tay trong bên trái đưa vào giữa -->
+                                    <path d="M-64,34 C-46,28 -26,32 -12,38 L-14,54 C-34,52 -54,48 -68,44 Z" fill="#ffffff"/>
+                                    <path d="M-64,34 C-46,28 -26,32 -12,38" fill="none" stroke="#7dd3fc" stroke-width="2.5"/>
+                                    <!-- Bàn tay trái ngửa nhẹ nâng Linh Hỏa -->
+                                    <path d="M-16,38 C-8,35 6,35 16,39 C20,41 18,45 12,46 C2,48 -8,47 -16,44 Z" fill="url(#animePorcelainSkin)"/>
+                                </g>
+
+                                <!-- HÀN BĂNG LINH HỎA XOÁY TRÒN TRONG LÒNG BÀN TAY TRÁI (ANIMATED SPIRIT FLAME) -->
+                                <g class="rig-spirit-flame" transform="translate(2, 16)">
+                                    <circle cx="0" cy="4" r="34" fill="url(#dantianSpiritFlameGrad)" style="mix-blend-mode: screen;"/>
+                                    <!-- Ngoại diễm xanh băng uốn lượn -->
+                                    <path id="mudra-flame-outer" d="M0,24 C-20,22 -26,4 -14,-12 C-18,2 -8,6 -6,-22 C-2,-8 4,-16 2,-32 C14,-16 12,-2 18,-14 C26,4 18,22 0,24 Z" fill="#38bdf8" opacity="0.88" filter="url(#softGlow)"/>
+                                    <!-- Trung diễm lam ngọc -->
+                                    <path id="mudra-flame-mid" d="M0,22 C-13,20 -16,6 -8,-8 C-4,2 2,-12 1,-22 C8,-10 14,4 10,14 C8,19 4,22 0,22 Z" fill="#bae6fd" opacity="0.95"/>
+                                    <!-- Tâm hỏa trắng tinh khiết -->
+                                    <path d="M0,20 C-7,18 -8,8 -2,-4 C2,4 7,10 4,17 C3,19 1,20 0,20 Z" fill="#ffffff"/>
+                                </g>
+
+                                <!-- Cánh tay phải & bàn tay phải dựng đứng kết Kiếm Chỉ trước ngực (Chuẩn 100% ảnh mẫu) -->
+                                <g stroke="#1e3a5f" stroke-width="1.4" stroke-linejoin="round">
+                                    <!-- Vạt tay áo phải ôm cổ tay đưa lên ngực -->
+                                    <path d="M56,28 C38,16 18,2 4,-6 L-8,8 C8,20 28,34 46,42 Z" fill="#ffffff"/>
+                                    <path d="M4,-6 L-8,8" fill="none" stroke="#7dd3fc" stroke-width="2.6"/>
+                                    <!-- Bàn tay ngọc dựng đứng kết Kiếm Chỉ (2 ngón trỏ & giữa duỗi thẳng lên, ngón cái giữ ngón áp út) -->
+                                    <path d="M-6,4 C-10,-2 -10,-12 -8,-18 L-8,-36 C-8,-40 -5,-41 -4,-37 L-4,-20 L-4,-38 C-4,-42 -1,-42 0,-38 L0,-16 C4,-16 6,-12 5,-6 C4,2 0,6 -6,4 Z" fill="url(#animePorcelainSkin)"/>
+                                    <!-- Nếp ngón tay co lại tinh tế -->
+                                    <path d="M-4,-15 C1,-15 3,-11 1,-7 C-2,-7 -4,-10 -4,-15 Z" fill="#fbd5c8" stroke="#1e3a5f" stroke-width="1.1"/>
+                                    <!-- Đốm sáng Kiếm Khí ngưng tụ trên đầu ngón tay Kiếm Chỉ -->
+                                    <circle cx="-2" cy="-42" r="3.5" fill="#ffffff" filter="url(#divineBloom)"/>
+                                </g>
+                            </g>
+
+                            <!-- LỚP 5: ĐẦU, DUNG NHAN ANIME MANHUA TUYỆT MỸ, TÓC MAI & BÚI TÓC TRÂM NGỌC (RIGGED HEAD) -->
+                            <g id="maiden-head-group" class="rig-head" transform="translate(0, -86)">
+                                <!-- Cổ thon trắng ngần & bóng đổ dưới cằm -->
+                                <path d="M-8,18 L-9,38 L0,46 L9,38 L8,18 Z" fill="url(#animePorcelainSkin)" stroke="#1e3a5f" stroke-width="1.4"/>
+                                <path d="M-8,19 C-3,24 3,24 8,19 L8,25 C3,29 -3,29 -8,25 Z" fill="#eab8a8"/>
+
+                                <!-- Búi tóc tròn trên đỉnh đầu & Trâm Băng Ngọc chuẩn ảnh mẫu -->
+                                <g stroke="#0f172a" stroke-width="1.5">
+                                    <ellipse cx="0" cy="-46" rx="19" ry="15" fill="url(#animeHairGloss)"/>
+                                    <!-- Dải lụa ngọc lam quấn chân búi tóc -->
+                                    <path d="M-18,-38 C-8,-44 8,-44 18,-38 C14,-33 -14,-33 -18,-38 Z" fill="#38bdf8" stroke="#1e3a5f" stroke-width="1.2"/>
+                                    <!-- Trâm hoa băng tinh cài lệch bên trái búi tóc -->
+                                    <circle cx="-14" cy="-42" r="4.5" fill="#7dd3fc" stroke="#ffffff" stroke-width="1"/>
+                                    <circle cx="-8" cy="-45" r="3" fill="#e0f2fe" stroke="#1e3a5f" stroke-width="0.8"/>
+                                </g>
+
+                                <!-- Đôi tai nhỏ nhắn -->
+                                <path d="M-23,-8 C-26,-8 -26,2 -21,5" fill="url(#animePorcelainSkin)" stroke="#1e3a5f" stroke-width="1.2"/>
+                                <path d="M23,-8 C26,-8 26,2 21,5" fill="url(#animePorcelainSkin)" stroke="#1e3a5f" stroke-width="1.2"/>
+
+                                <!-- Khuôn mặt V-Line Manhua thanh thoát -->
+                                <path d="M-23,-20 C-23,-3 -16,13 0,21 C16,13 23,-3 23,-20 C23,-36 -23,-36 -23,-20 Z" fill="url(#animePorcelainSkin)" stroke="#1e3a5f" stroke-width="1.5" stroke-linejoin="round"/>
+
+                                <!-- Phấn má hồng nhẹ hai bên gò má -->
+                                <ellipse cx="-13" cy="2" rx="5.5" ry="2.8" fill="#fda4af" opacity="0.38"/>
+                                <ellipse cx="13" cy="2" rx="5.5" ry="2.8" fill="#fda4af" opacity="0.38"/>
+
+                                <!-- Chu Sa Băng Ấn nhỏ giữa trán -->
+                                <polygon id="maiden-forehead-mark" points="0,-22 2.2,-17 0,-12 -2.2,-17" fill="#38bdf8"/>
+
+                                <!-- Chân mày lá liễu thanh mảnh -->
+                                <path d="M-17,-11 Q-11,-14.5 -5,-11.5" fill="none" stroke="#1e293b" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M5,-11.5 Q11,-14.5 17,-11" fill="none" stroke="#1e293b" stroke-width="1.4" stroke-linecap="round"/>
+
+                                <!-- TRẠNG THÁI 1 (MẶC ĐỊNH CHUẨN ẢNH MẪU): ĐÔI MẮT NHẮM HỜ NHẬP ĐỊNH HÀNG MI CONG DÀI -->
+                                <g id="maiden-eyes-closed-group">
+                                    <path d="M-16,-4.5 C-13,-1.5 -8,-1.5 -5,-4" fill="none" stroke="#0f172a" stroke-width="1.9" stroke-linecap="round"/>
+                                    <path d="M5,-4 C8,-1.5 13,-1.5 16,-4.5" fill="none" stroke="#0f172a" stroke-width="1.9" stroke-linecap="round"/>
+                                    <!-- Hàng mi rủ mềm mại -->
+                                    <path d="M-16,-4.5 L-18,-2.5 M-12,-2.2 L-13,0.2 M16,-4.5 L18,-2.5 M12,-2.2 L13,0.2" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round"/>
+                                    <!-- Đường mí mắt trên mảnh nhẹ -->
+                                    <path d="M-15,-7 Q-10.5,-9 -6,-6.5 M6,-6.5 Q10.5,-9 15,-7" fill="none" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/>
+                                </g>
+
+                                <!-- TRẠNG THÁI 2 (KHI BẤM KHAI NHÃN): ĐÔI MẮT BĂNG TINH RỰC SÁNG -->
+                                <g id="maiden-eyes-open-group" class="hidden">
+                                    <ellipse cx="-10.5" cy="-4.5" rx="4.5" ry="3.4" fill="#ffffff"/>
+                                    <ellipse cx="10.5" cy="-4.5" rx="4.5" ry="3.4" fill="#ffffff"/>
+                                    <circle cx="-10.5" cy="-4.5" r="2.8" fill="#0284c7"/>
+                                    <circle cx="10.5" cy="-4.5" r="2.8" fill="#0284c7"/>
+                                    <circle cx="-10.5" cy="-4.5" r="1.4" fill="#090d16"/>
+                                    <circle cx="10.5" cy="-4.5" r="1.4" fill="#090d16"/>
+                                    <circle cx="-11.8" cy="-5.6" r="1" fill="#ffffff"/>
+                                    <circle cx="9.2" cy="-5.6" r="1" fill="#ffffff"/>
+                                    <path d="M-16.5,-5.5 Q-10.5,-9.5 -4.5,-5" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M4.5,-5 Q10.5,-9.5 16.5,-5.5" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+                                </g>
+
+                                <!-- Sống mũi thanh tú & Đôi môi anh đào nhỏ nhắn -->
+                                <path d="M-0.5,-3 L-1.2,3.5 L0.8,4.2" fill="none" stroke="#d99b8c" stroke-width="1.1" stroke-linecap="round"/>
+                                <path d="M-4,11.5 Q0,10.2 4,11.5 Q0,13.5 -4,11.5 Z" fill="#f472b6"/>
+                                <path d="M-4.5,11.5 Q0,12.2 4.5,11.5" fill="none" stroke="#9d174d" stroke-width="1" stroke-linecap="round"/>
+                                <!-- Vệt máu khóe môi khi Trọng Thương -->
+                                <path id="maiden-mouth-blood" d="M2.5,12 Q5,17 4,21" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" opacity="0"/>
+
+                                <!-- Mái tóc đen rẽ ngôi uốn phồng & Hai lọn tóc mai dài rủ trước ngực -->
+                                <path d="M0,-36 C-14,-36 -25,-26 -26,-10 C-28,14 -26,48 -20,82 C-16,48 -17,12 -16,-12 C-13,-22 -6,-28 0,-26 C6,-28 13,-22 16,-12 C17,12 16,48 20,82 C26,48 28,14 26,-10 C25,-26 14,-36 0,-36 Z" fill="url(#animeHairGloss)" stroke="#0f172a" stroke-width="1.5" stroke-linejoin="round"/>
+                                <!-- Vệt bóng sáng Anime trên mái tóc đen -->
+                                <path d="M-18,-23 Q-9,-28 -3,-24 M3,-24 Q9,-28 18,-23" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
+                            </g>
+
+                            <!-- LỚP 6: SÓNG NƯỚC BĂNG ĐÀO THỦY LIÊN TẦNG TIỀN CẢNH & CÁNH HOA TUYẾT BAY QUANH NGƯỜI -->
+                            <g class="rig-water-lotus" transform="translate(0, 118)" stroke="#1e3a5f" stroke-width="1.5" stroke-linejoin="round">
+                                <!-- Hai lượn sóng trắng-lam ôm lấy tiền cảnh dưới chân -->
+                                <path d="M-148,4 C-112,28 -52,32 -6,18 C-38,-2 -96,-8 -148,4 Z" fill="url(#waterWaveCrestGrad)"/>
+                                <path d="M148,4 C112,28 52,32 6,18 C38,-2 96,-8 148,4 Z" fill="url(#waterWaveCrestGrad)"/>
+                                <path d="M-88,16 C-46,34 46,34 88,16 C48,4 -48,4 -88,16 Z" fill="#ffffff"/>
+                            </g>
+
+                            <!-- Các giọt nước băng và cánh hoa trắng lơ lửng xung quanh nhân vật đúng như bức ảnh mẫu -->
+                            <g class="rig-petals" fill="#ffffff" stroke="#1e3a5f" stroke-width="1">
+                                <path d="M-88,-68 C-82,-76 -74,-72 -78,-62 C-82,-56 -90,-60 -88,-68 Z"/>
+                                <path d="M-112,-14 C-106,-22 -98,-18 -102,-8 C-106,-2 -114,-6 -112,-14 Z"/>
+                                <path d="M96,-92 C104,-98 110,-92 104,-82 C98,-76 92,-84 96,-92 Z"/>
+                                <path d="M126,-28 C134,-34 140,-28 134,-18 C128,-12 122,-20 126,-28 Z"/>
+                                <path d="M154,28 C162,22 168,28 162,38 C156,44 150,36 154,28 Z"/>
+                                <circle cx="-68" cy="-94" r="3" fill="#e0f2fe"/>
+                                <circle cx="138" cy="-68" r="3.5" fill="#e0f2fe"/>
+                                <circle cx="-136" cy="24" r="3.5" fill="#ffffff"/>
+                            </g>
+                        </g>
+
+                        <!-- KHUNG ẢNH PNG TÙY CHỌN (Nếu đạo hữu muốn tải ảnh ngoài đè lên) -->
+                        <image id="custom-uploaded-maiden-img" href="" x="-200" y="-210" width="400" height="380" preserveAspectRatio="xMidYMid meet" class="hidden" filter="url(#animeStickerGlow)"/>
+                    </g>
+</svg>

@@ -17,6 +17,139 @@
         layer?.replaceChildren();
         stage?.replaceChildren();
         flash?.classList.remove('active');
+        lightningCanvas = null;
+        lightningCtx = null;
+    }
+
+    let lightningCanvas = null;
+    let lightningCtx = null;
+
+    function getLightningCanvas() {
+        if (!stage) return null;
+        if (!lightningCanvas || !lightningCanvas.isConnected) {
+            lightningCanvas = document.createElement('canvas');
+            lightningCanvas.id = 'trib-lightning-canvas';
+            lightningCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:45;';
+            stage.appendChild(lightningCanvas);
+            lightningCtx = lightningCanvas.getContext('2d');
+        }
+        const rect = modal.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        if (lightningCanvas.width !== Math.floor(rect.width * dpr) || lightningCanvas.height !== Math.floor(rect.height * dpr)) {
+            lightningCanvas.width = Math.floor(rect.width * dpr);
+            lightningCanvas.height = Math.floor(rect.height * dpr);
+        }
+        lightningCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { canvas: lightningCanvas, ctx: lightningCtx, width: rect.width, height: rect.height };
+    }
+
+    function generateDisplacementSegments(x1, y1, x2, y2, displace = 70, minDisplace = 6) {
+        if (displace < minDisplace) return [{ x1, y1, x2, y2 }];
+        const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * displace;
+        const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * (displace * 0.35);
+        return [
+            ...generateDisplacementSegments(x1, y1, midX, midY, displace * 0.52, minDisplace),
+            ...generateDisplacementSegments(midX, midY, x2, y2, displace * 0.52, minDisplace)
+        ];
+    }
+
+    function renderProceduralLightning(targetHeadX, targetHeadY, boltColor) {
+        const cObj = getLightningCanvas();
+        if (!cObj) return;
+        const { ctx, canvas } = cObj;
+        const modalRect = modal.getBoundingClientRect();
+        const endX = targetHeadX - modalRect.left;
+        const endY = targetHeadY - modalRect.top;
+        const startX = endX + (Math.random() - 0.5) * 120;
+        const startY = 0;
+
+        // Main procedural bolt
+        const mainSegments = generateDisplacementSegments(startX, startY, endX, endY, 80, 5);
+        
+        // Secondary sub-branches
+        const subBranches = [];
+        for (let i = 2; i < mainSegments.length - 2; i += 3) {
+            if (Math.random() < 0.35) {
+                const seg = mainSegments[i];
+                const branchAngle = (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.5);
+                const branchLen = 60 + Math.random() * 90;
+                const bx2 = seg.x2 + Math.sin(branchAngle) * branchLen;
+                const by2 = seg.y2 + Math.cos(branchAngle) * branchLen;
+                subBranches.push(generateDisplacementSegments(seg.x2, seg.y2, bx2, by2, 35, 4));
+            }
+        }
+
+        // Crawling shield arcs
+        const shieldArcs = [];
+        const shieldR = 75 + Math.random() * 25;
+        for (let a = 0; a < 6; a++) {
+            const baseAngle = (a / 6) * Math.PI * 2;
+            const arcStart = baseAngle + (Math.random() - 0.5) * 0.4;
+            const arcEnd = arcStart + 0.5 + Math.random() * 0.6;
+            shieldArcs.push({ arcStart, arcEnd, r: shieldR + (Math.random() - 0.5) * 15 });
+        }
+
+        let frame = 0;
+        const totalFrames = 6;
+        function drawFrame() {
+            frame++;
+            const alpha = Math.max(0, 1 - (frame - 1) / totalFrames);
+            if (alpha <= 0 || !modal.classList.contains('active')) {
+                const dpr = window.devicePixelRatio || 1;
+                ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+                return;
+            }
+
+            const dpr = window.devicePixelRatio || 1;
+            ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Pass 1: Outer glowing aura
+            ctx.strokeStyle = boltColor;
+            ctx.lineWidth = 5.5;
+            ctx.shadowBlur = 28;
+            ctx.shadowColor = boltColor;
+
+            ctx.beginPath();
+            mainSegments.forEach((s, idx) => {
+                if (idx === 0) ctx.moveTo(s.x1, s.y1);
+                ctx.lineTo(s.x2, s.y2);
+            });
+            subBranches.forEach(branch => {
+                branch.forEach((s, idx) => {
+                    if (idx === 0) ctx.moveTo(s.x1, s.y1);
+                    ctx.lineTo(s.x2, s.y2);
+                });
+            });
+            ctx.stroke();
+
+            // Pass 2: Intense white-hot core
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.stroke();
+
+            // Pass 3: Crawling electric arcs around shield
+            ctx.strokeStyle = boltColor;
+            ctx.lineWidth = 2.0;
+            ctx.shadowBlur = 16;
+            shieldArcs.forEach(sa => {
+                ctx.beginPath();
+                ctx.arc(endX, endY, sa.r, sa.arcStart, sa.arcEnd);
+                ctx.stroke();
+            });
+
+            ctx.restore();
+
+            requestAnimationFrame(drawFrame);
+        }
+
+        requestAnimationFrame(drawFrame);
     }
 
     function chooseArtwork(wave, total) {
@@ -78,6 +211,19 @@
         }, { once: true });
         stage.appendChild(image);
         image.src = chooseArtwork(wave, total).src;
+
+        // --- NÂNG CẤP AAA: PROCEDURAL MIDPOINT DISPLACEMENT LIGHTNING & CRAWLING SHIELD ARCS ---
+        try {
+            renderProceduralLightning(headX, headY, color);
+            if (typeof window.triggerCameraTrauma === 'function') {
+                window.triggerCameraTrauma(0.65, 'modal-do-kiep');
+            }
+            if (window.soundSystem?.play) {
+                window.soundSystem.play('danger');
+            }
+        } catch (e) {
+            console.warn('[TribulationVisuals] Lỗi vẽ lôi kiếp phân nhánh:', e);
+        }
 
         // Keep the existing environmental flash, shockwave, sparks and camera shake.
         flash.style.background = `radial-gradient(circle at 50% 30%, ${color}99, transparent 72%)`;

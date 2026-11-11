@@ -107,6 +107,14 @@
         // ====================================================================
         // 3. CƠ CHẾ XÁC SUẤT PHẨM CHẤT (RNG QUALITIES)
         // ====================================================================
+        const XIANXIA_AFFIX_POOL = [
+            { label: "Kiếm Ý Sắc Bén", text: "Bạo kích +8% • Sát thương bạo +15%" },
+            { label: "Cửu U Huyết Nhận", text: "Hút máu +6% • Hồi phục +120 HP/s" },
+            { label: "Canh Kim Phá Trận", text: "Phá giáp +15% • Bỏ qua 20% hộ giáp" },
+            { label: "Kim Cang Hộ Thể", text: "Giảm thương +12% • Kháng bạo +10%" },
+            { label: "Linh Mạch Quán Thông", text: "Tốc độ tu vi +10% • Giảm tiêu hao MP 15%" }
+        ];
+
         const CRAFTING_QUALITIES = {
             HAPHAP: {
                 id: "ha_pham",
@@ -137,21 +145,33 @@
                 borderStyle: "border-sky-400",
                 boxStyle: "quality--thuong-pham",
                 subStat: { label: "Cực Phẩm Đặc Hiệu", text: "Tốc đánh +10% • Bạo kích +8%" }
+            },
+            CUCPHAM: {
+                id: "cuc_pham",
+                name: "Tiên Thiên Cực Phẩm",
+                multiplier: 3.8,
+                colorText: "text-amber-300 font-extrabold",
+                badgeBg: "bg-amber-950/90 text-amber-300 border-amber-400 ring-1 ring-amber-400/50",
+                borderStyle: "border-amber-400 shadow-[0_0_18px_rgba(250,204,21,0.6)]",
+                boxStyle: "quality--cuc-pham",
+                subStat: { label: "Tiên Khí Thần Uy", text: "Bạo kích +16% • Phá giáp +22% • Tụ khí +15%" }
             }
         };
 
         /**
          * Quay số ngẫu nhiên phẩm chất:
-         * 70% Hạ Phẩm, 25% Trung Phẩm, 5% Thượng Phẩm
+         * 50% Hạ Phẩm, 30% Trung Phẩm, 15% Thượng Phẩm, 5% Tiên Thiên Cực Phẩm
          */
         function rollCraftingQuality() {
             const rand = Math.random(); // 0 -> 1
             if (rand < 0.05) {
-                return CRAFTING_QUALITIES.THUONGPHAM; // 5%
-            } else if (rand < 0.30) {
-                return CRAFTING_QUALITIES.TRUNGPHAM;  // 25% (0.05 đến 0.30)
+                return CRAFTING_QUALITIES.CUCPHAM;    // 5%
+            } else if (rand < 0.20) {
+                return CRAFTING_QUALITIES.THUONGPHAM; // 15%
+            } else if (rand < 0.50) {
+                return CRAFTING_QUALITIES.TRUNGPHAM;  // 30%
             } else {
-                return CRAFTING_QUALITIES.HAPHAP;     // 70% (0.30 đến 1.00)
+                return CRAFTING_QUALITIES.HAPHAP;     // 50%
             }
         }
 
@@ -274,46 +294,49 @@
                 const card = document.createElement('article');
                 card.className = 'recipe-card';
                 card.innerHTML = `
-                    <div class="recipe-header">
-                        <div class="recipe-title-group">
-                            <div class="recipe-item-avatar">
-                                <i class="fa-solid ${recipe.icon}"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <h3 class="recipe-name">${recipe.name}</h3>
-                                    <span class="recipe-type-tag">${recipe.type}</span>
+                    <div class="craft-card-content">
+                        <div class="recipe-header">
+                            <div class="recipe-title-group">
+                                <div class="recipe-item-avatar">
+                                    <i class="fa-solid ${recipe.icon}"></i>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mt-0.5">${recipe.desc}</p>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="recipe-name">${recipe.name}</h3>
+                                        <span class="recipe-type-tag">${recipe.type}</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">${recipe.desc}</p>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="recipe-meta-stats">
+                            <div class="flex items-center gap-2">
+                                <span>Chỉ số gốc:</span>
+                                ${statsArr.join(' • ')}
+                            </div>
+                            <div class="ml-auto font-mono text-[11px] text-amber-300">
+                                <i class="fa-regular fa-hourglass-half"></i> ${recipe.craftTime}s
+                            </div>
+                        </div>
+
+                        <div class="materials-container">
+                            <div class="materials-title">
+                                <i class="fa-solid fa-boxes-stacked"></i> Nguyên Liệu Tiêu Hao:
+                            </div>
+                            <div class="materials-list">
+                                ${matsHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="craft-card-action">
                         <span class="recipe-req-badge ${realmMet ? 'req--met' : 'req--unmet'}">
                             <i class="fa-solid ${realmMet ? 'fa-check' : 'fa-lock'}"></i> ${recipe.reqRealmName}
                         </span>
+                        <button type="button" class="btn-forge" onclick="startCrafting('${recipe.id}')" ${canCraft ? '' : 'disabled'}>
+                            <i class="fa-solid ${btnIcon}"></i> ${btnLabel}
+                        </button>
                     </div>
-
-                    <div class="recipe-meta-stats">
-                        <div class="flex items-center gap-2">
-                            <span>Chỉ số gốc:</span>
-                            ${statsArr.join(' • ')}
-                        </div>
-                        <div class="ml-auto font-mono text-[11px] text-amber-300">
-                            <i class="fa-regular fa-hourglass-half"></i> ${recipe.craftTime}s
-                        </div>
-                    </div>
-
-                    <div class="materials-container">
-                        <div class="materials-title">
-                            <i class="fa-solid fa-boxes-stacked"></i> Nguyên Liệu Tiêu Hao:
-                        </div>
-                        <div class="materials-list">
-                            ${matsHtml}
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn-forge" onclick="startCrafting('${recipe.id}')" ${canCraft ? '' : 'disabled'}>
-                        <i class="fa-solid ${btnIcon}"></i> ${btnLabel}
-                    </button>
                 `;
                 container.appendChild(card);
             });
@@ -422,6 +445,17 @@
             // 1. Quay random phẩm chất (RNG)
             const quality = rollCraftingQuality();
 
+            // Lấy dòng phụ ngẫu nhiên nếu đạt Thượng Phẩm / Cực Phẩm
+            let dynamicSubStat = quality.subStat ? quality.subStat.text : null;
+            if (quality.id === 'thuong_pham' || quality.id === 'cuc_pham') {
+                const rolledAffix = XIANXIA_AFFIX_POOL[Math.floor(Math.random() * XIANXIA_AFFIX_POOL.length)];
+                if (rolledAffix) {
+                    dynamicSubStat = quality.id === 'cuc_pham' 
+                        ? `${rolledAffix.text} • [Tiên Thiên Hào Quang]`
+                        : rolledAffix.text;
+                }
+            }
+
             // 2. Tính toán chỉ số nhân theo hệ số phẩm chất
             const multipliedStats = {};
             for (const [key, val] of Object.entries(recipe.baseStats)) {
@@ -439,7 +473,7 @@
                 quality: quality.name,
                 qualityId: quality.id,
                 stats: multipliedStats,
-                subStat: quality.subStat ? quality.subStat.text : null,
+                subStat: dynamicSubStat,
                 timeCreated: new Date().toLocaleTimeString('vi-VN')
             };
 
@@ -447,8 +481,9 @@
             playerState.craftedBag.unshift(craftedItem);
 
             // Đồng bộ trang bị rèn được vào Túi Đồ Bản Nguyên
+            const prevCp = typeof window.getCombatPower === 'function' ? window.getCombatPower() : 0;
             if (typeof window.addItemToInventory === 'function') {
-                const rarityMap = { thuong_pham: 'Epic', trung_pham: 'Rare', ha_pham: 'Common' };
+                const rarityMap = { cuc_pham: 'Legendary', thuong_pham: 'Epic', trung_pham: 'Rare', ha_pham: 'Common' };
                 window.addItemToInventory({
                     id: craftedItem.id,
                     name: craftedItem.name,
@@ -463,7 +498,19 @@
                     desc: `${recipe.desc} (${craftedItem.subStat || 'Phẩm chất ' + quality.name})`
                 }, 1);
             }
+            if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+            const newCp = typeof window.getCombatPower === 'function' ? window.getCombatPower() : 0;
+            const cpDelta = Math.max(800, newCp - prevCp);
+
+            if (typeof window.spawnFloatingText === 'function') {
+                window.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `Rèn Thành ${quality.name}! (+${cpDelta.toLocaleString('vi-VN')} CP)`, 'text-amber-300 font-bold');
+            }
+
+            if (typeof window.addLog === 'function') {
+                window.addLog(`⚒️ <span class="text-amber-300 font-bold">[Luyện Khí Đại Thành]</span> Đã rèn thành công <strong>${craftedItem.name}</strong> (${craftedItem.subStat || 'Phẩm chất ' + quality.name})! (+${cpDelta.toLocaleString('vi-VN')} CP). Đã cất vào Càn Khôn Nang.`, 'text-amber-300');
+            }
             if (typeof window.saveGameState === 'function') window.saveGameState();
+            if (typeof window.updateHUD === 'function') window.updateHUD();
 
             // 4. Reset trạng thái lò rèn về bình thường
             furnaceState.isCrafting = false;
@@ -593,6 +640,7 @@
             el.classList.remove('active');
             el.classList.add('hidden');
         }
+        closeCraftingModal();
         if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
     }
 

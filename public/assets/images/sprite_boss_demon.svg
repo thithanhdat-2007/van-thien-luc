@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 560" width="100%" height="100%">
+  <defs>
+    <linearGradient id="dmRobeDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="40%" stop-color="#881337"/>
+      <stop offset="75%" stop-color="#1f0a14"/>
+      <stop offset="100%" stop-color="#0f070a"/>
+    </linearGradient>
+    <linearGradient id="dmWingFlames" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="25%" stop-color="#f43f5e"/>
+      <stop offset="65%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#4c0519"/>
+    </linearGradient>
+    <linearGradient id="dmGoldHorns" x1="0%" y1="0%" x2="40%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="35%" stop-color="#ca8a04"/>
+      <stop offset="70%" stop-color="#451a03"/>
+      <stop offset="100%" stop-color="#1c1917"/>
+    </linearGradient>
+    <radialGradient id="dmCoreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#fef08a"/>
+      <stop offset="70%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </radialGradient>
+    <radialGradient id="dmAbyssSmoke" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#be123c" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#881337" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="dmCrimsonBloom" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <g id="rig-demon-master" transform="translate(15, 10)">
+    <!-- Vòng Ma Vụ Huyết Quang Phía Sau -->
+    <circle cx="215" cy="260" r="175" fill="url(#dmAbyssSmoke)"/>
+
+    <!-- ĐÔI CÁNH HUYẾT DỰC MA HOÀNG KHỔNG LỒ (MASSIVE DEMON WINGS) -->
+    <!-- Cánh Trái -->
+    <g opacity="0.95" filter="url(#dmCrimsonBloom)">
+      <path d="M 160 220 C 90 125, 20 65, 5 35 C 25 85, 30 145, 15 200 C 40 185, 65 195, 80 235 C 50 245, 25 275, 10 320 C 65 305, 115 295, 160 270 Z" fill="url(#dmWingFlames)" stroke="#f43f5e" stroke-width="2"/>
+      <path d="M 160 220 C 100 135, 45 80, 5 35" fill="none" stroke="#1c1917" stroke-width="7" stroke-linecap="round"/>
+      <path d="M 5 35 C -2 20, -8 10, -12 5" fill="none" stroke="url(#dmGoldHorns)" stroke-width="4.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Cánh Phải -->
+    <g opacity="0.95" filter="url(#dmCrimsonBloom)">
+      <path d="M 270 220 C 340 125, 410 65, 425 35 C 405 85, 400 145, 415 200 C 390 185, 365 195, 350 235 C 380 245, 405 275, 420 320 C 365 305, 315 295, 270 270 Z" fill="url(#dmWingFlames)" stroke="#f43f5e" stroke-width="2"/>
+      <path d="M 270 220 C 330 135, 385 80, 425 35" fill="none" stroke="#1c1917" stroke-width="7" stroke-linecap="round"/>
+      <path d="M 425 35 C 432 20, 438 10, 442 5" fill="none" stroke="url(#dmGoldHorns)" stroke-width="4.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Đuôi Bọ Cạp Ma Đạo Bọc Gai -->
+    <path d="M 215 370 C 280 420, 335 390, 350 330 C 358 275, 340 245, 315 225" fill="none" stroke="url(#dmRobeDark)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M 215 370 C 280 420, 335 390, 350 330 C 358 275, 340 245, 315 225" fill="none" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 315 225 C 330 215, 345 205, 335 195 C 315 205, 305 220, 315 225 Z" fill="url(#dmGoldHorns)" stroke="#fbbf24" stroke-width="1.8"/>
+
+    <!-- Chi Dưới & Móng Vuốt Ma Thú -->
+    <path d="M 175 330 C 155 390, 140 450, 125 490 C 150 490, 165 470, 180 430 C 190 390, 195 360, 200 330 Z" fill="url(#dmRobeDark)" stroke="#881337" stroke-width="1.8"/>
+    <path d="M 255 330 C 275 390, 290 450, 305 490 C 280 490, 265 470, 250 430 C 240 390, 235 360, 230 330 Z" fill="url(#dmRobeDark)" stroke="#881337" stroke-width="1.8"/>
+    <path d="M 125 490 C 110 495, 105 505, 130 506 C 140 506, 145 498, 150 490 Z" fill="url(#dmGoldHorns)"/>
+    <path d="M 305 490 C 320 495, 325 505, 300 506 C 290 506, 285 498, 280 490 Z" fill="url(#dmGoldHorns)"/>
+
+    <!-- Thân Thể & Ma Giáp Gai Sừng -->
+    <path d="M 165 190 C 175 170, 255 170, 265 190 C 280 240, 275 310, 260 340 C 235 355, 195 355, 170 340 C 155 310, 150 240, 165 190 Z" fill="url(#dmRobeDark)" stroke="#f43f5e" stroke-width="2"/>
+    
+    <!-- Lõi Huyết Ma Đan Bốc Cháy Giữa Ngực -->
+    <ellipse cx="215" cy="250" rx="16" ry="20" fill="url(#dmCoreGlow)" filter="url(#dmCrimsonBloom)"/>
+
+    <!-- Giáp Vai Gai Sừng Cường Tráng -->
+    <path d="M 165 190 C 135 170, 115 150, 100 130 C 125 155, 150 180, 170 205 Z" fill="url(#dmGoldHorns)" stroke="#fbbf24" stroke-width="1.8"/>
+    <path d="M 265 190 C 295 170, 315 150, 330 130 C 305 155, 280 180, 260 205 Z" fill="url(#dmGoldHorns)" stroke="#fbbf24" stroke-width="1.8"/>
+
+    <!-- Hai Cánh Tay Cơ Bắp Vuốt Quỷ -->
+    <path d="M 160 205 C 135 235, 125 270, 120 305 C 135 300, 150 275, 160 250 Z" fill="url(#dmRobeDark)" stroke="#881337" stroke-width="1.5"/>
+    <path d="M 120 305 C 110 325, 100 340, 115 345 C 127 345, 133 330, 135 315 Z" fill="url(#dmGoldHorns)"/>
+    <path d="M 270 205 C 295 235, 305 270, 310 305 C 295 300, 280 275, 270 250 Z" fill="url(#dmRobeDark)" stroke="#881337" stroke-width="1.5"/>
+    <path d="M 310 305 C 320 325, 330 340, 315 345 C 303 345, 297 330, 295 315 Z" fill="url(#dmGoldHorns)"/>
+
+    <!-- Đầu & Cặp Sừng Vĩ Đại Của Ma Hoàng -->
+    <path d="M 190 140 C 190 170, 200 185, 215 188 C 230 185, 240 170, 240 140 C 240 115, 190 115, 190 140 Z" fill="url(#dmRobeDark)" stroke="#f43f5e" stroke-width="1.5"/>
+    
+    <!-- Cặp Sừng Ma Hoàng Xoắn Uốn Cong Lộng Lẫy -->
+    <path d="M 195 125 C 175 90, 150 60, 125 40 C 150 70, 180 105, 190 135 Z" fill="url(#dmGoldHorns)" stroke="#fbbf24" stroke-width="2"/>
+    <path d="M 235 125 C 255 90, 280 60, 305 40 C 280 70, 250 105, 240 135 Z" fill="url(#dmGoldHorns)" stroke="#fbbf24" stroke-width="2"/>
+
+    <!-- Nhãn Quang Ma Hoàng Rực Lửa Vàng Kim -->
+    <polygon points="198,142 208,145 200,148" fill="#fef08a" filter="url(#dmCrimsonBloom)"/>
+    <polygon points="232,142 222,145 230,148" fill="#fef08a" filter="url(#dmCrimsonBloom)"/>
+
+    <!-- Huyết Nhận Ma Tộc Lơ Lửng Quanh Thân -->
+    <g id="demon-blood-blades" filter="url(#dmCrimsonBloom)">
+      <path d="M 105 250 C 95 230, 85 210, 80 185 C 90 205, 105 225, 115 245 Z" fill="#f43f5e" stroke="#fef08a" stroke-width="1.2"/>
+      <path d="M 325 250 C 335 230, 345 210, 350 185 C 340 205, 325 225, 315 245 Z" fill="#f43f5e" stroke="#fef08a" stroke-width="1.2"/>
+    </g>
+  </g>
+</svg>

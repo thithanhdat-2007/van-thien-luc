@@ -33,6 +33,28 @@ function getCurrentRootVisual() {
     return SPIRITUAL_ROOTS[state.spiritualRoot?.id] || SPIRITUAL_ROOTS.mortal_mixed || null;
 }
 
+let cachedDantianX = null;
+let cachedDantianY = null;
+let lastDantianCheck = 0;
+
+function getDantianCoords() {
+    const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    if (now - lastDantianCheck > 1200 || cachedDantianX === null) {
+        lastDantianCheck = now;
+        const core = document.getElementById('dantian-core');
+        if (core && canvas) {
+            const coreRect = core.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            cachedDantianX = (coreRect.left + coreRect.width / 2) - canvasRect.left;
+            cachedDantianY = (coreRect.top + coreRect.height / 2) - canvasRect.top;
+        } else {
+            cachedDantianX = canvas ? canvas.width / 2 : 400;
+            cachedDantianY = canvas ? canvas.height / 2 : 300;
+        }
+    }
+    return { x: cachedDantianX, y: cachedDantianY };
+}
+
 class QiParticle {
     constructor() {
         this.reset();
@@ -49,19 +71,26 @@ class QiParticle {
         this.alpha = 0.25 + Math.random() * 0.65;
         this.isGold = Math.random() > 0.65;
         this.swirlFactor = (Math.random() - 0.5) * 0.6;
+        this.isBurst = false;
     }
     update() {
         this.prevX = this.x;
         this.prevY = this.y;
 
-        const targetX = canvas.width / 2;
-        const targetY = canvas.height / 2 - 12;
-        const dx = targetX - this.x;
-        const dy = targetY - this.y;
+        const target = getDantianCoords();
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 16) {
-            this.reset();
+        if (distance < 18) {
+            if (this.isBurst) {
+                this.alpha = 0;
+            } else {
+                if (Math.random() < 0.08 && typeof spawnRipple === 'function') {
+                    spawnRipple(target.x, target.y, this.isGold ? '#facc15' : '#22d3ee');
+                }
+                this.reset();
+            }
         } else {
             const nx = dx / distance;
             const ny = dy / distance;
@@ -803,6 +832,84 @@ function spawnRipple(x, y, color = "#22d3ee") {
     vfxEngine.spawnRipple(x, y, color);
 }
 
+function triggerQiBurst(x, y) {
+    if (!canvas || !ctx) return;
+    const canvasRect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { left: 0, top: 0 };
+    const localX = (typeof x === 'number' && !isNaN(x)) ? (x - canvasRect.left) : (canvas.width / 2);
+    const localY = (typeof y === 'number' && !isNaN(y)) ? (y - canvasRect.top) : (canvas.height / 2);
+
+    if (typeof spawnRipple === 'function') {
+        spawnRipple(localX, localY, '#22d3ee');
+    }
+    if (typeof Shockwave !== 'undefined') {
+        shockwaves.push(new Shockwave(localX, localY, '#38bdf8'));
+    }
+
+    const burstCount = 24;
+    for (let i = 0; i < burstCount; i++) {
+        const p = new QiParticle();
+        p.isBurst = true;
+        const angle = (Math.PI * 2 / burstCount) * i + (Math.random() - 0.5) * 0.4;
+        const burstDist = 25 + Math.random() * 45;
+        p.x = localX + Math.cos(angle) * burstDist;
+        p.y = localY + Math.sin(angle) * burstDist;
+        p.prevX = localX;
+        p.prevY = localY;
+        p.speed = 1.8 + Math.random() * 2.2;
+        p.size = 2.0 + Math.random() * 2.5;
+        p.alpha = 0.85;
+        p.isGold = Math.random() > 0.5;
+        p.swirlFactor = (Math.random() - 0.5) * 1.1;
+        particles.push(p);
+    }
+
+    if (particles.length > 120) {
+        particles = particles.filter(p => !p.isBurst || p.alpha > 0.05);
+    }
+}
+
+function triggerCameraTrauma(intensity = 1.0, targetId = 'game-viewport') {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const el = document.getElementById(targetId) || document.getElementById('game-viewport') || document.body;
+    if (!el) return;
+
+    let trauma = Math.min(1.0, Math.max(0.1, intensity));
+    const startTime = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    const duration = 380;
+
+    function shakeStep(now) {
+        const elapsed = now - startTime;
+        if (elapsed >= duration) {
+            el.style.transform = '';
+            el.style.filter = '';
+            return;
+        }
+
+        const progress = elapsed / duration;
+        const decay = Math.pow(1 - progress, 2);
+        const shakeMag = trauma * 14 * decay;
+        const angleMag = trauma * 1.2 * decay;
+
+        const offsetX = (Math.random() * 2 - 1) * shakeMag;
+        const offsetY = (Math.random() * 2 - 1) * shakeMag;
+        const rotate = (Math.random() * 2 - 1) * angleMag;
+
+        el.style.transform = `translate3d(${offsetX.toFixed(2)}px, ${offsetY.toFixed(2)}px, 0) rotate(${rotate.toFixed(2)}deg)`;
+
+        if (elapsed < 120 && trauma > 0.5) {
+            el.style.filter = `drop-shadow(-2px 0 rgba(244, 63, 94, 0.6)) drop-shadow(2px 0 rgba(56, 189, 248, 0.5))`;
+        } else {
+            el.style.filter = '';
+        }
+
+        requestAnimationFrame(shakeStep);
+    }
+
+    requestAnimationFrame(shakeStep);
+}
+
 if (typeof window !== 'undefined') {
     window.CanvasEffectEngine = CanvasEffectEngine;
     window.vfxEngine = vfxEngine;
@@ -812,4 +919,6 @@ if (typeof window !== 'undefined') {
     window.spawnClickRune = spawnClickRune;
     window.triggerSwordSlash = triggerSwordSlash;
     window.triggerBreakthroughBurst = triggerBreakthroughBurst;
+    window.triggerQiBurst = triggerQiBurst;
+    window.triggerCameraTrauma = triggerCameraTrauma;
 }

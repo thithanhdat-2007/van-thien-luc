@@ -186,6 +186,145 @@
             border: 1px solid rgba(245, 158, 11, 0.32);
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
         }
+
+        /* PC tower workspace. Menus hold secondary controls around a clear arena. */
+        .tower-topbar {
+            min-height: 72px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #253044;
+            background: linear-gradient(110deg, #152438, #0b1422 48%, #101b2c);
+            box-shadow: inset 0 -1px 0 #caa66314;
+            position: relative;
+            z-index: 50;
+        }
+        .tower-identity, .tower-top-actions, .tower-identity-meta,
+        .tower-encounter-meta, .tower-secondary-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tower-identity h1 { margin: 0 0 4px; color: #f4d58e; font-size: 17px; font-weight: 800; letter-spacing: .06em; }
+        .tower-emblem { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid #8b7046; border-radius: 12px; font-size: 23px; background: linear-gradient(145deg, #3b3328, #152336); box-shadow: inset 0 1px 0 #f4d58e26; }
+        .tower-identity-meta { gap: 12px; font-size: 11px; }
+        .tower-realm { color: #8ed9e5; }
+        .tower-progress { color: #a5b4c7; }
+        .tower-resource { display: flex; align-items: center; gap: 7px; padding: 8px 11px; font-size: 12px; border: 1px solid #263248; border-radius: 9px; background: #101827; white-space: nowrap; }
+        .tower-ui-button, .tower-menu > summary {
+            min-height: 38px;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid #344259;
+            border-radius: 9px;
+            color: #d9e4f0;
+            background: #141e2e;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            white-space: nowrap;
+        }
+        .tower-menu > summary::-webkit-details-marker { display: none; }
+        .tower-menu > summary:hover, .tower-menu[open] > summary, .tower-ui-button:hover { border-color: #85b5cc; background: #1a2b3c; }
+        .tower-ui-button.tower-heal { color: #92dfbf; border-color: #2b5e53; }
+        .tower-ui-button.tower-exit { color: #feb4bf; border-color: #703a4b; width: 38px; padding: 8px; }
+        .tower-menu { position: relative; }
+        .tower-menu[open] { z-index: 80; }
+        .tower-menu > summary > span:first-child { min-width: 0; }
+        .tower-popover {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 380px;
+            max-height: min(670px, calc(100dvh - 120px));
+            overflow-y: auto;
+            padding: 18px;
+            border: 1px solid #41526c;
+            border-radius: 14px;
+            background: #0d1726;
+            color: #dce6f4;
+            box-shadow: 0 20px 65px #000b;
+        }
+        .tower-popover h2 { color: #b7c6d9; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-bottom: 10px; }
+        .tower-popover h2:not(:first-child) { margin-top: 18px; padding-top: 16px; border-top: 1px solid #263348; }
+        .tower-choice-grid, .tower-manual-grid, .tower-stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .tower-popover button { min-height: 36px; border-radius: 8px; font-size: 11px; line-height: 1.5; padding: 8px 10px; box-shadow: none; white-space: normal; }
+        .tower-popover button[aria-pressed="true"] { border-color: #64bdcc; background: #163b4b; color: #d8faff; opacity: 1; }
+        .tower-popover .tower-forge, .tower-popover .tower-library { width: 100%; margin-top: 14px; }
+        .tower-stat { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; background: #101f31; border-radius: 7px; font-size: 11px; }
+        .tower-stat span { color: #92a5bd; }
+        .tower-workspace { display: grid; grid-template-columns: minmax(0, 1fr) clamp(292px, 22vw, 340px); gap: 14px; padding: 14px; flex: 1; min-height: 0; }
+        .tower-combat-column { display: grid; grid-template-rows: auto minmax(0, 1fr) auto 22px; gap: 10px; min-width: 0; min-height: 0; }
+        .tower-encounter { padding: 2px 4px; }
+        .tower-encounter-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .tower-floor-tag { color: #e9b975; font-size: 10px; white-space: nowrap; padding: 4px 7px; border: 1px solid #695334; border-radius: 6px; background: #b9852810; }
+        .tower-floor-title { font-size: 15px; font-weight: 700; color: #e7edf5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tower-encounter-meta { min-height: 28px; gap: 12px; margin-top: 5px; flex-wrap: wrap; }
+        .tower-encounter-meta > span { font-size: 11px; }
+        .tower-encounter-meta #ui-element-counter-status { font-size: 11px; animation: none; }
+        .tower-encounter-meta #arena-cp-ratio { margin-left: auto; }
+        .tower-battlefield { position: relative; min-height: 0; border-radius: 16px; overflow: hidden; isolation: isolate; }
+        .tower-fighter-hud { position: absolute; z-index: 30; inset: 12px 12px auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; pointer-events: none; }
+        .tower-fighter-hud .hud-glass { min-width: 0; padding: 10px 12px; border-radius: 11px; box-shadow: inset 0 1px 0 #ffffff09; background: linear-gradient(120deg, #111e2ff2, #080f20e8); }
+        .tower-fighter-hud .hud-glass > div:first-child { gap: 8px; min-width: 0; }
+        .tower-fighter-hud .hud-glass > div:first-child > span:first-child { min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #guardian-spirit-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+        #boss-stats-mini { font-size: 9px; white-space: nowrap; }
+        .tower-hit-anchors { position: absolute; inset: 90px 0 0; z-index: 30; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; }
+        .tower-hit-anchors > div { position: relative; }
+        #combo-counter-box { top: 100px; left: 16px; transform-origin: top left; scale: .85; }
+        .tower-combat-dock { position: relative; z-index: 40; border: 1px solid #35485e; border-radius: 14px; background: linear-gradient(135deg, #132236, #0c1524 65%); padding: 12px; box-shadow: inset 0 1px 0 #ffffff09; }
+        .tower-chain-status { display: flex; align-items: center; gap: 12px; min-width: 0; margin-bottom: 10px; font-size: 11px; }
+        .tower-chain-badge { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: #9ac5c9; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+        .tower-chain-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #557080; }
+        .tower-combat-dock[data-fighting="true"] .tower-chain-badge { color: #88e1c4; }
+        .tower-combat-dock[data-fighting="true"] .tower-chain-badge::before { background: #6ee7b7; box-shadow: 0 0 8px #6ee7b744; }
+        #combat-skill-status { min-width: 0; display: flex; align-items: baseline; gap: 9px; overflow: hidden; }
+        #combat-skill-name { color: #d4e3f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #combat-skill-meta { color: #8ba1bb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+        #combat-turn-label { margin-left: auto; flex-shrink: 0; color: #b9a47d; font-size: 10px; font-variant-numeric: tabular-nums; }
+        .tower-skills-row { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+        .tower-menu-up > summary { width: 100%; }
+        .tower-menu-up .tower-popover { top: auto; bottom: calc(100% + 10px); left: 0; right: auto; max-height: calc(100dvh - 240px); }
+        .tower-manual-popover { width: 440px; }
+        .tower-elements { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+        #tower-manual-menu > summary { height: 100%; justify-content: space-between; text-align: left; }
+        #tower-manual-menu summary small { display: block; color: #849ab5; font-size: 10px; margin-bottom: 3px; }
+        #active-manual-label { display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; font-size: 12px; color: #edd49f; }
+        #active-manual-skills-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+        #active-manual-skills-bar > button { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 10px; row-gap: 3px; min-width: 0; min-height: 54px; padding: 8px 10px; border: 1px solid #34465d; border-radius: 10px; background: #142238; color: #d9e4ef; text-align: left; transition: border-color .15s, background .15s; }
+        #active-manual-skills-bar > button:hover { border-color: #83bccb; background: #1b3048; }
+        #active-manual-skills-bar > button[aria-pressed="true"] { border-color: #b89a5b; background: linear-gradient(120deg, #3b3326, #1e2637); }
+        #active-manual-skills-bar > button.is-casting { border-color: #80dccf; box-shadow: inset 0 0 0 1px #80dccf55; }
+        #active-manual-skills-bar > button > span:first-child { grid-row: 1 / 3; display: grid; place-items: center; align-self: center; width: 34px; height: 34px; border: 1px solid #91b7ce24; border-radius: 9px; background: #080f1b66; font-size: 20px; }
+        #active-manual-skills-bar > button > span:nth-child(2) { grid-column: 2; justify-self: start; white-space: nowrap; font-size: 9px; color: #8eb7c7; letter-spacing: .04em; text-transform: uppercase; }
+        #active-manual-skills-bar > button > span:last-child { grid-column: 2; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tower-actions-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 9px; }
+        .tower-secondary-actions > button, #auto-climb-label { min-height: 38px; border-radius: 9px; font-size: 11px; box-shadow: none; white-space: nowrap; }
+        #btn-fight { min-height: 40px; min-width: 206px; padding: 9px 16px; border: 1px solid #f3d28c; border-radius: 9px; background: linear-gradient(110deg, #edca7d, #c59648); color: #241b10; box-shadow: inset 0 1px 0 #fff5; font-size: 13px; }
+        #btn-fight[data-fighting="true"] { border-color: #a76473; background: #342330; color: #ffc7d0; box-shadow: none; }
+        .tower-artifact-popover { width: 320px; }
+        .tower-artifact-popover > button { width: 100%; justify-content: space-between; margin-bottom: 8px; }
+        .tower-artifact-popover p { color: #8da2bb; font-size: 11px; line-height: 1.7; margin-top: 10px; }
+        .tower-combat-log { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8196b0; font-size: 11px; line-height: 22px; padding: 0 4px; }
+        .tower-sidebar { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #2c3a50; border-radius: 14px; background: #0b1320; overflow: hidden; }
+        .tower-sidebar > div:first-child button { font-family: inherit; font-size: 11px; min-height: 34px; }
+        #sidebar-tab-manuals, #sidebar-tab-bag { min-height: 0; overflow-y: auto; }
+        .tower-sidebar #floor-drop-preview { grid-template-columns: 1fr; }
+        .tower-sidebar #floor-drop-preview > div { padding: 7px 9px; }
+        .tower-sidebar #floor-drop-preview > div > div:first-child { font-size: 18px; }
+        .tower-topbar button:focus-visible, .tower-popover button:focus-visible,
+        .tower-combat-dock button:focus-visible, .tower-menu > summary:focus-visible { outline: 2px solid #8cd5e2; outline-offset: 3px; }
+        @media (prefers-reduced-motion: reduce) {
+            .tower-popover, .tower-menu > summary, #active-manual-skills-bar > button { transition: none; }
+        }
     </style>
 </head>
 <body class="w-screen h-screen overflow-hidden bg-[#020307] select-none">
@@ -207,113 +346,128 @@
     <!-- ==================== POPUP TRẤN YÊU THÁP V2 ==================== -->
     <div id="tran-yeu-thap-popup" class="fixed inset-0 z-50 w-screen h-screen bg-[#02040a] flex flex-col justify-between overflow-hidden">
 
-        <!-- 1. TOP HEADER BAR -->
-        <header class="h-14 shrink-0 bg-gradient-to-r from-[#040710] via-[#0c1326] to-[#040710] border-b border-amber-500/35 px-4 flex items-center justify-between z-30 shadow-2xl">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-rose-600 to-purple-900 p-[1px] shadow-[0_0_25px_rgba(245,158,11,0.5)]">
-                    <div class="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center text-lg">
-                        🗡️
-                    </div>
-                </div>
+        <header class="tower-topbar">
+            <div class="tower-identity">
+                <span class="tower-emblem" aria-hidden="true">🗡️</span>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="font-xianxia text-base xl:text-lg font-black tracking-wider bg-gradient-to-r from-amber-200 via-yellow-400 to-cyan-300 bg-clip-text text-transparent">
-                            TRẤN YÊU THÁP V3 • SÁNG THẾ
-                        </h1>
-                        <span id="header-realm-tag" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/40">
-                            Cảnh Giới: Trúc Cơ Đỉnh Phong
-                        </span>
-                        <span id="ui-cleared-badge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-bold text-[11px]">
-                            Đã vượt: 19/50 Tầng
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-3 text-[11px] text-slate-300 mt-0.5">
-                        <span>⚔️ Công: <strong id="stat-atk" class="text-amber-300 font-mono">148K</strong></span>
-                        <span>🛡️ Thủ: <strong id="stat-def" class="text-emerald-300 font-mono">42K</strong></span>
-                        <span>💥 Bạo: <strong id="stat-crit" class="text-rose-400 font-mono">35%</strong></span>
-                        <span>💨 Né: <strong id="stat-eva" class="text-cyan-300 font-mono">18%</strong></span>
+                    <h1>TRẤN YÊU THÁP</h1>
+                    <div class="tower-identity-meta">
+                        <span id="header-realm-tag" class="tower-realm">Cảnh Giới: Trúc Cơ Đỉnh Phong</span>
+                        <span id="ui-cleared-badge" class="tower-progress">Đã vượt: 19/50 Tầng</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Phải: Đổi Thiên Tượng, Tài Nguyên & Nút Tiện Ích -->
-            <div class="flex items-center gap-2">
-                <!-- Bộ chọn Thiên Tượng 8K (Skybox Switcher) -->
-                <div class="hidden lg:flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-xl border border-indigo-500/40 text-[11px]">
-                    <span class="text-indigo-300 font-semibold mr-1">🌌 Thiên Tượng:</span>
-                    <button onclick="setSkyTheme('cosmic')" id="sky-btn-cosmic" class="px-2 py-0.5 rounded bg-indigo-600/40 text-cyan-200 border border-cyan-400/60 font-bold transition">Tinh Hà</button>
-                    <button onclick="setSkyTheme('bloodmoon')" id="sky-btn-bloodmoon" class="px-2 py-0.5 rounded bg-slate-900 text-rose-300 border border-slate-800 hover:border-rose-500/50 transition">Huyết Nguyệt</button>
-                    <button onclick="setSkyTheme('thunder')" id="sky-btn-thunder" class="px-2 py-0.5 rounded bg-slate-900 text-purple-300 border border-slate-800 hover:border-purple-500/50 transition">Lôi Trì</button>
-                    <button onclick="setSkyTheme('immortal')" id="sky-btn-immortal" class="px-2 py-0.5 rounded bg-slate-900 text-amber-300 border border-slate-800 hover:border-amber-500/50 transition">Tiên Cảnh</button>
-                </div>
-
-                <div class="px-3 py-1.5 rounded-xl bg-slate-900/95 border border-amber-500/35 flex items-center gap-1.5 text-xs">
-                    <span>🪙</span>
+            <div class="tower-top-actions">
+                <div class="tower-resource" title="Linh Thạch">
+                    🪙
                     <span id="ui-linh-thach" class="font-bold text-amber-300 font-mono">1,561,820</span>
                 </div>
-                <div class="px-3 py-1.5 rounded-xl bg-slate-900/95 border border-cyan-500/35 flex items-center gap-1.5 text-xs hidden xl:flex">
-                    <span>⚡</span>
+                <div class="tower-resource" title="Tu Vi">
+                    ⚡
                     <span id="ui-tu-vi" class="font-bold text-cyan-300 font-mono">57,222,772</span>
                 </div>
-
-                <button onclick="forgeSwordUpgrade()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600/30 to-purple-600/30 hover:brightness-125 border border-amber-400/70 text-amber-200 text-xs font-bold flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.3)] transition active:scale-95">
-                    <span>🔥</span> Đúc Kiếm (<span id="ui-sword-count-top">12</span>)
+                <button onclick="healHeroFull()" class="tower-ui-button tower-heal">
+                    <span>💚</span>
+                    Hồi Máu
                 </button>
-
-                <button onclick="healHeroFull()" class="px-2.5 py-1.5 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/50 text-emerald-300 text-xs font-bold flex items-center gap-1 transition active:scale-95">
-                    <span>💚</span> Hồi Máu
-                </button>
-
-                <button onclick="toggleSoundFX()" id="btn-sfx-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-xs font-bold transition">
-                    <span>🔊</span>
-                </button>
-
-                <button onclick="closeTowerPopup()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-700 to-red-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1 shadow-lg transition">
+                <details class="tower-menu" id="tower-settings-menu" data-keep-open>
+                    <summary>
+                        Tùy chỉnh
+                        <span aria-hidden="true">⌄</span>
+                    </summary>
+                    <div class="tower-popover tower-settings-popover">
+                        <h2>Thiên tượng</h2>
+                        <div class="tower-choice-grid">
+                            <button onclick="setSkyTheme('cosmic')" id="sky-btn-cosmic" class="px-2 py-0.5 rounded bg-indigo-600/40 text-cyan-200 border border-cyan-400/60 font-bold transition">Tinh Hà</button>
+                            <button onclick="setSkyTheme('bloodmoon')" id="sky-btn-bloodmoon" class="px-2 py-0.5 rounded bg-slate-900 text-rose-300 border border-slate-800 hover:border-rose-500/50 transition">Huyết Nguyệt</button>
+                            <button onclick="setSkyTheme('thunder')" id="sky-btn-thunder" class="px-2 py-0.5 rounded bg-slate-900 text-purple-300 border border-slate-800 hover:border-purple-500/50 transition">Lôi Trì</button>
+                            <button onclick="setSkyTheme('immortal')" id="sky-btn-immortal" class="px-2 py-0.5 rounded bg-slate-900 text-amber-300 border border-slate-800 hover:border-amber-500/50 transition">Tiên Cảnh</button>
+                        </div>
+                        <h2>Linh cảnh</h2>
+                        <div class="tower-choice-grid">
+                            <button onclick="toggleThreePureClones()" id="btn-tam-thanh" class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/70 text-cyan-200 font-bold text-xs shadow-[0_0_14px_rgba(34,211,238,0.45)] transition active:scale-95" title="Nhất Khí Hóa Tam Thanh: Triệu hồi 2 Nguyên Thần Phân Thân cùng vây công!">👥 Hóa Tam Thanh: BẬT</button>
+                            <button onclick="toggleDivineWings()" id="btn-wings-toggle" class="px-2 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-400/60 text-purple-200 font-bold text-[11px] transition">🪽 Thần Dực</button>
+                            <button onclick="togglePhapTuongMode()" id="btn-phap-tuong" class="px-2 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 text-amber-200 font-bold text-[11px] transition">🐉 Pháp Tướng</button>
+                            <button onclick="toggleSoundFX()" id="btn-sfx-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-xs font-bold transition">
+                                <span>🔊</span>
+                            </button>
+                        </div>
+                        <h2>Biểu diễn tuyệt kỹ</h2>
+                        <div class="tower-choice-grid">
+                            <button onclick="triggerGrassCutsStarsSpectacle()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.75)] hover:brightness-125 transition active:scale-95" title="Một cọng cỏ chém đứt cả Mặt Trời, Mặt Trăng và Tinh Tú trên bầu trời!">🌿 Nhất Thảo Trảm Tinh Thần</button>
+                            <button onclick="triggerHeavenlyTribulationEvent()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-amber-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(192,132,252,0.75)] hover:brightness-125 transition active:scale-95" title="Gọi Cửu Trọng Lôi Kiếp & Nghịch Thiên Trảm Thiên Đạo Pháp Nhãn!">⚡ Nghịch Thiên Phạt Đạo</button>
+                            <button onclick="triggerSwordRainSpectacle()" class="px-2.5 py-1 rounded-xl golden-glow-btn text-white font-bold text-xs shadow-[0_0_18px_rgba(245,158,11,0.65)] hover:brightness-125 transition active:scale-95">☄️ Mưa Vạn Kiếm</button>
+                        </div>
+                        <h2>Chỉ số nhân vật</h2>
+                        <div class="tower-stats-grid">
+                            <div class="tower-stat">
+                                <span>Công kích</span>
+                                <strong id="stat-atk" class="text-amber-300 font-mono">148K</strong>
+                            </div>
+                            <div class="tower-stat">
+                                <span>Phòng ngự</span>
+                                <strong id="stat-def" class="text-emerald-300 font-mono">42K</strong>
+                            </div>
+                            <div class="tower-stat">
+                                <span>Bạo kích</span>
+                                <strong id="stat-crit" class="text-rose-400 font-mono">35%</strong>
+                            </div>
+                            <div class="tower-stat">
+                                <span>Né tránh</span>
+                                <strong id="stat-eva" class="text-cyan-300 font-mono">18%</strong>
+                            </div>
+                        </div>
+                        <button onclick="forgeSwordUpgrade()" class="tower-ui-button tower-forge">
+                            <span>🔥</span>
+                            Đúc Kiếm (
+                            <span id="ui-sword-count-top">12</span>
+                            )
+                        </button>
+                    </div>
+                </details>
+                <button aria-label="Đóng Trấn Yêu Tháp" onclick="closeTowerPopup()" class="tower-ui-button tower-exit">
                     <span>✕</span>
                 </button>
             </div>
         </header>
 
-        <!-- 2. MAIN WORKSPACE: SÂN ĐẤU 8K SIÊU RỘNG (9 CỘT) - BẢNG QUẢN LÝ (3 CỘT) -->
-        <main class="flex-1 min-h-0 grid grid-cols-12 gap-3 p-3 overflow-hidden">
-
-            <!-- ==================== VÙNG TRÁI (9 COL): ĐẤU TRƯỜNG 8K HDR ==================== -->
-            <section class="col-span-9 flex flex-col min-h-0 relative">
-
-                <div id="arena-viewport" class="relative flex-1 min-h-0 rounded-2xl xianxia-arena-frame overflow-hidden flex flex-col justify-between p-4">
-
+        <main class="tower-workspace">
+            <section class="tower-combat-column" aria-label="Đấu trường">
+                <header class="tower-encounter">
+                    <div class="tower-encounter-heading">
+                        <span id="arena-floor-tag" class="tower-floor-tag">🔥 BOSS CỘT MỐC</span>
+                        <h2 id="arena-floor-title" class="tower-floor-title">TẦNG 20 • HUYẾT DỰC MA HOÀNG</h2>
+                    </div>
+                    <div class="tower-encounter-meta">
+                        <span id="boss-element-badge" class="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-xs text-emerald-200 font-bold">Hệ: 🌿 Mộc Yêu</span>
+                        <span id="ui-element-counter-status" class="text-xs text-emerald-400 font-bold">⚡ Đang Khắc Chế (+35% Sát Thương)</span>
+                        <span id="arena-cp-ratio" class="text-xs text-emerald-400 font-bold mr-1">Kiếm Lực: 1,320,000</span>
+                        <span class="hidden" id="arena-boss-cp">1,250,000</span>
+                    </div>
+                </header>
+                <div id="arena-viewport" class="tower-battlefield xianxia-arena-frame">
                     <!-- DẢI ĐIỆN ẢNH IMAX 21:9 TRÊN & DƯỚI KHI TUNG ĐẠI CẤM THUẬT -->
                     <div class="cinema-bar absolute top-0 left-0 right-0 bg-black/95 z-40 pointer-events-none border-b border-amber-500/30 flex items-center justify-center overflow-hidden">
-                        <span id="cinema-top-quote" class="font-xianxia text-[11px] tracking-[0.45em] text-amber-300/90 uppercase">
-                            ✦ NHẤT CHU THẢO TRẢM TẬN NHẬT NGUYỆT TINH THẦN • VẠN CỔ KIẾM ĐẾ ✦
-                        </span>
+                        <span id="cinema-top-quote" class="font-xianxia text-[11px] tracking-[0.45em] text-amber-300/90 uppercase">✦ NHẤT CHU THẢO TRẢM TẬN NHẬT NGUYỆT TINH THẦN • VẠN CỔ KIẾM ĐẾ ✦</span>
                     </div>
                     <div class="cinema-bar absolute bottom-0 left-0 right-0 bg-black/95 z-40 pointer-events-none border-t border-amber-500/30 flex items-center justify-center overflow-hidden">
-                        <span class="font-mono text-[10px] tracking-[0.3em] text-cyan-300/80">
-                            [ HỒNG MÔNG SÁNG THẾ ENGINE • 60FPS PROCEDURAL CELESTIAL VFX ]
-                        </span>
+                        <span class="font-mono text-[10px] tracking-[0.3em] text-cyan-300/80">[ HỒNG MÔNG SÁNG THẾ ENGINE • 60FPS PROCEDURAL CELESTIAL VFX ]</span>
                     </div>
-
                     <!-- CANVAS 60FPS ĐỒ HỌA CHÍNH -->
                     <canvas id="combat-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10" aria-label="Đấu trường Trấn Yêu Tháp"></canvas>
-
                     <!-- LAYER HIỆU ỨNG THIÊN LÔI & ĐẠI KIẾM KHỔNG LỒ -->
                     <div id="vfx-overlay-layer" class="absolute inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden"></div>
-
                     <!-- ANIME CUT-IN BANNER KHI TUNG ĐẠI CHIÊU -->
                     <div id="anime-cutin-banner" class="hidden absolute top-1/3 left-0 right-0 z-50 pointer-events-none overflow-hidden">
                         <div id="anime-cutin-box" class="w-full py-3 px-12 bg-gradient-to-r from-transparent via-slate-950/95 to-transparent border-y-2 border-amber-400 shadow-[0_0_60px_rgba(245,158,11,0.95)] flex items-center justify-center gap-6">
                             <div class="text-4xl drop-shadow-[0_0_15px_#fff]" id="cutin-icon">🌌</div>
                             <div class="text-center">
                                 <div id="cutin-subtitle" class="text-[11px] font-bold tracking-[0.35em] text-cyan-300 uppercase">THƯỢNG CỔ THẦN THÔNG KIẾM QUYẾT</div>
-                                <div id="cutin-title" class="font-xianxia text-2xl xl:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400">
-                                    NHẤT KIẾM KHAI THIÊN MÔN!
-                                </div>
+                                <div id="cutin-title" class="font-xianxia text-2xl xl:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400">NHẤT KIẾM KHAI THIÊN MÔN!</div>
                             </div>
                             <div class="text-4xl drop-shadow-[0_0_15px_#fff]">🗡️</div>
                         </div>
                     </div>
-
                     <!-- COMBO COUNTER LIÊN TRẢM KIẾM Ý -->
                     <div id="combo-counter-box" class="hidden absolute top-36 left-6 z-40 pointer-events-none">
                         <div class="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/30 via-rose-600/25 to-transparent border-l-4 border-amber-400 backdrop-blur-md">
@@ -325,227 +479,158 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- BANNER TUYỆT KỸ / KIẾM TRẬN -->
-                    <div id="cinematic-banner" class="hidden absolute top-28 left-1/2 -translate-x-1/2 z-50 px-8 py-2 rounded-full border-2 border-amber-300 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-amber-200 font-xianxia font-black text-xs xl:text-sm tracking-[0.2em] shadow-[0_0_50px_rgba(245,158,11,0.95)] pointer-events-none whitespace-nowrap">
-                        🗡️ VẠN KIẾM QUY TÔNG • NHẤT KIẾM TRẢM THIÊN MA 🗡️
-                    </div>
-
-                    <!-- TOP HUD TRONG SÂN ĐẤU -->
-                    <div class="relative z-30 flex flex-col gap-2 shrink-0">
-
-                        <!-- Thanh Thông Tin Tầng Đấu & Nút Hiệu Ứng Đồ Họa Đỉnh Cao -->
-                        <div class="flex items-center justify-between px-4 py-2 rounded-2xl hud-glass flex-wrap gap-2">
-                            <div class="flex items-center gap-2">
-                                <span id="arena-floor-tag" class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-lg bg-rose-500/25 text-rose-200 border border-rose-500/50">
-                                    🔥 BOSS CỘT MỐC
-                                </span>
-                                <h2 id="arena-floor-title" class="font-xianxia text-base xl:text-lg font-black text-amber-300 tracking-wider">
-                                    TẦNG 20 • HUYẾT DỰC MA HOÀNG
-                                </h2>
-                                <span id="boss-element-badge" class="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-xs text-emerald-200 font-bold">
-                                    Hệ: 🌿 Mộc Yêu
-                                </span>
-                                <span id="ui-element-counter-status" class="text-xs text-emerald-400 font-bold">
-                                    ⚡ Đang Khắc Chế (+35% Sát Thương)
-                                </span>
-                            </div>
-
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                <span id="arena-cp-ratio" class="text-xs text-emerald-400 font-bold mr-1">Kiếm Lực: 1,320,000</span>
-                                <span class="hidden" id="arena-boss-cp">1,250,000</span>
-
-                                <button onclick="triggerGrassCutsStarsSpectacle()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.75)] hover:brightness-125 transition active:scale-95" title="Một cọng cỏ chém đứt cả Mặt Trời, Mặt Trăng và Tinh Tú trên bầu trời!">
-                                    🌿 Nhất Thảo Trảm Tinh Thần
-                                </button>
-                                <button onclick="triggerHeavenlyTribulationEvent()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-amber-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(192,132,252,0.75)] hover:brightness-125 transition active:scale-95" title="Gọi Cửu Trọng Lôi Kiếp & Nghịch Thiên Trảm Thiên Đạo Pháp Nhãn!">
-                                    ⚡ Nghịch Thiên Phạt Đạo
-                                </button>
-                                <button onclick="toggleThreePureClones()" id="btn-tam-thanh" class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/70 text-cyan-200 font-bold text-xs shadow-[0_0_14px_rgba(34,211,238,0.45)] transition active:scale-95" title="Nhất Khí Hóa Tam Thanh: Triệu hồi 2 Nguyên Thần Phân Thân cùng vây công!">
-                                    👥 Hóa Tam Thanh: BẬT
-                                </button>
-                                <button onclick="triggerSwordRainSpectacle()" class="px-2.5 py-1 rounded-xl golden-glow-btn text-white font-bold text-xs shadow-[0_0_18px_rgba(245,158,11,0.65)] hover:brightness-125 transition active:scale-95">
-                                    ☄️ Mưa Vạn Kiếm
-                                </button>
-                                <button onclick="toggleDivineWings()" id="btn-wings-toggle" class="px-2 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-400/60 text-purple-200 font-bold text-[11px] transition">
-                                    🪽 Thần Dực
-                                </button>
-                                <button onclick="togglePhapTuongMode()" id="btn-phap-tuong" class="px-2 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 text-amber-200 font-bold text-[11px] transition">
-                                    🐉 Pháp Tướng
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 2 Thanh Máu Đối Đầu Trực Quan -->
-                        <div class="grid grid-cols-2 gap-6 px-1">
-                            <!-- Phe Ta: Kiếm Tiên -->
-                            <div class="hud-glass rounded-2xl p-2.5 border-cyan-500/45">
-                                <div class="flex justify-between items-center text-xs mb-1">
-                                    <span class="font-xianxia font-bold text-cyan-300 text-sm flex items-center gap-1.5">
-                                        <span id="hero-display-name"><span>🗡️</span> Tiêu Dao Kiếm Tiên • </span><span id="hero-element-tag" class="text-amber-300">Kim Kiếm Ý</span>
+                    <div id="cinematic-banner" class="hidden absolute top-28 left-1/2 -translate-x-1/2 z-50 px-8 py-2 rounded-full border-2 border-amber-300 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-amber-200 font-xianxia font-black text-xs xl:text-sm tracking-[0.2em] shadow-[0_0_50px_rgba(245,158,11,0.95)] pointer-events-none whitespace-nowrap">🗡️ VẠN KIẾM QUY TÔNG • NHẤT KIẾM TRẢM THIÊN MA 🗡️</div>
+                    <div class="tower-fighter-hud">
+                        <!-- Phe Ta: Kiếm Tiên -->
+                        <div class="hud-glass rounded-2xl p-2.5 border-cyan-500/45">
+                            <div class="flex justify-between items-center text-xs mb-1">
+                                <span class="font-xianxia font-bold text-cyan-300 text-sm flex items-center gap-1.5">
+                                    <span id="hero-display-name">
+                                        <span>🗡️</span>
+                                        Tiêu Dao Kiếm Tiên •
                                     </span>
-                                    <div class="flex items-center gap-1.5">
-                                        <span id="hero-shield-badge" class="hidden text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/25 text-amber-200 border border-amber-400/60 font-bold animate-pulse">
-                                            🔔 Đông Hoàng Chung
-                                        </span>
-                                        <span id="guardian-spirit-name" class="text-[11px] px-2 py-0.5 rounded-lg bg-purple-950/90 text-purple-200 border border-purple-400/40 font-bold">
-                                            <span id="guardian-spirit-icon">🐺</span> Hắc Phong Lang Hồn
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-emerald-500/50 relative">
-                                    <div id="hero-hp-fill" class="h-full bg-gradient-to-r from-emerald-600 via-teal-400 to-cyan-300 rounded-full transition-all duration-200 shadow-[0_0_14px_#10b981]" style="width: 100%"></div>
-                                    <div id="hero-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">
-                                        850,000 / 850,000
-                                    </div>
-                                </div>
-
-                                <div class="mt-1.5 flex items-center gap-2">
-                                    <span class="text-[10px] text-cyan-300 font-bold shrink-0">⚡ Kiếm Nguyên:</span>
-                                    <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-cyan-500/40">
-                                        <div id="hero-mp-fill" class="h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-white rounded-full transition-all duration-200 shadow-[0_0_10px_#22d3ee]" style="width: 0%"></div>
-                                    </div>
-                                    <span id="hero-mp-label" class="text-[10px] text-cyan-200 font-mono font-bold shrink-0">0/100</span>
+                                    <span id="hero-element-tag" class="text-amber-300">Kim Kiếm Ý</span>
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="hero-shield-badge" class="hidden text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/25 text-amber-200 border border-amber-400/60 font-bold animate-pulse">🔔 Đông Hoàng Chung</span>
+                                    <span id="guardian-spirit-name" class="text-[11px] px-2 py-0.5 rounded-lg bg-purple-950/90 text-purple-200 border border-purple-400/40 font-bold">
+                                        <span id="guardian-spirit-icon">🐺</span>
+                                        Hắc Phong Lang Hồn
+                                    </span>
                                 </div>
                             </div>
-
-                            <!-- Phe Địch: Yêu Vương -->
-                            <div class="hud-glass rounded-2xl p-2.5 border-rose-500/50">
-                                <div class="flex justify-between items-center text-xs mb-1">
-                                    <span id="boss-hud-name" class="font-xianxia font-bold text-rose-400 text-sm truncate">👹 Huyết Dực Ma Hoàng</span>
-                                    <span id="boss-stats-mini" class="text-[11px] text-amber-300 font-mono">Bạo: 22% | Né: 10%</span>
+                            <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-emerald-500/50 relative">
+                                <div id="hero-hp-fill" class="h-full bg-gradient-to-r from-emerald-600 via-teal-400 to-cyan-300 rounded-full transition-all duration-200 shadow-[0_0_14px_#10b981]" style="width: 100%"></div>
+                                <div id="hero-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">850,000 / 850,000</div>
+                            </div>
+                            <div class="mt-1.5 flex items-center gap-2">
+                                <span class="text-[10px] text-cyan-300 font-bold shrink-0">⚡ Kiếm Nguyên:</span>
+                                <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-cyan-500/40">
+                                    <div id="hero-mp-fill" class="h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-white rounded-full transition-all duration-200 shadow-[0_0_10px_#22d3ee]" style="width: 0%"></div>
                                 </div>
-
-                                <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-rose-500/50 relative">
-                                    <div id="boss-hp-fill" class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-full transition-all duration-200 shadow-[0_0_14px_#f43f5e]" style="width: 100%"></div>
-                                    <div id="boss-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">
-                                        920,000 / 920,000
+                                <span id="hero-mp-label" class="text-[10px] text-cyan-200 font-mono font-bold shrink-0">0/100</span>
+                            </div>
+                        </div>
+                        <!-- Phe Địch: Yêu Vương -->
+                        <div class="hud-glass rounded-2xl p-2.5 border-rose-500/50">
+                            <div class="flex justify-between items-center text-xs mb-1">
+                                <span id="boss-hud-name" class="font-xianxia font-bold text-rose-400 text-sm truncate">👹 Huyết Dực Ma Hoàng</span>
+                                <span id="boss-stats-mini" class="text-[11px] text-amber-300 font-mono">Bạo: 22% | Né: 10%</span>
+                            </div>
+                            <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-rose-500/50 relative">
+                                <div id="boss-hp-fill" class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-full transition-all duration-200 shadow-[0_0_14px_#f43f5e]" style="width: 100%"></div>
+                                <div id="boss-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">920,000 / 920,000</div>
+                            </div>
+                            <div class="mt-1.5 grid grid-cols-2 gap-3">
+                                <div class="flex items-center gap-1.5" title="Đánh về 0% sẽ làm Boss Vỡ Giáp và chịu 100% Bạo Kích!">
+                                    <span id="boss-toughness-title" class="text-[10px] text-amber-300 font-bold shrink-0">🛡️ Yêu Cang:</span>
+                                    <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-amber-500/40">
+                                        <div id="boss-toughness-fill" class="h-full bg-gradient-to-r from-amber-500 via-yellow-300 to-white rounded-full transition-all duration-200" style="width: 100%"></div>
                                     </div>
+                                    <span id="boss-toughness-label" class="text-[10px] text-amber-200 font-mono font-bold shrink-0">100%</span>
                                 </div>
-
-                                <div class="mt-1.5 grid grid-cols-2 gap-3">
-                                    <div class="flex items-center gap-1.5" title="Đánh về 0% sẽ làm Boss Vỡ Giáp và chịu 100% Bạo Kích!">
-                                        <span id="boss-toughness-title" class="text-[10px] text-amber-300 font-bold shrink-0">🛡️ Yêu Cang:</span>
-                                        <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-amber-500/40">
-                                            <div id="boss-toughness-fill" class="h-full bg-gradient-to-r from-amber-500 via-yellow-300 to-white rounded-full transition-all duration-200" style="width: 100%"></div>
-                                        </div>
-                                        <span id="boss-toughness-label" class="text-[10px] text-amber-200 font-mono font-bold shrink-0">100%</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] text-rose-300 font-bold shrink-0">🔥 Nộ Khí:</span>
+                                    <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-rose-500/40">
+                                        <div id="boss-mp-fill" class="h-full bg-gradient-to-r from-purple-700 via-rose-500 to-amber-300 rounded-full transition-all duration-200" style="width: 0%"></div>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-[10px] text-rose-300 font-bold shrink-0">🔥 Nộ Khí:</span>
-                                        <div class="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-rose-500/40">
-                                            <div id="boss-mp-fill" class="h-full bg-gradient-to-r from-purple-700 via-rose-500 to-amber-300 rounded-full transition-all duration-200" style="width: 0%"></div>
-                                        </div>
-                                        <span id="boss-mp-label" class="text-[10px] text-rose-200 font-mono font-bold shrink-0">0/100</span>
-                                    </div>
+                                    <span id="boss-mp-label" class="text-[10px] text-rose-200 font-mono font-bold shrink-0">0/100</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- VÙNG NEO HIỂN THỊ SỐ SÁT THƯƠNG NẢY LÊN -->
-                    <div class="relative z-30 grid grid-cols-2 gap-6 flex-1 items-center pointer-events-none">
-                        <div id="hero-stage-anchor" class="h-full relative flex items-center justify-center">
-                            <div id="hero-sprite-wrapper" class="w-40 h-40"></div>
+                    <div class="tower-hit-anchors" aria-hidden="true">
+                        <div id="hero-stage-anchor">
+                            <div id="hero-sprite-wrapper"></div>
                         </div>
-                        <div id="boss-stage-anchor" class="h-full relative flex items-center justify-center">
-                            <div id="boss-sprite-wrapper" class="w-40 h-40"></div>
+                        <div id="boss-stage-anchor">
+                            <div id="boss-sprite-wrapper"></div>
                         </div>
                     </div>
-
-                    <!-- THANH ĐIỀU KHIỂN CHIẾN ĐẤU TRỰC QUAN Ở ĐÁY SÂN ĐẤU -->
-                    <div class="relative z-30 flex flex-col gap-1.5 shrink-0">
-
-                        <!-- Thanh Pháp Bảo Chủ Động (3 Thượng Cổ Chí Bảo Bấm Tung Chiêu Tức Thì) & Log -->
-                        <div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-slate-950/85 border border-amber-500/30 backdrop-blur-md text-xs">
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <span class="text-[11px] font-bold text-amber-300">🏺 Pháp Bảo:</span>
-                                <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn 3 hiệp (Phím 1)">
-                                    <span>🔔 Đông Hoàng Chung</span>
-                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-amber-300 border border-amber-500/40">[1]</kbd>
-                                </button>
-                                <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Triệu hồi 4 thanh Tru Tiên Tứ Kiếm bắn tia hủy diệt liên tục (Phím 2)">
-                                    <span>🩸 Tru Tiên Kiếm</span>
-                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-rose-300 border border-rose-500/40">[2]</kbd>
-                                </button>
-                                <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Phóng Thái Cực Hỗn Độn Luân nghiền nát 40% Yêu Cang & hồi đầy Kiếm Nguyên (Phím 3)">
-                                    <span>☯️ Thái Cực Luân</span>
-                                    <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-cyan-300 border border-cyan-500/40">[3]</kbd>
-                                </button>
-                            </div>
-
-                            <div id="combat-log-stream" class="flex-1 truncate font-mono text-amber-200/90 h-5 overflow-hidden text-right text-[11px]">
-                                ⚡ [Space] Khai Chiến • [T] Tự Leo • [X] Tốc Độ • [Q] Đổi Tab • [C] Quét • [1-3] Pháp Bảo
-                            </div>
+                </div>
+                <footer class="tower-combat-dock" data-fighting="false">
+                    <div class="tower-chain-status">
+                        <span class="tower-chain-badge">Tự động liên chiêu</span>
+                        <div id="combat-skill-status" role="status" aria-live="polite" aria-atomic="true">
+                            <strong id="combat-skill-name">Ngẫu nhiên thần thông</strong>
+                            <span id="combat-skill-meta">Toàn bộ công pháp · Ulti khi đầy Kiếm Nguyên</span>
                         </div>
-
-                        <!-- Bảng Điều Khiển Chính: Chủ Tu Công Pháp (8 Bộ) + Tam Thức Liên Chiêu (24 Kỹ Năng) + Khai Chiến -->
-                        <div class="hud-glass rounded-2xl p-2 flex flex-col gap-1.5">
-
-                            <!-- HÀNG 1: CHỌN THẬP ĐẠI CÔNG PHÁP ĐẠO THỐNG (10 CULTIVATION MANUALS) -->
-                            <div class="flex items-center justify-between gap-1.5 flex-wrap border-b border-slate-800/90 pb-1.5">
-                                <div class="flex items-center gap-1 flex-wrap">
-                                    <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider mr-1">📜 Chủ Tu Công Pháp:</span>
-                                    <div id="manual-selector-bar" class="flex items-center gap-1 flex-wrap"></div>
-                                </div>
-                                <button onclick="switchRightSidebarTab('manuals')" class="px-2.5 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[10px] font-bold transition">
-                                    📖 Mở Tàng Kinh Các (30 Thần Thông)
-                                </button>
-                            </div>
-
-                            <!-- HÀNG 2: HỆ NGŨ HÀNH + 3 THỨC CỦA CÔNG PHÁP ĐANG VẬN CHUYỂN + KHAI CHIẾN -->
-                            <div class="flex items-center justify-between gap-2 flex-wrap">
-
-                                <!-- BƯỚC 1: CHỌN HỆ KHẮC CHẾ -->
-                                <div class="flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-xl border border-slate-800">
-                                    <span class="text-[10px] font-bold text-amber-300 mr-0.5">Hệ:</span>
+                        <span id="combat-turn-label">Sẵn sàng</span>
+                    </div>
+                    <div class="tower-skills-row">
+                        <details class="tower-menu tower-menu-up" id="tower-manual-menu">
+                            <summary>
+                                <span>
+                                    <small>Chủ tu công pháp</small>
+                                    <strong id="active-manual-label">Thanh Liên Kiếm</strong>
+                                </span>
+                                <span aria-hidden="true">⌃</span>
+                            </summary>
+                            <div class="tower-popover tower-manual-popover">
+                                <h2>Vận chuyển công pháp</h2>
+                                <div id="manual-selector-bar" class="tower-manual-grid"></div>
+                                <h2>Ngũ hành kiếm ý</h2>
+                                <div class="tower-elements">
                                     <button onclick="selectHeroElement('Kim')" id="elem-btn-Kim" class="px-2 py-1 rounded-lg border-2 border-amber-400 bg-amber-500/25 text-amber-200 text-[11px] font-bold transition" title="⚔️ Hệ Kim: Khắc chế Hệ Mộc (+35% Sát Thương) | Bị Hệ Hỏa khắc">⚔️ Kim</button>
                                     <button onclick="selectHeroElement('Moc')" id="elem-btn-Moc" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-emerald-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🌿 Hệ Mộc: Khắc chế Hệ Thủy (+35% Sát Thương) | Bị Hệ Kim khắc">🌿 Mộc</button>
                                     <button onclick="selectHeroElement('Thuy')" id="elem-btn-Thuy" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-cyan-300 text-[11px] opacity-75 hover:opacity-100 transition" title="❄️ Hệ Thủy: Khắc chế Hệ Hỏa (+35% Sát Thương) | Bị Hệ Lôi khắc">❄️ Thủy</button>
                                     <button onclick="selectHeroElement('Hoa')" id="elem-btn-Hoa" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-rose-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🔥 Hệ Hỏa: Khắc chế Hệ Lôi (+35% Sát Thương) | Bị Hệ Thủy khắc">🔥 Hỏa</button>
                                     <button onclick="selectHeroElement('Loi')" id="elem-btn-Loi" class="px-2 py-1 rounded-lg border border-slate-800 bg-slate-900 text-purple-300 text-[11px] opacity-75 hover:opacity-100 transition" title="🌩️ Hệ Lôi: Khắc chế Hệ Kim (+35% Sát Thương) | Bị Hệ Hỏa khắc">🌩️ Lôi</button>
                                 </div>
-
-                                <!-- BƯỚC 2: TAM THỨC THẦN THÔNG CỦA CÔNG PHÁP (BẤM ĐỂ TUNG CHIÊU NGAY HOẶC ĐẶT LÀM TUYỆT KỸ) -->
-                                <div id="active-manual-skills-bar" class="flex items-center gap-1.5 bg-slate-950/90 px-2.5 py-1 rounded-xl border border-cyan-500/35 flex-wrap">
-                                    <!-- Render động 3 thức (Tiểu Thần Thông, Đại Thần Thông, Tuyệt Thế Cấm Thuật) theo Công Pháp -->
-                                </div>
-
-                                <!-- BƯỚC 3: NÚT KHAI CHIẾN & TỐC ĐỘ -->
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="toggleCombatSpeed()" id="btn-speed" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1" title="Tốc độ trận đấu: 1x / 2x / 3x (Phím X)">
-                                        <span id="speed-label">1x</span>
-                                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[X]</kbd>
-                                    </button>
-
-                                    <label id="auto-climb-label" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs cursor-pointer select-none transition-all duration-200 hover:border-amber-500/50" title="Tự động leo tiếp tầng sau khi thắng (Phím T)">
-                                        <input type="checkbox" id="chk-auto-climb" class="accent-emerald-500 rounded cursor-pointer w-3.5 h-3.5">
-                                        <span id="auto-climb-status-dot" class="hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                        <span id="auto-climb-text" class="text-slate-300 font-semibold">Tự Leo: TẮT</span>
-                                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[T]</kbd>
-                                    </label>
-
-                                    <button id="btn-fight" onclick="startOrStopCombat()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5" title="Khai chiến hoặc dừng giao đấu (Phím Space)">
-                                        <span>🗡️ KHIÊU CHIẾN (T.20)</span>
-                                        <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>
-                                    </button>
-                                </div>
-
+                                <button type="button" class="tower-ui-button tower-library" onclick="switchRightSidebarTab('manuals')">📖 Xem toàn bộ công pháp & thần thông</button>
                             </div>
-                        </div>
+                        </details>
+                        <div id="active-manual-skills-bar" class="tower-active-skills"><!-- Render động 3 thức (Tiểu Thần Thông, Đại Thần Thông, Tuyệt Thế Cấm Thuật) theo Công Pháp --></div>
                     </div>
-
-                </div>
-
+                    <div class="tower-actions-row">
+                        <div class="tower-secondary-actions">
+                            <details class="tower-menu tower-menu-up" id="tower-artifact-menu">
+                                <summary>
+                                    🏺 Pháp bảo
+                                    <kbd>1–3</kbd>
+                                    <span aria-hidden="true">⌃</span>
+                                </summary>
+                                <div class="tower-popover tower-artifact-popover">
+                                    <h2>Pháp bảo chủ động</h2>
+                                    <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn 3 hiệp (Phím 1)">
+                                        <span>🔔 Đông Hoàng Chung</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-amber-300 border border-amber-500/40">[1]</kbd>
+                                    </button>
+                                    <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Triệu hồi 4 thanh Tru Tiên Tứ Kiếm bắn tia hủy diệt liên tục (Phím 2)">
+                                        <span>🩸 Tru Tiên Kiếm</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-rose-300 border border-rose-500/40">[2]</kbd>
+                                    </button>
+                                    <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Phóng Thái Cực Hỗn Độn Luân nghiền nát 40% Yêu Cang & hồi đầy Kiếm Nguyên (Phím 3)">
+                                        <span>☯️ Thái Cực Luân</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-cyan-300 border border-cyan-500/40">[3]</kbd>
+                                    </button>
+                                    <p>Dùng nhanh bằng phím 1, 2, 3 khi giao chiến.</p>
+                                </div>
+                            </details>
+                            <button onclick="toggleCombatSpeed()" id="btn-speed" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1" title="Tốc độ trận đấu: 1x / 2x / 3x (Phím X)">
+                                <span id="speed-label">1x</span>
+                                <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[X]</kbd>
+                            </button>
+                            <label id="auto-climb-label" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs cursor-pointer select-none transition-all duration-200 hover:border-amber-500/50" title="Tự động leo tiếp tầng sau khi thắng (Phím T)">
+                                <input type="checkbox" id="chk-auto-climb" class="accent-emerald-500 rounded cursor-pointer w-3.5 h-3.5">
+                                <span id="auto-climb-status-dot" class="hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span id="auto-climb-text" class="text-slate-300 font-semibold">Tự Leo: TẮT</span>
+                                <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[T]</kbd>
+                            </label>
+                        </div>
+                        <button id="btn-fight" onclick="startOrStopCombat()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5" title="Khai chiến hoặc dừng giao đấu (Phím Space)">
+                            <span>🗡️ KHIÊU CHIẾN (T.20)</span>
+                            <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>
+                        </button>
+                    </div>
+                </footer>
+                <div id="combat-log-stream" class="tower-combat-log">⚡ [Space] Khai Chiến • [T] Tự Leo • [X] Tốc Độ • [Q] Đổi Tab • [C] Quét • [1-3] Pháp Bảo</div>
             </section>
-
-            <!-- ==================== VÙNG PHẢI (3 COL): BẢNG QUẢN LÝ 3 TAB (TẦNG THÁP - CÔNG PHÁP - TÚI ĐỒ) ==================== -->
-            <aside class="col-span-3 flex flex-col xianxia-card rounded-2xl overflow-hidden min-h-0">
-
+            <aside id="tower-sidebar" class="tower-sidebar">
                 <div class="grid grid-cols-3 p-1.5 bg-slate-950 border-b border-amber-500/25 gap-1 shrink-0">
                     <button onclick="switchRightSidebarTab('floors')" id="tab-btn-floors" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-gradient-to-r from-amber-500/25 to-rose-500/20 text-amber-300 border border-amber-400/60 shadow transition flex items-center justify-center gap-1" title="Xem 50 tầng tháp (Bấm hoặc nhấn [Q] đổi Tab)">
-                        <span>🗼 Tầng (50)</span>
+                        <span>🗼 Tầng</span>
                         <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-amber-300/80 border border-amber-500/30">[Q]</kbd>
                     </button>
                     <button onclick="switchRightSidebarTab('manuals')" id="tab-btn-manuals" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-amber-200 transition flex items-center justify-center gap-1" title="Tàng Kinh Các (Bấm hoặc nhấn [Q] đổi Tab)">
@@ -556,63 +641,67 @@
                         <span id="bag-count-badge" class="ml-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/25 text-emerald-300 text-[10px] font-mono">3</span>
                     </button>
                 </div>
-
                 <!-- TAB 1: CHỌN TẦNG & CÀN QUÉT -->
                 <div id="sidebar-tab-floors" class="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <!-- Thanh tiến độ leo tháp & Nhảy tầng nhanh -->
                     <div class="px-2.5 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
                         <div class="flex items-center gap-1.5 text-slate-300">
                             <span class="text-amber-400">🗼</span>
-                            <span class="text-[11px] font-medium">Tiến Độ Leo Tháp:</span>
+                            <span class="text-[11px] font-medium">Tiến độ</span>
                             <span id="climb-progress-badge" class="font-mono font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30 text-[10px]">19/50 (38%)</span>
                         </div>
-                        <button onclick="jumpToHighestFloor()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/25 via-rose-500/20 to-amber-500/25 hover:brightness-110 border border-amber-400/60 text-amber-200 text-xs font-xianxia font-bold flex items-center gap-1 transition active:scale-95" title="Tiến thẳng tới tầng kế tiếp cần vượt">
-                            🚀 Tầng Kế Tiếp
-                        </button>
+                        <button onclick="jumpToHighestFloor()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/25 via-rose-500/20 to-amber-500/25 hover:brightness-110 border border-amber-400/60 text-amber-200 text-xs font-xianxia font-bold flex items-center gap-1 transition active:scale-95" title="Tiến thẳng tới tầng kế tiếp cần vượt">🚀 Tầng Kế Tiếp</button>
                     </div>
-
                     <div class="p-2.5 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between shrink-0">
-                        <span class="text-xs text-slate-300 font-medium">Nhận thưởng tầng đã qua:</span>
+                        <span class="text-xs text-slate-300 font-medium">Càn quét</span>
                         <div class="flex items-center gap-1.5">
                             <button onclick="sweepClearedFloor(1)" class="px-2.5 py-1 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-400/60 text-emerald-200 font-bold text-xs transition active:scale-95 flex items-center gap-1" title="Càn quét 1 lần tầng cao nhất (Phím C)">
                                 <span>⚡ Quét x1</span>
                                 <kbd class="font-mono text-[9px] text-emerald-300 opacity-80 px-1 py-0.2 rounded bg-black/40 border border-emerald-500/30">[C]</kbd>
                             </button>
-                            <button onclick="sweepClearedFloor(5)" class="px-2.5 py-1 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-400/60 text-cyan-200 font-bold text-xs transition active:scale-95" title="Càn quét nhanh 5 lần">
-                                ⚡ Quét x5
-                            </button>
+                            <button onclick="sweepClearedFloor(5)" class="px-2.5 py-1 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-400/60 text-cyan-200 font-bold text-xs transition active:scale-95" title="Càn quét nhanh 5 lần">⚡ Quét x5</button>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-5 gap-1 p-2 bg-slate-950/90 border-b border-slate-800 shrink-0 text-[10px] font-bold">
                         <button onclick="selectTierGroup(1)" id="tier-btn-1" class="py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800 transition">
-                            1-10<br><span class="text-[9px] font-normal opacity-75">Luyện Khí</span>
+                            1-10
+                            <br>
+                            <span class="text-[9px] font-normal opacity-75">Luyện Khí</span>
                         </button>
                         <button onclick="selectTierGroup(2)" id="tier-btn-2" class="py-1.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 transition">
-                            11-20<br><span class="text-[9px] font-normal opacity-75">Trúc Cơ</span>
+                            11-20
+                            <br>
+                            <span class="text-[9px] font-normal opacity-75">Trúc Cơ</span>
                         </button>
                         <button onclick="selectTierGroup(3)" id="tier-btn-3" class="py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800 transition">
-                            21-30<br><span class="text-[9px] font-normal opacity-75">Kim Đan</span>
+                            21-30
+                            <br>
+                            <span class="text-[9px] font-normal opacity-75">Kim Đan</span>
                         </button>
                         <button onclick="selectTierGroup(4)" id="tier-btn-4" class="py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800 transition">
-                            31-40<br><span class="text-[9px] font-normal opacity-75">Nguyên Anh</span>
+                            31-40
+                            <br>
+                            <span class="text-[9px] font-normal opacity-75">Nguyên Anh</span>
                         </button>
                         <button onclick="selectTierGroup(5)" id="tier-btn-5" class="py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800 transition">
-                            41-50<br><span class="text-[9px] font-normal opacity-75">Hóa Thần</span>
+                            41-50
+                            <br>
+                            <span class="text-[9px] font-normal opacity-75">Hóa Thần</span>
                         </button>
                     </div>
-
                     <div id="floor-list-container" class="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-0"></div>
-
                     <div class="p-2.5 bg-slate-950/95 border-t border-amber-500/25 shrink-0">
                         <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-[11px] font-bold text-amber-300">🎁 Phần Thưởng Rớt Ở Tầng <span id="loot-table-floor">20</span>:</span>
+                            <span class="text-[11px] font-bold text-amber-300">
+                                🎁 Phần Thưởng Rớt Ở Tầng
+                                <span id="loot-table-floor">20</span>
+                                :
+                            </span>
                             <span class="text-[10px] text-emerald-400 font-bold">Tỷ lệ 100%</span>
                         </div>
                         <div id="floor-drop-preview" class="grid grid-cols-2 gap-1.5"></div>
                     </div>
                 </div>
-
                 <!-- TAB MỚI: TÀNG KINH CÁC - THẬP ĐẠI CÔNG PHÁP & 30 THẦN THÔNG TU TIÊN -->
                 <div id="sidebar-tab-manuals" class="hidden flex-1 flex flex-col min-h-0 overflow-hidden">
                     <div class="p-2.5 bg-slate-900/90 border-b border-amber-500/25 shrink-0">
@@ -621,12 +710,17 @@
                             <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">10 Bộ • 30 Thần Thông</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-0.5">
-                            Mỗi bộ Công Pháp gồm <strong>Tâm Pháp Nội Tại</strong> và <strong>3 Thức Liên Chiêu</strong> (Tiểu Thần Thông → Đại Thần Thông → Tuyệt Thế Cấm Thuật). Bấm vào chiêu bất kỳ để <strong>Thi Triển Ngay</strong>!
+                            Mỗi bộ Công Pháp gồm
+                            <strong>Tâm Pháp Nội Tại</strong>
+                            và
+                            <strong>3 Thức Liên Chiêu</strong>
+                            (Tiểu Thần Thông → Đại Thần Thông → Tuyệt Thế Cấm Thuật). Bấm vào chiêu bất kỳ để
+                            <strong>Thi Triển Ngay</strong>
+                            !
                         </p>
                     </div>
                     <div id="manuals-compendium-list" class="flex-1 overflow-y-auto p-2.5 space-y-2.5 min-h-0"></div>
                 </div>
-
                 <!-- TAB 3: TÚI ĐỒ, YÊU HỒN & ĐỘT PHÁ CẢNH GIỚI -->
                 <div id="sidebar-tab-bag" class="hidden flex-1 flex flex-col gap-2.5 p-2.5 min-h-0 overflow-y-auto">
                     <div class="p-3 rounded-xl bg-slate-900/90 border border-purple-500/40 shrink-0">
@@ -634,30 +728,20 @@
                             <span class="text-[10px] font-bold uppercase text-purple-300">🌌 Cột Mốc Đột Phá</span>
                             <span id="milestone-status-text" class="text-[11px] font-bold text-rose-400">🔒 Tầng 20 Chặn Cửa</span>
                         </div>
-                        <h3 id="milestone-title-right" class="font-xianxia text-sm font-bold text-amber-300">
-                            Đột Phá: Kim Đan Kỳ
-                        </h3>
-                        <p id="milestone-desc-right" class="text-[11px] text-slate-300 mt-0.5">
-                            Chiến thắng Boss Tầng 20 để mở khóa đột phá!
-                        </p>
-                        <button id="btn-breakthrough-milestone" onclick="claimMilestoneBreakthrough()" disabled class="mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed transition">
-                            🔒 Hãy Vượt Tầng 20 Trước
-                        </button>
+                        <h3 id="milestone-title-right" class="font-xianxia text-sm font-bold text-amber-300">Đột Phá: Kim Đan Kỳ</h3>
+                        <p id="milestone-desc-right" class="text-[11px] text-slate-300 mt-0.5">Chiến thắng Boss Tầng 20 để mở khóa đột phá!</p>
+                        <button id="btn-breakthrough-milestone" onclick="claimMilestoneBreakthrough()" disabled class="mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed transition">🔒 Hãy Vượt Tầng 20 Trước</button>
                     </div>
-
                     <div class="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/35 flex flex-col shrink-0">
                         <div class="flex items-center justify-between mb-2">
                             <div>
                                 <h3 class="font-xianxia text-xs font-bold text-emerald-300 uppercase">🎒 Túi Bảo Vật & Đan Dược</h3>
                                 <p class="text-[10px] text-slate-400">Bấm vào vật phẩm để dùng ngay</p>
                             </div>
-                            <button onclick="useAllLootItems()" class="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/60 text-xs font-bold text-emerald-200 transition active:scale-95">
-                                ✨ Dùng Tất Cả
-                            </button>
+                            <button onclick="useAllLootItems()" class="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/60 text-xs font-bold text-emerald-200 transition active:scale-95">✨ Dùng Tất Cả</button>
                         </div>
                         <div id="loot-bag-grid" class="space-y-1.5 max-h-44 overflow-y-auto pr-1"></div>
                     </div>
-
                     <div class="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex flex-col shrink-0">
                         <div class="flex items-center justify-between mb-1.5">
                             <span class="font-xianxia text-xs font-bold text-amber-300 uppercase">🏺 Luyện Yêu Hồ (Yêu Hồn)</span>
@@ -666,9 +750,7 @@
                         <div id="captured-soul-box" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
-
             </aside>
-
         </main>
 
         <!-- ==================== BẢNG ĐẠI THẮNG TRẢM YÊU VƯƠNG (VICTORY MODAL) ==================== -->
@@ -1108,6 +1190,7 @@
             gameState.sfxEnabled = !gameState.sfxEnabled;
             const btn = document.getElementById('btn-sfx-toggle');
             btn.innerHTML = gameState.sfxEnabled ? `<span>🔊</span>` : `<span>🔇</span>`;
+            btn.setAttribute('aria-pressed', String(gameState.sfxEnabled));
         }
 
         function togglePhapTuongMode() {
@@ -1115,6 +1198,7 @@
             const btn = document.getElementById('btn-phap-tuong');
             if (btn) {
                 btn.textContent = gameState.phapTuongEnabled ? "🐉 Pháp Tướng: BẬT" : "🐉 Pháp Tướng: TẮT";
+                btn.setAttribute('aria-pressed', String(gameState.phapTuongEnabled));
             }
             if (gameState.phapTuongEnabled) {
                 spawnCalligraphySeal('龍神', 450, 220, '#38bdf8');
@@ -1126,6 +1210,7 @@
             const btn = document.getElementById('btn-wings-toggle');
             if (btn) {
                 btn.textContent = gameState.wingsEnabled ? "🪽 Thần Dực" : "🪽 Tắt Dực";
+                btn.setAttribute('aria-pressed', String(gameState.wingsEnabled));
             }
             if (gameState.wingsEnabled) {
                 spawnCalligraphySeal('神翼', 280, 260, '#c084fc');
@@ -1137,6 +1222,7 @@
             const btn = document.getElementById('btn-tam-thanh');
             if (btn) {
                 btn.textContent = gameState.tamThanhEnabled ? "👥 Hóa Tam Thanh: BẬT" : "👥 Hóa Tam Thanh: TẮT";
+                btn.setAttribute('aria-pressed', String(gameState.tamThanhEnabled));
             }
             playSound('bell');
             const canvas = document.getElementById('combat-canvas');
@@ -1781,12 +1867,78 @@
             });
         }
 
+        // Bake only static artwork at 2x resolution. Motion and effect counts stay live.
+        function createTowerArtwork(width, height, originX, originY, paint) {
+            const surface = document.createElement('canvas');
+            surface.width = width * 2;
+            surface.height = height * 2;
+            const brush = surface.getContext('2d');
+            brush.scale(2, 2);
+            brush.translate(originX, originY);
+            brush.globalCompositeOperation = 'lighter';
+            paint(brush);
+            return { surface, width, height, x: -originX, y: -originY };
+        }
+
+        function drawTowerArtwork(ctx, artwork) {
+            ctx.drawImage(artwork.surface, artwork.x, artwork.y, artwork.width, artwork.height);
+        }
+
+        function prepareAmbientDustArtwork(dust) {
+            return createTowerArtwork(64, 64, 32, 32, paint => {
+                paint.globalAlpha = dust.alpha;
+                paint.fillStyle = dust.color;
+                paint.shadowColor = dust.color;
+                paint.shadowBlur = 20;
+                paint.beginPath();
+                paint.arc(0, 0, dust.r, 0, Math.PI * 2);
+                paint.fill();
+            });
+        }
+
+        function getTowerArtwork(cache, key, prepare, limit = 12) {
+            let artwork = cache.get(key);
+            if (!artwork) {
+                artwork = prepare();
+                if (cache.size >= limit) cache.delete(cache.keys().next().value);
+                cache.set(key, artwork);
+            }
+            return artwork;
+        }
+
+        const divineWingArtwork = new Map();
         // VẼ CÁNH THẦN DỰC LÔI PHƯỢNG CHO KIẾM TIÊN (DIVINE LUMINOUS WINGS)
         function drawHeroDivineWings(ctx, x, y, t, color1 = '#38bdf8', color2 = '#a855f7') {
             if (!gameState.wingsEnabled) return;
+            const wing = getTowerArtwork(divineWingArtwork, `${color1}|${color2}`, () =>
+                createTowerArtwork(208, 192, 144, 96, paint => {
+                    for (let f = 0; f < 6; f++) {
+                        paint.save();
+                        paint.rotate(-0.35 + f * 0.16);
+                        const featherLen = 88 - f * 8;
+                        const grad = paint.createLinearGradient(0, 0, -featherLen, -20);
+                        grad.addColorStop(0, '#ffffff');
+                        grad.addColorStop(0.45, color1);
+                        grad.addColorStop(1, 'transparent');
+                        paint.fillStyle = grad;
+                        paint.shadowColor = color2;
+                        // Canvas blur is measured in pixels, independently of the 2x transform.
+                        paint.shadowBlur = 32;
+                        paint.globalAlpha = 0.65 - f * 0.06;
+                        paint.beginPath();
+                        paint.moveTo(-10, 0);
+                        paint.quadraticCurveTo(-featherLen * 0.6, -24, -featherLen, -8);
+                        paint.quadraticCurveTo(-featherLen * 0.5, 8, -10, 4);
+                        paint.closePath();
+                        paint.fill();
+                        paint.restore();
+                    }
+                }));
             ctx.save();
             ctx.translate(x, y - 24);
             ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
 
             const flap = Math.sin(t * 4.5) * 0.16;
 
@@ -1795,28 +1947,7 @@
                 ctx.scale(side, 1);
                 ctx.rotate(flap);
 
-                for (let f = 0; f < 6; f++) {
-                    ctx.save();
-                    ctx.rotate(-0.35 + f * 0.16);
-                    const featherLen = 88 - f * 8;
-                    const grad = ctx.createLinearGradient(0, 0, -featherLen, -20);
-                    grad.addColorStop(0, '#ffffff');
-                    grad.addColorStop(0.45, color1);
-                    grad.addColorStop(1, 'transparent');
-
-                    ctx.fillStyle = grad;
-                    ctx.shadowColor = color2;
-                    ctx.shadowBlur = 16;
-                    ctx.globalAlpha = 0.65 - f * 0.06;
-
-                    ctx.beginPath();
-                    ctx.moveTo(-10, 0);
-                    ctx.quadraticCurveTo(-featherLen * 0.6, -24, -featherLen, -8);
-                    ctx.quadraticCurveTo(-featherLen * 0.5, 8, -10, 4);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.restore();
-                }
+                drawTowerArtwork(ctx, wing);
                 ctx.restore();
             }
 
@@ -1863,14 +1994,68 @@
         }
 
         // VẼ CHÂN LONG KIẾM HỒN & CỬU U MA LONG UỐN LƯỢN 3D
-        const dragonSegmentCache = new Map();
+        const dragonArtworkCache = new Map();
+        const dragonPointsX = new Float64Array(26);
+        const dragonPointsY = new Float64Array(26);
         function drawArticulatedSpiritDragon(ctx, centerX, centerY, t, isHero = true, mainColor = '#fde047', glowColor = '#f59e0b') {
             if (!gameState.phapTuongEnabled) return;
+            const segments = 26;
+            const artwork = getTowerArtwork(dragonArtworkCache, `${mainColor}|${glowColor}|${isHero}`, () => {
+                const body = Array.from({ length: segments }, (_, i) => {
+                    const ratio = 1 - i / segments;
+                    const segRadius = 3 + Math.sin(ratio * Math.PI) * 11;
+                    return createTowerArtwork(112, 112, 56, 56, paint => {
+                        // Keep the existing segment glow; only trim its empty sprite border.
+                        paint.globalCompositeOperation = 'source-over';
+                        paint.fillStyle = i % 2 === 0 ? mainColor : '#ffffff';
+                        paint.shadowColor = glowColor;
+                        paint.shadowBlur = 18;
+                        paint.beginPath();
+                        paint.arc(0, 0, segRadius, 0, Math.PI * 2);
+                        paint.fill();
+                        if (i % 2 === 0 && i < segments - 3) {
+                            paint.fillStyle = mainColor;
+                            paint.beginPath();
+                            paint.moveTo(-4, -segRadius);
+                            paint.lineTo(6, -segRadius - 9 * ratio);
+                            paint.lineTo(4, -segRadius + 2);
+                            paint.closePath();
+                            paint.fill();
+                        }
+                    });
+                });
+                const head = createTowerArtwork(176, 160, 96, 80, paint => {
+                    paint.globalAlpha = 0.85;
+                    paint.fillStyle = '#ffffff';
+                    paint.shadowColor = glowColor;
+                    paint.shadowBlur = 48;
+                    paint.beginPath();
+                    paint.moveTo(22, 0);
+                    paint.lineTo(-6, -12);
+                    paint.lineTo(-14, -6);
+                    paint.lineTo(-14, 6);
+                    paint.lineTo(-6, 12);
+                    paint.closePath();
+                    paint.fill();
+                    paint.strokeStyle = mainColor;
+                    paint.lineWidth = 3;
+                    paint.beginPath();
+                    paint.moveTo(-4, -8);
+                    paint.quadraticCurveTo(-22, -24, -34, -18);
+                    paint.moveTo(-4, 8);
+                    paint.quadraticCurveTo(-22, 24, -34, 18);
+                    paint.stroke();
+                    paint.fillStyle = isHero ? '#38bdf8' : '#fef08a';
+                    paint.beginPath();
+                    paint.arc(4, -4, 2.5, 0, Math.PI * 2);
+                    paint.arc(4, 4, 2.5, 0, Math.PI * 2);
+                    paint.fill();
+                });
+                return { body, head };
+            }, 8);
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
 
-            const segments = 26;
-            const points = [];
             const dir = isHero ? 1 : -1;
 
             for (let i = 0; i < segments; i++) {
@@ -1880,91 +2065,32 @@
 
                 const px = centerX + Math.cos(phase * dir) * radiusX - dir * 15;
                 const py = centerY - 78 + Math.sin(phase * 1.5) * radiusY;
-                points.push({ x: px, y: py });
+                dragonPointsX[i] = px;
+                dragonPointsY[i] = py;
             }
 
             for (let i = segments - 1; i >= 0; i--) {
-                const pt = points[i];
                 const ratio = 1 - i / segments;
-                const segRadius = 3 + Math.sin(ratio * Math.PI) * 11;
 
                 ctx.save();
-                ctx.translate(pt.x, pt.y);
+                ctx.translate(dragonPointsX[i], dragonPointsY[i]);
                 if (i > 0) {
-                    const nextPt = points[i - 1];
-                    ctx.rotate(Math.atan2(nextPt.y - pt.y, nextPt.x - pt.x));
+                    ctx.rotate(Math.atan2(dragonPointsY[i - 1] - dragonPointsY[i], dragonPointsX[i - 1] - dragonPointsX[i]));
                 }
 
                 ctx.globalAlpha = 0.22 + ratio * 0.45;
-                const segmentKey = JSON.stringify([i, mainColor, glowColor]);
-                let segment = dragonSegmentCache.get(segmentKey);
-                if (!segment) {
-                    segment = document.createElement('canvas');
-                    segment.width = 320;
-                    segment.height = 320;
-                    const paint = segment.getContext('2d');
-                    paint.scale(2, 2);
-                    paint.translate(80, 80);
-                paint.fillStyle = i % 2 === 0 ? mainColor : '#ffffff';
-                paint.shadowColor = glowColor;
-                paint.shadowBlur = 18;
-
-                paint.beginPath();
-                paint.arc(0, 0, segRadius, 0, Math.PI * 2);
-                paint.fill();
-
-                if (i % 2 === 0 && i < segments - 3) {
-                    paint.fillStyle = mainColor;
-                    paint.beginPath();
-                    paint.moveTo(-4, -segRadius);
-                    paint.lineTo(6, -segRadius - 9 * ratio);
-                    paint.lineTo(4, -segRadius + 2);
-                    paint.closePath();
-                    paint.fill();
-                }
-
-                    if (dragonSegmentCache.size >= 260) dragonSegmentCache.delete(dragonSegmentCache.keys().next().value);
-                    dragonSegmentCache.set(segmentKey, segment);
-                }
                 ctx.shadowBlur = 0;
-                ctx.drawImage(segment, -80, -80, 160, 160);
+                drawTowerArtwork(ctx, artwork.body[i]);
                 ctx.restore();
             }
 
-            const head = points[0];
-            const neck = points[1];
-            const headAngle = Math.atan2(head.y - neck.y, head.x - neck.x);
+            const headAngle = Math.atan2(dragonPointsY[0] - dragonPointsY[1], dragonPointsX[0] - dragonPointsX[1]);
             ctx.save();
-            ctx.translate(head.x, head.y);
+            ctx.translate(dragonPointsX[0], dragonPointsY[0]);
             ctx.rotate(headAngle);
-            ctx.globalAlpha = 0.85;
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 24;
-
-            ctx.beginPath();
-            ctx.moveTo(22, 0);
-            ctx.lineTo(-6, -12);
-            ctx.lineTo(-14, -6);
-            ctx.lineTo(-14, 6);
-            ctx.lineTo(-6, 12);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.strokeStyle = mainColor;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(-4, -8);
-            ctx.quadraticCurveTo(-22, -24, -34, -18);
-            ctx.moveTo(-4, 8);
-            ctx.quadraticCurveTo(-22, 24, -34, 18);
-            ctx.stroke();
-
-            ctx.fillStyle = isHero ? '#38bdf8' : '#fef08a';
-            ctx.beginPath();
-            ctx.arc(4, -4, 2.5, 0, Math.PI * 2);
-            ctx.arc(4, 4, 2.5, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+            drawTowerArtwork(ctx, artwork.head);
 
             ctx.restore();
             ctx.restore();
@@ -2810,8 +2936,12 @@
             function resize() {
                 arenaWidth = Math.max(1, canvas.offsetWidth);
                 arenaHeight = Math.max(1, canvas.offsetHeight);
-                canvas.width = Math.round(arenaWidth * renderScale);
-                canvas.height = Math.round(arenaHeight * renderScale);
+                const pixelWidth = Math.round(arenaWidth * renderScale);
+                const pixelHeight = Math.round(arenaHeight * renderScale);
+                if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+                    canvas.width = pixelWidth;
+                    canvas.height = pixelHeight;
+                }
             }
             resize();
             window.addEventListener('resize', resize);
@@ -2819,6 +2949,7 @@
             // Phím tắt chiến đấu & thao tác: 1, 2, 3 (Pháp Bảo), Space (Chiến/Dừng), Q (Chuyển Tab), C (Càn Quét nhanh)
             window.addEventListener('keydown', (e) => {
                 if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+                if ((e.code === 'Space' || e.key === 'Enter') && e.target.closest('button, summary')) return;
 
                 const vModal = document.getElementById('tower-victory-modal');
                 const isVictoryOpen = vModal && !vModal.classList.contains('hidden');
@@ -2893,6 +3024,8 @@
                     alpha: 0.3 + Math.random() * 0.65
                 });
             }
+            // Every mote keeps its exact random radius, opacity and color for its lifetime.
+            ambientDust.forEach(dust => { dust.artwork = prepareAmbientDustArtwork(dust); });
 
             starfield = [];
             for (let i = 0; i < 90; i++) {
@@ -3206,13 +3339,10 @@
                     if (d.y < 0) { d.y = h; d.x = Math.random() * w; }
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
-                    ctx.globalAlpha = d.alpha;
-                    ctx.fillStyle = d.color;
-                    ctx.shadowColor = d.color;
-                    ctx.shadowBlur = 10;
-                    ctx.beginPath();
-                    ctx.arc(d.x % w, d.y, d.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.shadowBlur = 0;
+                    ctx.translate(d.x % w, d.y);
+                    drawTowerArtwork(ctx, d.artwork);
                     ctx.restore();
                 });
 
@@ -3245,7 +3375,7 @@
                 }
 
                 drawSwordImmortal(ctx, heroX, heroY, t, false);
-                // Monster model is intentionally hidden until monster artwork is integrated.
+                drawDemonSovereign(ctx, bossX, bossY, t);
 
 
 
@@ -4271,7 +4401,7 @@
                             </div>
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1">
-                                    <span class="text-xs font-bold truncate ${isSelected ? 'text-amber-300' : 'text-slate-200'}">${f.name}</span>
+                                    <span class="text-xs font-bold truncate ${isSelected ? 'text-amber-300' : 'text-slate-200'}">${f.name.replace(/\s*\(Tầng \d+\)/i, '')}</span>
                                     <span class="text-[10px]" title="Hệ ${elemInfo.name}">${elemInfo.icon}</span>
                                 </div>
                                 <div class="text-[10px] text-slate-400 font-mono">
@@ -4352,7 +4482,7 @@
         }
 
         function updateArenaHUD(fObj) {
-            document.getElementById('arena-floor-title').textContent = `TẦNG ${fObj.floor} • ${fObj.name.toUpperCase()}`;
+            document.getElementById('arena-floor-title').textContent = `Tầng ${fObj.floor} • ${fObj.name.replace(/\s*\(Tầng \d+\)/i, '')}`;
             document.getElementById('arena-boss-cp').textContent = fmt(fObj.cp);
             document.getElementById('arena-floor-tag').textContent = fObj.isMilestone
                 ? `🔥 CỘT MỐC ${fObj.realmUnlock.toUpperCase()}`
@@ -4740,6 +4870,31 @@
             nextCombatTurn();
         }
 
+        function pickAutoCombatSkill(useUltimate) {
+            const manual = CULTIVATION_MANUALS[Math.floor(Math.random() * CULTIVATION_MANUALS.length)];
+            const lastSkillIndex = manual.skills.length - 1;
+            const skillIndex = useUltimate ? lastSkillIndex : Math.floor(Math.random() * lastSkillIndex);
+            return ULTIMATE_SKILLS.find(skill => skill.id === manual.skills[skillIndex].id);
+        }
+
+        function updateCombatSkillUI(skill = null) {
+            const bar = document.getElementById('active-manual-skills-bar');
+            const skillId = skill ? String(skill.id) : '';
+            bar.dataset.castingSkillId = skillId;
+            bar.querySelectorAll('button[data-skill-id]').forEach(button => {
+                button.classList.toggle('is-casting', button.dataset.skillId === skillId);
+            });
+            document.getElementById('combat-skill-name').textContent = skill
+                ? `${skill.icon} ${skill.name}`
+                : `Ngẫu nhiên ${ULTIMATE_SKILLS.length} thần thông`;
+            document.getElementById('combat-skill-meta').textContent = skill
+                ? `${skill.manualName.replace(/[《》]/g, '')} · ${skill.stance}`
+                : `${CULTIVATION_MANUALS.length} công pháp · Ulti khi đầy Kiếm Nguyên`;
+            document.getElementById('combat-turn-label').textContent = gameState.inCombat
+                ? `Hiệp ${gameState.battleTurns}`
+                : 'Sẵn sàng';
+        }
+
         function startOrStopCombat() {
             if (gameState.inCombat) {
                 stopCombat("Đạo hữu chủ động thu kiếm lùi bước.");
@@ -4774,12 +4929,15 @@
             addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến Tầng ${fObj.floor}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> (${gameState.hero.swordCount} Phi Kiếm) đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
 
             const runTick = () => {
-                if (!gameState.inCombat) return;
+                if (!gameState.inCombat || nextCombatTurn !== runTick) return;
                 gameState.battleTurns++;
 
                 const h = gameState.hero;
                 const elemMult = (ELEMENTS[h.element]?.counters === fObj.element) ? 1.35 : 1.0;
                 const comboBonusMult = 1 + Math.min(1.5, gameState.comboCount * 0.02);
+                // Mỗi hiệp bốc chiêu từ toàn bộ công pháp; đầy Kiếm Nguyên bốc một cấm thuật.
+                const autoSkill = pickAutoCombatSkill(h.mp >= 100);
+                updateCombatSkillUI(autoSkill);
 
                 // Cơ chế Uy Áp Nghiền Ép (Aura Crush) khi Kiếm Lực ta áp đảo hoàn toàn (ratio >= 2.0x)
                 const myCp = getHeroCP();
@@ -4790,7 +4948,8 @@
                     gameState.liveBossHp = 0;
                     gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, crushDmg);
                     incrementCombo();
-                    fireCanvasSwordQi(true, '#fde047', 15, true);
+                    playHeavenlyLightningVFX(autoSkill, 'boss');
+                    fireCanvasSwordQi(true, autoSkill.color, 15, true);
                     triggerScreenShake('ult');
                     playSound('thunder');
                     spawnFloatingText('boss-stage-anchor', `💥 UY ÁP NGHIỀN ÉP! -${fmt(crushDmg)}!`, 'ult');
@@ -4836,11 +4995,9 @@
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 10);
                 }
 
-                // LƯỢT 1: KIẾM TIÊN VẬN CHUYỂN TAM THỨC CÔNG PHÁP (TIỂU THẦN THÔNG -> ĐẠI THẦN THÔNG -> TUYỆT THẾ CẤM THUẬT)
-                const currentManual = CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0];
                 if (h.mp >= 100) {
                     h.mp = 0;
-                    const ult = ULTIMATE_SKILLS.find(s => s.id === gameState.selectedUltId) || currentManual.skills[2];
+                    const ult = autoSkill;
                     playHeavenlyLightningVFX(ult, 'boss');
                     fireCanvasSwordQi(true, ult.color, 9, true);
                     playSound('thunder');
@@ -4862,7 +5019,7 @@
                     gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
 
                     spawnFloatingText('boss-stage-anchor', `${ult.icon} ${ult.name.toUpperCase()} -${fmt(finalDmg)}!`, 'ult');
-                    addLog(`<span class="text-cyan-300 font-bold">🌌 [${currentManual.shortName} • Cấm Thuật]</span> Thi triển <strong>${ult.name}</strong> giáng xuống ${fObj.name} gây <span class="text-amber-300 font-bold">${fmt(finalDmg)}</span> sát thương!`);
+                    addLog(`<span class="text-cyan-300 font-bold">${ult.icon} [${ult.manualName} • Cấm Thuật]</span> Thi triển <strong>${ult.name}</strong> giáng xuống ${fObj.name} gây <span class="text-amber-300 font-bold">${fmt(finalDmg)}</span> sát thương!`);
 
                     if (ult.healRatio) {
                         const heal = Math.round(h.maxHp * ult.healRatio);
@@ -4873,24 +5030,16 @@
                     const bossDodged = !isBossBroken && ((Math.random() * 100) < fObj.eva);
                     if (bossDodged) {
                         bossAnim.dodgeOffset = 45;
-                        fireCanvasSwordQi(true, '#38bdf8', 2, false);
+                        playHeavenlyLightningVFX(autoSkill, 'boss');
+                        fireCanvasSwordQi(true, autoSkill.color, 2, false);
                         playSound('sword');
                         spawnFloatingText('boss-stage-anchor', 'NÉ KIẾM!', 'dodge');
-                        addLog(`💨 ${fObj.name} hóa huyết ảnh <strong>NÉ TRÁNH</strong> luồng phi kiếm!`);
+                        addLog(`💨 ${fObj.name} hóa huyết ảnh <strong>NÉ TRÁNH</strong> ${autoSkill.name}!`);
                     } else {
                         incrementCombo();
-                        const rollStance = Math.random();
-                        let activeStanceSkill = null;
-                        if (rollStance < 0.28) {
-                            activeStanceSkill = currentManual.skills[1]; // Thức 2: Đại Thần Thông
-                        } else if (rollStance < 0.68) {
-                            activeStanceSkill = currentManual.skills[0]; // Thức 1: Tiểu Thần Thông
-                        }
-
-                        const stanceMult = activeStanceSkill ? activeStanceSkill.mult * 0.65 : 1.0;
-                        const toughnessBreak = activeStanceSkill
-                            ? activeStanceSkill.toughnessBreak
-                            : ((ELEMENTS[h.element]?.counters === fObj.element) ? 35 : 25);
+                        const activeStanceSkill = autoSkill;
+                        const stanceMult = activeStanceSkill.mult * 0.65;
+                        const toughnessBreak = activeStanceSkill.toughnessBreak;
 
                         if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - toughnessBreak);
 
@@ -4906,25 +5055,11 @@
                         gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
                         gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
 
-                        if (activeStanceSkill) {
-                            playHeavenlyLightningVFX(activeStanceSkill, 'boss');
-                            fireCanvasSwordQi(true, activeStanceSkill.color, 6, isCrit);
-                            playSound('crit');
-                            spawnFloatingText('boss-stage-anchor', `${activeStanceSkill.icon} ${activeStanceSkill.name} -${fmt(finalDmg)}!`, 'crit');
-                            addLog(`${activeStanceSkill.icon} <span class="text-amber-300 font-bold">[${activeStanceSkill.stance}]</span> Vận chuyển <strong>${activeStanceSkill.name}</strong> gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> sát thương!`);
-                        } else {
-                            fireCanvasSwordQi(true, isCrit ? '#fde047' : '#38bdf8', isCrit ? 5 : 3, isCrit);
-                            if (isCrit) {
-                                playSound('crit');
-                                triggerScreenShake('crit');
-                                spawnFloatingText('boss-stage-anchor', `💥 ${isBossBroken ? 'PHÁ CANG TRẢM ' : 'KIẾM BẠO '}-${fmt(finalDmg)}!`, 'crit');
-                                addLog(`💥 <span class="text-amber-300 font-bold">[THUẤN DI BẠO KÍCH]</span> Chém rách không gian gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> sát thương!`);
-                            } else {
-                                playSound('sword');
-                                spawnFloatingText('boss-stage-anchor', `-${fmt(finalDmg)}`, 'normal');
-                                addLog(`🗡️ Chu Thiên Phi Kiếm xuyên kích gây <strong>${fmt(finalDmg)}</strong> sát thương (+28 Kiếm Nguyên).`);
-                            }
-                        }
+                        playHeavenlyLightningVFX(activeStanceSkill, 'boss');
+                        fireCanvasSwordQi(true, activeStanceSkill.color, 6, isCrit);
+                        playSound('crit');
+                        spawnFloatingText('boss-stage-anchor', `${activeStanceSkill.icon} ${activeStanceSkill.name} -${fmt(finalDmg)}!`, 'crit');
+                        addLog(`${activeStanceSkill.icon} <span class="text-amber-300 font-bold">[${activeStanceSkill.stance}]</span> Vận chuyển <strong>${activeStanceSkill.name}</strong> gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> sát thương!`);
                     }
                 }
 
@@ -4964,8 +5099,8 @@
                 }
 
                 // LƯỢT 2: YÊU VƯƠNG PHẢN KÍCH (CÓ XÁC SUẤT BỊ CHOÁNG NẾU VỠ CANG)
-                setTimeout(() => {
-                    if (!gameState.inCombat) return;
+                gameState.combatTimer = setTimeout(() => {
+                    if (!gameState.inCombat || nextCombatTurn !== runTick) return;
 
                     const isStunned = isBossBroken && (Math.random() < 0.65);
                     if (isStunned) {
@@ -5611,6 +5746,7 @@
             renderManualsCompendium();
 
             if (castImmediately) {
+                if (gameState.inCombat) updateCombatSkillUI(u);
                 playHeavenlyLightningVFX(u, 'boss');
                 fireCanvasSwordQi(true, u.color, 8, true);
                 playSound('thunder');
@@ -5657,7 +5793,7 @@
             bar.innerHTML = CULTIVATION_MANUALS.map(m => {
                 const isActive = m.id === gameState.activeManualId;
                 return `
-                    <button onclick="selectCultivationManual('${m.id}')" class="px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition ${
+                    <button onclick="selectCultivationManual('${m.id}')" aria-pressed="${isActive}" class="px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition ${
                         isActive
                             ? 'bg-gradient-to-r from-amber-500/35 to-purple-600/35 text-amber-200 border-2 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]'
                             : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600 opacity-80 hover:opacity-100'
@@ -5673,20 +5809,17 @@
             const bar = document.getElementById('active-manual-skills-bar');
             if (!bar) return;
             const manual = CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0];
+            document.getElementById('active-manual-label').textContent = manual.shortName;
 
             bar.innerHTML = `
-                <span class="text-[10px] font-bold text-cyan-300 mr-0.5">${manual.icon} Tam Thức:</span>
                 ${manual.skills.map((s, idx) => {
                     const isSelected = s.id === gameState.selectedUltId;
+                    const isCasting = String(s.id) === bar.dataset.castingSkillId;
                     const badgeLabel = idx === 0 ? 'Thức 1' : (idx === 1 ? 'Thức 2' : 'Cấm Thuật');
                     return `
-                        <button onclick="selectUltimateSkill(${s.id}, true)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition active:scale-95 ${
-                            isSelected
-                                ? 'border-2 border-amber-400 bg-purple-950/90 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.45)]'
-                                : 'border border-slate-700 bg-slate-900/90 text-slate-200 hover:border-cyan-400/60'
-                        }" title="${s.stance}: ${s.desc} (Bấm để thi triển ngay!)">
+                        <button onclick="selectUltimateSkill(${s.id}, true)" data-skill-id="${s.id}" aria-pressed="${isSelected}" class="tower-skill-card${isCasting ? ' is-casting' : ''}" title="${s.stance}: ${s.desc} (Bấm để thi triển ngay!)">
                             <span>${s.icon}</span>
-                            <span class="text-[9px] px-1 rounded bg-black/50 text-cyan-300 font-mono">${badgeLabel}</span>
+                            <span>${badgeLabel}</span>
                             <span>${s.name}</span>
                         </button>
                     `;
@@ -5749,6 +5882,9 @@
         function updateFightButtonUI(isFighting) {
             const btn = document.getElementById('btn-fight');
             if (!btn) return;
+            btn.dataset.fighting = String(isFighting);
+            document.querySelector('.tower-combat-dock').dataset.fighting = String(isFighting);
+            updateCombatSkillUI();
             if (isFighting) {
                 btn.className = "px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/50 font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.3)] transition active:scale-95 flex items-center justify-center gap-1.5";
                 btn.innerHTML = `<span>⏹️ DỪNG CHIẾN</span> <kbd class="px-1.5 py-0.5 rounded bg-black/50 text-[10px] font-mono text-rose-300 border border-rose-500/40">Space</kbd>`;
@@ -5868,7 +6004,46 @@
             document.getElementById('tran-yeu-thap-popup').classList.remove('hidden');
         }
 
+        function initTowerMenus() {
+            const menus = [...document.querySelectorAll('.tower-menu')];
+            const closeMenu = (menu, restoreFocus = false) => {
+                menu.open = false;
+                if (restoreFocus) menu.querySelector('summary').focus();
+            };
+            menus.forEach(menu => {
+                menu.addEventListener('toggle', () => {
+                    if (menu.open) menus.forEach(other => { if (other !== menu) closeMenu(other); });
+                });
+                menu.addEventListener('click', event => {
+                    if (event.target.closest('button') && !menu.hasAttribute('data-keep-open')) closeMenu(menu, true);
+                });
+            });
+            document.addEventListener('click', event => {
+                if (!event.target.closest('.tower-menu')) menus.forEach(menu => closeMenu(menu));
+            });
+            document.addEventListener('keydown', event => {
+                const opened = menus.find(menu => menu.open);
+                const resultDialog = document.querySelector('#tower-victory-modal:not(.hidden), #tower-defeat-modal:not(.hidden)');
+                if (event.key === 'Escape' && opened && !resultDialog) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closeMenu(opened, true);
+                }
+            });
+            document.getElementById('btn-sfx-toggle').setAttribute('aria-label', 'Bật hoặc tắt âm thanh');
+            const visualToggles = {
+                'btn-sfx-toggle': gameState.sfxEnabled,
+                'btn-phap-tuong': gameState.phapTuongEnabled,
+                'btn-wings-toggle': gameState.wingsEnabled,
+                'btn-tam-thanh': gameState.tamThanhEnabled
+            };
+            Object.entries(visualToggles).forEach(([id, enabled]) => {
+                document.getElementById(id).setAttribute('aria-pressed', String(enabled));
+            });
+        }
+
         window.onload = () => {
+            initTowerMenus();
             initArenaCanvas();
             renderManualSelectorBar();
             renderActiveManualSkillsBar();

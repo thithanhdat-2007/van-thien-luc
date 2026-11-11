@@ -11,6 +11,7 @@
 | Luyện khí | `js/features/forging.js` | `js/equipment_data.js`, `#modal-luyen-khi` |
 | Khuê phòng, đạo lữ | `js/features/chamber.js` | `#modal-khue-phong` |
 | Bản Nguyên Tu Sĩ | `js/features/character.js` | `#hud-left`, `.origin-dashboard` trong `style.css` |
+| Model nhân vật màn hình chính | `js/features/character_model.js` | `#model-two-object`, `#model-two-panel` trong `index.html`, `css/model_studio.css`, `public/assets/images/model_2_character.svg` |
 | Túi Đồ & Bản Nguyên (3 Cột) | `js/app.js` (`renderCharacterHub`) | `#page-inventory`, `js/app.js`, `style.css` (Bố cục 3 Cột: Bản Nguyên Tu Sĩ, Càn Khôn Bảo Nang, Đài Giám Định) |
 | Công Pháp • Tàng Kinh Các | `js/app.js` (`renderSkillsHub`) | `js/skills_data.js`, `#page-skills`, `style.css` (3 Phân Khu: Chu Thiên Pháp Vị, Thẻ Trúc Dựng Đứng, Đài Tham Ngộ Tam Hợp) |
 | Thanh tài nguyên trên | `js/features/topbar.js` | `#global-top-resource-bar` |

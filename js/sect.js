@@ -886,6 +886,16 @@ function buySectShopItem(itemId) {
             if (typeof addLog === 'function') {
                 addLog(`🌿 <span class="text-teal-300 font-bold">[Thanh Tâm Đan]</span> Dược lực thanh tịnh tan vào thần hồn, tiêu trừ 10 Tâm Ma, Đạo Tâm tăng lên (${state.daoTam}/100)!`, "text-teal-300 font-bold", "sect-use-pill");
             }
+        } else if (item.action === 'gain_perm_stats') {
+            if (!state.permPillStats) state.permPillStats = { hp: 0, atk: 0, def: 0 };
+            const hpGain = Number(item.stats?.hp) || 0;
+            const atkGain = Number(item.stats?.atk) || 0;
+            state.permPillStats.hp = (state.permPillStats.hp || 0) + hpGain;
+            state.permPillStats.atk = (state.permPillStats.atk || 0) + atkGain;
+            if (typeof playSound === 'function') playSound('bell');
+            if (typeof addLog === 'function') {
+                addLog(`✨ <span class="text-amber-300 font-bold">[Thái Ất Tẩy Tủy]</span> Phục dụng <strong>${item.name}</strong>, gân cốt biến dị vô song, vĩnh viễn tăng <strong>+${hpGain} Khí Huyết</strong> và <strong>+${atkGain} Công Kích</strong>!`, "text-gold-300 font-bold", "sect-use-pill");
+            }
         } else {
             // Thêm vào inventory
             if (Array.isArray(state.inventory)) {

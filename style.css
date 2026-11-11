@@ -456,18 +456,32 @@
     transition: width 0.4s ease !important;
 }
 
-/* Viên ngọc cân bằng ở tâm */
+/* Viên ngọc cân bằng ở tâm: Nhịp thở Thái Cực */
 .dao-balance-orb {
     position: absolute !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: 12px !important;
-    height: 12px !important;
+    width: 14px !important;
+    height: 14px !important;
     border-radius: 50% !important;
     border: 1.5px solid #0f172a !important;
     z-index: 3 !important;
-    transition: left 0.4s ease !important;
+    transition: left 0.4s ease, background 0.4s ease, box-shadow 0.4s ease !important;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #94a3b8 60%, #0f172a 100%) !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
+    animation: daoOrbBreathe 2.4s infinite ease-in-out !important;
+}
+
+@keyframes daoOrbBreathe {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.18);
+        box-shadow: 0 0 14px rgba(250, 204, 21, 0.8), 0 0 22px rgba(244, 63, 94, 0.6);
+    }
 }
 
 /* ==========================================================================
@@ -2583,29 +2597,83 @@
     border-color: rgba(56, 189, 248, 0.4) !important;
 }
 
-#modal-gia-vien .toast-bubble {
-
+#modal-gia-vien .toast-bubble,
+.toast-bubble,
+#toast-bubble,
+#estate-toast-bubble {
     position: fixed !important;
-    bottom: 2rem !important;
+    bottom: 2.5rem !important;
     left: 50% !important;
-    transform: translateX(-50%) translateY(20px) !important;
-    background: rgba(15, 23, 42, 0.95) !important;
-    border: 1px solid #10b981 !important;
+    transform: translateX(-50%) translateY(20px) scale(0.92) !important;
+    background: linear-gradient(135deg, rgba(6, 28, 22, 0.96), rgba(3, 14, 18, 0.98)) !important;
+    border: 1px solid rgba(16, 185, 129, 0.7) !important;
     color: #ecfdf5 !important;
-    padding: 0.75rem 1.5rem !important;
-    border-radius: 999px !important;
+    padding: 0.65rem 1.8rem !important;
+    border-radius: 6px !important;
     font-size: 0.85rem !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.3) !important;
+    font-family: 'Cinzel', 'JetBrains Mono', monospace !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.35), inset 0 0 12px rgba(250, 204, 21, 0.2) !important;
     pointer-events: none !important;
     opacity: 0 !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    z-index: 9999 !important;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(16px) !important;
 }
 
-#modal-gia-vien .toast-bubble.is-active {
+#modal-gia-vien .toast-bubble::before,
+.toast-bubble::before,
+#toast-bubble::before,
+#estate-toast-bubble::before {
+    content: '' !important;
+    position: absolute !important;
+    left: -4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 6px !important;
+    height: 120% !important;
+    border-radius: 3px !important;
+    background: linear-gradient(180deg, #fef08a, #eab308 40%, #854d0e 80%, #fef08a 100%) !important;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.6) !important;
+}
+
+#modal-gia-vien .toast-bubble::after,
+.toast-bubble::after,
+#toast-bubble::after,
+#estate-toast-bubble::after {
+    content: '' !important;
+    position: absolute !important;
+    right: -4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 6px !important;
+    height: 120% !important;
+    border-radius: 3px !important;
+    background: linear-gradient(180deg, #fef08a, #eab308 40%, #854d0e 80%, #fef08a 100%) !important;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.6) !important;
+}
+
+#modal-gia-vien .toast-bubble.is-active,
+.toast-bubble.is-active,
+#toast-bubble.is-active,
+#estate-toast-bubble.is-active {
     opacity: 1 !important;
-    transform: translateX(-50%) translateY(0) !important;
+    transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+/* Hiệu ứng trượt nhẹ cho dòng nhật ký Thiên Cơ */
+.log-entry-slide {
+    animation: logEntrySlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes logEntrySlide {
+    from {
+        opacity: 0;
+        transform: translateX(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* ==========================================================================
@@ -2942,40 +3010,87 @@
     top: 25%;
     left: 50%;
     transform: translate(-50%, 0);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Cinzel', 'JetBrains Mono', monospace;
     font-weight: 900;
     white-space: nowrap;
     pointer-events: none;
     z-index: 100;
-    animation: floatDamageUp 1.25s ease-out forwards;
+    animation: damageGravityArc 1.25s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
 }
 #modal-tran-yeu-thap .damage-number-pop--normal {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     color: #ffffff;
-    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 15px #e11d48;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.95), 0 0 16px #e11d48;
 }
 #modal-tran-yeu-thap .damage-number-pop--crit {
-    font-size: 1.7rem;
-    color: #f43f5e;
-    text-shadow: 0 0 12px rgba(0, 0, 0, 0.9), 0 0 25px #e11d48, 0 0 35px #fb7185;
+    font-size: 2.1rem;
+    letter-spacing: 0.05em;
+    background: linear-gradient(180deg, #ffffff 0%, #fef08a 35%, #f59e0b 70%, #dc2626 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.9)) drop-shadow(0 0 24px rgba(250, 204, 21, 0.8));
 }
 #modal-tran-yeu-thap .damage-number-pop--dodge {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     color: #38bdf8;
     font-style: italic;
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
 }
 #modal-tran-yeu-thap .damage-number-pop--skill {
-    font-size: 1.4rem;
-    color: #f59e0b;
-    text-shadow: 0 0 12px rgba(245, 158, 11, 0.9);
+    font-size: 1.5rem;
+    color: #fbbf24;
+    text-shadow: 0 0 14px rgba(245, 158, 11, 0.95);
 }
 
-@keyframes floatDamageUp {
-    0% { opacity: 0; transform: translate(-50%, 15px) scale(0.6); }
-    20% { opacity: 1; transform: translate(-50%, -10px) scale(1.15); }
-    70% { opacity: 1; transform: translate(-50%, -45px) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -75px) scale(0.85); }
+@keyframes damageGravityArc {
+    0% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), 20px) scale(0.5); }
+    18% { opacity: 1; transform: translate(calc(-50% + var(--dx, 0px) * 1.5), -28px) scale(1.3); }
+    45% { opacity: 1; transform: translate(calc(-50% + var(--dx, 0px) * 2.2), -48px) scale(1.05); }
+    80% { opacity: 0.9; transform: translate(calc(-50% + var(--dx, 0px) * 2.8), -15px) scale(0.95); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px) * 3.2), 25px) scale(0.8); }
+}
+
+/* Hit-Stop & Hurt Shake on Stage */
+#modal-tran-yeu-thap.tower-hit-stop * {
+    animation-play-state: paused !important;
+}
+
+#modal-tran-yeu-thap .target-pushback-player {
+    animation: pushbackPlayer 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modal-tran-yeu-thap .target-pushback-boss {
+    animation: pushbackBoss 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pushbackPlayer {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-20px) scale(0.96); filter: brightness(2.6) drop-shadow(0 0 18px #f43f5e); }
+    100% { transform: translateX(0) scale(1); filter: none; }
+}
+
+@keyframes pushbackBoss {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(20px) scale(0.96); filter: brightness(2.6) drop-shadow(0 0 18px #f43f5e); }
+    100% { transform: translateX(0) scale(1); filter: none; }
+}
+
+/* Slash Arc Trail SVG */
+#modal-tran-yeu-thap .slash-arc-trail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 220px;
+    height: 220px;
+    transform: translate(-50%, -50%) rotate(var(--slash-angle, -35deg));
+    pointer-events: none;
+    z-index: 90;
+    animation: slashArcFlash 0.32s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes slashArcFlash {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--slash-angle, -35deg)) scale(0.4); }
+    20% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--slash-angle, -35deg)) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--slash-angle, -35deg)) scale(1.35); }
 }
 
 /* PHẦN 2: KHUNG NHẬT KÝ CHIẾN ĐẤU & BẢNG ĐIỀU KHIỂN DƯỚI */
@@ -3182,6 +3297,56 @@
 }
 
 
+/* Crafting rooms follow the same PC workspace proportions. */
+#modal-luyen-dan .alchemy-status-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 32px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 24px 0;
+}
+:is(#modal-luyen-dan, #modal-luyen-khi) .craft-eyebrow {
+    margin-bottom: 3px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+}
+:is(#modal-luyen-dan, #modal-luyen-khi) .craft-idle-hint {
+    color: #94a3b8;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.6;
+    z-index: 5;
+}
+:is(#modal-luyen-dan .is-brewing, #modal-luyen-khi .is-forging) .craft-idle-hint { visibility: hidden; }
+:is(#modal-luyen-dan, #modal-luyen-khi) .craft-card-content { min-width: 0; }
+:is(#modal-luyen-dan, #modal-luyen-khi) .craft-card-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+#modal-luyen-dan .craft-effect-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: #94a3b8;
+    font-size: 11px;
+}
+:is(#modal-luyen-dan, #modal-luyen-khi) button:focus-visible {
+    outline: 2px solid #7dd3fc;
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    #modal-luyen-dan *, #modal-luyen-khi * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 /* ==========================================================================
    SCOPED CSS CHO MODAL-LUYEN-DAN
    ========================================================================== */
@@ -3194,6 +3359,7 @@
     opacity: 0;
     background: #030712 !important;
     overflow-y: auto !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
 }
 
@@ -3217,12 +3383,8 @@
 
 
         #modal-luyen-dan * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    box-sizing: border-box;
+}
 
 
         #modal-luyen-dan {
@@ -3232,7 +3394,9 @@
                 radial-gradient(circle at 82% 75%, rgba(168, 85, 247, 0.12) 0%, transparent 55%),
                 linear-gradient(180deg, #02060b 0%, #06111d 100%);
             color: #f1f5f9;
-            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -3254,20 +3418,18 @@
            KHỐI TRÊN CÙNG: THÔNG TIN LUYỆN ĐAN SƯ & ĐAN ĐỘC (HEADER BAR)
            ========================================================================== */
         #modal-luyen-dan .alchemy-top-bar {
-            background: rgba(8, 18, 30, 0.95);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-bottom: 1.5px solid var(--border-gold);
-            padding: 0.85rem 1.5rem;
-            display: grid;
-            grid-template-columns: auto 1fr auto auto;
-            align-items: center;
-            gap: 1.25rem;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-        }
+    background: rgba(11, 19, 32, .96);
+    border-bottom: 1px solid rgba(20, 184, 166, .22);
+    padding: 16px 142px 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
 
 
         #modal-luyen-dan .alchemist-badge {
@@ -3293,13 +3455,14 @@
 
 
         #modal-luyen-dan .alchemist-title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.05rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-        }
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
 
 
         #modal-luyen-dan .rank-pill {
@@ -3313,11 +3476,11 @@
 
         /* Thanh EXP Nghề Luyện Đan */
         #modal-luyen-dan .alchemy-exp-box {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            min-width: 200px;
-        }
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
 
 
         #modal-luyen-dan .exp-track {
@@ -3353,16 +3516,12 @@
 
         /* THANH ĐAN ĐỘC (PILL POISON BAR) */
         #modal-luyen-dan .poison-meter-box {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            min-width: 190px;
-            background: rgba(15, 23, 42, 0.7);
-            padding: 0.35rem 0.65rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-        }
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    position: relative;
+}
 
         #modal-luyen-dan .poison-meter-box.is-toxic-alert {
             border-color: #ef4444;
@@ -3428,69 +3587,68 @@
 
 
         #modal-luyen-dan .herb-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem 0.55rem;
-            border-radius: 8px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.72rem;
-            font-family: 'JetBrains Mono', monospace;
-        }
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, .85);
+    border: 1px solid rgba(148, 163, 184, .22);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
 
 
-        
+
 
 
         /* ==========================================================================
            BỐ CỤC 2 CỘT CHO SPA VIEWPORT
            ========================================================================== */
         #modal-luyen-dan .alchemy-viewport {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.25rem;
-            padding: 1.25rem;
-            max-width: 1480px;
-            margin: 0 auto;
-            width: 100%;
-        }
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 20px;
+    padding: 20px 24px 28px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    height: clamp(520px, calc(100dvh - 180px), 640px);
+    align-items: stretch;
+}
 
 
-        #modal-luyen-dan .alchemy-viewport {
-                grid-template-columns: 46% 54%;
-                height: calc(100vh - 82px);
-                align-items: stretch;
-                overflow: hidden;
-            }
+
 
 
         #modal-luyen-dan .panel-box {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-gold);
-            border-radius: 1.25rem;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
+    background: rgba(15, 23, 42, .78);
+    border: 1px solid rgba(20, 184, 166, .25);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+}
 
 
         /* ==========================================================================
            KHỐI BÊN TRÁI: LÒ ĐAN & HIỆU ỨNG KHÓI SƯƠNG MỜ ẢO
            ========================================================================== */
         #modal-luyen-dan .cauldron-header {
-            padding: 0.85rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(10, 20, 32, 0.6);
-        }
+    padding: 0 0 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+}
 
 
         #modal-luyen-dan .header-btn-group {
@@ -3524,35 +3682,41 @@
 
         /* Buồng Lò Đan Trung Tâm */
         #modal-luyen-dan .cauldron-chamber {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 1.5rem;
-            min-height: 380px;
-            background: radial-gradient(circle at center 60%, rgba(20, 184, 166, 0.08) 0%, rgba(2, 6, 14, 0.98) 75%);
-            overflow: hidden;
-        }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    padding: 95px 12px 32px;
+    min-height: 290px;
+    background: radial-gradient(ellipse at center 65%, rgba(56, 189, 248, .06), transparent 70%);
+    overflow: hidden;
+}
 
 
         /* Hộp Tiến Độ Luyện Đan */
         #modal-luyen-dan .brewing-progress-box {
-            width: 90%;
-            max-width: 380px;
-            background: rgba(10, 24, 38, 0.95);
-            border: 1px solid #14b8a6;
-            border-radius: 12px;
-            padding: 0.85rem 1rem;
-            margin-bottom: 1.25rem;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
-            opacity: 0;
-            transform: translateY(-12px);
-            transition: all 0.3s ease;
-            pointer-events: none;
-            z-index: 10;
-        }
+    width: calc(100% - 24px);
+    max-width: 380px;
+    background: rgba(10, 24, 38, 0.95);
+    border: 1px solid #14b8a6;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin: 0;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    translate: -50% 0;
+}
 
         #modal-luyen-dan .brewing-progress-box.is-active {
             opacity: 1;
@@ -3583,15 +3747,16 @@
 
         /* Đỉnh Lò Đan (SVG Visual) */
         #modal-luyen-dan .cauldron-visual-wrap {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-            transition: transform 0.25s;
-        }
+    position: relative;
+    width: 190px;
+    height: 190px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: transform .25s;
+}
 
         #modal-luyen-dan .is-brewing .cauldron-visual-wrap {
             animation: cauldronTremble 0.2s infinite ease-in-out alternate;
@@ -3686,6 +3851,55 @@
             animation: spinAlchCircle 24s linear infinite;
         }
 
+        #modal-luyen-dan .is-brewing .alchemy-runic-circle {
+            animation-duration: 5s !important;
+            border-color: rgba(45, 212, 191, 0.95);
+            box-shadow: 0 0 30px rgba(20, 184, 166, 0.65), inset 0 0 20px rgba(45, 212, 191, 0.4);
+        }
+
+        /* Pillar of Light - Đan Hương / Khí Linh Xuất Thế */
+        #modal-luyen-dan .alchemy-pillar-of-light,
+        #modal-luyen-khi .alchemy-pillar-of-light {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            background: linear-gradient(180deg, transparent 0%, var(--pillar-color, #facc15) 60%, #ffffff 100%);
+            box-shadow: 0 0 45px var(--pillar-color, #facc15), 0 0 80px var(--pillar-color, #facc15);
+            animation: pillarAscend 0.75s cubic-bezier(0.12, 0.9, 0.25, 1) forwards;
+        }
+
+        @keyframes pillarAscend {
+            0% {
+                opacity: 0;
+                height: 0;
+                width: 12px;
+                filter: brightness(2);
+            }
+            30% {
+                opacity: 1;
+                height: 100vh;
+                width: 54px;
+                filter: brightness(3.5);
+            }
+            70% {
+                opacity: 0.9;
+                height: 100vh;
+                width: 42px;
+                filter: brightness(2);
+            }
+            100% {
+                opacity: 0;
+                height: 100vh;
+                width: 10px;
+                filter: brightness(1);
+            }
+        }
+
         @keyframes spinAlchCircle {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -3694,10 +3908,10 @@
 
         /* Panel Thông Số Tỷ Lệ RNG Dưới Cột Trái */
         #modal-luyen-dan .cauldron-rate-footer {
-            padding: 0.85rem 1.25rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(8, 18, 30, 0.65);
-        }
+    padding: 14px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, .15);
+    flex-shrink: 0;
+}
 
 
         #modal-luyen-dan .rate-grid-alch {
@@ -3709,59 +3923,65 @@
 
 
         #modal-luyen-dan .rate-alch-cell {
-            padding: 0.35rem 0.45rem;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.7rem;
-        }
+    padding: 10px 5px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    font-size: 12px;
+    line-height: 1.6;
+}
 
 
         /* ==========================================================================
            KHỐI BÊN PHẢI: ĐAN PHƯƠNG & LINH THẢO (DANH SÁCH CUỘN DỌC)
            ========================================================================== */
         #modal-luyen-dan .recipes-header {
-            padding: 0.85rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(10, 20, 32, 0.6);
-        }
+    padding: 0 0 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+}
 
 
         #modal-luyen-dan .recipes-scroll-list {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+    flex: 1;
+    min-height: 0;
+    padding: 14px 3px 14px 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
 
         #modal-luyen-dan .recipe-card-box {
-            background: var(--bg-card);
-            border: 1.5px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 1rem 1.15rem;
-            transition: all 0.25s ease;
-            position: relative;
-        }
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 146px;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    background: rgba(2, 6, 23, .5);
+    border: 1px solid rgba(148, 163, 184, .2);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color .2s;
+    position: relative;
+}
 
         #modal-luyen-dan .recipe-card-box:hover {
-            border-color: rgba(20, 184, 166, 0.45);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-        }
+    border-color: rgba(148, 163, 184, .5);
+}
 
 
         #modal-luyen-dan .rec-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.75rem;
-            margin-bottom: 0.55rem;
-        }
+    display: flex;
+    margin-bottom: 10px;
+    min-width: 0;
+}
 
 
         #modal-luyen-dan .rec-icon-wrap {
@@ -3778,11 +3998,11 @@
 
 
         #modal-luyen-dan .rec-mats-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin: 0.65rem 0;
-        }
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
 
 
         #modal-luyen-dan .rec-mat-pill {
@@ -3809,19 +4029,21 @@
 
 
         #modal-luyen-dan .btn-brew {
-            width: 100%;
-            padding: 0.65rem 1rem;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Noto Serif', serif;
-        }
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: background .2s;
+    font-family: inherit;
+    line-height: 1.5;
+}
 
         #modal-luyen-dan .btn-brew:not(:disabled) {
             background: linear-gradient(135deg, #047857, #059669, #10b981);
@@ -3848,14 +4070,15 @@
 
         /* Kệ Hồ Lô Chứa Đan Dược Đã Luyện Xong */
         #modal-luyen-dan .recent-pills-shelf {
-            padding: 0.75rem 1.25rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(6, 14, 24, 0.7);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            overflow-x: auto;
-        }
+    padding: 12px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+}
 
         #modal-luyen-dan .pill-item-badge {
             display: flex;
@@ -3881,6 +4104,102 @@
         }
 
         #modal-luyen-dan .btn-swallow-pill:hover { background: rgba(16, 185, 129, 0.5); }
+
+        /* Phím Chọn Số Lượng Luyện Hàng Loạt (Batch Crafting) */
+        #modal-luyen-dan .alchemy-batch-pills {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 6px;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        #modal-luyen-dan .batch-pill-label {
+            font-size: 10px;
+            color: #94a3b8;
+            font-family: monospace;
+            margin-right: 2px;
+            font-weight: 600;
+        }
+
+        #modal-luyen-dan .batch-opt-btn {
+            padding: 2px 7px;
+            font-size: 11px;
+            font-family: monospace;
+            font-weight: 700;
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(45, 212, 191, 0.25);
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        #modal-luyen-dan .batch-opt-btn:hover:not(:disabled) {
+            background: rgba(45, 212, 191, 0.2);
+            border-color: rgba(45, 212, 191, 0.6);
+            color: #5eead4;
+        }
+
+        #modal-luyen-dan .batch-opt-btn.is-active {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.7), rgba(20, 184, 166, 0.9));
+            border-color: #2dd4bf;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(45, 212, 191, 0.45);
+        }
+
+        #modal-luyen-dan .batch-opt-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            border-color: rgba(100, 116, 139, 0.25);
+        }
+
+        /* Nút Uống Tất Cả Trên Kệ Hồ Lô */
+        #modal-luyen-dan .btn-swallow-all {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.6));
+            border: 1px solid rgba(52, 211, 153, 0.7);
+            color: #6ee7b7;
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: monospace;
+            transition: all 0.2s ease;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #modal-luyen-dan .btn-swallow-all:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.85));
+            border-color: #34d399;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+        }
+
+        /* Huy Hiệu Bạo Kích Đan Đạo */
+        #modal-luyen-dan .crit-alchemy-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(245, 158, 11, 0.4));
+            border: 1px solid #facc15;
+            color: #fde047;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+            animation: alchPulseGlow 1.8s infinite alternate;
+        }
+
+        @keyframes alchPulseGlow {
+            from { box-shadow: 0 0 4px rgba(250, 204, 21, 0.3); }
+            to { box-shadow: 0 0 12px rgba(250, 204, 21, 0.75); }
+        }
 
 
         /* ==========================================================================
@@ -3972,7 +4291,7 @@
             100% { transform: scale(1.02); }
         }
 
-    
+
 
 /* ==========================================================================
    SCOPED CSS CHO MODAL-LUYEN-KHI
@@ -3987,6 +4306,7 @@
     opacity: 0;
     background: #030712 !important;
     overflow-y: auto !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
 }
 
@@ -4012,12 +4332,8 @@
 
 
         #modal-luyen-khi * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    box-sizing: border-box;
+}
 
 
         #modal-luyen-khi {
@@ -4027,7 +4343,9 @@
                 radial-gradient(circle at 80% 70%, rgba(225, 29, 72, 0.08) 0%, transparent 60%),
                 linear-gradient(180deg, #020408 0%, #080c16 100%);
             color: #f1f5f9;
-            font-family: 'Noto Serif', serif, -apple-system, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -4059,20 +4377,18 @@
            2. HEADER THANH ĐIỀU HƯỚNG & TÀI NGUYÊN (TOP BAR)
            ========================================================================== */
         #modal-luyen-khi .forging-top-bar {
-            background: rgba(8, 12, 22, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-gold);
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
+    background: rgba(11, 19, 32, .96);
+    border-bottom: 1px solid rgba(245, 158, 11, .22);
+    padding: 16px 142px 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
 
 
         #modal-luyen-khi .forging-brand {
@@ -4147,58 +4463,57 @@
         }
 
 
-        
+
 
 
         /* ==========================================================================
            3. BỐ CỤC CHÍNH 2 CỘT (MAIN SPA LAYOUT)
            ========================================================================== */
         #modal-luyen-khi .forging-container {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.25rem;
-            padding: 1.25rem;
-            max-width: 1440px;
-            margin: 0 auto;
-            width: 100%;
-        }
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 20px;
+    padding: 20px 24px 28px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    height: clamp(520px, calc(100dvh - 100px), 640px);
+    align-items: stretch;
+}
 
 
-        #modal-luyen-khi .forging-container {
-                grid-template-columns: 46% 54%;
-                align-items: stretch;
-                height: calc(100vh - 65px);
-                overflow: hidden;
-            }
+
 
 
         /* Cột Trái & Cột Phải */
         #modal-luyen-khi .forging-panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-gold);
-            border-radius: 1.25rem;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
+    background: rgba(15, 23, 42, .78);
+    border: 1px solid rgba(245, 158, 11, .25);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+}
 
 
         /* ==========================================================================
            4. KHỐI BÊN TRÁI: LUYỆN KHÍ ĐỈNH & HIỆU ỨNG LỬA CHÁY
            ========================================================================== */
         #modal-luyen-khi .furnace-panel-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(10, 16, 28, 0.5);
-        }
+    padding: 0 0 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+}
 
 
         #modal-luyen-khi .furnace-status-badge {
@@ -4234,35 +4549,41 @@
 
         /* Buồng Lò Rèn (Furnace Chamber) */
         #modal-luyen-khi .furnace-chamber {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 1.5rem;
-            min-height: 380px;
-            overflow: hidden;
-            background: radial-gradient(circle at center 65%, rgba(245, 158, 11, 0.08) 0%, rgba(2, 6, 15, 0.95) 75%);
-        }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    padding: 95px 12px 32px;
+    min-height: 290px;
+    background: radial-gradient(ellipse at center 65%, rgba(56, 189, 248, .06), transparent 70%);
+    overflow: hidden;
+}
 
 
         /* Hộp Tiến Độ Đang Rèn (Nằm trên đỉnh lò) */
         #modal-luyen-khi .crafting-progress-box {
-            width: 90%;
-            max-width: 380px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            border-radius: 12px;
-            padding: 0.85rem 1rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(245, 158, 11, 0.1);
-            transition: all 0.3s ease;
-            opacity: 0;
-            transform: translateY(-10px);
-            pointer-events: none;
-            z-index: 10;
-        }
+    width: calc(100% - 24px);
+    max-width: 380px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin: 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(245, 158, 11, 0.1);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    z-index: 10;
+
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    translate: -50% 0;
+}
 
         #modal-luyen-khi .crafting-progress-box.is-active {
             opacity: 1;
@@ -4337,15 +4658,16 @@
 
         /* Đỉnh Lò Rèn (Cauldron Illustration) */
         #modal-luyen-khi .furnace-body-wrapper {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-            transition: transform 0.3s;
-        }
+    position: relative;
+    width: 190px;
+    height: 190px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: transform .25s;
+}
 
         #modal-luyen-khi .is-forging .furnace-body-wrapper {
             animation: furnaceRumble 0.18s infinite ease-in-out alternate;
@@ -4523,23 +4845,24 @@
 
         /* Panel Thông Tin Tỷ Lệ Phẩm Chất (RNG Card) */
         #modal-luyen-khi .rng-info-card {
-            padding: 0.85rem 1.25rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(10, 16, 28, 0.6);
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.65rem;
-            text-align: center;
-        }
+    padding: 14px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, .15);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    text-align: center;
+    flex-shrink: 0;
+}
 
         #modal-luyen-khi .rng-tier-pill {
-            padding: 0.4rem 0.5rem;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+}
 
         #modal-luyen-khi .rng-tier-pill.tier-white {
             background: rgba(148, 163, 184, 0.1);
@@ -4562,41 +4885,47 @@
            5. KHỐI BÊN PHẢI: ĐỒ PHỔ & NGUYÊN LIỆU (BLUEPRINTS & MATERIALS)
            ========================================================================== */
         #modal-luyen-khi .blueprints-panel-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(10, 16, 28, 0.5);
-        }
+    padding: 0 0 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+}
 
 
         #modal-luyen-khi .blueprints-list {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+    flex: 1;
+    min-height: 0;
+    padding: 14px 3px 14px 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
 
         /* Thẻ Công Thức Đúc Trang Bị (Recipe Card) */
         #modal-luyen-khi .recipe-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 1rem 1.15rem;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
-        }
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 146px;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    background: rgba(2, 6, 23, .5);
+    border: 1px solid rgba(148, 163, 184, .2);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color .2s;
+    position: relative;
+}
 
         #modal-luyen-khi .recipe-card:hover {
-            border-color: rgba(245, 158, 11, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-        }
+    border-color: rgba(148, 163, 184, .5);
+}
 
         #modal-luyen-khi .recipe-card::before {
             content: '';
@@ -4611,12 +4940,10 @@
 
 
         #modal-luyen-khi .recipe-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-bottom: 0.65rem;
-        }
+    display: flex;
+    margin-bottom: 10px;
+    min-width: 0;
+}
 
 
         #modal-luyen-khi .recipe-title-group {
@@ -4642,11 +4969,11 @@
 
 
         #modal-luyen-khi .recipe-name {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #f8fafc;
-            font-family: 'Cinzel', serif;
-        }
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc;
+    font-family: inherit;
+}
 
 
         #modal-luyen-khi .recipe-type-tag {
@@ -4685,16 +5012,14 @@
 
 
         #modal-luyen-khi .recipe-meta-stats {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-bottom: 0.75rem;
-            background: rgba(10, 15, 26, 0.5);
-            padding: 0.45rem 0.75rem;
-            border-radius: 8px;
-        }
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
 
         #modal-luyen-khi .stat-highlight {
             color: #38bdf8;
@@ -4705,8 +5030,8 @@
 
         /* Danh Sách Nguyên Liệu Cần Thiết */
         #modal-luyen-khi .materials-container {
-            margin-bottom: 0.85rem;
-        }
+    margin: 0;
+}
 
         #modal-luyen-khi .materials-title {
             font-size: 0.7rem;
@@ -4750,19 +5075,21 @@
 
         /* Nút Luyện Khí */
         #modal-luyen-khi .btn-forge {
-            width: 100%;
-            padding: 0.65rem 1rem;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Noto Serif', serif;
-        }
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: background .2s;
+    font-family: inherit;
+    line-height: 1.5;
+}
 
         #modal-luyen-khi .btn-forge:not(:disabled) {
             background: linear-gradient(135deg, #b45309, #d97706, #f59e0b);
@@ -4960,22 +5287,35 @@
             animation: skyGlow 2s infinite alternate;
         }
 
+        #modal-luyen-khi .quality--cuc-pham {
+            color: #facc15;
+            border-color: #f59e0b;
+            box-shadow: 0 0 35px rgba(250, 204, 21, 0.7);
+            animation: goldGlow 1.8s infinite alternate;
+        }
+
         @keyframes skyGlow {
             0% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
             100% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.9); }
         }
 
+        @keyframes goldGlow {
+            0% { box-shadow: 0 0 25px rgba(250, 204, 21, 0.6); }
+            100% { box-shadow: 0 0 45px rgba(250, 204, 21, 1); }
+        }
+
 
         /* Kho trang bị vừa rèn */
         #modal-luyen-khi .recent-crafted-shelf {
-            padding: 0.75rem 1.25rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(10, 16, 28, 0.6);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            overflow-x: auto;
-        }
+    padding: 12px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, .15);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+}
 
         #modal-luyen-khi .shelf-item-badge {
             display: flex;
@@ -4989,7 +5329,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-    
+
 
 /* ==========================================================================
    SCOPED CSS CHO MODAL-KHUE-PHONG (KHUÊ PHÒNG TIÊN ĐIỆN)
@@ -6708,6 +7048,66 @@ section.feature-page.game-page #char-right-tab-content {
     outline: none !important;
 }
 
+/* Scroll Unroll Animation & Caret flip cho Bottom Menu */
+#bottom-menu .dropup-menu {
+    transform-origin: bottom center !important;
+}
+
+#bottom-menu .dropup-menu.active {
+    display: flex !important;
+    animation: scrollUnroll 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+@keyframes scrollUnroll {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scaleY(0.7) translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) scaleY(1) translateY(0);
+    }
+}
+
+#bottom-menu .nav-item-wrapper.is-open .nav-btn i.fa-caret-up,
+#bottom-menu .nav-btn.active i.fa-caret-up {
+    transform: rotate(180deg) !important;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    color: #facc15 !important;
+}
+
+/* Hiệu ứng tia sáng quét ánh kim (Metallic Sheen) */
+@keyframes metallicSheen {
+    0%, 75% {
+        transform: translateX(-120%) skewX(-20deg);
+        opacity: 0;
+    }
+    80% {
+        opacity: 0.6;
+    }
+    95%, 100% {
+        transform: translateX(180%) skewX(-20deg);
+        opacity: 0;
+    }
+}
+
+.cbar-corner-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgba(254, 240, 138, 0.45) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: metallicSheen 6s infinite ease-in-out;
+    pointer-events: none;
+}
+
+/* Loot Magnet Flying Token */
+.loot-magnet-particle {
+    pointer-events: none !important;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8)) !important;
+    will-change: transform, left, top;
+}
+
 /* LAYER 3: MODAL CHỨC NĂNG TOÀN MÀN HÌNH (GIA VIÊN, LUYỆN ĐAN, LUYỆN KHÍ, KHUÊ PHÒNG, THÁP, ĐỘ KIẾP) */
 #modal-gia-vien,
 #modal-luyen-dan,
@@ -6806,6 +7206,29 @@ section.feature-page.game-page #char-right-tab-content {
 #floating-text-container {
     z-index: 99999 !important;
     pointer-events: none !important;
+}
+
+#rpg-item-tooltip {
+    box-shadow: 0 14px 40px -4px rgba(0, 0, 0, 0.95), 0 0 20px rgba(217, 119, 6, 0.2) !important;
+    backdrop-filter: blur(20px) !important;
+    background: linear-gradient(155deg, rgba(13, 19, 36, 0.97), rgba(4, 8, 20, 0.98)) !important;
+    animation: rpgTooltipPopIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#scene-bg-art {
+    will-change: transform;
+    transform-origin: center center;
+}
+
+@keyframes rpgTooltipPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* QUY TẮC BẤT BIẾN POINTER-EVENTS & DISPLAY CHO TẤT CẢ OVERLAY & MODAL KHI ĐÓNG (TRỊ DỨT ĐIỂM LIỆT NÚT) */
@@ -7198,6 +7621,22 @@ section.feature-page.game-page #char-right-tab-content {
     max-height: calc(100vh - 190px) !important;
 }
 
+#center-avatar #char-main-img {
+    width: min(100%, 460px) !important;
+    max-height: 560px !important;
+    filter: drop-shadow(0 0 24px rgba(56, 189, 248, .5)) drop-shadow(0 20px 16px rgba(0, 0, 0, .7)) !important;
+    animation: origin-avatar-float 4s ease-in-out infinite !important;
+}
+
+@keyframes origin-avatar-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #center-avatar #char-main-img { animation: none !important; }
+}
+
 /* A quiet, compact realm display leaves more room for the scene. */
 #tu-vi-bar {
     height: 58px !important;
@@ -7307,8 +7746,21 @@ section.feature-page.game-page #char-right-tab-content {
 }
 #foundation-panel .linh-can-visual__heading span { color: #a8bac6; font-size: .65rem; }
 #foundation-panel .linh-can-visual__halo { inset: 23% 12% 16%; opacity: .55; }
-#foundation-panel .linh-can-visual__body,
-#foundation-panel .linh-can-visual__meridians { opacity: .22; }
+#foundation-panel .linh-can-visual__body { opacity: .28; }
+#foundation-panel .linh-can-visual__meridians {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px var(--root-color, #38bdf8));
+}
+#foundation-panel .linh-can-visual__meridians path {
+    stroke: var(--root-color, #38bdf8);
+    stroke-width: 1.8px;
+    stroke-dasharray: 6 14;
+    animation: meridianQiFlow 4s linear infinite;
+}
+@keyframes meridianQiFlow {
+    0% { stroke-dashoffset: 40; }
+    100% { stroke-dashoffset: 0; }
+}
 #foundation-panel .meridian-node {
     width: 44px;
     height: 44px;
@@ -7316,6 +7768,11 @@ section.feature-page.game-page #char-right-tab-content {
     background: color-mix(in srgb, var(--element-color) 20%, #132130);
     box-shadow: 0 3px 12px rgba(0, 0, 0, .36);
     font-size: .7rem;
+    animation: meridianNodePulse 3s ease-in-out infinite;
+}
+@keyframes meridianNodePulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 10px rgba(0, 0, 0, 0.4); }
+    50% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 20px color-mix(in srgb, var(--element-color) 70%, transparent); }
 }
 #foundation-panel .meridian-node::after { inset: -4px; opacity: .2; }
 #foundation-panel .meridian-node.is-active { outline: 2px solid #e9d39a; outline-offset: 4px; box-shadow: 0 0 16px color-mix(in srgb, var(--element-color) 55%, transparent); }
@@ -8385,23 +8842,63 @@ body:has(#modal-do-kiep.active) #bottom-menu { display: none !important; }
 }
 
 #hud-left .fill-hp {
-    background: linear-gradient(90deg, #9f1239 0%, #e11d48 60%, #fb7185 100%) !important;
+    background: linear-gradient(90deg, #9f1239 0%, #e11d48 45%, #fb7185 80%, #9f1239 100%) !important;
     box-shadow: 0 0 10px rgba(225, 29, 72, 0.7) !important;
 }
 
 #hud-left .fill-mp {
-    background: linear-gradient(90deg, #0369a1 0%, #0ea5e9 60%, #38bdf8 100%) !important;
+    background: linear-gradient(90deg, #0369a1 0%, #0ea5e9 45%, #38bdf8 80%, #0369a1 100%) !important;
     box-shadow: 0 0 10px rgba(14, 165, 233, 0.7) !important;
 }
 
 #hud-left .fill-dao-tam {
-    background: linear-gradient(90deg, #6b21a8 0%, #9333ea 60%, #c084fc 100%) !important;
+    background: linear-gradient(90deg, #6b21a8 0%, #9333ea 45%, #c084fc 80%, #6b21a8 100%) !important;
     box-shadow: 0 0 10px rgba(147, 51, 234, 0.7) !important;
 }
 
 #hud-left .fill-tho-nguyen {
-    background: linear-gradient(90deg, #b45309 0%, #d97706 60%, #fbbf24 100%) !important;
+    background: linear-gradient(90deg, #b45309 0%, #d97706 45%, #fbbf24 80%, #b45309 100%) !important;
     box-shadow: 0 0 10px rgba(217, 119, 6, 0.7) !important;
+}
+
+#hud-left .fill-hp,
+#hud-left .fill-mp,
+#hud-left .fill-dao-tam,
+#hud-left .fill-tho-nguyen {
+    background-size: 200% 100% !important;
+    animation: liquidEnergyFlow 4s linear infinite !important;
+    position: relative !important;
+}
+
+#hud-left .fill-hp::after,
+#hud-left .fill-mp::after,
+#hud-left .fill-dao-tam::after,
+#hud-left .fill-tho-nguyen::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 0 8px 2px currentColor;
+    opacity: 0.9;
+}
+
+@keyframes liquidEnergyFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+#global-top-resource-bar .currency-card.currency-card-flash {
+    animation: currencyFlashPulse 0.45s ease-out !important;
+}
+
+@keyframes currencyFlashPulse {
+    0% { box-shadow: 0 0 18px rgba(250, 204, 21, 0.9) !important; border-color: rgba(250, 204, 21, 0.95) !important; }
+    100% { box-shadow: none !important; }
 }
 
 /* 4. CĂN CƠ NGŨ HÀNH LINH CĂN (SPIRIT ROOT 5 ELEMENTS GLOW) */
@@ -9127,18 +9624,19 @@ section.feature-page {
 /* Character origin dashboard. Keep the existing live stat bindings. */
 #hud-left:has(.origin-dashboard) {
     padding: 12px !important;
-    background: linear-gradient(160deg, rgba(12, 24, 36, .96), rgba(13, 20, 31, .94)) !important;
-    border: 1px solid rgba(148, 185, 195, .25) !important;
+    background: linear-gradient(160deg, rgba(11, 15, 25, .97), rgba(9, 14, 25, .95)) !important;
+    border: 1px solid rgba(245, 158, 11, .3) !important;
     border-radius: 18px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .6) !important;
     scrollbar-width: thin;
 }
 #hud-left .origin-dashboard { display: grid !important; min-width: 0; gap: 6px !important; }
 #hud-left .origin-dashboard .xianxia-glass-panel {
     margin: 0 !important;
     padding: 7px !important;
-    border: 1px solid rgba(148, 185, 195, .16) !important;
+    border: 1px solid rgba(245, 158, 11, .18) !important;
     border-radius: 13px !important;
-    background: rgba(25, 42, 54, .48) !important;
+    background: rgba(15, 23, 42, .55) !important;
     box-shadow: none !important;
     min-width: 0;
 }
@@ -9150,7 +9648,7 @@ section.feature-page {
     padding-bottom: 4px !important;
     font-size: 12px !important;
     line-height: 1.5;
-    border-bottom: 1px solid rgba(148, 185, 195, .12) !important;
+    border-bottom: 1px solid rgba(245, 158, 11, .22) !important;
 }
 #hud-left .origin-dashboard .panel-header-title > span:last-child { font-size: 9px !important; color: #8ea6b5 !important; }
 #hud-left .origin-dashboard .stat-capsule {
@@ -9158,8 +9656,8 @@ section.feature-page {
     gap: 5px;
     padding: 6px 8px !important;
     border-radius: 9px !important;
-    background: rgba(5, 16, 25, .55) !important;
-    border: 1px solid rgba(148, 185, 195, .16) !important;
+    background: rgba(15, 23, 42, .7) !important;
+    border: 1px solid rgba(245, 158, 11, .2) !important;
     min-width: 0;
 }
 #hud-left .origin-dashboard .stat-capsule-label { font-size: 9px !important; letter-spacing: .05em; }
@@ -9861,5 +10359,292 @@ body.tower-v4-active > :not(#tower-v4-frame) * {
     box-shadow: 0 0 28px rgba(56, 189, 248, 0.8) !important;
     transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   NÂNG CẤP CHUYÊN SÂU: HƯỞNG ỨNG CHIẾN ĐẤU TÂM MA, BÍ CẢNH & PHÁP BẢO
+   ========================================================================== */
+
+/* 1. Trảm Tâm Ma Huyễn Cảnh (#tam-ma-battle-modal) */
+#tam-ma-battle-modal .tm-lunge-player {
+    animation: tmLungePlayer 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+#tam-ma-battle-modal .tm-lunge-demon {
+    animation: tmLungeDemon 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+#tam-ma-battle-modal .tm-hurt-flash {
+    filter: brightness(2.6) drop-shadow(0 0 16px #f43f5e) !important;
+    transition: filter 0.15s ease;
+}
+#tam-ma-battle-modal .tm-dodge-back {
+    animation: tmDodgeBack 0.25s ease-out;
+}
+
+@keyframes tmLungePlayer {
+    0% { transform: translateX(0) scale(1); }
+    45% { transform: translateX(18px) scale(1.12); filter: drop-shadow(0 0 12px #38bdf8); }
+    100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes tmLungeDemon {
+    0% { transform: translateX(0) scale(1); }
+    45% { transform: translateX(-18px) scale(1.12); filter: drop-shadow(0 0 12px #f43f5e); }
+    100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes tmDodgeBack {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-12px) scale(0.94); opacity: 0.6; }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+/* 2. Bí Cảnh Chiến Đấu (#center-modal-backdrop) */
+#center-modal-backdrop .combat-lunge-player {
+    animation: combatLungeP 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+#center-modal-backdrop .combat-lunge-boss {
+    animation: combatLungeB 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+#center-modal-backdrop .combat-hurt-flash {
+    filter: brightness(2.8) drop-shadow(0 0 18px #ef4444) !important;
+}
+
+@keyframes combatLungeP {
+    0% { transform: translateX(0); }
+    40% { transform: translateX(16px) scale(1.08); filter: drop-shadow(0 0 10px #10b981); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes combatLungeB {
+    0% { transform: translateX(0); }
+    40% { transform: translateX(-16px) scale(1.08); filter: drop-shadow(0 0 10px #ef4444); }
+    100% { transform: translateX(0); }
+}
+
+/* 3. Pháp Bảo Bản Mệnh Khí Linh Hào Quang (#page-artifact) */
+#page-artifact article {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.25s ease;
+}
+#page-artifact article:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(250, 204, 21, 0.25);
+}
+#page-artifact .artifact-level-flash {
+    animation: artifactLevelFlash 0.5s ease-out;
+}
+@keyframes artifactLevelFlash {
+    0% { box-shadow: 0 0 35px #facc15, inset 0 0 25px #facc15; }
+    100% { box-shadow: none; }
+}
+
+/* ==========================================================================
+   4. ĐẤU GIÁ HỘI TIÊN GIA AAA (#page-world-auction)
+   ========================================================================== */
+#page-world-auction .auction-hammer-pulse {
+    animation: auctionGavelPulse 2.5s infinite ease-in-out;
+}
+@keyframes auctionGavelPulse {
+    0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 4px #c084fc); }
+    50% { transform: scale(1.12) rotate(-8deg); filter: drop-shadow(0 0 14px #e879f9); }
+}
+
+#page-world-auction .auction-stage-card {
+    background: radial-gradient(circle at 50% 20%, rgba(88, 28, 135, 0.22) 0%, rgba(15, 23, 42, 0.95) 75%), #050811;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+}
+
+#page-world-auction .auction-pedestal-light {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.25rem;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(10, 15, 30, 0.9) 80%);
+    border: 2px solid rgba(192, 132, 252, 0.5);
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.35), inset 0 0 15px rgba(168, 85, 247, 0.2);
+}
+#page-world-auction .auction-pedestal-light::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 1.5rem;
+    border: 1px dashed rgba(234, 179, 8, 0.45);
+    animation: pedestalRotateRune 12s linear infinite;
+    pointer-events: none;
+}
+@keyframes pedestalRotateRune {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Dynamic Gavel Animation */
+#page-world-auction .gavel-box {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#page-world-auction .gavel-hammer {
+    transform-origin: 80% 80%;
+    transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#page-world-auction .gavel-striking .gavel-hammer {
+    animation: gavelSmackDown 0.35s ease-in-out;
+}
+@keyframes gavelSmackDown {
+    0% { transform: rotate(0deg); }
+    35% { transform: rotate(-55deg) scale(1.15); filter: drop-shadow(0 0 12px #f59e0b); }
+    65% { transform: rotate(10deg); filter: drop-shadow(0 0 18px #ef4444); }
+    100% { transform: rotate(0deg); }
+}
+
+#page-world-auction .gavel-shockwave {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    width: 14px;
+    height: 6px;
+    margin-left: -7px;
+    border-radius: 50%;
+    border: 2px solid #fbbf24;
+    opacity: 0;
+    pointer-events: none;
+}
+#page-world-auction .gavel-striking .gavel-shockwave {
+    animation: gavelShockwaveRing 0.5s ease-out;
+}
+@keyframes gavelShockwaveRing {
+    0% { transform: scale(0.5); opacity: 1; border-color: #f59e0b; }
+    100% { transform: scale(5.5); opacity: 0; border-color: #ef4444; }
+}
+
+/* Speech Dialogue Bubble */
+#page-world-auction .auction-dialogue-bubble {
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(234, 179, 8, 0.15);
+    border-radius: 1rem;
+    animation: dialogueFloat 3s ease-in-out infinite alternate;
+}
+@keyframes dialogueFloat {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-3px); }
+}
+
+/* Countdown Timer Bar */
+#page-world-auction .auction-timer-container {
+    height: 5px;
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+#page-world-auction .auction-timer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+    transition: width 1s linear;
+}
+
+/* ==========================================================================
+   5. HỘ SƠN ĐẠI TRẬN TÔNG MÔN AAA (#page-sect-array)
+   ========================================================================== */
+#page-sect-array .sect-array-diagram {
+    background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.9) 0%, rgba(5, 8, 16, 0.98) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Barrier Dome Pulse */
+#page-sect-array .sect-barrier-dome {
+    animation: barrierDomePulse 4s ease-in-out infinite;
+    transform-origin: center;
+}
+@keyframes barrierDomePulse {
+    0%, 100% { opacity: 0.65; transform: scale(1); filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+    50% { opacity: 0.95; transform: scale(1.03); filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.6)); }
+}
+
+/* Leyline Stream Flow */
+#page-sect-array .array-leyline-flow {
+    stroke-dasharray: 8, 8;
+    animation: leylineFlowAnim 2s linear infinite;
+}
+@keyframes leylineFlowAnim {
+    from { stroke-dashoffset: 32; }
+    to { stroke-dashoffset: 0; }
+}
+
+/* Array Node Hover & Pulse */
+#page-sect-array .array-eye-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+#page-sect-array .array-eye-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+/* ==========================================================================
+   BẢNG NHÂN QUẢ CHÁNH MA & CƠ DUYÊN BÍ CẢNH (EXPEDITION & DUNGEON AAA POLISH)
+   ========================================================================== */
+#page-world-encounter .karmic-path-card,
+#world-encounter-page-content .karmic-path-card,
+#hub-modal-content .karmic-path-card {
+    position: relative;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.65), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(245, 158, 11, 0.05);
+    overflow: hidden;
+}
+
+#page-world-encounter .karmic-meter-fill-righteous,
+#world-encounter-page-content .karmic-meter-fill-righteous,
+#hub-modal-content .karmic-meter-fill-righteous {
+    background: linear-gradient(90deg, #10b981, #06b6d4, #f59e0b);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#page-world-encounter .karmic-meter-fill-demonic,
+#world-encounter-page-content .karmic-meter-fill-demonic,
+#hub-modal-content .karmic-meter-fill-demonic {
+    background: linear-gradient(90deg, #9333ea, #e11d48, #ef4444);
+    box-shadow: 0 0 10px rgba(225, 29, 72, 0.5);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#page-world-dungeon .relic-discovery-badge,
+#world-dungeon-page-content .relic-discovery-badge,
+#hub-modal-content .relic-discovery-badge {
+    animation: relicGlowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes relicGlowPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.3), inset 0 0 8px rgba(245, 158, 11, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.65), inset 0 0 14px rgba(245, 158, 11, 0.4);
+    }
+}
+
+#ancient-scroll-content .encounter-choice-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+#ancient-scroll-content .encounter-choice-card:hover {
+    transform: translateY(-3px);
+}
+
 
 

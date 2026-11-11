@@ -3304,6 +3304,36 @@ const SECT_SHOP_ITEMS = [
         effect: "+380 Công Kích, +2500 Khí Huyết, +10% Bạo Kích",
         stats: { atk: 380, hp: 2500, critRate: 0.10, damage: 650 }
     },
+    {
+        id: "bk_thai_at_than_kiem",
+        sectId: "thanh_van",
+        name: "Thái Ất Thần Kiếm Quyết",
+        type: "Vũ Kỹ",
+        category: "vu_ky",
+        tier: "thien",
+        minRank: 4,
+        price: 5500,
+        icon: "fa-bolt-lightning",
+        image: "./assets/images/item_bamboo_sword.jpg",
+        desc: "Thượng cổ kiếm quyết uy lực cái thế, nhất kiếm toái hư không, dẫn cửu thiên thần lôi trảm yêu trừ ma.",
+        effect: "+880 Công Kích, +4500 Khí Huyết, +15% Bạo Kích, +10% Tốc độ tu vi",
+        stats: { atk: 880, hp: 4500, critRate: 0.15, expRateMultiplier: 0.10, damage: 1250 }
+    },
+    {
+        id: "bk_cuu_chuyen_kim_than",
+        sectId: "thanh_van",
+        name: "Cửu Chuyển Kim Thân Quyết",
+        type: "Tâm Pháp",
+        category: "tam_phap",
+        tier: "thien",
+        minRank: 4,
+        price: 6000,
+        icon: "fa-shield-halved",
+        image: "./assets/images/item_bamboo_scroll.jpg",
+        desc: "Bất hoại kim thân chi đạo, nhục thân bất diệt, vạn kiếp bất xâm.",
+        effect: "+350 Phòng Ngự, +6000 Khí Huyết, +15% Tốc độ tu luyện",
+        stats: { def: 350, hp: 6000, expRateMultiplier: 0.15 }
+    },
 
     // Bí Kíp Huyết Hồn Cốc
     {
@@ -3366,6 +3396,36 @@ const SECT_SHOP_ITEMS = [
         effect: "+450 Công Kích, +1500 Khí Huyết, +12% Bạo Kích",
         stats: { atk: 450, hp: 1500, critRate: 0.12, damage: 720 }
     },
+    {
+        id: "bk_cuu_u_huyet_de",
+        sectId: "huyet_hon",
+        name: "Cửu U Huyết Đế Kinh",
+        type: "Tâm Pháp",
+        category: "tam_phap",
+        tier: "thien",
+        minRank: 4,
+        price: 6000,
+        icon: "fa-skull-crossbones",
+        image: "./assets/images/item_bamboo_scroll.jpg",
+        desc: "Đế kinh chí cao của ma đạo cửu u, luyện hóa vạn linh huyết sát thành bổ dưỡng vô thượng căn cơ.",
+        effect: "+920 Công Kích, +3000 Khí Huyết, +18% Bạo Kích, +15% Tốc độ tu luyện",
+        stats: { atk: 920, hp: 3000, critRate: 0.18, expRateMultiplier: 0.15 }
+    },
+    {
+        id: "bk_tuyet_diet_ma_tranh",
+        sectId: "huyet_hon",
+        name: "Thiên Ma Diệt Thế Trảo",
+        type: "Vũ Kỹ",
+        category: "vu_ky",
+        tier: "thien",
+        minRank: 4,
+        price: 5500,
+        icon: "fa-hand-back-fist",
+        image: "./assets/images/item_bamboo_sword.jpg",
+        desc: "Trảo xuất xé rách thương khung, sát ý ngập trời thị huyết cuồng nộ.",
+        effect: "+1050 Công Kích, +2500 Khí Huyết, +20% Sát Thương Bạo Kích",
+        stats: { atk: 1050, hp: 2500, critDmg: 0.20, damage: 1400 }
+    },
 
     // Bí Kíp Tán Tu Minh
     {
@@ -3427,6 +3487,36 @@ const SECT_SHOP_ITEMS = [
         desc: "Đạo pháp chí cao của Tán Tu liên minh, nhất khí phân thân uy áp quần hùng.",
         effect: "+360 Công Kích, +2000 Khí Huyết, +200 Phòng Ngự",
         stats: { atk: 360, hp: 2000, def: 200, damage: 680 }
+    },
+    {
+        id: "bk_hon_don_quy_nhat",
+        sectId: "tan_tu",
+        name: "Hỗn Độn Quy Nhất Quyết",
+        type: "Tâm Pháp",
+        category: "tam_phap",
+        tier: "thien",
+        minRank: 4,
+        price: 6000,
+        icon: "fa-infinity",
+        image: "./assets/images/item_bamboo_scroll.jpg",
+        desc: "Quy vạn pháp về hỗn độn tiên thiên, ngũ hành tương sinh, linh khí thiên địa vô tận quy tụ.",
+        effect: "+750 Công Kích, +300 Phòng Ngự, +5000 Khí Huyết, +20% Tốc độ tu luyện",
+        stats: { atk: 750, def: 300, hp: 5000, expRateMultiplier: 0.20 }
+    },
+    {
+        id: "bk_thien_dia_vo_cuc",
+        sectId: "tan_tu",
+        name: "Thiên Địa Vô Cực Trận Bút",
+        type: "Vũ Kỹ",
+        category: "vu_ky",
+        tier: "thien",
+        minRank: 4,
+        price: 5500,
+        icon: "fa-compass-drafting",
+        image: "./assets/images/item_bamboo_sword.jpg",
+        desc: "Hóa thiên địa làm trận, chỉ tay điểm họa vạn dặm sơn hà trấn sát càn khôn.",
+        effect: "+820 Công Kích, +350 Phòng Ngự, +4000 Khí Huyết, +12% Bạo Kích",
+        stats: { atk: 820, def: 350, hp: 4000, critRate: 0.12, damage: 1300 }
     },
 
     // Đan Dược & Vật Phẩm Tông Môn Dùng Chung
@@ -3493,6 +3583,23 @@ const SECT_SHOP_ITEMS = [
         effect: "Giảm 10 Tâm Ma, khôi phục 10 Đạo Tâm",
         usable: true,
         action: "clear_tam_ma_10"
+    },
+    {
+        id: "pill_thai_at_tay_tuy",
+        sectId: "all",
+        name: "Thái Ất Tẩy Tủy Kim Đan",
+        type: "Đan Dược",
+        category: "dan_duoc",
+        tier: "thien",
+        minRank: 4,
+        price: 3500,
+        icon: "fa-sun",
+        image: "./assets/images/item_qi_pill_bottle.jpg",
+        desc: "Tuyệt phẩm tiên đan tẩy rửa linh căn toàn diện, tăng vĩnh viễn 1000 Khí Huyết và 80 Công Kích.",
+        effect: "Vĩnh viễn: +1000 HP, +80 ATK",
+        usable: true,
+        action: "gain_perm_stats",
+        stats: { hp: 1000, atk: 80 }
     }
 ];
 
