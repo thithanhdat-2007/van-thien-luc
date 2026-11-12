@@ -96,6 +96,11 @@
     // PHẦN 2: CHARACTER STATS PROFILE LOGIC
     // ========================================================================
     function renderMasterCharacterStats() {
+        // The current character controller owns the shared profile elements.
+        if (typeof window.renderCharacterUI === 'function') {
+            window.renderCharacterUI();
+            return;
+        }
         if (typeof state === 'undefined') return;
 
         const eff = typeof getEffectiveStats === 'function' ? getEffectiveStats() : {};

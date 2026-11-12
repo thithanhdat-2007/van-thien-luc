@@ -31,7 +31,9 @@
     <link rel="stylesheet" href="./css/master_demos.css">
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./css/model_studio.css">
-    <link rel="stylesheet" href="./css/xianxia_model_rig.css">
+    <link rel="stylesheet" href="./css/encounter.css">
+    <link rel="stylesheet" href="./css/foundation.css">
+    <link rel="stylesheet" href="./css/breakthrough-results.css">
 </head>
 <body class="w-full h-screen flex flex-col overflow-hidden bg-slate-950 relative select-none font-sans" data-realm="luyen-khi" data-cultivation-realm="luyen-khi" data-world="realm">
     <!-- ==========================================
@@ -265,11 +267,7 @@
             <button type="button" onclick="toggleSound()" id="btn-sound" class="topbar-tool-btn" title="Bật/Tắt âm thanh">
                 <i id="sound-icon" class="fa-solid fa-volume-high"></i>
             </button>
-            <button type="button" onclick="openAntigravityExportModal()" class="topbar-tool-btn topbar-tool-btn--export" title="Xuất nguyên Folder chuẩn cho Antigravity">
-                <i class="fa-solid fa-folder-tree"></i>
-                <span class="export-label">Xuất Antigravity</span>
-            </button>
-            <button type="button" onclick="toggleImmersionMode()" id="btn-immersion" class="topbar-tool-btn" title="Cài đặt hiển thị / Ngắm cảnh">
+            <button type="button" onclick="openGameSettings()" id="btn-immersion" class="topbar-tool-btn" title="Cài đặt hiển thị / Ngắm cảnh">
                 <i class="fa-solid fa-gear"></i>
             </button>
         </div>
@@ -447,48 +445,48 @@
 
                 <!-- 4. CĂN CƠ & LINH CĂN (SPIRIT ROOTS) -->
                 <section class="xianxia-glass-panel">
-                    <h3 class="panel-header-title">
-                        <span><i class="fa-solid fa-seedling text-emerald-400"></i> Căn Cơ & Linh Căn</span>
-                        <span class="text-[10px] text-slate-400 font-normal">Ngũ Hành Tương Sinh</span>
+                    <h3 class="panel-header-title cursor-pointer group" onclick="navigateTo('page-root')" title="Bấm để mở Hệ Thống Ngũ Hành Linh Căn">
+                        <span><i class="fa-solid fa-seedling text-emerald-400 group-hover:rotate-12 transition-transform"></i> Căn Cơ & Linh Căn</span>
+                        <span class="text-[10px] text-amber-300 font-semibold group-hover:text-amber-200 transition-colors flex items-center gap-1">Tu Luyện <i class="fa-solid fa-chevron-right text-[8px]"></i></span>
                     </h3>
 
                     <!-- 5 Ô NGUYÊN TỐ NGŨ HÀNH -->
-                    <div class="elements-display-row">
+                    <div class="elements-display-row cursor-pointer" onclick="navigateTo('page-root')" title="Bấm để mở Căn Cơ Linh Căn">
                         <div id="root-elem-kim" class="element-slot elem-kim active">
                             <i class="fa-solid fa-coins elem-icon"></i>
                             <span class="elem-name">Kim</span>
-                            <span class="elem-pct">Thức Tỉnh</span>
+                            <span class="elem-pct">Lv.2</span>
                         </div>
-                        <div id="root-elem-moc" class="element-slot elem-moc">
+                        <div id="root-elem-moc" class="element-slot elem-moc active">
                             <i class="fa-solid fa-tree elem-icon"></i>
                             <span class="elem-name">Mộc</span>
-                            <span class="elem-pct">Tiềm Ẩn</span>
+                            <span class="elem-pct">Lv.4</span>
                         </div>
                         <div id="root-elem-thuy" class="element-slot elem-thuy active">
                             <i class="fa-solid fa-water elem-icon"></i>
                             <span class="elem-name">Thủy</span>
-                            <span class="elem-pct">Thức Tỉnh</span>
+                            <span class="elem-pct">Lv.37</span>
                         </div>
-                        <div id="root-elem-hoa" class="element-slot elem-hoa">
+                        <div id="root-elem-hoa" class="element-slot elem-hoa active">
                             <i class="fa-solid fa-fire elem-icon"></i>
                             <span class="elem-name">Hỏa</span>
-                            <span class="elem-pct">Tiềm Ẩn</span>
+                            <span class="elem-pct">Lv.1</span>
                         </div>
-                        <div id="root-elem-tho" class="element-slot elem-tho">
+                        <div id="root-elem-tho" class="element-slot elem-tho active">
                             <i class="fa-solid fa-mountain elem-icon"></i>
                             <span class="elem-name">Thổ</span>
-                            <span class="elem-pct">Tiềm Ẩn</span>
+                            <span class="elem-pct">Lv.3</span>
                         </div>
                     </div>
 
-                    <!-- DÒNG THÔNG SỐ HẤP THU TU VI -->
-                    <div class="root-absorption-banner">
+                    <!-- DÒNG THÔNG SỐ CỘNG HƯỞNG & LINH KHÍ -->
+                    <div class="root-absorption-banner cursor-pointer" onclick="navigateTo('page-root')" title="Bấm để mở Căn Cơ Linh Căn">
                         <span class="text-slate-300">
-                            <i class="fa-solid fa-sparkles text-emerald-400 mr-1.5"></i>
-                            Độ Tinh Khiết: <strong id="ui-root-purity-name" class="text-emerald-300">Biến Dị (Đơn Hệ Thần Lôi)</strong>
+                            <i class="fa-solid fa-circle-nodes text-emerald-400 mr-1.5"></i>
+                            Cộng Hưởng: <strong id="ui-root-resonance" class="text-emerald-300">Chưa kích hoạt</strong>
                         </span>
                         <span class="font-mono font-bold text-amber-300">
-                            Hệ số: <strong id="ui-root-multiplier" class="text-emerald-400 text-sm">x2.00</strong>
+                            <strong id="ui-root-linhkhi" class="text-amber-400 text-xs">6M LK</strong>
                         </span>
                     </div>
                 </section>
@@ -600,10 +598,6 @@
                      onerror="this.src='./assets/images/nu_tu_trong_suot.png'" 
                      style="position: relative; object-fit: contain; z-index: 2; margin-bottom: -15px; filter: drop-shadow(0px 18px 16px rgba(0,0,0,0.85)); pointer-events: auto;" />
 
-                <img id="model-two-illustration" src="./assets/images/nu_tu_trong_suot.png" alt="Băng Tâm Tiên Tử đang tọa thiền" decoding="async">
-                <object id="model-two-object" type="image/svg+xml" data="./assets/images/model_2_character.svg" aria-label="Băng Tâm Tiên Tử, model nhân vật 2D" tabindex="-1"></object>
-                <button id="model-two-settings-button" type="button" aria-controls="model-two-panel" aria-expanded="false" title="Điều chỉnh model nhân vật">⚙ Điều chỉnh nhân vật</button>
-
                 <!-- Hạch Tâm Đan Điền (Linh Khí Băng Lam tụ tại đan điền) -->
                 <div id="dantian-core" class="absolute top-[60%] left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-500 shadow-[0_0_25px_#22d3ee] animate-ping z-30 pointer-events-none" style="animation-duration: 2.5s;"></div>
                 <div class="absolute top-[60%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_12px_#67e8f9] z-30 pointer-events-none"></div>
@@ -672,15 +666,16 @@
     </div>
     <!-- HẾT KHUNG 3 CỘT: #main-content -->
 
-    <!-- 2.4. NÚT KỲ NGỘ BẤT NGỜ NỔI TRÊN MÀN HÌNH -->
-    <button id="fortuitous-event-btn" onclick="triggerFortuitousEvent()" class="fixed left-1/2 -translate-x-1/2 top-24 z-30 xianxia-panel glow-gold px-4 py-1.5 rounded-full items-center gap-2 text-xs font-bold text-gold-200 animate-bounce hidden">
-        <i class="fa-solid fa-meteor text-gold-300"></i>
-        <span>Thiên Cơ Kỳ Ngộ Xuất Hiện! (Chạm Nhận)</span>
-    </button>
+
         </div>
         <!-- HẾT TẦNG 1: KHÔNG GIAN TIÊN CẢNH (#game-viewport) -->
     </div>
     <!-- HẾT APP ROOT CONTAINER (.app-container) -->
+
+    <button id="fortuitous-event-btn" type="button" onclick="triggerFortuitousEvent()" class="encounter-notice" hidden aria-controls="ancient-scroll-backdrop" aria-expanded="false">
+        <span class="encounter-notice-icon" aria-hidden="true">📜</span>
+        <span>Kỳ ngộ xuất hiện!<small>Mở cổ tịch</small></span>
+    </button>
 
     <!-- Nút Khôi Phục HUD Khi Đang Ở Chế Độ Ngắm Cảnh Toàn Màn Hình -->
     <button id="btn-restore-hud" onclick="toggleImmersionMode()" class="hidden fixed bottom-5 right-5 z-50 xianxia-panel px-4 py-2 rounded-full text-xs text-gold-300 border border-gold-400/60 items-center gap-2 shadow-lg hover:scale-105 transition">
@@ -1332,31 +1327,13 @@
     <!-- ==========================================
          MODAL KỲ NGỘ CỔ TỊCH (ANCIENT ENCOUNTER SCROLL)
     =========================================== -->
-    <div id="ancient-scroll-backdrop" class="hidden fixed inset-0 z-[80] bg-black/85 backdrop-blur-md items-center justify-center p-3 sm:p-5 select-none overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="ancient-scroll-title">
-        <section class="xianxia-panel rounded-2xl border-2 border-amber-600/80 bg-slate-950/95 w-full max-w-2xl text-slate-100 shadow-[0_0_50px_rgba(245,158,11,0.35)] relative overflow-hidden flex flex-col max-h-[92vh] modal-scale-drop">
-            <!-- Header Tiêu Đề Cổ Cuộn -->
-            <header class="flex items-center justify-between p-3.5 sm:p-4 border-b border-amber-900/60 bg-gradient-to-r from-amber-950/80 via-slate-900/90 to-amber-950/80 relative z-10">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-lg bg-amber-950 border border-amber-500/60 flex items-center justify-center text-amber-300 shadow-inner">
-                        <i class="fa-solid fa-scroll text-sm"></i>
-                    </span>
-                    <div>
-                        <h2 id="ancient-scroll-title" class="font-serif text-base sm:text-lg font-bold text-amber-200 tracking-wide flex items-center gap-2">
-                            <span>Kỳ Ngộ Cổ Tịch</span>
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-900/80 text-amber-300 border border-amber-500/50">Cơ Duyên Hồng Hoang</span>
-                        </h2>
-                        <p class="text-[10px] text-slate-400 font-serif italic">Thiên địa luân hồi, nhất niệm định chính ma</p>
-                    </div>
-                </div>
-                <button type="button" onclick="closeEncounterModal()" class="w-8 h-8 rounded-lg bg-slate-900/80 border border-slate-700/60 hover:border-amber-500 text-slate-400 hover:text-amber-300 flex items-center justify-center transition" aria-label="Đóng modal">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
+    <div id="ancient-scroll-backdrop" class="hidden fixed inset-0 items-center justify-center p-5" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ancient-scroll-title">
+        <section class="encounter-modal flex flex-col rounded-2xl overflow-hidden">
+            <header class="encounter-header flex items-center justify-between gap-4">
+                <div><h2 id="ancient-scroll-title" tabindex="-1">Kỳ Ngộ Cổ Tịch</h2><span id="encounter-rarity">Cơ duyên Hồng Hoang</span></div>
+                <button type="button" class="encounter-close" onclick="closeEncounterModal()" aria-label="Đóng tạm, giữ kỳ ngộ để xem sau">✕</button>
             </header>
-
-            <!-- Nội Dung Thẻ Trúc Đối Lập (ancient-scroll-content) -->
-            <div id="ancient-scroll-content" class="p-3.5 sm:p-5 flex flex-col gap-3 relative z-10 overflow-y-auto max-h-[78vh]">
-                <!-- Dynamic choices injected by openEncounterModal() -->
-            </div>
+            <div id="ancient-scroll-content" class="overflow-y-auto"></div>
         </section>
     </div>
 
@@ -1519,6 +1496,19 @@
             </div>
         </div>
 
+        <div class="bt-celestial-field" role="presentation">
+            <div class="bt-orbit bt-orbit-outer"></div>
+            <div class="bt-orbit bt-orbit-inner"></div>
+            <div class="bt-portal-shockwave"></div>
+            <div class="bt-ascension-horizon"></div>
+            <svg class="bt-flying-sword bt-sword-left" viewBox="0 0 28 170" role="presentation"><path d="M14 1 22 26 17 123 11 123 6 26Z M14 8V122 M2 126 14 120 26 126 14 132Z M11 132H17V157L14 166 11 157Z"/></svg>
+            <svg class="bt-flying-sword bt-sword-right" viewBox="0 0 28 170" role="presentation"><path d="M14 1 22 26 17 123 11 123 6 26Z M14 8V122 M2 126 14 120 26 126 14 132Z M11 132H17V157L14 166 11 157Z"/></svg>
+            <i class="bt-spark" style="--i:0"></i><i class="bt-spark" style="--i:1"></i>
+            <i class="bt-spark" style="--i:2"></i><i class="bt-spark" style="--i:3"></i>
+            <i class="bt-spark" style="--i:4"></i><i class="bt-spark" style="--i:5"></i>
+            <i class="bt-spark" style="--i:6"></i><i class="bt-spark" style="--i:7"></i>
+        </div>
+
         <!-- Nội Dung Trôi Lơ Lửng Ở Trung Tâm -->
         <div class="cinematic-content cinematic-content-success">
             
@@ -1642,7 +1632,7 @@
         <div class="cinematic-blood-mist"></div>
 
         <!-- Đốm Tàn Tro Huyết Hỏa Lơ Lửng (Blood Embers) -->
-        <div class="cinematic-blood-embers" aria-hidden="true">
+        <div class="cinematic-blood-embers" role="presentation">
             <span class="ember ember-1"></span>
             <span class="ember ember-2"></span>
             <span class="ember ember-3"></span>
@@ -1656,7 +1646,7 @@
         </div>
 
         <!-- Trận Đồ Ma Đạo Phản Phệ Nền (Demonic Array Watermark SVG Với Vết Nứt Tia Sét Đỏ) -->
-        <div class="demonic-array-bg" aria-hidden="true">
+        <div class="demonic-array-bg" role="presentation">
             <svg class="demonic-array-svg" viewBox="0 0 600 600" fill="none">
                 <defs>
                     <linearGradient id="bloodLightningGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1702,6 +1692,16 @@
                     <path d="M335,235 L410,260 L435,310" stroke="#fb7185" stroke-width="1.8" stroke-linecap="round" />
                 </g>
             </svg>
+        </div>
+
+        <div class="bt-celestial-field" role="presentation">
+            <div class="bt-orbit bt-orbit-outer"></div>
+            <div class="bt-orbit bt-orbit-inner"></div>
+            <div class="bt-portal-shockwave"></div>
+            <div class="bt-ascension-horizon"></div>
+            <i class="bt-spark" style="--i:0"></i><i class="bt-spark" style="--i:1"></i>
+            <i class="bt-spark" style="--i:2"></i><i class="bt-spark" style="--i:3"></i>
+            <i class="bt-spark" style="--i:4"></i><i class="bt-spark" style="--i:5"></i>
         </div>
 
         <!-- BẢNG THÔNG BÁO THẤT BẠI: TẤM BIA TRẤN ÁP HẮC DIỆU THẠCH 3D -->
@@ -4095,6 +4095,7 @@
     <script src="./js/data.js"></script>
     <script src="./js/realms_data.js"></script>
     <script src="./js/skills_data.js"></script>
+    <script src="./js/cultivation_math.js"></script>
     <script src="./js/stats.js"></script>
     <script src="./js/loop.js"></script>
     <script src="./js/tribulation_system.js"></script>
@@ -4401,7 +4402,6 @@
     <script src="./main.js" defer></script>
     <script src="./js/features/tribulation.js" defer></script>
     <script src="./js/features/estate.js" defer></script>
-    <script src="./js/features/xianxia_model_rig.js" defer></script>
     <script src="./js/features/demon_tower.js" defer></script>
     <script src="./js/features/topbar.js" defer></script>
     <script src="./js/features/character.js" defer></script>
@@ -4409,6 +4409,7 @@
     <script src="./js/features/alchemy.js" defer></script>
     <script src="./js/features/forging.js" defer></script>
     <script src="./js/features/chamber.js" defer></script>
+    <script src="./js/features/encounter.js" defer></script>
     <script src="./js/features/bootstrap.js" defer></script>
     <script src="./js/tribulation_visuals.js" defer></script>
 </body>

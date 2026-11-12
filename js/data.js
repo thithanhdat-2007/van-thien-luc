@@ -18,6 +18,27 @@ if (typeof globalThis !== "undefined") {
     globalThis.DEFAULT_IMG_FALLBACK = DEFAULT_IMG_FALLBACK;
 }
 
+const BASE_LINH_KHI_CAPACITY = 50000;
+const BASE_LINH_KHI_REGEN = 100;
+if (typeof window !== "undefined") {
+    window.BASE_LINH_KHI_CAPACITY = BASE_LINH_KHI_CAPACITY;
+    window.BASE_LINH_KHI_REGEN = BASE_LINH_KHI_REGEN;
+}
+if (typeof globalThis !== "undefined") {
+    globalThis.BASE_LINH_KHI_CAPACITY = BASE_LINH_KHI_CAPACITY;
+    globalThis.BASE_LINH_KHI_REGEN = BASE_LINH_KHI_REGEN;
+}
+
+const CULTIVATION_BALANCE_RULES = Object.freeze({
+    pacingDampener: 0.15,
+    manaDivisor: 15,
+    spiritRegenDivisor: 15,
+    manaSkillRatio: 0.10,
+    manaSkillFlatCost: 5,
+    spiritCapacityBase: 50000,
+    spiritCapacityPerMajor: 25000
+});
+
 // 0. CẤU HÌNH THIÊN KIẾP ĐẠI CẢNH GIỚI ĐỘNG (MAJOR TRIBULATION DYNAMIC DATA)
 const tribulationConfig = {
   "TrucCo": {
@@ -1146,21 +1167,32 @@ if (typeof globalThis !== 'undefined') {
 }
 
 const FIVE_ELEMENTS_CONFIG = ELEMENTAL_PILLARS;
-const ELEMENTAL_RESONANCE = { step: 10, bonusPerStep: 0.02 };
+const ELEMENTAL_RESONANCE = { step: 10, bonusPerStep: 0.05 };
 
 const LINH_CAN_STAGES = [
-    { min: 1, name: "Phàm Giai", color: "#9ca3af" },
-    { min: 10, name: "Hoàng Giai", color: "#4ade80" },
-    { min: 20, name: "Huyền Giai", color: "#60a5fa" },
-    { min: 30, name: "Địa Giai", color: "#c084fc" },
-    { min: 40, name: "Thiên Giai", color: "#facc15" },
-    { min: 50, name: "Linh Giai", color: "#fb923c" },
-    { min: 60, name: "Vương Giai", color: "#ef4444" },
-    { min: 70, name: "Hoàng Đế Giai", color: "#f472b6" },
-    { min: 80, name: "Thánh Giai", color: "#2dd4bf" },
-    { min: 90, name: "Thần Giai", color: "#fde047" },
-    { min: 100, name: "Tiên Thiên / Chí Tôn Giai", color: "rainbow" }
+    { min: 1, max: 10, name: "Phàm Giai", color: "#94a3b8", colorClass: "text-slate-400" },
+    { min: 11, max: 20, name: "Linh Giai", color: "#34d399", colorClass: "text-emerald-400" },
+    { min: 21, max: 30, name: "Huyền Giai", color: "#60a5fa", colorClass: "text-blue-400" },
+    { min: 31, max: 40, name: "Địa Giai", color: "#c084fc", colorClass: "text-purple-400" },
+    { min: 41, max: 50, name: "Thiên Giai", color: "#fb923c", colorClass: "text-orange-400" },
+    { min: 51, max: 60, name: "Vương Giai", color: "#ef4444", colorClass: "text-red-500" },
+    { min: 61, max: 70, name: "Hoàng Giai", color: "#e11d48", colorClass: "text-rose-600" },
+    { min: 71, max: 80, name: "Tôn Giai", color: "#f1f5f9", colorClass: "text-slate-100" },
+    { min: 81, max: 90, name: "Thánh Giai", color: "#facc15", colorClass: "text-yellow-400" },
+    { min: 91, max: 100, name: "Cực Đạo", color: "rainbow", colorClass: "cuc-dao-text bg-gradient-to-r from-amber-400 via-rose-400 to-cyan-400 text-transparent bg-clip-text font-black animate-pulse" }
 ];
+const NGU_HANH_TIERS = LINH_CAN_STAGES;
+
+if (typeof window !== 'undefined') {
+    window.LINH_CAN_STAGES = LINH_CAN_STAGES;
+    window.NGU_HANH_TIERS = NGU_HANH_TIERS;
+    window.ELEMENTAL_RESONANCE = ELEMENTAL_RESONANCE;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.LINH_CAN_STAGES = LINH_CAN_STAGES;
+    globalThis.NGU_HANH_TIERS = NGU_HANH_TIERS;
+    globalThis.ELEMENTAL_RESONANCE = ELEMENTAL_RESONANCE;
+}
 const LINH_CAN_RULES = { maxLevel: 100, stageStep: 10, stageCostMultiplier: 2.5, rareCostMultiplier: 1.2, rareUnlockItem: "di_nguyen_thach" };
 const RARE_LINH_CAN_BRANCHES = {
     ice: { id: "bang", name: "Băng Linh Căn", element: "Băng", color: "#a5f3fc", icon: "fa-snowflake" },
@@ -1275,6 +1307,14 @@ const GUARDIAN_PETS = {
 window.GUARDIAN_PETS = GUARDIAN_PETS;
 
 // 4.3. NHẬT KÝ KỲ NGỘ VĂN BẢN (CỔ TỊCH CUỘN TRÒN & CHÁNH MA TRỊ SỐ)
+const ENCOUNTER_RULES = Object.freeze({
+    idleChance: 0.001,
+    expeditionChance: 0.05,
+    cooldownMs: 10 * 60 * 1000,
+    righteousMindGain: 12,
+    demonicMindLoss: 25
+});
+
 const ENCOUNTERS = [
     {
         id: "enc_1",
@@ -3768,7 +3808,9 @@ const DEFAULT_STATE = {
     timeScale: 1,
     realmIndex: 0,
     exp: 0,
-    linhKhi: 0,
+    linhKhi: 6000000,
+    maxLinhKhi: 50000,
+    linhKhiRegen: 100,
     stones: 0,
     immortalJade: 0,
     hp: 500,
@@ -3833,11 +3875,18 @@ const DEFAULT_STATE = {
     roles: [],
     progressionFlags: [],
     spiritRoot: "Ngụy Linh Căn",
+    playerLinhCan: {
+        kim: 2,
+        moc: 4,
+        thuy: 37,
+        hoa: 1,
+        tho: 3
+    },
     spiritualRoot: {
         id: "mortal_mixed",
         tier: "mortal",
         awakenStage: 0,
-        pillars: { metal: 1, wood: 1, water: 1, fire: 1, earth: 1 },
+        pillars: { metal: 2, wood: 4, water: 37, fire: 1, earth: 3 },
         rareBranches: { ice: { level: 0, isUnlocked: false }, wind: { level: 0, isUnlocked: false }, thunder: { level: 0, isUnlocked: false } },
         mutations: { metal: false, wood: false, water: false, fire: false, earth: false, ice: false, wind: false, thunder: false }
     },
@@ -3846,6 +3895,8 @@ const DEFAULT_STATE = {
     bgIndex: 0,
     pillBuffRemaining: 0,
     sectRankIndex: 0,
+    pendingEncounterId: null,
+    lastEncounterAt: 0,
     lastOnlineTime: Date.now(),
     // NÂNG CẤP TỤ LINH TRẬN NGŨ HÀNH & KỲ NGỘ CHÁNH MA
     fiveElements: { kim: 1, moc: 1, thuy: 1, hoa: 1, tho: 1 },
@@ -4680,4 +4731,48 @@ if (typeof module !== 'undefined' && module.exports) {
         calculateCombatDamage,
         calculateMonsterCombatPower
     };
+}
+
+// Clean gameplay baseline; the item catalog remains available for reward lookups.
+function createFreshGameplayState(previous = null) {
+    const fresh = structuredClone(DEFAULT_STATE);
+    fresh.linhKhi = 0;
+    fresh.inventory = [];
+    fresh.equipped = {};
+    fresh.playerLinhCan = { kim: 1, moc: 1, thuy: 1, hoa: 1, tho: 1 };
+    fresh.spiritualRoot.pillars = { metal: 1, wood: 1, water: 1, fire: 1, earth: 1 };
+    fresh.fiveElements = { ...fresh.playerLinhCan };
+    fresh.auto = Object.fromEntries(Object.keys(fresh.auto).map(key => [key, false]));
+    fresh.talismans = Object.fromEntries(Object.keys(fresh.talismans).map(key => [key, 0]));
+    fresh.arenaHonor = 0;
+    fresh.auctionData.currentBid = 0;
+    fresh.auctionData.highestBidder = null;
+    fresh.auctionData.isPlayerHighest = false;
+    fresh.manualArtGiftV1 = true;
+    fresh.lastOnlineTime = Date.now();
+    fresh.lastArenaTicketRecharge = Date.now();
+    if (previous?.player) {
+        fresh.player.name = previous.player.name || fresh.player.name;
+        fresh.player.avatar_url = previous.player.avatar_url || fresh.player.avatar_url;
+    }
+    if (previous?.avatar_url) fresh.avatar_url = previous.avatar_url;
+    return fresh;
+}
+
+// Per-level root bonuses. Percentage values use percentage points except critDamage.
+const ROOT_STAT_RULES = Object.freeze({ atk:25, hp:250, def:15, mp:5, armorPen:.1, regen:.5, dodge:.05, speed:.2, crit:.1, critDamage:.005, critResist:.1 });
+function getRootStatBonuses(player) {
+    const names = {metal:'kim',wood:'moc',water:'thuy',fire:'hoa',earth:'tho'};
+    const levels = Object.fromEntries(Object.entries(names).map(([key,id]) => [key, Math.min(100,Math.max(0,Number(player.playerLinhCan?.[id] ?? player.spiritualRoot?.pillars?.[key]) || 0))]));
+    const r = ROOT_STAT_RULES;
+    return { levels, atk:levels.metal*r.atk, hp:levels.wood*r.hp, def:levels.earth*r.def, mp:levels.water*r.mp,
+        armorPen:levels.metal*r.armorPen, regen:levels.wood*r.regen, dodge:levels.water*r.dodge, speed:levels.water*r.speed,
+        crit:levels.fire*r.crit, critDamage:levels.fire*r.critDamage, critResist:levels.earth*r.critResist,
+        resonance:Math.floor(Math.min(...Object.values(levels))/ELEMENTAL_RESONANCE.step)*ELEMENTAL_RESONANCE.bonusPerStep };
+}
+const ROOT_BREAKTHROUGH_RULES = Object.freeze({ requiredRealm:'Đại Thừa', requiredStage:'Viên Mãn', chance:.01 });
+function canAttemptRootCap(realm) {
+    const name = String(realm?.name || realm?.title || '').normalize('NFC').toLocaleLowerCase('vi');
+    const stage = String(realm?.stageName || realm?.stage || realm?.minorName || '').normalize('NFC').toLocaleLowerCase('vi');
+    return name.includes('đại thừa') && (name.includes('viên mãn') || stage.includes('viên mãn'));
 }

@@ -1,13 +1,14 @@
 /** Dữ liệu tháp độc lập. Xem TOWER_EDITING.md trước khi chỉnh.
  * Giữ id công pháp/vật phẩm ổn định. Thêm vfxType cần bộ phát trong engine.
- * Game chính vẫn dùng js/data.js, bản tháp này chưa đồng bộ save chính.
+ * Game chính dùng js/data.js; cầu nối save/chỉ số nằm trong js/features/demon_tower.js.
  */
 // Điều kiện vận hành đang dùng. Giữ nguyên giá trị mặc định khi tái cấu trúc.
 // turnDurationMs tính bằng mili giây. enrageHpRatio nằm trong khoảng 0–1.
 // FPS là trần vẽ, không phải tốc độ gameplay. Thay đổi cần kiểm tra hiệu ứng.
 const TOWER_RULES = Object.freeze({
     targetFps: 60,
-    turnDurationMs: 820,
+    turnDurationMs: 2000,
+    minimumTurnDurationMs: 800,
     forgeSwordCost: 100000,
     enrageHpRatio: 0.35,
     bellShieldTurns: 4,

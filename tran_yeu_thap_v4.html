@@ -920,6 +920,7 @@
     <!-- ==================== ENGINE VẠN KIẾM THẦN TUYỆT V2 (6 ĐẠI THẦN THÔNG + 4 THIÊN TƯỢNG) ==================== -->
     <!-- Dữ liệu sửa tại js/tower_data.js. Quy trình sửa tại TOWER_EDITING.md. -->
     <script src="./js/tower_data.js"></script>
+    <script src="./js/stats.js"></script>
     <script>
         /**
          * 1. HỆ THỐNG NGŨ HÀNH KIẾM Ý & TƯƠNG KHẮC
@@ -1012,7 +1013,7 @@
         }
 
         function applyMainGameData(data) {
-            if (!data) return;
+            if (!data || gameState.inCombat) return;
             try {
                 if (data.linhThach !== undefined) gameState.linhThach = Number(data.linhThach) || 0;
                 if (data.tuVi !== undefined) gameState.tuVi = Number(data.tuVi) || 0;
@@ -1036,11 +1037,15 @@
                         gameState.hero.maxHp = Number(data.hero.maxHp);
                         gameState.hero.hp = Number(data.hero.hp || data.hero.maxHp);
                     }
-                    if (data.hero.atk) gameState.hero.atk = Number(data.hero.atk);
-                    if (data.hero.def) gameState.hero.def = Number(data.hero.def);
+                    if (data.hero.atk !== undefined) gameState.hero.atk = Number(data.hero.atk);
+                    if (data.hero.def !== undefined) gameState.hero.def = Number(data.hero.def);
                     if (data.hero.crit !== undefined) gameState.hero.crit = Number(data.hero.crit);
                     if (data.hero.critDmg !== undefined) gameState.hero.critDmg = Number(data.hero.critDmg);
                     if (data.hero.eva !== undefined) gameState.hero.eva = Number(data.hero.eva);
+                    gameState.hero.tier = data.hero.tier;
+                    gameState.hero.realmIndex = data.hero.realmIndex;
+                    gameState.hero.armorPen = data.hero.armorPen || 0;
+                    gameState.hero.critResist = data.hero.critResist || 0;
                     if (data.hero.element) gameState.hero.element = String(data.hero.element);
                     if (data.hero.swordCount) gameState.hero.swordCount = Number(data.hero.swordCount);
                 }
@@ -1053,17 +1058,17 @@
 
                 if (data.activeManualId) gameState.activeManualId = data.activeManualId;
                 if (data.selectedUltId !== undefined) gameState.selectedUltId = data.selectedUltId;
-                if (Array.isArray(data.capturedSouls) && data.capturedSouls.length > 0) {
+                if (Array.isArray(data.capturedSouls)) {
                     gameState.capturedSouls = data.capturedSouls;
                 }
-                if (Array.isArray(data.lootBag) && data.lootBag.length > 0) {
+                if (Array.isArray(data.lootBag)) {
                     gameState.lootBag = data.lootBag;
                 }
-                if (data.activeGuardian) {
+                if (Object.prototype.hasOwnProperty.call(data, 'activeGuardian')) {
                     gameState.activeGuardian = data.activeGuardian;
                     const guardEl = document.getElementById('guardian-spirit-name');
                     if (guardEl) {
-                        guardEl.innerHTML = `<span>${data.activeGuardian.icon || '🐺'}</span> ${data.activeGuardian.name}`;
+                        guardEl.textContent = data.activeGuardian ? `${data.activeGuardian.icon || '🐺'} ${data.activeGuardian.name}` : 'Chưa có Hộ Pháp';
                     }
                 }
 
@@ -1450,6 +1455,7 @@
 
         // THẦN THÔNG TRÌNH DIỄN 1: MƯA VẠN KIẾM TRIỀU TÔNG
         function triggerSwordRainSpectacle() {
+            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => triggerSwordRainSpectacle(); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1484,7 +1490,7 @@
             }
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const rainDmg = Math.round(gameState.hero.atk * 1.9);
+                const rainDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 1.9);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - rainDmg);
                 if (gameState.liveBossBrokenTurns <= 0) {
                     gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 35);
@@ -1502,6 +1508,7 @@
 
         // THẦN THÔNG TRÌNH DIỄN 2: NHẤT KIẾM KHAI THIÊN MÔN (CHÉM ĐÔI BẦU TRỜI & NỨT VỠ HƯ KHÔNG)
         function triggerHeavenSplitSpectacle() {
+            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => triggerHeavenSplitSpectacle(); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1524,7 +1531,7 @@
             spawnSpaceShatter(w * 0.75, h * 0.52, '#e879f9', 18);
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const splitDmg = Math.round(gameState.hero.atk * 2.45);
+                const splitDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 2.45);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - splitDmg);
                 if (gameState.liveBossBrokenTurns <= 0) {
                     gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 55);
@@ -1542,6 +1549,7 @@
 
         // THẦN THÔNG TRÌNH DIỄN 3: NHẤT CHU THẢO TRẢM TẬN NHẬT NGUYỆT TINH THẦN (MỘT CỌNG CỎ CHÉM ĐÔI NHẬT NGUYỆT TINH TÚ)
         function triggerGrassCutsStarsSpectacle() {
+            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => triggerGrassCutsStarsSpectacle(); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1571,7 +1579,7 @@
             }, 220);
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const grassDmg = Math.round(gameState.hero.atk * 3.2);
+                const grassDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 3.2);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - grassDmg);
                 gameState.liveBossToughness = 0;
                 bossAnim.hitFlash = 12;
@@ -1587,6 +1595,7 @@
 
         // THẦN THÔNG TRÌNH DIỄN 4: CỬU TRỌNG LÔI KIẾP & NGHỊCH THIÊN PHẠT ĐẠO (CHÉM ĐÔI THIÊN ĐẠO PHÁP NHÃN)
         function triggerHeavenlyTribulationEvent() {
+            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => triggerHeavenlyTribulationEvent(); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1628,7 +1637,7 @@
             }
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const tribDmg = Math.round(gameState.hero.atk * 3.1);
+                const tribDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 3.1);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - tribDmg);
                 gameState.liveBossToughness = 0;
                 bossAnim.hitFlash = 12;
@@ -1662,6 +1671,7 @@
 
         // TAM ĐẠI PHÁP BẢO CHỦ ĐỘNG (PHÍM 1, 2, 3)
         function castActiveArtifact(slot) {
+            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => castActiveArtifact(slot); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1699,7 +1709,7 @@
                 });
                 gameState.hero.mp = 100;
                 if (gameState.inCombat && gameState.liveBossHp > 0) {
-                    const wheelDmg = Math.round(gameState.hero.atk * 1.75);
+                    const wheelDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 1.75);
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - wheelDmg);
                     gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 45);
                     spawnFloatingText('boss-stage-anchor', `☯️ THÁI CỰC LUÂN -${fmt(wheelDmg)}!`, 'ult');
@@ -4864,6 +4874,35 @@
          * 11. CORE COMBAT LOOP V2 & AUTO CONTINUATION
          */
         let nextCombatTurn = null;
+        let combatGeneration = 0;
+        let wakeCombatSleep = null;
+        let queuedTowerAction = null;
+        let queuedCombatSkill = null;
+        let resolvingPlayerTurn = false;
+        function getCombatTurnDelay() {
+            return Math.max(TOWER_RULES.minimumTurnDurationMs || 800,
+                Math.round(TOWER_RULES.turnDurationMs / (gameState.combatSpeed || 1)));
+        }
+        const sleep = ms => new Promise(resolve => {
+            wakeCombatSleep = resolve;
+            gameState.combatTimer = setTimeout(() => { wakeCombatSleep = null; gameState.combatTimer = null; resolve(); }, ms);
+        });
+        function refreshCombatPlayer() {
+            try {
+                if (window.parent === window || typeof window.parent.getTowerSyncPayload !== 'function') return false;
+                const payload = window.parent.getTowerSyncPayload();
+                if (!payload?.hero) return false;
+                gameState.hero = { ...structuredClone(payload.hero), hp:payload.hero.maxHp, mp:0, maxMp:100 };
+                gameState.realmName = payload.realmName;
+                gameState.characterName = payload.characterName;
+                return true;
+            } catch (error) { console.warn('[Tower] Không đọc được chỉ số nhân vật', error); return false; }
+        }
+        function towerDamage(attacker, defender, multiplier = 1, defFactor = 1, isCrit = false, critDamage = 1.5) {
+            return calculateDamage({ atk:attacker.atk, tier:attacker.tier, armorPen:attacker.armorPen || 0,
+                critChance:isCrit ? 1 : 0, critDamage, damageBuff:multiplier },
+                { def:defender.def * defFactor, tier:defender.tier, critResist:defender.critResist || 0 }).damage;
+        }
         let combatTurnBusy = false;
         function playCombatTurn() {
             if (combatTurnBusy || !gameState.inCombat || !nextCombatTurn) return;
@@ -4895,15 +4934,17 @@
                 : 'Sẵn sàng';
         }
 
-        function startOrStopCombat() {
+        async function startOrStopCombat() {
             if (gameState.inCombat) {
                 stopCombat("Đạo hữu chủ động thu kiếm lùi bước.");
                 return;
             }
 
-            const fObj = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor);
+            if (!refreshCombatPlayer()) { addLog('⚠️ Hãy mở Trấn Yêu Tháp từ game chính để lấy chỉ số nhân vật thật.'); return; }
+            const fObj = structuredClone(TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor));
             if (!fObj) return;
 
+            combatGeneration++;
             gameState.inCombat = true;
             combatTurnBusy = false;
             gameState.battleTurns = 0;
@@ -4921,44 +4962,29 @@
             gameState.liveBossBrokenTurns = 0;
             let bossEnraged = false;
 
+            updateArenaHUD(fObj);
             updateFightButtonUI(true);
+            updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, fObj.hp, fObj.hp, 0, 100, false);
 
             const heroElem = ELEMENTS[gameState.hero.element] || ELEMENTS.Kim;
             const isElementAdvantage = heroElem.counters === fObj.element;
 
             addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến Tầng ${fObj.floor}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> (${gameState.hero.swordCount} Phi Kiếm) đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
 
-            const runTick = () => {
-                if (!gameState.inCombat || nextCombatTurn !== runTick) return;
+            const runTick = async () => {
+                if (combatTurnBusy || !gameState.inCombat || nextCombatTurn !== runTick) return;
+                combatTurnBusy = true;
+                try {
+                while (gameState.inCombat && nextCombatTurn === runTick) {
                 gameState.battleTurns++;
 
                 const h = gameState.hero;
                 const elemMult = (ELEMENTS[h.element]?.counters === fObj.element) ? 1.35 : 1.0;
                 const comboBonusMult = 1 + Math.min(1.5, gameState.comboCount * 0.02);
                 // Mỗi hiệp bốc chiêu từ toàn bộ công pháp; đầy Kiếm Nguyên bốc một cấm thuật.
-                const autoSkill = pickAutoCombatSkill(h.mp >= 100);
+                const autoSkill = queuedCombatSkill || pickAutoCombatSkill(h.mp >= 100);
+                queuedCombatSkill = null;
                 updateCombatSkillUI(autoSkill);
-
-                // Cơ chế Uy Áp Nghiền Ép (Aura Crush) khi Kiếm Lực ta áp đảo hoàn toàn (ratio >= 2.0x)
-                const myCp = getHeroCP();
-                const cpRatio = myCp / Math.max(1, fObj.cp);
-                if (cpRatio >= 2.0 && gameState.battleTurns === 1) {
-                    gameState.liveBossToughness = 0;
-                    const crushDmg = Math.round(fObj.hp * 1.5);
-                    gameState.liveBossHp = 0;
-                    gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, crushDmg);
-                    incrementCombo();
-                    playHeavenlyLightningVFX(autoSkill, 'boss');
-                    fireCanvasSwordQi(true, autoSkill.color, 15, true);
-                    triggerScreenShake('ult');
-                    playSound('thunder');
-                    spawnFloatingText('boss-stage-anchor', `💥 UY ÁP NGHIỀN ÉP! -${fmt(crushDmg)}!`, 'ult');
-                    showCinematicBanner(`⚡ KIẾM LỰC ÁP ĐẢO (${cpRatio.toFixed(1)}x) • UY ÁP NGHIỀN ÉP! ⚡`, 1800);
-                    addLog(`<span class="text-amber-300 font-bold">💥 [UY ÁP NGHIỀN ÉP]</span> Kiếm Lực Tiêu Dao Tử (${fmt(myCp)}) áp đảo hoàn toàn ${fObj.name} (${fmt(fObj.cp)} - gấp ${cpRatio.toFixed(1)} lần)! Vạn Kiếm Quy Tông trảm sát tức khắc!`);
-                    updateBarsUI(h.hp, h.maxHp, h.mp, 0, gameState.liveBossMaxHp, 0, 0, true);
-                    triggerFatalFinisher(fObj, () => handleVictory(fObj));
-                    return;
-                }
 
                 const isBossBroken = gameState.liveBossBrokenTurns > 0;
                 if (isBossBroken) {
@@ -4975,7 +5001,7 @@
                     gameState.domainTicksLeft--;
                     fireCanvasSwordQi(true, '#22d3ee', 6, false);
                     playSound('sword');
-                    const domainDmg = Math.round(h.atk * 0.68 * elemMult);
+                    const domainDmg = towerDamage(h, fObj, 0.68 * elemMult);
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - domainDmg);
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 30);
                     incrementCombo();
@@ -4990,12 +5016,16 @@
                 }
 
                 if (gameState.activeGuardian) {
-                    const petDmg = Math.round(h.atk * gameState.activeGuardian.bonusAtkRatio);
+                    const petDmg = towerDamage(h, fObj, gameState.activeGuardian.bonusAtkRatio);
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - petDmg);
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 10);
                 }
 
-                if (h.mp >= 100) {
+                if (queuedTowerAction) {
+                    const action = queuedTowerAction; queuedTowerAction = null;
+                    resolvingPlayerTurn = true;
+                    try { action(); } finally { resolvingPlayerTurn = false; }
+                } else if (h.mp >= 100) {
                     h.mp = 0;
                     const ult = autoSkill;
                     playHeavenlyLightningVFX(ult, 'boss');
@@ -5008,10 +5038,8 @@
                     const breakAmt = ult.toughnessBreak || 55;
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - breakAmt);
 
-                    const effectiveDef = isBossBroken ? 0 : fObj.def * 0.55;
-                    const rawDmg = Math.max(h.atk * 0.25, h.atk - effectiveDef) * ult.mult * elemMult * (isBossBroken ? 1.5 : 1);
                     const isCrit = isBossBroken || (Math.random() * 100 < (h.crit + 18));
-                    const finalDmg = Math.round(rawDmg * (isCrit ? h.critDmg * comboBonusMult : 1));
+                    const finalDmg = towerDamage(h, fObj, ult.mult * elemMult * (isBossBroken ? 1.5 : 1), isBossBroken ? 0 : .55, isCrit, h.critDmg * comboBonusMult);
 
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
                     gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 15);
@@ -5045,8 +5073,7 @@
 
                         const isCrit = isBossBroken || ((Math.random() * 100) < h.crit);
                         const defFactor = isBossBroken ? 0.2 : 0.85;
-                        const baseDmg = Math.max(h.atk * 0.2, h.atk - fObj.def * defFactor) * stanceMult * elemMult * (isBossBroken ? 1.45 : 1) * (0.92 + Math.random() * 0.16);
-                        const finalDmg = Math.round(baseDmg * (isCrit ? h.critDmg * comboBonusMult : 1));
+                        const finalDmg = towerDamage(h, fObj, stanceMult * elemMult * (isBossBroken ? 1.45 : 1) * (.92 + Math.random() * .16), defFactor, isCrit, h.critDmg * comboBonusMult);
 
                         gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
                         h.mp = Math.min(100, h.mp + (isCrit ? 36 : 28));
@@ -5093,15 +5120,14 @@
                     gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
                 );
 
+                await sleep(getCombatTurnDelay());
+                if (!gameState.inCombat || nextCombatTurn !== runTick) return;
                 if (gameState.liveBossHp <= 0) {
                     triggerFatalFinisher(fObj, () => handleVictory(fObj));
                     return;
                 }
 
-                // LƯỢT 2: YÊU VƯƠNG PHẢN KÍCH (CÓ XÁC SUẤT BỊ CHOÁNG NẾU VỠ CANG)
-                gameState.combatTimer = setTimeout(() => {
-                    if (!gameState.inCombat || nextCombatTurn !== runTick) return;
-
+                // Enemy gets its own visible turn, one second after the player's hit.
                     const isStunned = isBossBroken && (Math.random() < 0.65);
                     if (isStunned) {
                         spawnFloatingText('boss-stage-anchor', '💫 CHOÁNG VÁNG!', 'dodge');
@@ -5115,16 +5141,14 @@
                             addLog(`<span class="text-cyan-300">✨ [Ngự Phong Thân Pháp]</span> Đạo hữu đạp phi kiếm lướt nhẹ, <strong>NÉ TRÁNH</strong> đòn của ${fObj.name}!`);
                         } else {
                             const isBossCrit = (Math.random() * 100) < fObj.crit;
-                            const mult = (isBossCrit ? 1.65 : 1) * (bossEnraged ? 1.35 : 1);
 
-                            const rawBossDmg = Math.max(fObj.atk * 0.18, fObj.atk - h.def * 0.9) * mult;
-                            let bossDmg = Math.round(rawBossDmg * (0.9 + Math.random() * 0.2));
+                            let bossDmg = towerDamage(fObj, h, (bossEnraged ? 1.35 : 1) * (.9 + Math.random() * .2), .9, isBossCrit, 1.65);
 
                             // Nếu có Đông Hoàng Chung Hộ Thể, giảm 55% sát thương và phản chấn!
                             if (gameState.shieldBellTurns > 0) {
                                 gameState.shieldBellTurns--;
                                 bossDmg = Math.round(bossDmg * 0.45);
-                                const reflectDmg = Math.round(h.atk * 0.45);
+                                const reflectDmg = towerDamage(h, fObj, .45);
                                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - reflectDmg);
                                 spawnFloatingText('boss-stage-anchor', `🔔 PHẢN CHẤN -${fmt(reflectDmg)}`, 'crit');
                                 if (gameState.shieldBellTurns <= 0) {
@@ -5148,6 +5172,8 @@
                         gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
                     );
 
+                    await sleep(getCombatTurnDelay());
+                    if (!gameState.inCombat || nextCombatTurn !== runTick) return;
                     if (gameState.liveBossHp <= 0) {
                         triggerFatalFinisher(fObj, () => handleVictory(fObj));
                         return;
@@ -5157,24 +5183,19 @@
                         return;
                     }
 
-                    // TỰ ĐỘNG NỐI TIẾP HIỆP CHIẾN ĐẤU TIẾP THEO
-                    if (gameState.inCombat) {
-                        const nextTurnDelay = Math.max(160, Math.round((TOWER_RULES.turnDurationMs - 330) / (gameState.combatSpeed || 1)));
-                        clearTimeout(gameState.combatTimer);
-                        gameState.combatTimer = setTimeout(() => {
-                            if (gameState.inCombat) runTick();
-                        }, nextTurnDelay);
-                    }
-                }, Math.round(330 / (gameState.combatSpeed || 1)));
-
+                }
+                } catch (error) { if (nextCombatTurn === runTick) stopCombat("Trận đấu tạm dừng do lỗi xử lý."); console.error(error); }
             };
 
             nextCombatTurn = runTick;
-            runTick();
+            await runTick();
         }
 
         function stopCombat(reason) {
+            combatGeneration++;
             nextCombatTurn = null;
+            queuedTowerAction = queuedCombatSkill = null;
+            if (wakeCombatSleep) { const resolve = wakeCombatSleep; wakeCombatSleep = null; resolve(); }
             clearTimeout(gameState.combatTimer);
             gameState.combatTimer = null;
             combatTurnBusy = false;
@@ -5216,10 +5237,11 @@
             showCinematicBanner(`⚔️ VẠN KIẾM QUY TÔNG • TRẢM SÁT ${fObj.name.toUpperCase()}! ⚔️`, 1800);
             addLog(`<span class="text-amber-300 font-bold">⚡ [TRẢM SÁT KẾT LIỄU]</span> Vạn kiếm tề xuất, chém vỡ ma đan của <strong>${fObj.name}</strong>, hoàn tất đồ ma!`);
 
-            const finishDelay = Math.round(550 / (gameState.combatSpeed || 1));
-            setTimeout(() => {
-                if (onComplete) onComplete();
-            }, finishDelay);
+            const battle = nextCombatTurn;
+            gameState.combatTimer = setTimeout(() => {
+                gameState.combatTimer = null;
+                if (gameState.inCombat && nextCombatTurn === battle && onComplete) onComplete();
+            }, 550);
         }
 
         function handleVictory(fObj) {
@@ -5280,6 +5302,7 @@
                 selectedTier: gameState.selectedTier
             });
 
+            const climbGeneration = combatGeneration;
             if (document.getElementById('chk-auto-climb').checked && fObj.floor < 50) {
                 const nextF = fObj.floor + 1;
                 const nextFObj = TOWER_50_FLOORS.find(x => x.floor === nextF);
@@ -5300,12 +5323,13 @@
 
                 const delay = Math.round(950 / (gameState.combatSpeed || 1));
                 setTimeout(() => {
+                    if (combatGeneration !== climbGeneration || gameState.inCombat || !document.getElementById('chk-auto-climb').checked) return;
                     gameState.selectedTier = Math.ceil(nextF / 10);
                     selectTierGroup(gameState.selectedTier);
                     selectFloor(nextF);
                     addLog(`<span class="text-amber-300 font-bold">⚡ [Tự Động Leo Tháp]</span> Tiến vào Tầng ${nextF}... Khai trận trảm ma!`);
                     setTimeout(() => {
-                        if (document.getElementById('chk-auto-climb').checked && !gameState.inCombat) {
+                        if (combatGeneration === climbGeneration && document.getElementById('chk-auto-climb').checked && !gameState.inCombat) {
                             startOrStopCombat();
                         }
                     }, Math.round(450 / (gameState.combatSpeed || 1)));
@@ -5745,6 +5769,12 @@
             renderActiveManualSkillsBar();
             renderManualsCompendium();
 
+            if (castImmediately && gameState.inCombat) {
+                queuedCombatSkill = u;
+                updateCombatSkillUI(u);
+                addLog(`📜 Đã chuẩn bị ${u.name} cho lượt kế tiếp.`);
+                return;
+            }
             if (castImmediately) {
                 if (gameState.inCombat) updateCombatSkillUI(u);
                 playHeavenlyLightningVFX(u, 'boss');
@@ -5917,26 +5947,13 @@
             const val = document.getElementById('speed-label');
             if (!btn) return;
             if (val) val.textContent = `${gameState.combatSpeed || 1}x`;
-            else btn.textContent = `${gameState.combatSpeed || 1}x`;
-
-            if (gameState.combatSpeed === 2) {
-                btn.className = "px-2.5 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-400/80 text-xs font-mono font-bold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.4)] transition active:scale-95 flex items-center gap-1";
-                btn.title = "Tốc độ trận đấu: 2x (Bấm hoặc nhấn [X] để đổi)";
-            } else if (gameState.combatSpeed === 3) {
-                btn.className = "px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-400/80 text-xs font-mono font-bold text-rose-300 shadow-[0_0_14px_rgba(244,63,94,0.5)] transition active:scale-95 flex items-center gap-1";
-                btn.title = "Tốc độ trận đấu: 3x Cực Tốc (Bấm hoặc nhấn [X] để đổi)";
-            } else {
-                btn.className = "px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1";
-                btn.title = "Tốc độ trận đấu: 1x Tiêu Chuẩn (Bấm hoặc nhấn [X] để đổi)";
-            }
+            btn.title = `Khoảng nghỉ mỗi lượt: ${getCombatTurnDelay() / 1000}s. Bấm hoặc nhấn X để đổi tốc độ.`;
         }
 
         function toggleCombatSpeed() {
-            if (gameState.combatSpeed === 1) gameState.combatSpeed = 2;
-            else if (gameState.combatSpeed === 2) gameState.combatSpeed = 3;
-            else gameState.combatSpeed = 1;
+            gameState.combatSpeed = (gameState.combatSpeed || 1) % 3 + 1;
             updateSpeedBtnUI();
-            spawnFloatingText('hero-stage-anchor', `⚡ TỐC ĐỘ ${gameState.combatSpeed}X!`, 'ult');
+            spawnFloatingText('hero-stage-anchor', `${gameState.combatSpeed}x · ${getCombatTurnDelay() / 1000}s/lượt`, 'dodge');
         }
 
         function healHeroFull() {
@@ -6042,6 +6059,7 @@
             });
         }
 
+        window.addEventListener('pagehide', () => stopCombat());
         window.onload = () => {
             initTowerMenus();
             initArenaCanvas();

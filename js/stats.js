@@ -124,7 +124,8 @@ function calculateDamage(attacker, defender) {
 
     // Đảm bảo Công Kích >= 1 và Phòng Ngự >= 0, triệt tiêu hoàn toàn NaN
     const atkVal = Math.max(1, Number(atkObj.total_atk !== undefined ? atkObj.total_atk : (atkObj.atk || 0)) || 1);
-    const defVal = Math.max(0, Number(defObj.total_def !== undefined ? defObj.total_def : (defObj.def || 0)) || 0);
+    const penetration = Math.min(50, Math.max(0, Number(atkObj.armorPen) || 0));
+    const defVal = Math.max(0, Number(defObj.total_def !== undefined ? defObj.total_def : (defObj.def || 0)) || 0) * (1 - penetration / 100);
 
     // 1. Dmg thô: Trừ phòng ngự
     let rawDamage = atkVal - defVal;
@@ -136,16 +137,16 @@ function calculateDamage(attacker, defender) {
     let critChance = typeof atkObj.critChance === 'number'
         ? atkObj.critChance
         : (typeof atkObj.crit === 'number' ? (atkObj.crit > 1 ? atkObj.crit / 100 : atkObj.crit) : 0.05);
-    critChance = Math.max(0, Math.min(1, Number(critChance) || 0.05));
+    critChance = Math.max(0, Math.min(1, Number(critChance) || 0) - Math.min(.5, Math.max(0, Number(defObj.critResist) || 0) / 100));
     let critDamage = Math.max(1, Number(atkObj.critDamage) || 1.5);
     let isCrit = Math.random() < critChance;
     if (isCrit) rawDamage = Math.max(1, Math.floor(rawDamage * critDamage));
 
     // 3. Nhân hệ số Uy Áp
-    let attackerTier = atkObj.realmIndex !== undefined
+    let attackerTier = atkObj.tier !== undefined ? atkObj.tier : atkObj.realmIndex !== undefined
         ? (Math.floor(atkObj.realmIndex / 4) + 1)
         : (atkObj.tier !== undefined ? atkObj.tier : (atkObj.realmTier !== undefined ? atkObj.realmTier : 1));
-    let defenderTier = defObj.realmIndex !== undefined
+    let defenderTier = defObj.tier !== undefined ? defObj.tier : defObj.realmIndex !== undefined
         ? (Math.floor(defObj.realmIndex / 4) + 1)
         : (defObj.tier !== undefined ? defObj.tier : (defObj.realmTier !== undefined ? defObj.realmTier : 1));
     let suppressionMultiplier = (typeof getRealmSuppression === 'function')
@@ -340,11 +341,13 @@ function calculateTotalStats(sourceState) {
     skillHpMult += gearHpPercent;
 
     // 4. TỔNG CHỈ SỐ (TOTAL STATS) = (Base + Gear) * (1 + Skill Multiplier)
-    let totalAtk = Math.floor((baseAtk + gearAtk) * (1 + skillAtkMult));
-    let totalDef = Math.floor((baseDef + gearDef) * (1 + skillDefMult));
-    let totalHp = Math.floor((baseHp + gearHp) * (1 + skillHpMult));
-    let totalMp = Math.floor((baseMp + gearMp) * (1 + skillMpMult));
-    const totalCrit = Number(((Number(s.crit) || 10) + gearCrit).toFixed(1));
+    const roots = getRootStatBonuses(s);
+    const rootMult = 1 + roots.resonance;
+    let totalAtk = Math.floor((baseAtk + roots.atk + gearAtk) * (1 + skillAtkMult) * rootMult);
+    let totalDef = Math.floor((baseDef + roots.def + gearDef) * (1 + skillDefMult) * rootMult);
+    let totalHp = Math.floor((baseHp + roots.hp + gearHp) * (1 + skillHpMult) * rootMult);
+    let totalMp = CultivationMathEngine.manaCap((baseMp + roots.mp + gearMp) * (1 + skillMpMult) * rootMult, realmObj);
+    const totalCrit = Number(((Number(s.crit) || 10) + gearCrit + roots.crit).toFixed(1));
 
     // Giảm 50% nếu đang Trọng Thương
     if (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil) {

@@ -41,7 +41,53 @@
     };
 
     let currentDragItem = null;
+    let currentDropTarget = null;
     let contextMenuItemId = null;
+
+    function resolveItemSlot(slot, itemType) {
+        if (slot === 'secondary_weapon') return 'artifact';
+        if (slot) return slot;
+        if (itemType === 'Vũ Khí' || itemType === 'weapon') return 'weapon';
+        if (itemType === 'Pháp Bảo' || itemType === 'secondary_weapon' || itemType === 'Vũ Khí Phụ') return 'artifact';
+        return '';
+    }
+
+    function resolveCharacterDropTarget(target) {
+        if (!target || typeof target.closest !== 'function') return null;
+        const zone = target.closest('[data-drop-zone="character"], #char-equip-dropzone, .char-equip-dropzone');
+        if (!zone) return null;
+        return zone.querySelector('#char-equip-dropzone, .char-equip-dropzone') || zone;
+    }
+
+    function isEquipmentItem(item, target) {
+        if (!item) return false;
+        if (target && target.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]')) return true;
+        return Boolean(resolveItemSlot(item.slot, item.type));
+    }
+
+    function setDropTargetHighlight(nextTarget) {
+        if (currentDropTarget === nextTarget) return;
+        if (currentDropTarget) {
+            currentDropTarget.classList.remove('drop-target-valid', 'dropzone-valid-highlight');
+        }
+        currentDropTarget = nextTarget || null;
+        if (currentDropTarget) {
+            currentDropTarget.classList.add('drop-target-valid', 'dropzone-valid-highlight');
+        }
+    }
+
+    function cleanupDragState() {
+        if (currentDragItem && currentDragItem.sourceEl) {
+            currentDragItem.sourceEl.classList.remove('is-dragging', 'dragging');
+        }
+        document.querySelectorAll('.is-dragging, .dragging').forEach(el => {
+            el.classList.remove('is-dragging', 'dragging');
+        });
+        document.querySelectorAll('.drag-ghost-clone').forEach(el => el.remove());
+        setDropTargetHighlight(null);
+        document.body.classList.remove('is-item-dragging');
+        currentDragItem = null;
+    }
 
     /**
      * Ẩn tooltip an toàn
@@ -74,10 +120,11 @@
         const s = (typeof state !== 'undefined' ? state : (window.state || null));
         if (!s) return false;
         const item = s.inventory.find(i => i.id === itemId);
-        if (!item || !item.slot) return false;
+        const slotKey = item ? resolveItemSlot(item.slot, item.type) : '';
+        if (!item || !slotKey) return false;
 
         // Kiểm tra khóa tính năng Bản Mệnh Pháp Bảo
-        if (item.slot === 'artifact') {
+        if (slotKey === 'artifact') {
             if (typeof rejectLockedFeature === 'function' && rejectLockedFeature('btn_phap_bao_ban_menh')) return false;
             if (typeof REALMS !== 'undefined' && s.realmIndex != null && REALMS[s.realmIndex]?.majorIndex < 2 && !item.equipped) {
                 if (typeof addLog === 'function') {
@@ -91,14 +138,18 @@
         if (item.equipped) return true;
 
         // Tháo món cũ cùng ô (nếu có)
-        const oldEquipped = s.inventory.find(i => i.slot === item.slot && i.equipped && i.id !== item.id);
+        const oldEquipped = s.inventory.find(i => resolveItemSlot(i.slot, i.type) === slotKey && i.equipped && i.id !== item.id);
         if (oldEquipped) {
             oldEquipped.equipped = false;
         }
 
         item.equipped = true;
+        if (!s.equipped || typeof s.equipped !== 'object') {
+            s.equipped = {};
+        }
+        s.equipped[slotKey] = item;
         if (s.equipment && typeof s.equipment === 'object') {
-            s.equipment[item.slot] = item;
+            s.equipment[slotKey] = item;
         }
 
         // Đồng bộ GameState & tính toán lại chỉ số
@@ -114,11 +165,16 @@
             }
         }
 
+        if (slotKey === 'weapon') {
+            const swordEl = document.getElementById('flying-sword-visual');
+            if (swordEl) swordEl.classList.remove('hidden');
+        }
+
         if (typeof playSound === 'function') playSound('bell');
-        if (typeof triggerSlotFlash === 'function') triggerSlotFlash(item.slot);
+        if (typeof triggerSlotFlash === 'function') triggerSlotFlash(slotKey);
 
         if (typeof addLog === 'function') {
-            addLog(`⚔️ <span class="text-amber-300 font-bold">[Trang Bị]</span> Đã mặc [${item.name}] vào ô <b>${SLOT_LABELS[item.slot] || item.slot}</b>!`, 'reward');
+            addLog(`⚔️ <span class="text-amber-300 font-bold">[Trang Bị]</span> Đã mặc [${item.name}] vào ô <b>${SLOT_LABELS[slotKey] || slotKey}</b>!`, 'reward');
         }
 
         // Cập nhật giao diện
@@ -136,12 +192,16 @@
         const s = (typeof state !== 'undefined' ? state : (window.state || null));
         if (!s) return false;
 
-        const item = s.inventory.find(i => (i.id === slotOrItemId || i.slot === slotOrItemId) && i.equipped);
+        const item = s.inventory.find(i => (i.id === slotOrItemId || i.slot === slotOrItemId || resolveItemSlot(i.slot, i.type) === slotOrItemId) && i.equipped);
         if (!item) return false;
 
+        const slotKey = resolveItemSlot(item.slot, item.type);
         item.equipped = false;
-        if (s.equipment && typeof s.equipment === 'object') {
-            s.equipment[item.slot] = null;
+        if (slotKey && s.equipped && typeof s.equipped === 'object' && s.equipped[slotKey]?.id === item.id) {
+            s.equipped[slotKey] = null;
+        }
+        if (slotKey && s.equipment && typeof s.equipment === 'object') {
+            s.equipment[slotKey] = null;
         }
 
         // Đồng bộ GameState & tính toán lại chỉ số
@@ -157,8 +217,13 @@
             }
         }
 
+        if (slotKey === 'weapon') {
+            const swordEl = document.getElementById('flying-sword-visual');
+            if (swordEl) swordEl.classList.add('hidden');
+        }
+
         if (typeof playSound === 'function') playSound('bell');
-        if (typeof triggerSlotFlash === 'function') triggerSlotFlash(item.slot);
+        if (slotKey && typeof triggerSlotFlash === 'function') triggerSlotFlash(slotKey);
 
         if (typeof addLog === 'function') {
             addLog(`📦 <span class="text-slate-300">[Tháo Trang Bị]</span> Đã tháo [${item.name}] đưa về Túi Đồ.`, 'text-slate-400');
@@ -426,15 +491,17 @@
 
         // Bắt đầu kéo (dragstart)
         document.addEventListener('dragstart', (e) => {
-            const dragTarget = e.target.closest('[draggable="true"], [data-item-id]');
+            const dragTarget = e.target.closest('[data-item-id][draggable="true"]');
             if (!dragTarget) return;
 
             const itemId = dragTarget.dataset.itemId;
-            const slot = dragTarget.dataset.slot;
-            const isEquipped = dragTarget.dataset.isEquipped === 'true';
-            const itemType = dragTarget.dataset.itemType;
+            const slot = dragTarget.dataset.slot || '';
+            const isEquipped = dragTarget.dataset.isEquipped === 'true' || Boolean(dragTarget.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]'));
+            const itemType = dragTarget.dataset.itemType || '';
 
             if (!itemId) return;
+
+            cleanupDragState();
 
             currentDragItem = {
                 itemId,
@@ -444,105 +511,155 @@
                 sourceEl: dragTarget
             };
 
-            try {
-                e.dataTransfer.setData('text/plain', JSON.stringify({ itemId, slot, isEquipped, itemType }));
-                e.dataTransfer.effectAllowed = 'move';
-            } catch (err) {
-                // Fallback nếu JSON lỗi
-                e.dataTransfer.setData('text/plain', itemId);
+            if (e.dataTransfer) {
+                try {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ itemId, slot, isEquipped, itemType }));
+                    e.dataTransfer.effectAllowed = 'move';
+                } catch (err) {
+                    // Fallback nếu JSON lỗi
+                    e.dataTransfer.setData('text/plain', itemId);
+                }
+
+                // Tạo 1 bóng kéo cố định kích thước 56x56px để không bao giờ bị giãn
+                const ghost = dragTarget.cloneNode(true);
+                ghost.removeAttribute('id');
+                ghost.classList.remove('is-dragging', 'dragging', 'ring-2', 'ring-yellow-300', 'border-yellow-300', 'animate-pulse');
+                ghost.classList.add('drag-ghost-clone');
+                ghost.style.width = '56px';
+                ghost.style.height = '56px';
+                ghost.style.minWidth = '56px';
+                ghost.style.maxWidth = '56px';
+                ghost.style.minHeight = '56px';
+                ghost.style.maxHeight = '56px';
+                ghost.style.position = 'fixed';
+                ghost.style.top = '-9999px';
+                ghost.style.left = '-9999px';
+                ghost.style.margin = '0';
+                ghost.style.transform = 'none';
+                ghost.style.transition = 'none';
+                ghost.style.opacity = '1';
+                ghost.style.pointerEvents = 'none';
+                ghost.style.zIndex = '99999';
+                document.body.appendChild(ghost);
+                if (typeof e.dataTransfer.setDragImage === 'function') {
+                    e.dataTransfer.setDragImage(ghost, 28, 28);
+                }
+                setTimeout(() => {
+                    if (ghost.parentNode) ghost.remove();
+                }, 0);
             }
 
-            // Thêm class .dragging tạo hiệu ứng mờ
-            setTimeout(() => {
-                if (dragTarget) dragTarget.classList.add('dragging');
-            }, 10);
+            // Chỉ làm mờ ô gốc, không display:none và không delay transition
+            dragTarget.classList.add('is-dragging', 'dragging');
+            document.body.classList.add('is-item-dragging');
 
             // Ẩn tooltip khi bắt đầu kéo
             safeHideItemTooltip();
             hideCustomContextMenu();
         });
 
-        // Kéo qua vùng thả (dragover)
+        // Kéo qua vùng thả (dragover) - không re-render, chỉ đổi class khi đổi ô đích
         document.addEventListener('dragover', (e) => {
             if (!currentDragItem) return;
 
-            const equipSlotDropzone = e.target.closest('.rpg-equip-slot, [data-drop-zone="equipment"]');
-            const inventoryDropzone = e.target.closest('.inventory-grid, #rpg-inventory-grid, [data-drop-zone="inventory"], .custom-inventory-scrollbar');
+            const equipSlotDropzone = e.target.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]');
+            const characterDropzone = !equipSlotDropzone ? resolveCharacterDropTarget(e.target) : null;
+            const inventoryDropzone = e.target.closest('#rpg-inventory-grid, .inventory-grid, [data-drop-zone="inventory"]');
 
             if (equipSlotDropzone) {
-                // Kiểm tra xem món đồ có đúng ô không
                 const targetSlot = equipSlotDropzone.dataset.slot;
-                const canEquip = currentDragItem.slot && currentDragItem.slot === targetSlot;
+                const dragSlot = resolveItemSlot(currentDragItem.slot, currentDragItem.itemType);
+                const canEquip = Boolean(dragSlot && dragSlot === targetSlot);
 
                 if (canEquip) {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    equipSlotDropzone.classList.add('dropzone-valid-highlight');
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                    setDropTargetHighlight(equipSlotDropzone);
+                } else {
+                    setDropTargetHighlight(null);
                 }
-            } else if (inventoryDropzone) {
-                // Nếu đang kéo từ trang bị ra túi đồ
-                if (currentDragItem.isEquipped) {
+            } else if (characterDropzone && !currentDragItem.isEquipped) {
+                const dragSlot = resolveItemSlot(currentDragItem.slot, currentDragItem.itemType);
+                if (dragSlot) {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    inventoryDropzone.classList.add('dropzone-valid-highlight');
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                    setDropTargetHighlight(characterDropzone);
+                } else {
+                    setDropTargetHighlight(null);
                 }
+            } else if (inventoryDropzone && currentDragItem.isEquipped) {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                setDropTargetHighlight(inventoryDropzone);
+            } else {
+                setDropTargetHighlight(null);
             }
         });
 
         // Rời khỏi vùng thả (dragleave)
         document.addEventListener('dragleave', (e) => {
-            const dropzone = e.target.closest('.dropzone-valid-highlight');
-            if (dropzone && (!dropzone.contains(e.relatedTarget))) {
-                dropzone.classList.remove('dropzone-valid-highlight');
+            if (!currentDropTarget) return;
+            const zoneContainer = currentDropTarget.closest('[data-drop-zone="character"]') || currentDropTarget;
+            if (!e.relatedTarget || !zoneContainer.contains(e.relatedTarget)) {
+                setDropTargetHighlight(null);
             }
         });
 
         // Kết thúc kéo (dragend)
         document.addEventListener('dragend', () => {
-            if (currentDragItem && currentDragItem.sourceEl) {
-                currentDragItem.sourceEl.classList.remove('dragging');
-            }
-            document.querySelectorAll('.dropzone-valid-highlight').forEach(el => {
-                el.classList.remove('dropzone-valid-highlight');
-            });
-            currentDragItem = null;
+            cleanupDragState();
         });
 
         // Thả vật phẩm (drop)
         document.addEventListener('drop', (e) => {
-            document.querySelectorAll('.dropzone-valid-highlight').forEach(el => {
-                el.classList.remove('dropzone-valid-highlight');
-            });
+            if (!currentDragItem) {
+                cleanupDragState();
+                return;
+            }
 
-            if (!currentDragItem) return;
+            const dragSnapshot = currentDragItem;
+            const equipSlotDropzone = e.target.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]');
+            const characterDropzone = !equipSlotDropzone ? resolveCharacterDropTarget(e.target) : null;
+            const inventoryDropzone = e.target.closest('#rpg-inventory-grid, .inventory-grid, [data-drop-zone="inventory"]');
 
-            const equipSlotDropzone = e.target.closest('.rpg-equip-slot, [data-drop-zone="equipment"]');
-            const inventoryDropzone = e.target.closest('.inventory-grid, #rpg-inventory-grid, [data-drop-zone="inventory"], .custom-inventory-scrollbar');
+            cleanupDragState();
 
             // Thả vào ô trang bị
             if (equipSlotDropzone) {
                 e.preventDefault();
                 const targetSlot = equipSlotDropzone.dataset.slot;
-                const item = getItemFromState(currentDragItem.itemId);
+                const item = getItemFromState(dragSnapshot.itemId);
+                const itemSlot = item ? resolveItemSlot(item.slot, item.type) : '';
 
-                if (item && item.slot === targetSlot) {
+                if (item && itemSlot === targetSlot) {
                     equipItem(item.id);
                 } else if (item) {
                     if (typeof addLog === 'function') {
-                        addLog(`⚠️ [Không Khớp Vị Trí] [${item.name}] thuộc ô ${SLOT_LABELS[item.slot] || item.slot}, không thể trang bị vào ô ${SLOT_LABELS[targetSlot] || targetSlot}!`, 'text-rose-400');
+                        addLog(`⚠️ [Không Khớp Vị Trí] [${item.name}] thuộc ô ${SLOT_LABELS[itemSlot] || itemSlot}, không thể trang bị vào ô ${SLOT_LABELS[targetSlot] || targetSlot}!`, 'text-rose-400');
+                    }
+                    if (typeof playSound === 'function') playSound('bell');
+                }
+            }
+            // Thả vào ô nhân vật -> Tự động nhận diện vị trí và trang bị
+            else if (characterDropzone && !dragSnapshot.isEquipped) {
+                e.preventDefault();
+                const item = getItemFromState(dragSnapshot.itemId);
+                const itemSlot = item ? resolveItemSlot(item.slot, item.type) : '';
+
+                if (item && itemSlot) {
+                    equipItem(item.id);
+                } else if (item) {
+                    if (typeof addLog === 'function') {
+                        addLog(`⚠️ [${item.name}] không phải trang bị, không thể mặc lên nhân vật!`, 'text-rose-400');
                     }
                     if (typeof playSound === 'function') playSound('bell');
                 }
             }
             // Thả vào túi đồ (để tháo)
-            else if (inventoryDropzone) {
-                if (currentDragItem.isEquipped) {
-                    e.preventDefault();
-                    unequipItem(currentDragItem.slot || currentDragItem.itemId);
-                }
+            else if (inventoryDropzone && dragSnapshot.isEquipped) {
+                e.preventDefault();
+                unequipItem(dragSnapshot.slot || dragSnapshot.itemId);
             }
-
-            currentDragItem = null;
         });
 
         // --- 2. SỰ KIỆN NHẤP ĐÚP (DBLCLICK - QUICK ACTION) ---
@@ -559,12 +676,12 @@
             hideCustomContextMenu();
 
             // Nếu đang trong ô trang bị hoặc đang trang bị -> Tự động tháo về túi
-            if (item.equipped || target.closest('.rpg-equip-slot, [data-drop-zone="equipment"]')) {
+            if (item.equipped || target.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]')) {
                 unequipItem(item.slot || item.id);
             }
-            // Nếu trong túi đồ -> Tự động mặc (nếu có slot) hoặc phục dụng (nếu là đan dược)
+            // Nếu trong túi đồ -> Tự động mặc (nếu là trang bị) hoặc phục dụng (nếu là đan dược)
             else {
-                if (item.slot) {
+                if (resolveItemSlot(item.slot, item.type)) {
                     equipItem(item.id);
                 } else if (item.type === 'Đan Dược' || item.effect) {
                     if (typeof useInventoryItem === 'function') {
@@ -586,8 +703,27 @@
                 return;
             }
 
-            e.preventDefault();
             const itemId = target.dataset.itemId;
+            const item = getItemFromState(itemId);
+            if (!item) {
+                hideCustomContextMenu();
+                return;
+            }
+
+            e.preventDefault();
+            safeHideItemTooltip();
+            hideCustomContextMenu();
+
+            // Trang bị: Click chuột phải mặc / tháo ngay lập tức
+            if (isEquipmentItem(item, target)) {
+                if (item.equipped || target.closest('.equip-slot, .rpg-equip-slot, [data-drop-zone="equipment"]')) {
+                    unequipItem(item.slot || item.id);
+                } else {
+                    equipItem(item.id);
+                }
+                return;
+            }
+
             showCustomContextMenu(e, itemId);
         });
 

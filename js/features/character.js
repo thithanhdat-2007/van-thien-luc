@@ -160,6 +160,7 @@
                 : null;
 
         if (!s) return player;
+        const effective = typeof window.getEffectiveStats === 'function' ? window.getEffectiveStats() : {};
 
         // Tên cảnh giới từ REALMS
         let realmName = "Trúc Cơ - Sơ Kỳ";
@@ -202,23 +203,24 @@
 
         return {
             name: s.player?.name || s.name || "Tiêu Dao Tử",
+            avatar_url: s.player?.avatar_url || s.avatar_url || s.player?.avatar || s.avatar,
             world: worldName,
             daoTam: daoTamText,
             realmIndex: s.realmIndex || 0,
             realmName: realmName,
             core: {
                 hp: s.hp ?? s.totalHp ?? 5800,
-                maxHp: s.maxHp ?? s.totalHp ?? 5800,
+                maxHp: effective.maxHp ?? s.maxHp ?? s.totalHp ?? 5800,
                 mp: s.mp ?? s.totalMp ?? 2400,
-                maxMp: s.maxMp ?? s.totalMp ?? 2400,
+                maxMp: effective.maxMp ?? s.maxMp ?? s.totalMp ?? 2400,
                 daoTamPoints: currentDaoTam,
                 maxDaoTam: 100,
                 age: s.ageYears ?? s.age ?? 18,
-                maxLifespan: s.lifespan ?? 200
+                maxLifespan: s.maxAge ?? s.lifespan ?? 200
             },
             combat: {
-                atk: s.totalAtk ?? s.atk ?? 680,
-                def: s.totalDef ?? s.def ?? 320,
+                atk: effective.atk ?? s.totalAtk ?? s.atk ?? 680,
+                def: effective.def ?? s.totalDef ?? s.def ?? 320,
                 spd: s.speed ?? 125,
                 critRate: (typeof s.crit === 'number') ? s.crit : 18.5,
                 armorPen: (typeof s.armorPen === 'number') ? s.armorPen : 12.0,
@@ -279,7 +281,10 @@
         const avatarEl = document.getElementById('ui-avatar');
         if (avatarEl && (p.avatar_url || p.avatar)) {
             const nextAvatar = p.avatar_url || p.avatar;
-            if (avatarEl.getAttribute('src') !== nextAvatar) avatarEl.src = nextAvatar;
+            if (avatarEl.dataset.profileAvatar !== nextAvatar) {
+                avatarEl.dataset.profileAvatar = nextAvatar;
+                if (avatarEl.getAttribute('src') !== nextAvatar) avatarEl.src = nextAvatar;
+            }
         }
         const daoTamEl = document.getElementById('ui-dao-tam');
         if (daoTamEl) daoTamEl.innerHTML = '<i class="fa-solid fa-yin-yang mr-1"></i> ' + p.daoTam;

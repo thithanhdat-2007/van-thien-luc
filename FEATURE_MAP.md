@@ -4,6 +4,7 @@
 
 | Phần người dùng yêu cầu | File điều khiển chính | Nguồn liên quan khi cần |
 | --- | --- | --- |
+| Kỳ Ngộ Cổ Tịch | `js/features/encounter.js` | `ENCOUNTERS`, `ENCOUNTER_RULES` trong `js/data.js`; trigger trong `js/loop.js` và `completeExpedition`; `css/encounter.css` |
 | Trấn Yêu Tháp | `js/features/demon_tower.js` | Nút mở `tran_yeu_thap_v4.html` trong iframe toàn màn hình. Đã đồng bộ 2 chiều với save chính (`window.state`): chỉ số nhân vật, cảnh giới, Linh Thạch, Tu Vi, tầng tháp, túi đồ chiến lợi phẩm và lưu trữ tự động. `#modal-tran-yeu-thap` và hệ tháp trong `js/app.js` là các bản cũ |
 | Độ kiếp | `js/features/tribulation.js` | `js/tribulation_visuals.js`, `js/tribulation_system.js`, `#modal-do-kiep` |
 | Gia viên | `js/features/estate.js` | `js/dong_phu_ecosystem.js`, `js/cave.js`, `#modal-gia-vien` |
@@ -11,7 +12,7 @@
 | Luyện khí | `js/features/forging.js` | `js/equipment_data.js`, `#modal-luyen-khi` |
 | Khuê phòng, đạo lữ | `js/features/chamber.js` | `#modal-khue-phong` |
 | Bản Nguyên Tu Sĩ | `js/features/character.js` | `#hud-left`, `.origin-dashboard` trong `style.css` |
-| Model nhân vật màn hình chính | `js/features/character_model.js` | `#model-two-object`, `#model-two-panel` trong `index.html`, `css/model_studio.css`, `public/assets/images/model_2_character.svg` |
+| Cài đặt hiển thị | `js/features/character_model.js` | Hộp thoại Cài đặt, kích thước nhân vật, âm thanh, ngắm cảnh; giao diện tại `css/model_studio.css` |
 | Túi Đồ & Bản Nguyên (3 Cột) | `js/app.js` (`renderCharacterHub`) | `#page-inventory`, `js/app.js`, `style.css` (Bố cục 3 Cột: Bản Nguyên Tu Sĩ, Càn Khôn Bảo Nang, Đài Giám Định) |
 | Công Pháp • Tàng Kinh Các | `js/app.js` (`renderSkillsHub`) | `js/skills_data.js`, `#page-skills`, `style.css` (3 Phân Khu: Chu Thiên Pháp Vị, Thẻ Trúc Dựng Đứng, Đài Tham Ngộ Tam Hợp) |
 | Thanh tài nguyên trên | `js/features/topbar.js` | `#global-top-resource-bar` |

@@ -6,7 +6,8 @@
 - `js/tower_data.js` nạp trước engine, chứa ngũ hành, công pháp, kỹ năng, vật phẩm rơi, quái và công thức 50 tầng.
 - `TOWER_RULES` trong file dữ liệu chứa FPS, thời gian lượt, giá đúc kiếm, ngưỡng cuồng bạo, số lượt hộ thể và kiếm trận.
 - `tran_yeu_thap_v4.html` chứa UI, model canvas, phát hiệu ứng, state demo và xử lý chiến đấu.
-- Tháp vẫn dùng state riêng. Dữ liệu game chính thuộc `js/data.js`. Chưa đồng bộ túi đồ hoặc save hai bên.
+- Tháp giữ bản sao chỉ số cho từng trận. Khi khiêu chiến, gọi `getTowerSyncPayload()` → `recalculateAllStats()` từ game chính; không đôn chỉ số hay dùng nhân vật demo khi chiến đấu. Kết quả, vật phẩm và tiến trình được chuyển về game chính qua cầu nối trong `js/features/demon_tower.js`.
+- Mỗi lượt người/quái nghỉ theo tốc độ: 1x = 2000ms, 2x = 1000ms, 3x = 800ms. Dừng trận hủy chờ và khóa các callback cũ. `js/stats.js` cung cấp công thức sát thương và Uy Áp dùng chung.
 
 ## Thông tin cần khi nhận yêu cầu
 

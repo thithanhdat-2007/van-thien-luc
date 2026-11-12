@@ -128,9 +128,10 @@
 
     function getTowerSyncPayload() {
         const s = window.state || {};
-        const effStats = (typeof window.getEffectiveStats === 'function')
-            ? window.getEffectiveStats()
-            : { atk: s.atk || 148000, def: s.def || 42000, maxHp: s.maxHp || 850000, crit: s.crit || 35 };
+        const effStats = typeof window.recalculateAllStats === 'function'
+            ? window.recalculateAllStats()
+            : (typeof window.getEffectiveStats === 'function' ? window.getEffectiveStats() : s);
+        const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0,Number(value)) : fallback;
 
         const currentRealm = (typeof window.REALMS !== 'undefined' && Array.isArray(window.REALMS))
             ? (window.REALMS[s.realmIndex] || window.REALMS[0])
@@ -156,8 +157,8 @@
         }
 
         return {
-            characterName: s.characterName || s.name || "Tiêu Dao Tử",
-            playerName: s.characterName || s.name || "Tiêu Dao Tử",
+            characterName: s.player?.name || s.characterName || s.name || "Tiêu Dao Tử",
+            playerName: s.player?.name || s.characterName || s.name || "Tiêu Dao Tử",
             realmName: currentRealm?.name || "Luyện Khí Kỳ",
             linhThach: Number(s.stones) || 0,
             tuVi: Number(s.exp) || 0,
@@ -165,15 +166,20 @@
             selectedFloor: selectedFloor,
             selectedTier: selectedTier,
             hero: {
-                maxHp: Math.max(1000, Math.round(Number(effStats.maxHp || s.maxHp || 1000))),
-                hp: Math.max(1, Math.round(Number(s.hp || effStats.maxHp || s.maxHp || 1000))),
+                name: s.player?.name || s.characterName || s.name || 'Tiêu Dao Tử',
+                realmIndex: Math.max(0,Math.floor(finite(s.realmIndex))),
+                tier: currentRealm.realmTier || (Number.isFinite(currentRealm.majorIndex) ? currentRealm.majorIndex + 1 : effStats.tier || 1),
+                maxHp: Math.max(1,finite(effStats.maxHp ?? s.maxHp,1)),
+                hp: Math.max(1,finite(effStats.maxHp ?? s.maxHp,1)),
                 mp: 0,
-                maxMp: 100,
-                atk: Math.max(100, Math.round(Number(effStats.atk || s.atk || 100))),
-                def: Math.max(50, Math.round(Number(effStats.def || s.def || 50))),
-                crit: Math.min(85, Math.max(5, Math.round(Number(effStats.crit || s.crit || 10)))),
-                critDmg: Number(effStats.critMultiplier || 2.0),
-                eva: Math.min(60, Math.max(5, Math.round(Number(effStats.dodge || effStats.eva || 10)))),
+                maxMp: 100, // Kiếm Nguyên is a combat gauge, not the player's MP pool.
+                atk: finite(effStats.atk ?? s.atk),
+                def: finite(effStats.def ?? s.def),
+                crit: Math.min(100,finite(effStats.crit ?? s.crit)),
+                critDmg: 1.5 + finite(effStats.critDamageBonus),
+                eva: Math.min(100,finite(effStats.dodge ?? s.dodge)),
+                armorPen: finite(effStats.armorPen),
+                critResist: finite(effStats.critResist),
                 element: elem,
                 swordCount: Math.min(36, Math.max(6, 6 + Math.floor((s.realmIndex || 0) * 1.5)))
             },
@@ -292,7 +298,7 @@
     }
 
     window.addEventListener('message', (event) => {
-        if (!event.data) return;
+        if (!event.data || event.source !== towerV4Frame?.contentWindow) return;
         if (event.data.type === 'van-thien-luc:tower-close') {
             closeDemonTowerModal();
         } else if (event.data.type === 'van-thien-luc:tower-ready') {
@@ -342,19 +348,8 @@
         if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
     }
 
-    function handleChallengeClick() {
-        if (isCombatActive) return;
-        if (towerPlayer.hp <= 0) {
-            showXianxiaToast("⚠️ Đạo hữu đang trọng thương! Hãy bấm 'Vận Công Hồi Khí' trước.", "error");
-            return;
-        }
-
-        if (isAutoClimbOn) {
-            runAutoClimbFast();
-        } else {
-            startTowerCombat(towerPlayer, towerCurrentBoss);
-        }
-    }
+    // Legacy buttons enter the same paced arena; never use a second combat engine.
+    function handleChallengeClick() { openDemonTowerModal(); }
 
     function startTowerCombat(playerFighter, bossFighter) {
         isCombatActive = true;
@@ -591,38 +586,6 @@
             return;
         }
         isAutoClimbOn = checked;
-    }
-
-    function runAutoClimbFast() {
-        let climbed = 0;
-        let stonesEarned = 0;
-        let tuviEarned = 0;
-        const maxFloorsPerSweep = 50; // Giới hạn an toàn, tránh block main thread
-
-        while (
-            climbed < maxFloorsPerSweep &&
-            towerPlayer.hp > 0 &&
-            towerCurrentBoss &&
-            towerCurrentBoss.cp > 0 &&
-            towerPlayer.cp >= (towerCurrentBoss.cp * 3)
-        ) {
-            climbed++;
-            stonesEarned += (Number(towerCurrentBoss.rewardStones) || 0);
-            tuviEarned += (Number(towerCurrentBoss.rewardTuvi) || 0);
-            towerPlayer.hp = Math.max(1, towerPlayer.hp - Math.round(towerPlayer.maxHp * 0.015));
-
-            towerCurrentFloor++;
-            towerCurrentBoss = createFloorBoss(towerCurrentFloor);
-        }
-
-        towerPlayer.stones += stonesEarned;
-        towerPlayer.tuvi += tuviEarned;
-        updateArenaUI();
-
-        if (climbed > 0) {
-            appendLog(`⚡ [Auto-Climb] Đã càn quét nhanh ${climbed} tầng! +${stonesEarned.toLocaleString()} Linh Thạch, +${tuviEarned.toLocaleString()} Tu Vi.`, 'log-entry--win');
-            showXianxiaToast(`⚡ AUTO-CLIMB THÀNH CÔNG! Quét ${climbed} Tầng Tháp (+${stonesEarned.toLocaleString()} Linh Thạch, +${tuviEarned.toLocaleString()} Tu Vi). Dừng tại Tầng ${towerCurrentFloor}.`, 'success');
-        }
     }
 
     function updateHPDisplays() {

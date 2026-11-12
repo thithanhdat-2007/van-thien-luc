@@ -67,10 +67,14 @@ function gainQi(targetState) {
     const prevExp = Number(s.exp) || 0;
     const prevLinhKhi = Number(s.linhKhi) || 0;
 
-    // Tích lũy Linh Khí Động Phủ
-    if (typeof getLinhKhiMax === 'function' && typeof getLinhKhiRate === 'function') {
-        s.linhKhi = Math.min(getLinhKhiMax(), prevLinhKhi + getLinhKhiRate() * timeScale);
-    }
+    // Tích lũy Linh Khí Động Phủ (Spirit Pool Accumulation)
+    const maxLk = (typeof getLinhKhiMax === 'function') ? getLinhKhiMax(s) : (Number(s.maxLinhKhi) || 50000);
+    const regenLk = (typeof getLinhKhiRate === 'function') ? getLinhKhiRate(s) : (Number(s.linhKhiRegen) || 100);
+    s.maxLinhKhi = maxLk;
+    s.linhKhiRegen = regenLk;
+    s.linhKhi = Math.min(maxLk, prevLinhKhi + regenLk * timeScale);
+    if (s.linhKhi > maxLk) s.linhKhi = maxLk;
+    if (s.playerLinhCan) s.playerLinhCan.linhKhi = s.linhKhi;
 
     // Tăng Tu Vi qua addExp (nếu có) hoặc cộng trực tiếp (Bể chứa Tu Vi là vô hạn)
     let gainedExp = 0;
@@ -102,7 +106,8 @@ function checkAutoHeal(targetState) {
         : ((typeof calculateTotalStats === 'function') ? calculateTotalStats(s) : { maxHp: s.maxHp || 500, maxMp: s.maxMp || 200 });
 
     const maxHp = Number(eff.maxHp || s.maxHp || 500);
-    const maxMp = Number(eff.maxMp || s.maxMp || 200);
+    const maxMp = Math.max(0, Number(eff.maxMp ?? s.maxMp ?? 200));
+    if (typeof CultivationMathEngine !== 'undefined') CultivationMathEngine.clampResources(s, eff, typeof getLinhKhiMax === 'function' ? getLinhKhiMax() : s.linhKhi);
     const prevHp = Number(s.hp ?? maxHp);
     const prevMp = Number(s.mp ?? maxMp);
 
@@ -119,7 +124,7 @@ function checkAutoHeal(targetState) {
     if (s.mp === undefined) s.mp = maxMp;
     if (s.mp < maxMp) {
         const titleRegen = maxMp * (Number(eff.mpRegenPercent) || 0);
-        s.mp = Math.min(maxMp, Math.round(s.mp + (4 + titleRegen) * timeScale));
+        s.mp = Math.min(maxMp, s.mp + (4 + titleRegen) * timeScale / CULTIVATION_BALANCE_RULES.manaDivisor);
     }
 
     // 2.3 Vận công Auto Heal bằng Linh Lực nếu bật Auto
@@ -164,20 +169,10 @@ function rollRandomEvent(targetState, customRng) {
         }
         return { triggered: true, eventType: 'TAM_MA', lossMp };
     } else {
-        // Sự kiện Thiên Cơ Kỳ Ngộ
-        const bonusStones = Math.max(5, ((Number(s.realmStage) || 0) + 1) * 10);
-        s.stones = (Number(s.stones) || 0) + bonusStones;
-        if (typeof document !== 'undefined') {
-            const eventBtn = document.getElementById('fortuitous-event-btn');
-            if (eventBtn && eventBtn.classList) {
-                eventBtn.classList.remove('hidden');
-                eventBtn.classList.add('flex');
-            }
-        }
-        if (typeof addLog === 'function') {
-            addLog(`✨ <span class="text-amber-300 font-bold">[Thiên Cơ Kỳ Ngộ]</span> Linh quang chợt lóe nơi động phủ, nhặt được <span class="text-amber-400 font-bold">+${bonusStones} Linh Thạch</span>!`, 'text-amber-300', 'random-ky-ngo');
-        }
-        return { triggered: true, eventType: 'KY_NGO', bonusStones };
+        // Heart-demon odds stay on the existing event roll. Encounters are rarer.
+        const chance = typeof ENCOUNTER_RULES !== 'undefined' ? ENCOUNTER_RULES.idleChance : 0.001;
+        const queued = rand < chance && typeof queueEncounter === 'function' && queueEncounter();
+        return { triggered: Boolean(queued), eventType: queued ? 'KY_NGO' : null };
     }
 }
 
