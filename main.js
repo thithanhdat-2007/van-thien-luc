@@ -113,6 +113,7 @@
             document.getElementById('tower-v4-frame')?.remove();
             document.body?.classList?.remove('tower-v4-active');
         }
+        document.getElementById('daily-blessing-modal')?.remove();
 
         const allModals = document.querySelectorAll(
             '.feature-popup, .feature-page, .game-page, ' +
@@ -191,7 +192,14 @@
             'demon-tower': 'modal-tran-yeu-thap',
             'page-tran-yeu-thap': 'modal-tran-yeu-thap',
             'demon-tower-modal': 'modal-tran-yeu-thap',
-            'do-kiep': 'modal-do-kiep'
+            'do-kiep': 'modal-do-kiep',
+            'page-achievement': 'page-achievement',
+            'achievement': 'page-achievement',
+            'thanh-tuu': 'page-achievement',
+            'page-thanh-tuu': 'page-achievement',
+            'modal-daily-blessing': 'modal-daily-blessing',
+            'phuc-loi': 'modal-daily-blessing',
+            'daily-blessing': 'modal-daily-blessing'
         };
         if (aliases[id]) id = aliases[id];
 
@@ -214,6 +222,9 @@
         if (id === 'modal-do-kiep') {
             if (typeof window.openDoKiepModal === 'function') return window.openDoKiepModal(null);
         }
+        if (id === 'modal-daily-blessing') {
+            if (typeof window.openDailyBlessingModal === 'function') return window.openDailyBlessingModal();
+        }
 
         // Mở các SPA Popup trang
         const el = document.getElementById(id);
@@ -223,6 +234,7 @@
         }
 
         if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
+        if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
 
         el.classList.remove('hidden');
         el.classList.add('active');
@@ -268,6 +280,10 @@
             } else if (typeof window.renderPetPage === 'function') {
                 window.renderPetPage();
             }
+        } else if (id === 'page-achievement') {
+            if (typeof window.renderAchievementHub === 'function') {
+                window.renderAchievementHub(document.getElementById('achievement-page-content'));
+            }
         } else if (id.startsWith('page-sect')) {
             const sub = id.replace('page-sect-', '') || 'quests';
             const container = document.getElementById(`sect-${sub}-page-content`) || document.getElementById(`${id}-content`);
@@ -300,6 +316,7 @@
         const modal = document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal');
         if (modal) {
             if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
+        if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
             modal.classList.remove('hidden');
             modal.classList.add('is-open');
             modal.removeAttribute('aria-hidden');
@@ -815,7 +832,7 @@
             if (badgeEl) badgeEl.textContent = '10/10';
             if (statusEl) {
                 statusEl.textContent = 'Đại Viên Mãn';
-                statusEl.className = 'text-[10px] text-amber-400 font-bold';
+                statusEl.className = 'text-[10px] text-amber-400 font-bold whitespace-nowrap shrink-0 ml-auto';
             }
             if (titleEl) titleEl.textContent = 'Thiên Mệnh Viên Mãn';
             if (descEl) descEl.textContent = 'Đạo hữu đã hoàn thành toàn bộ chuỗi 10 nhiệm vụ chính tuyến khởi đầu!';
@@ -843,7 +860,7 @@
         if (badgeEl) badgeEl.textContent = (questIdx + 1) + '/' + MAIN_QUEST_LINE.length;
         if (statusEl) {
             statusEl.textContent = done ? 'Có thể nhận' : 'Đang thực hiện';
-            statusEl.className = 'text-[10px] font-medium ' + (done ? 'text-amber-400 font-bold animate-pulse' : 'text-slate-400');
+            statusEl.className = 'text-[10px] font-medium whitespace-nowrap shrink-0 ml-auto ' + (done ? 'text-amber-400 font-bold animate-pulse' : 'text-slate-400');
         }
         if (titleEl) titleEl.textContent = q.title;
         if (descEl) descEl.textContent = q.desc;
@@ -1287,9 +1304,13 @@ const masterForceCloseAllPopups = function() {
     if (typeof window.closeCamNangModal === 'function') {
         try { window.closeCamNangModal(); } catch (e) {}
     }
+    if (typeof window.closeDailyBlessingModal === 'function') {
+        try { window.closeDailyBlessingModal(); } catch (e) {}
+    }
 
     // 3. Danh sách modal/popup cụ thể
     const modalIds = [
+        'modal-daily-blessing',
         'modal-tran-yeu-thap',
         'modal-gia-vien',
         'modal-luyen-dan',
@@ -1358,6 +1379,9 @@ const masterForceCloseAllPopups = function() {
     if (typeof window.closeAllDropups === 'function') {
         try { window.closeAllDropups(); } catch (e) {}
     }
+    if (typeof window.setOverlayVFXPause === 'function') {
+        try { window.setOverlayVFXPause(false); } catch (e) {}
+    }
 };
 
 window.universalCloseAllModals = masterForceCloseAllPopups;
@@ -1424,6 +1448,9 @@ const masterSyncAllUI = function() {
     }
     if (typeof window.updateHUD === 'function') {
         try { window.updateHUD(); } catch (e) {}
+    }
+    if (typeof window.syncAutomationUI === 'function') {
+        try { window.syncAutomationUI(); } catch (e) {}
     }
 };
 window.syncAllUI = masterSyncAllUI;
@@ -1813,7 +1840,16 @@ function handleCustomBattleOutcome(result, battle) {
         // Defeat
         if (mode === 'tamma') {
             s.isInjured = true;
-            if (window.state && window.state !== s) window.state.isInjured = true;
+            const curMax = Math.max(2, Number(s.maxHp) || 100);
+            if (Number(s.hp ?? curMax) >= curMax) s.hp = Math.max(1, Math.floor(curMax * 0.2));
+            if (window.state && window.state !== s) {
+                window.state.isInjured = true;
+                window.state.hp = s.hp;
+            }
+            if (window.GameState && window.GameState !== s) {
+                window.GameState.isInjured = true;
+                window.GameState.hp = s.hp;
+            }
             const lostTv = Math.round((Number(s.exp) || 0) * 0.05);
             s.exp = Math.max(0, (Number(s.exp) || 0) - lostTv);
             if (window.state && window.state !== s) window.state.exp = s.exp;
@@ -1834,8 +1870,17 @@ function handleCustomBattleOutcome(result, battle) {
             if (typeof window.renderSectPage === 'function') window.renderSectPage('array');
         } else {
             s.isInjured = true;
-            if (window.state && window.state !== s) window.state.isInjured = true;
-            const msg = `⚠️ Thất bại trước ${battle.name}! Kinh mạch chấn thương, cần Vận Công Điều Tức (15s) hoặc dùng Hồi Huyết Đan!`;
+            const curMax = Math.max(2, Number(s.maxHp) || 100);
+            if (Number(s.hp ?? curMax) >= curMax) s.hp = Math.max(1, Math.floor(curMax * 0.2));
+            if (window.state && window.state !== s) {
+                window.state.isInjured = true;
+                window.state.hp = s.hp;
+            }
+            if (window.GameState && window.GameState !== s) {
+                window.GameState.isInjured = true;
+                window.GameState.hp = s.hp;
+            }
+            const msg = `⚠️ Thất bại trước ${battle.name}! Kinh mạch chấn thương, cần Vận Công Điều Tức hoặc dùng Hồi Huyết Đan!`;
             if (typeof window.showGameToast === 'function') window.showGameToast(msg, 'error');
             else if (typeof window.showXianxiaToast === 'function') window.showXianxiaToast(msg, 'danger');
             if (typeof window.addLog === 'function') window.addLog(`<span class="text-rose-400 font-bold">${msg}</span>`, 'text-rose-400');
@@ -1854,8 +1899,14 @@ window.startUniversalBattle = function(enemyConfig) {
     if (!enemyConfig) return false;
     const s = window.GameState || window.state || {};
 
-    // Kiểm tra trạng thái Trọng Thương
-    if (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil) || (s.hp !== undefined && s.hp <= 0)) {
+    // Tự giải trừ Trọng Thương ảo trước khi kiểm tra vào trận
+    if (typeof window.reconcileHeavyInjuryState === 'function') {
+        window.reconcileHeavyInjuryState(s, { save: true, updateUi: true });
+    }
+    const stillInjured = (typeof window.isHeavyInjuryActive === 'function')
+        ? window.isHeavyInjuryActive(s)
+        : (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil));
+    if (stillInjured || (s.hp !== undefined && s.hp <= 0)) {
         const warnMsg = '⚠️ Đang trọng thương, kinh mạch tổn hại! Hãy điều tức hoặc cắn đan hồi phục trước khi khiêu chiến!';
         if (typeof window.showGameToast === 'function') {
             window.showGameToast(warnMsg, 'error');
@@ -1933,8 +1984,14 @@ window.attemptCultivationBreakthrough = function() {
     const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
     if (!s) return;
 
-    // 1. Kiểm tra trạng thái Trọng Thương
-    if (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
+    // 1. Tự giải trừ Trọng Thương ảo trước khi kiểm tra điều kiện Đột Phá
+    if (typeof window.reconcileHeavyInjuryState === 'function') {
+        window.reconcileHeavyInjuryState(s, { save: true, updateUi: true });
+    }
+    const stillInjured = (typeof window.isHeavyInjuryActive === 'function')
+        ? window.isHeavyInjuryActive(s)
+        : (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil));
+    if (stillInjured) {
         const msg = '⚠️ Đạo hữu đang bị Trọng Thương, kinh mạch tắc nghẽn, không thể đột phá! Hãy dùng đan dược hoặc đả tọa chữa lành.';
         if (typeof window.showGameToast === 'function') {
             window.showGameToast(msg, 'error');
@@ -2192,9 +2249,10 @@ globalThis.openGiaVienModal = window.openGiaVienModal;
     }
 
     window.checkOfflineProgression = function (forceTestSeconds) {
-        const gs = window.GameState || window.state;
+        if (!forceTestSeconds && (window.__OFFLINE_REWARD_HANDLED__ || window.__OFFLINE_REWARD_PENDING__)) return;
+        const gs = window.state || window.GameState;
         if (!gs) return;
-        const lastActive = Number(gs.lastActiveTime || gs.lastOnlineTime || 0);
+        const lastActive = Number(gs.lastActiveTimestamp || gs.lastActiveTime || gs.lastOnlineTime || 0);
         if (!lastActive && !forceTestSeconds) {
             gs.lastActiveTime = Date.now();
             return;
@@ -2202,28 +2260,47 @@ globalThis.openGiaVienModal = window.openGiaVienModal;
         const rawSeconds = forceTestSeconds
             ? Number(forceTestSeconds)
             : Math.floor((Date.now() - lastActive) / 1000);
-        if (rawSeconds < 60) return;
+        if (rawSeconds < 120) return;
 
         const offlineSeconds = Math.min(43200, rawSeconds);
-        const idleRate = typeof window.getQiPerSecond === 'function'
-            ? Math.max(1, Number(window.getQiPerSecond()) || 10)
-            : Math.max(1, Number(gs.qiPerSec) || 10);
-        const gainedExp = Math.max(1, Math.floor(idleRate * 0.6 * offlineSeconds));
-        const gainedStones = Math.max(1, Math.floor((offlineSeconds / 60) * 5));
+        const cultRate = typeof window.getIdleRate === 'function' ? Number(window.getIdleRate()) || 0 : Number(gs.qiRate || 5);
+        const lkRate = typeof window.getLinhKhiRate === 'function' ? Number(window.getLinhKhiRate()) || 0 : 1;
+        const maxLk = Math.max(0, typeof window.getLinhKhiMax === 'function' ? Number(window.getLinhKhiMax()) : Number(gs.maxLinhKhi || 100));
+        const curLk = Math.max(0, Number(gs.linhKhi || 0));
+        const realmIdx = Math.max(0, Number(gs.realmIndex || 0));
+        const gainedExp = Math.floor(cultRate * offlineSeconds * 0.6);
+        const gainedLinhKhi = Math.max(0, Math.min(maxLk - curLk, Math.floor(lkRate * offlineSeconds * 0.6)));
+        const gainedStones = Math.floor((realmIdx + 1) * 2 * (offlineSeconds / 60));
+
+        if (typeof window.showOfflineRewardModal === 'function') {
+            window.showOfflineRewardModal({
+                seconds: offlineSeconds,
+                exp: gainedExp,
+                linhKhi: gainedLinhKhi,
+                stones: gainedStones
+            });
+            return;
+        }
         showOfflineProgressionModal(offlineSeconds, gainedExp, gainedStones);
     };
 
-    // Lưu lastActiveTime mỗi 3 giây (chỉ khi đã load xong)
+    // Lưu lastActiveTime mỗi 15 giây (Anti-Lag, chỉ khi đã load xong)
     setInterval(() => {
-        if (window.__IS_GAME_LOADED === false) return;
-        const gs = window.GameState || window.state;
+        if (window.__IS_GAME_LOADED === false || window.__LOCK_SAVE__) return;
+        const gs = window.state || window.GameState;
         if (gs) {
-            gs.lastActiveTime = Date.now();
-            if (window.state && window.state !== gs) window.state.lastActiveTime = gs.lastActiveTime;
+            const nowTs = Date.now();
+            gs.lastActiveTime = nowTs;
+            gs.lastActiveTimestamp = nowTs;
+            if (window.GameState && window.GameState !== gs) {
+                window.GameState.lastActiveTime = nowTs;
+                window.GameState.lastActiveTimestamp = nowTs;
+            }
         }
-        if (typeof window.saveGame === 'function') window.saveGame();
+        if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+        else if (typeof window.saveGame === 'function') window.saveGame();
         else if (typeof window.saveGameState === 'function') window.saveGameState();
-    }, 3000);
+    }, 15000);
 
     // Lưu tức thì khi tải lại trang (Ctrl+Shift+R) hoặc đóng tab
     window.addEventListener('beforeunload', () => {
@@ -2258,7 +2335,9 @@ globalThis.openGiaVienModal = window.openGiaVienModal;
         if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
         setTimeout(() => {
-            if (typeof window.checkOfflineProgression === 'function') window.checkOfflineProgression();
+            if (!window.__OFFLINE_REWARD_HANDLED__ && !window.__OFFLINE_REWARD_PENDING__ && typeof window.checkOfflineProgression === 'function') {
+                window.checkOfflineProgression();
+            }
         }, 700);
     });
 })();
@@ -2383,6 +2462,7 @@ document.addEventListener('keydown', (e) => {
         }
 
         gs.beQuanX5Until = now + 60000;
+        if (typeof window.playSound === 'function') window.playSound('sword');
         if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
         if (typeof window.saveGameState === 'function') window.saveGameState();
         if (typeof window.syncAllUI === 'function') window.syncAllUI();
@@ -2506,10 +2586,14 @@ document.addEventListener('keydown', (e) => {
         modal.id = 'daily-blessing-modal';
         modal.className = 'fixed inset-0 z-[10600] flex items-center justify-center p-4';
         modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        const handleClose = () => {
+            modal.remove();
+            if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(false);
+        };
+        modal.addEventListener('click', (e) => { if (e.target === modal) handleClose(); });
         modal.innerHTML = `
             <div class="w-full max-w-md rounded-2xl border border-amber-500/40 p-6 text-slate-100 shadow-2xl relative" style="background: rgba(9, 3, 12, 0.98);">
-                <button type="button" onclick="document.getElementById('daily-blessing-modal')?.remove()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 flex items-center justify-center cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" id="btn-close-daily-blessing-modal" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 flex items-center justify-center cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
                 <div class="text-center space-y-3">
                     <div class="text-4xl">🎁</div>
                     <h3 class="font-serif text-xl font-bold text-amber-300">PHÚC LỢI THIÊN ĐẠO HÀNG NGÀY</h3>
@@ -2532,6 +2616,9 @@ document.addEventListener('keydown', (e) => {
             </div>
         `;
         document.body.appendChild(modal);
+        const closeBtn = document.getElementById('btn-close-daily-blessing-modal');
+        if (closeBtn) closeBtn.onclick = handleClose;
+        if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
     };
 
     window.claimDailyBlessing = function () {
@@ -2554,6 +2641,7 @@ document.addEventListener('keydown', (e) => {
             window.showGameToast('🎁 Đã nhận Phúc Lợi Thiên Đạo: +2,000 Linh Thạch, +10 Tiên Ngọc, +5 Ngộ Đạo Đan!', 'success');
         }
         document.getElementById('daily-blessing-modal')?.remove();
+        if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(false);
     };
 
     // Tự động gắn nút Phân Giải vào #page-inventory khi mở

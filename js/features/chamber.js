@@ -23,8 +23,9 @@
             buffs: [
                 { level: 1, text: "+10% Tốc độ Tụ Khí Tu Vi & +100 HP" },
                 { level: 2, text: "+15% Tốc độ Tụ Khí & +500 Khí Huyết (HP)" },
-                { level: 3, text: "🌸 Mở khóa: Tự động thu hoạch Gia Viên" },
-                { level: 4, text: "+30% Tốc độ Tụ Khí, +1,500 HP & Song Tu x3.0 Tu Vi" }
+                { level: 3, text: "🌸 Tâm Ấn • Niệm Tương Tri: Tự động hồi phục 20% HP khi Khí Huyết < 30% & Tự động thu hoạch Gia Viên" },
+                { level: 4, text: "+30% Tốc độ Tụ Khí, +1,500 HP & Song Tu x3.0 Tu Vi" },
+                { level: 5, text: "💖 Tâm Ấn • Loan Phụng Hòa Minh: +15% Bạo Kích & +25% Sát Thương Bạo trong Trấn Yêu Tháp" }
             ]
         },
         {
@@ -41,8 +42,9 @@
             buffs: [
                 { level: 1, text: "+15% Sát thương Công Kích (ATK) & +50 DEF" },
                 { level: 2, text: "+20% Sát thương Công Kích & +10% Bạo Kích" },
-                { level: 3, text: "⚔️ Mở khóa: Tự động thu hoạch Gia Viên & +15% Sát thương Boss" },
-                { level: 4, text: "+35% Công Kích, +20% Bạo Kích & Song Tu x3.0 Tu Vi" }
+                { level: 3, text: "⚔️ Tâm Ấn • Niệm Tương Tri: Tự động hồi phục 20% HP khi Khí Huyết < 30% & +15% Sát thương Boss" },
+                { level: 4, text: "+35% Công Kích, +20% Bạo Kích & Song Tu x3.0 Tu Vi" },
+                { level: 5, text: "💖 Tâm Ấn • Loan Phụng Hòa Minh: +15% Bạo Kích & +25% Sát Thương Bạo trong Trấn Yêu Tháp" }
             ]
         },
         {
@@ -59,20 +61,22 @@
             buffs: [
                 { level: 1, text: "+12% Hút Máu Khí Huyết & +30 ATK" },
                 { level: 2, text: "+18% Hút Máu & +20% Xuyên Thấu Giáp" },
-                { level: 3, text: "🩸 Mở khóa: Tự động thu hoạch Gia Viên & Phản phệ sát thương" },
-                { level: 4, text: "+25% Hút Máu, Miễn Phệ Tâm Ma & Song Tu x3.0 Tu Vi" }
+                { level: 3, text: "🩸 Tâm Ấn • Niệm Tương Tri: Tự động hồi phục 20% HP khi Khí Huyết < 30% & Phản phệ sát thương" },
+                { level: 4, text: "+25% Hút Máu, Miễn Phệ Tâm Ma & Song Tu x3.0 Tu Vi" },
+                { level: 5, text: "💖 Tâm Ấn • Loan Phụng Hòa Minh: +15% Bạo Kích & +25% Sát Thương Bạo trong Trấn Yêu Tháp" }
             ]
         }
     ];
 
     // ====================================================================
-    // KHỐI 2: CẤP BẬC HẢO CẢM & VẬT PHẨM QUÀ TẶNG (4 MỐC CHUẨN RPG)
+    // KHỐI 2: CẤP BẬC HẢO CẢM & VẬT PHẨM QUÀ TẶNG (5 MỐC CHUẨN RPG)
     // ====================================================================
     const AFFECTION_RANKS = [
         { level: 1, title: "Sơ Kiến", minExp: 0, maxExp: 99, multiplier: 1.0 },
         { level: 2, title: "Tri Kỷ", minExp: 100, maxExp: 299, multiplier: 1.5 },
         { level: 3, title: "Khuynh Tâm", minExp: 300, maxExp: 599, multiplier: 2.0 },
-        { level: 4, title: "Đạo Lữ Vĩnh Kết", minExp: 600, maxExp: 999999, multiplier: 3.0 }
+        { level: 4, title: "Đạo Lữ Vĩnh Kết", minExp: 600, maxExp: 999, multiplier: 2.8 },
+        { level: 5, title: "Tâm Thần Hợp Nhất", minExp: 1000, maxExp: 999999, multiplier: 3.5 }
     ];
 
     const GIFT_ITEMS_DATA = {
@@ -314,10 +318,25 @@
         s.activeCompanionId = playerState.activeCompanionId;
         s.lastDualCultivationTime = playerState.lastDualCultivationTime;
 
+        // Tính toán Tâm Ấn Đạo Lữ (Cấp 3 & Cấp 5)
+        let maxAffectionLevel = 0;
+        COMPANIONS_DATA.forEach(c => {
+            if (c.unlocked) {
+                const r = getAffectionRank(c.affection);
+                if (r.level > maxAffectionLevel) maxAffectionLevel = r.level;
+            }
+        });
+        s.companionBuffs = s.companionBuffs || {};
+        s.companionBuffs.hasHeartEcho = maxAffectionLevel >= 3;
+        s.companionBuffs.hasPhoenixHarmony = maxAffectionLevel >= 5;
+
         if (window.GameState) {
             window.GameState.companionsData = companionList;
             window.GameState.activeCompanionId = playerState.activeCompanionId;
             window.GameState.lastDualCultivationTime = playerState.lastDualCultivationTime;
+            window.GameState.companionBuffs = window.GameState.companionBuffs || {};
+            window.GameState.companionBuffs.hasHeartEcho = s.companionBuffs.hasHeartEcho;
+            window.GameState.companionBuffs.hasPhoenixHarmony = s.companionBuffs.hasPhoenixHarmony;
         }
 
         saveCompanionsState();

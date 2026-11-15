@@ -1457,6 +1457,30 @@ function getRealmSuppressionDetails(attackerTier, defenderTier) {
     };
 }
 
+function getRealmDisplayName(realmIndex, subRealmIndex) {
+    const list = (typeof window !== 'undefined' && Array.isArray(window.REALMS_DATA) && window.REALMS_DATA.length > 0)
+        ? window.REALMS_DATA
+        : ((typeof REALMS_DATA !== 'undefined' && Array.isArray(REALMS_DATA) && REALMS_DATA.length > 0)
+            ? REALMS_DATA
+            : ((typeof window !== 'undefined' && Array.isArray(window.REALMS) && window.REALMS.length > 0)
+                ? window.REALMS
+                : (typeof REALMS !== 'undefined' && Array.isArray(REALMS) ? REALMS : [])));
+
+    let rIdx = Number(realmIndex);
+    if (!Number.isFinite(rIdx) || rIdx < 0) rIdx = 0;
+
+    if (subRealmIndex !== undefined && subRealmIndex !== null && rIdx < 10) {
+        const match = list.find(r => r.majorIndex === rIdx && r.minorIndex === Number(subRealmIndex));
+        if (match && match.name) return match.name;
+    }
+
+    const item = list[rIdx] || list[list.length - 1] || list[0];
+    if (item) {
+        return item.name || item.title || 'Luyện Khí Tầng 1';
+    }
+    return 'Luyện Khí Tầng 1';
+}
+
 // Xuất Module cho môi trường Node.js và Trình duyệt
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -1472,7 +1496,8 @@ if (typeof module !== 'undefined' && module.exports) {
         getRealmSuppression,
         getRealmSuppressionTaken,
         calculateRealmSuppression,
-        getRealmSuppressionDetails
+        getRealmSuppressionDetails,
+        getRealmDisplayName
     };
 }
 
@@ -1490,4 +1515,8 @@ if (typeof window !== 'undefined') {
     window.getRealmSuppressionTaken = getRealmSuppressionTaken;
     window.calculateRealmSuppression = calculateRealmSuppression;
     window.getRealmSuppressionDetails = getRealmSuppressionDetails;
+    window.getRealmDisplayName = getRealmDisplayName;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.getRealmDisplayName = getRealmDisplayName;
 }

@@ -124,45 +124,36 @@
                 }
             }
 
-            // Phân nhánh Đạo Tâm & Danh Hiệu
-            let alignTitle = 'Tiêu Dao Tán Tu';
-            let alignClass = 'alignment-title-badge--neutral';
-            let alignTooltip = 'Tiêu Dao Tán Tu (Cân Bằng): +15% Tốc độ tụ khí tự nhiên';
-            let tribulationBonus = 0;
-            let sectBonus = 0;
-            let demonicAtkBonus = 0;
-            let demonicCritBonus = 0;
-            let tribulationPenalty = 0;
-            let qiRateBonus = 0.15;
+            // Phân nhánh Đạo Tâm từ nguồn công thức chuẩn (computeDaoAlignmentState)
+            const prevGs = window.GameState || window.state || {};
+            const alignState = (typeof window.computeDaoAlignmentState === 'function')
+                ? window.computeDaoAlignmentState({ righteous: r, demonic: d })
+                : null;
+            const alignDiff = r - d;
+            const alignKey = alignState ? alignState.key : (alignDiff >= 25 ? 'righteous' : (alignDiff <= -25 ? 'demonic' : 'neutral'));
+            const alignTitle = alignState ? alignState.title : (alignDiff >= 25 ? '☀️ Hạo Nhiên Chính Khí' : (alignDiff <= -25 ? '🌙 Thiên Ma Sát Ý' : '☯️ Thái Cực Hỗn Nguyên'));
+            const alignClass = alignState ? alignState.badgeClass : `alignment-title-badge--${alignKey}`;
+            const alignLines = alignState ? alignState.lines : (
+                alignKey === 'righteous'
+                    ? ['+15% Phòng Ngự toàn thân', '+20% Tốc độ Hồi Phục HP', '-25% Tỉ lệ Tẩu Hỏa Nhập Ma khi Độ Kiếp']
+                    : (alignKey === 'demonic'
+                        ? ['+20% Công Kích toàn thân', '+12% Tỉ lệ Bạo Kích', '+8% Hút Máu khi đánh Trấn Yêu Tháp']
+                        : ['+12% Tốc Độ Tụ Khí (Cân bằng Chính - Tà)'])
+            );
+            const alignTooltip = alignState ? alignState.tooltip : `${alignTitle}: ${alignLines.join(' • ')}`;
 
-            if (r > 65) {
-                alignTitle = 'Chính Đạo Tiên Phong';
-                alignClass = 'alignment-title-badge--righteous';
-                alignTooltip = 'Chính Đạo Tiên Phong: +15% Tỷ lệ Độ Kiếp thành công, +20% Uy tín Tông Môn';
-                tribulationBonus = 0.15;
-                sectBonus = 0.20;
-                qiRateBonus = 0;
-            } else if (d > 65) {
-                alignTitle = 'Ma Đạo Cự Phách';
-                alignClass = 'alignment-title-badge--demonic';
-                alignTooltip = 'Ma Đạo Cự Phách: +20% Công Kích & Bạo Kích, Lôi kiếp +15% sát thương';
-                demonicAtkBonus = 0.20;
-                demonicCritBonus = 20;
-                tribulationPenalty = 0.15;
-                qiRateBonus = 0;
-            }
-
-            const gs = window.GameState || window.state;
-            if (gs) {
+            const gsList = [window.GameState, window.state].filter(Boolean);
+            gsList.forEach(gs => {
+                gs.alignmentKey = alignKey;
                 gs.alignmentTitle = alignTitle;
-                gs.alignmentBuffs = {
-                    tribulationBonus,
-                    sectBonus,
-                    demonicAtkBonus,
-                    demonicCritBonus,
-                    tribulationPenalty,
-                    qiRateBonus
-                };
+                gs.alignmentTooltip = alignTooltip;
+                if (alignState) {
+                    gs.alignmentBuffs = alignState;
+                    gs.towerLifesteal = alignState.lifestealPercent || 0;
+                }
+            });
+            if (document?.body?.dataset && document.body.dataset.alignment !== alignKey) {
+                document.body.dataset.alignment = alignKey;
             }
 
             const badgeEl = document.getElementById('alignment-title-badge');
@@ -175,9 +166,45 @@
 
             const daoCard = document.getElementById('top-dao-card');
             if (daoCard) {
-                daoCard.title = `[Trục Cân Bằng Đạo Tâm] Chính Đạo: ${r} | Ma Đạo: ${d}\nDanh hiệu hiện tại: ${alignTitle}\nHiệu quả: ${alignTooltip}`;
+                daoCard.dataset.alignment = alignKey;
+                daoCard.title = `${alignTitle} | Chính Khí: ${r} • Ma Nghiệp: ${d}\n${alignLines.join('\n')}`;
+            }
+
+            const popTitleEl = document.getElementById('dao-pop-title');
+            const popScoreEl = document.getElementById('dao-pop-scores');
+            const popBuffsEl = document.getElementById('dao-pop-buffs');
+            if (popTitleEl) popTitleEl.textContent = alignTitle;
+            if (popScoreEl) popScoreEl.textContent = `Chính: ${r} • Tà: ${d} (Chênh: ${alignDiff >= 0 ? '+' : ''}${alignDiff})`;
+            if (popBuffsEl) {
+                popBuffsEl.innerHTML = alignLines
+                    .map(line => `<li class="dao-pop-buff-item"><span>✦</span><span>${line}</span></li>`)
+                    .join('');
+            }
+            // Nếu điểm Chính/Tà đổi pha (hoặc mới mở), tính lại chỉ số thực để đồng bộ ATK/DEF/Crit/Lifesteal ngay
+            if (prevGs._lastSyncedAlignKey !== alignKey && typeof window.recalculatePlayerStats === 'function') {
+                prevGs._lastSyncedAlignKey = alignKey;
+                window.recalculatePlayerStats();
             }
         }
+    }
+
+    function toggleDaoAlignmentPopover(evt) {
+        if (evt) evt.stopPropagation();
+        const card = document.getElementById('top-dao-card');
+        if (!card) return;
+        const willOpen = !card.classList.contains('is-popover-open');
+        card.classList.toggle('is-popover-open', willOpen);
+        card.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('click', (evt) => {
+            const card = document.getElementById('top-dao-card');
+            if (card && card.classList.contains('is-popover-open') && !card.contains(evt.target)) {
+                card.classList.remove('is-popover-open');
+                card.setAttribute('aria-expanded', 'false');
+            }
+        });
     }
 
     /**
@@ -194,10 +221,10 @@
         const realms = window.REALMS || (typeof REALMS !== 'undefined' ? REALMS : []);
         const rIdx = s.realmIndex || 0;
         const maxExp = (realms[rIdx] && realms[rIdx].maxExp) ? realms[rIdx].maxExp : 100;
-        const rate = s.qiRate || s.spiritRate || (realms[rIdx] ? realms[rIdx].expRate : 5) || 5;
+        const rate = (typeof window.getIdleRate === 'function' ? window.getIdleRate() : null) || s.qiRate || s.spiritRate || (realms[rIdx] ? realms[rIdx].expRate : 5) || 5;
 
-        const righteous = Number(window.GameState?.alignment?.righteous ?? s.alignment?.righteous ?? 50);
-        const demonic = Number(window.GameState?.alignment?.demonic ?? s.alignment?.demonic ?? 50);
+        const righteous = Number(window.GameState?.righteous ?? window.GameState?.alignment?.righteous ?? s.righteous ?? s.alignment?.righteous ?? 50);
+        const demonic = Number(window.GameState?.demonic ?? window.GameState?.alignment?.demonic ?? s.demonic ?? s.alignment?.demonic ?? 50);
 
         updateTopResourceBar({
             stones,
@@ -212,7 +239,9 @@
     window.formatNumber = formatNumber;
     window.updateTopResourceBar = updateTopResourceBar;
     window.syncTopResourceBarFromState = syncTopResourceBarFromState;
+    window.toggleDaoAlignmentPopover = toggleDaoAlignmentPopover;
     globalThis.formatNumber = formatNumber;
     globalThis.updateTopResourceBar = updateTopResourceBar;
     globalThis.syncTopResourceBarFromState = syncTopResourceBarFromState;
+    globalThis.toggleDaoAlignmentPopover = toggleDaoAlignmentPopover;
 })();

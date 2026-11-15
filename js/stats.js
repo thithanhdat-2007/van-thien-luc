@@ -342,15 +342,22 @@ function calculateTotalStats(sourceState) {
 
     // 4. TỔNG CHỈ SỐ (TOTAL STATS) = (Base + Gear) * (1 + Skill Multiplier)
     const roots = getRootStatBonuses(s);
+    const alignState = (typeof computeDaoAlignmentState === 'function') ? computeDaoAlignmentState(s) : null;
+    const achBonus = (typeof getClaimedAchievementBonuses === 'function') ? getClaimedAchievementBonuses(s) : { atk: 0, def: 0, hp: 0, crit: 0, atkPercent: 0, defPercent: 0, hpPercent: 0, allStatsPercent: 0 };
     const rootMult = 1 + roots.resonance;
-    let totalAtk = Math.floor((baseAtk + roots.atk + gearAtk) * (1 + skillAtkMult) * rootMult);
-    let totalDef = Math.floor((baseDef + roots.def + gearDef) * (1 + skillDefMult) * rootMult);
-    let totalHp = Math.floor((baseHp + roots.hp + gearHp) * (1 + skillHpMult) * rootMult);
-    let totalMp = CultivationMathEngine.manaCap((baseMp + roots.mp + gearMp) * (1 + skillMpMult) * rootMult, realmObj);
-    const totalCrit = Number(((Number(s.crit) || 10) + gearCrit + roots.crit).toFixed(1));
+    let totalAtk = Math.floor((baseAtk + achBonus.atk + roots.atk + gearAtk) * (1 + skillAtkMult + (alignState?.atkPercent || 0) + achBonus.atkPercent + achBonus.allStatsPercent) * rootMult);
+    let totalDef = Math.floor((baseDef + achBonus.def + roots.def + gearDef) * (1 + skillDefMult + (alignState?.defPercent || 0) + achBonus.defPercent + achBonus.allStatsPercent) * rootMult);
+    let totalHp = Math.floor((baseHp + achBonus.hp + roots.hp + gearHp) * (1 + skillHpMult + achBonus.hpPercent + achBonus.allStatsPercent) * rootMult);
+    let totalMp = CultivationMathEngine.manaCap((baseMp + roots.mp + gearMp) * (1 + skillMpMult + achBonus.allStatsPercent) * rootMult, realmObj);
+    const totalCrit = Math.min(100, Number(((Number(s.crit) || 10) + gearCrit + roots.crit + (alignState?.critBonus || 0) + achBonus.crit).toFixed(1)));
+
+    // Tự động giải trừ Trọng Thương ảo trước khi áp dụng hình phạt chỉ số
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(s, { skipStats: true, save: false, updateUi: false });
+    }
 
     // Giảm 50% nếu đang Trọng Thương
-    if (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil) {
+    if (hasActiveInjuryTimer(s, Date.now())) {
         totalAtk = Math.max(1, Math.floor(totalAtk * 0.5));
         totalDef = Math.max(1, Math.floor(totalDef * 0.5));
         totalHp = Math.max(1, Math.floor(totalHp * 0.5));
@@ -613,6 +620,11 @@ function recalculatePlayerStats(sourceState) {
         }
     });
 
+    // Tâm Ấn • Loan Phụng Hòa Minh (Hảo Cảm Đạo Lữ Cấp 5: +15% Bạo Kích)
+    if (s.companionBuffs?.hasPhoenixHarmony || rawState.companionBuffs?.hasPhoenixHarmony) {
+        companionCrit += 15;
+    }
+
     // E. YÊU HỒN ĐÃ LUYỆN HÓA & TIẾN ĐỘ TRẤN YÊU THÁP
     let soulAtk = 0, soulDef = 0, soulHp = 0;
     const tower = s.demonTower || rawState.demonTower || {};
@@ -678,14 +690,14 @@ function recalculatePlayerStats(sourceState) {
 
     artifactsList.forEach(art => {
         if (!art || !art.equipped) return;
-        const artLvl = Math.max(1, Number(art.level) || 1);
-        const extremeMultiplier = artLvl >= 10 ? 1.2 : 1.0;
+        const artLvl = Math.max(1, Math.min(15, Number(art.level) || 1));
+        const artMultiplier = 1 + (artLvl * 0.12);
         if (art.id === 'sword' || art.slot === 'sword' || art.name?.includes('Kiếm')) {
-            artifactAtk += Math.round(artLvl * 45 * tier * resonanceMultiplier * extremeMultiplier);
+            artifactAtk += Math.round(80 * tier * artMultiplier * resonanceMultiplier);
         } else if (art.id === 'mirror' || art.slot === 'mirror' || art.name?.includes('Kính')) {
-            artifactDef += Math.round(artLvl * 35 * tier * resonanceMultiplier * extremeMultiplier);
+            artifactDef += Math.round(60 * tier * artMultiplier * resonanceMultiplier);
         } else if (art.id === 'bead' || art.slot === 'bead' || art.slot === 'orb' || art.name?.includes('Châu')) {
-            artifactHp += Math.round(artLvl * 250 * tier * resonanceMultiplier * extremeMultiplier);
+            artifactHp += Math.round(400 * tier * artMultiplier * resonanceMultiplier);
         }
     });
 
@@ -724,32 +736,44 @@ function recalculatePlayerStats(sourceState) {
         if (tmpl.stats.hpPercent) skillHpMult += tmpl.stats.hpPercent * masteryMult;
     });
 
-    // TỔNG HỢP CHỈ SỐ CUỐI CÙNG
-    const resonanceMult = 1 + rootResonance;
-    const totalAtkMult = (1 + skillAtkMult + destinyAtkMult) * resonanceMult;
-    const totalDefMult = (1 + skillDefMult + destinyDefMult) * resonanceMult;
-    const totalHpMult = (1 + skillHpMult + destinyHpMult) * resonanceMult;
+    // TỔNG HỢP CHỈ SỐ CUỐI CÙNG (BAO GỒM ĐẠO TÂM & THÀNH TỰU VĨNH VIỄN)
+    const alignState = (typeof computeDaoAlignmentState === 'function')
+        ? computeDaoAlignmentState(s)
+        : { key: 'neutral', diff: 0, atkPercent: 0, defPercent: 0, critBonus: 0, hpRegenMult: 1, tauHoaReduction: 0, lifestealPercent: 0, qiRateMult: 1.12, qiRateMultiplier: 1.12 };
+    const achBonus = (typeof getClaimedAchievementBonuses === 'function')
+        ? getClaimedAchievementBonuses(s)
+        : { atk: 0, def: 0, hp: 0, crit: 0, atkPercent: 0, defPercent: 0, hpPercent: 0, allStatsPercent: 0, cultivationRate: 0 };
 
-    const totalAtk = Math.max(1, Math.floor((baseAtk + gearAtk + rootAtk + rareAtk + companionAtk + soulAtk + permAtk + petAtk + artifactAtk) * totalAtkMult));
-    const totalDef = Math.max(0, Math.floor((baseDef + gearDef + rootDef + rareDef + physiqueDef + companionDef + soulDef + permDef + petDef + artifactDef) * totalDefMult));
-    const totalHp = Math.max(10, Math.floor((baseHp + gearHp + rootHp + rareHp + physiqueHp + companionHp + soulHp + permHp + petHp + artifactHp) * totalHpMult));
+    const effectiveBaseAtk = baseAtk + achBonus.atk;
+    const effectiveBaseDef = baseDef + achBonus.def;
+    const effectiveBaseHp = baseHp + achBonus.hp;
+
+    const resonanceMult = 1 + rootResonance;
+    const totalAtkMult = (1 + skillAtkMult + destinyAtkMult + alignState.atkPercent + achBonus.atkPercent + achBonus.allStatsPercent) * resonanceMult;
+    const totalDefMult = (1 + skillDefMult + destinyDefMult + alignState.defPercent + achBonus.defPercent + achBonus.allStatsPercent) * resonanceMult;
+    const totalHpMult = (1 + skillHpMult + destinyHpMult + achBonus.hpPercent + achBonus.allStatsPercent) * resonanceMult;
+
+    const totalAtk = Math.max(1, Math.floor((effectiveBaseAtk + gearAtk + rootAtk + rareAtk + companionAtk + soulAtk + permAtk + petAtk + artifactAtk) * totalAtkMult));
+    const totalDef = Math.max(0, Math.floor((effectiveBaseDef + gearDef + rootDef + rareDef + physiqueDef + companionDef + soulDef + permDef + petDef + artifactDef) * totalDefMult));
+    const totalHp = Math.max(10, Math.floor((effectiveBaseHp + gearHp + rootHp + rareHp + physiqueHp + companionHp + soulHp + permHp + petHp + artifactHp) * totalHpMult));
     const totalMp = Math.max(10, Math.floor((baseMp + gearMp + rootMp) * resonanceMult));
     const baseCrit = 5;
     const baseSpd = 100 + tier * 15;
     const basePen = 0;
     const baseDodge = 3;
-    const totalCrit = Math.min(100, Number((baseCrit + gearCrit + rootCrit + rareCrit + destinyCrit + companionCrit + petCrit).toFixed(1)));
+    const totalCrit = Math.min(100, Number((baseCrit + gearCrit + rootCrit + rareCrit + destinyCrit + companionCrit + petCrit + alignState.critBonus + achBonus.crit).toFixed(1)));
     const totalSpd = Math.max(10, Math.round(baseSpd + rootSpd + rareSpd + petSpd));
     const totalPen = Math.min(75, Number((basePen + gearPen + rootPen + petPen).toFixed(1)));
     const totalDodge = Math.min(50, Number((baseDodge + gearDodge + rareDodge + destinyDodge + petDodge).toFixed(1)));
+    const effectiveHpRegen = Number((rootHpRegen * (alignState.hpRegenMult || 1)).toFixed(1));
 
     // CÔNG THỨC CHIẾN LỰC (CP): CP = (Total_ATK * 2) + (Total_DEF * 1.5) + (Total_HP * 0.1)
     const cp = Math.round((totalAtk * 2) + (totalDef * 1.5) + (totalHp * 0.1));
 
     // LƯU VÀO STATE
-    s.baseAtk = baseAtk;
-    s.baseDef = baseDef;
-    s.baseHp = baseHp;
+    s.baseAtk = effectiveBaseAtk;
+    s.baseDef = effectiveBaseDef;
+    s.baseHp = effectiveBaseHp;
     s.baseMp = baseMp;
 
     s.atk = totalAtk;
@@ -764,10 +788,16 @@ function recalculatePlayerStats(sourceState) {
     s.armorPen = totalPen;
     s.dodge = totalDodge;
     s.speed = totalSpd;
-    s.hpRegen = rootHpRegen;
+    s.hpRegen = effectiveHpRegen;
     s.injuryResist = physiqueResist;
     s.demonResist = soulDemonResist;
     s.combatPower = cp;
+    s.maxCombatPower = Math.max(Number(s.maxCombatPower) || 0, cp);
+    s.towerLifesteal = alignState.lifestealPercent || 0;
+    s.alignmentKey = alignState.key;
+    s.alignmentTitle = alignState.title;
+    s.alignmentTooltip = alignState.tooltip;
+    s.alignmentBuffs = alignState;
     s.activeElement = s.activeElement || 'metal';
 
     if (s.hp === undefined || s.hp > totalHp) s.hp = totalHp;
@@ -776,12 +806,14 @@ function recalculatePlayerStats(sourceState) {
     const statsResult = {
         tier,
         tierMultiplier,
-        base: { hp: baseHp, atk: baseAtk, def: baseDef, mp: baseMp },
+        base: { hp: effectiveBaseHp, atk: effectiveBaseAtk, def: effectiveBaseDef, mp: baseMp },
         gear: { hp: gearHp, atk: gearAtk, def: gearDef, crit: gearCrit, equippedCount },
         roots: { hp: rootHp, atk: rootAtk, def: rootDef, crit: rootCrit, resonance: rootResonance },
         companion: { hp: companionHp, atk: companionAtk, def: companionDef, crit: companionCrit },
         souls: { hp: soulHp, atk: soulAtk, def: soulDef },
-        total: { hp: totalHp, maxHp: totalHp, atk: totalAtk, def: totalDef, mp: totalMp, maxMp: totalMp, crit: totalCrit, spd: totalSpd, pen: totalPen, dodge: totalDodge },
+        alignment: alignState,
+        achievementBonuses: achBonus,
+        total: { hp: totalHp, maxHp: totalHp, atk: totalAtk, def: totalDef, mp: totalMp, maxMp: totalMp, crit: totalCrit, spd: totalSpd, pen: totalPen, dodge: totalDodge, lifesteal: alignState.lifestealPercent || 0 },
         hp: totalHp,
         maxHp: totalHp,
         atk: totalAtk,
@@ -790,6 +822,7 @@ function recalculatePlayerStats(sourceState) {
         spd: totalSpd,
         pen: totalPen,
         dodge: totalDodge,
+        lifesteal: alignState.lifestealPercent || 0,
         cp,
         combatPower: cp
     };
@@ -797,6 +830,16 @@ function recalculatePlayerStats(sourceState) {
     if (typeof GameState !== 'undefined' && GameState) {
         GameState.totalStats = statsResult;
         GameState.combatPower = cp;
+        GameState.maxCombatPower = s.maxCombatPower;
+        GameState.atk = totalAtk;
+        GameState.def = totalDef;
+        GameState.maxHp = totalHp;
+        GameState.crit = totalCrit;
+        GameState.towerLifesteal = s.towerLifesteal;
+        GameState.alignmentKey = alignState.key;
+        GameState.alignmentTitle = alignState.title;
+        GameState.alignmentTooltip = alignState.tooltip;
+        GameState.alignmentBuffs = alignState;
     }
 
     // ĐỒNG BỘ GIAO DIỆN CỘT TRÁI (#left-panel)
@@ -832,6 +875,23 @@ function recalculatePlayerStats(sourceState) {
     return statsResult;
 }
 
+function formatCompactNumber(num) {
+    const n = Number(num);
+    if (!Number.isFinite(n)) return '0';
+    const isNegative = n < 0;
+    const abs = Math.abs(n);
+    if (abs >= 1e9) {
+        return (isNegative ? '-' : '') + (abs / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
+    }
+    if (abs >= 1e6) {
+        return (isNegative ? '-' : '') + (abs / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
+    }
+    if (abs >= 1e4) {
+        return (isNegative ? '-' : '') + (abs / 1e3).toFixed(1).replace(/\.?0+$/, '') + 'K';
+    }
+    return (isNegative ? '-' : '') + Math.round(abs).toLocaleString('vi-VN');
+}
+
 function syncLeftPanelStatsUI(stats, s) {
     if (typeof document === 'undefined') return;
     const curHp = Math.min(stats.total.hp, Number(s.hp ?? stats.total.hp));
@@ -839,6 +899,17 @@ function syncLeftPanelStatsUI(stats, s) {
     const curMp = Math.min(stats.total.mp, Number(s.mp ?? stats.total.mp));
     const maxMp = stats.total.mp;
     const cp = stats.cp;
+
+    // Đồng bộ tên cảnh giới cho cả Thanh Tu Vi và Top Bar
+    const rName = (typeof window !== 'undefined' && typeof window.getRealmDisplayName === 'function')
+        ? window.getRealmDisplayName(s.realmIndex, s.subRealmIndex)
+        : (typeof getRealmDisplayName === 'function' ? getRealmDisplayName(s.realmIndex, s.subRealmIndex) : null);
+    if (rName) {
+        const realmBadge = document.getElementById('realm-badge');
+        if (realmBadge) realmBadge.textContent = rName;
+        const uiRealmTitle = document.getElementById('ui-realm-title');
+        if (uiRealmTitle) uiRealmTitle.textContent = rName;
+    }
 
     const uiTotalCp = document.getElementById('ui-total-cp');
     if (uiTotalCp) uiTotalCp.textContent = `${cp.toLocaleString('vi-VN')} CP`;
@@ -863,11 +934,20 @@ function syncLeftPanelStatsUI(stats, s) {
     if (uiMpBar) uiMpBar.style.width = `${Math.min(100, Math.max(0, (curMp / maxMp) * 100)).toFixed(1)}%`;
 
     const uiStatAtk = document.getElementById('ui-stat-atk');
-    if (uiStatAtk) uiStatAtk.textContent = stats.total.atk.toLocaleString('vi-VN');
+    if (uiStatAtk) {
+        uiStatAtk.textContent = formatCompactNumber(stats.total.atk);
+        uiStatAtk.title = stats.total.atk.toLocaleString('vi-VN');
+    }
     const uiStatDef = document.getElementById('ui-stat-def');
-    if (uiStatDef) uiStatDef.textContent = stats.total.def.toLocaleString('vi-VN');
+    if (uiStatDef) {
+        uiStatDef.textContent = formatCompactNumber(stats.total.def);
+        uiStatDef.title = stats.total.def.toLocaleString('vi-VN');
+    }
     const uiStatSpd = document.getElementById('ui-stat-spd');
-    if (uiStatSpd) uiStatSpd.textContent = stats.total.spd.toLocaleString('vi-VN');
+    if (uiStatSpd) {
+        uiStatSpd.textContent = formatCompactNumber(stats.total.spd);
+        uiStatSpd.title = stats.total.spd.toLocaleString('vi-VN');
+    }
     const uiStatCrit = document.getElementById('ui-stat-crit');
     if (uiStatCrit) uiStatCrit.textContent = `${stats.total.crit}%`;
     const uiStatPen = document.getElementById('ui-stat-pen');
@@ -911,6 +991,256 @@ function calculateCP(totalAtk, totalDef, totalHp) {
     return Math.round((atk * 2) + (def * 1.5) + (hp * 0.1));
 }
 
+function hasActiveInjuryTimer(s, now = Date.now()) {
+    if (!s || typeof s !== 'object') return false;
+    const until = Number(s.heavyInjuryUntil || 0);
+    const injuryTime = Number(s.heavyInjuryTime || 0);
+    const injuryEnd = Number(s.injuryEndTime || 0);
+    return (until > 0 && now < until) ||
+        (injuryTime > 0 && now < injuryTime) ||
+        (injuryEnd > 0 && now < injuryEnd);
+}
+
+function getInjuryStateTargets(primaryState) {
+    const targets = new Set();
+    if (primaryState && typeof primaryState === 'object') targets.add(primaryState);
+    if (typeof state !== 'undefined' && state && typeof state === 'object') targets.add(state);
+    if (typeof window !== 'undefined') {
+        if (window.state && typeof window.state === 'object') targets.add(window.state);
+        if (window.GameState && typeof window.GameState === 'object') {
+            targets.add(window.GameState);
+            if (window.GameState._rawState && typeof window.GameState._rawState === 'object') {
+                targets.add(window.GameState._rawState);
+            }
+        }
+        if (window.player && typeof window.player === 'object') targets.add(window.player);
+    }
+    return Array.from(targets);
+}
+
+let _pendingInjuryClearSave = false;
+
+/**
+ * Giải trừ trạng thái Trọng Thương ảo nếu Khí Huyết đã đầy 100% hoặc hết thời gian Trọng Thương.
+ */
+function reconcileHeavyInjuryState(targetState, options = {}) {
+    const { save = false, updateUi = false, skipStats = false, forceClear = false } = options;
+    const s = targetState
+        || (typeof window !== 'undefined' ? (window.GameState || window.state) : null)
+        || (typeof state !== 'undefined' ? state : null);
+    if (!s || typeof s !== 'object') return false;
+
+    const now = Date.now();
+    const targets = getInjuryStateTargets(s);
+
+    const anyInjuredFlag = targets.some(t =>
+        Boolean(t.isInjured) ||
+        Number(t.heavyInjuryUntil || 0) > 0 ||
+        Number(t.heavyInjuryTime || 0) > 0 ||
+        Number(t.injuryEndTime || 0) > 0 ||
+        Boolean(t.isMeditatingRecover)
+    );
+
+    const curHp = Number(s.hp ?? 0);
+    const curMaxHp = Number(s.maxHp ?? 0);
+    const hpFull = Number.isFinite(curHp) && curMaxHp > 0 && curHp >= curMaxHp;
+
+    const timerVals = [
+        Number(s.heavyInjuryUntil || 0),
+        Number(s.heavyInjuryTime || 0),
+        Number(s.injuryEndTime || 0)
+    ].filter(v => v > 0);
+    const timerExpired = timerVals.length > 0 && timerVals.every(v => now >= v);
+
+    const shouldClear = forceClear || (anyInjuredFlag && (hpFull || timerExpired));
+    if (!shouldClear) {
+        if (save && _pendingInjuryClearSave && typeof window !== 'undefined' && !window.__LOCK_SAVE__) {
+            const ok = (typeof window.forceSaveNow === 'function')
+                ? window.forceSaveNow()
+                : (typeof window.saveGameState === 'function' ? (window.saveGameState(), true) : false);
+            if (ok !== false) _pendingInjuryClearSave = false;
+        }
+        return false;
+    }
+
+    let changed = false;
+    targets.forEach(t => {
+        if (t.isInjured) { t.isInjured = false; changed = true; }
+        if (Number(t.heavyInjuryUntil || 0) !== 0) { t.heavyInjuryUntil = 0; changed = true; }
+        if (Number(t.heavyInjuryTime || 0) !== 0) { t.heavyInjuryTime = 0; changed = true; }
+        if (Number(t.injuryEndTime || 0) !== 0) { t.injuryEndTime = 0; changed = true; }
+        if (t.isMeditatingRecover) { t.isMeditatingRecover = false; changed = true; }
+        if (Number(t.meditateRecoverEnd || 0) !== 0) { t.meditateRecoverEnd = 0; changed = true; }
+    });
+
+    if (typeof document !== 'undefined') {
+        const badge = document.getElementById('heavy-injury-status');
+        if (badge) badge.classList.add('hidden');
+    }
+
+    if (changed) {
+        _pendingInjuryClearSave = true;
+    }
+
+    if (changed && !skipStats && typeof window !== 'undefined' && typeof window.recalculatePlayerStats === 'function') {
+        window.recalculatePlayerStats();
+        if (hpFull) {
+            const refreshedMax = Number(s.maxHp || curMaxHp || 0);
+            if (refreshedMax > 0) {
+                targets.forEach(t => { t.hp = refreshedMax; });
+            }
+        }
+    }
+
+    if (changed && updateUi && typeof window !== 'undefined') {
+        if (typeof window.updateHUD === 'function') window.updateHUD();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
+        if (typeof window.updateUI === 'function') window.updateUI();
+    }
+
+    if (save && _pendingInjuryClearSave && typeof window !== 'undefined' && !window.__LOCK_SAVE__) {
+        const ok = (typeof window.forceSaveNow === 'function')
+            ? window.forceSaveNow()
+            : (typeof window.saveGameState === 'function' ? (window.saveGameState(), true) : false);
+        if (ok !== false) _pendingInjuryClearSave = false;
+    }
+
+    return changed;
+}
+
+function isHeavyInjuryActive(targetState) {
+    const s = targetState
+        || (typeof window !== 'undefined' ? (window.GameState || window.state) : null)
+        || (typeof state !== 'undefined' ? state : null);
+    if (!s || typeof s !== 'object') return false;
+    reconcileHeavyInjuryState(s, { save: true, updateUi: true });
+    return Boolean(s.isInjured) || hasActiveInjuryTimer(s, Date.now());
+}
+
+function computeDaoAlignmentState(targetState) {
+    const s = targetState
+        || (typeof window !== 'undefined' ? (window.GameState || window.state) : null)
+        || (typeof state !== 'undefined' ? state : {});
+    const rawR = s?.alignment?.righteous ?? s?.righteous ?? (typeof window !== 'undefined' ? (window.GameState?.righteous ?? window.GameState?.alignment?.righteous ?? window.state?.alignment?.righteous ?? window.state?.righteous) : 50);
+    const rawD = s?.alignment?.demonic ?? s?.demonic ?? (typeof window !== 'undefined' ? (window.GameState?.demonic ?? window.GameState?.alignment?.demonic ?? window.state?.alignment?.demonic ?? window.state?.demonic) : 50);
+    const r = Math.max(0, Number(rawR ?? 50));
+    const d = Math.max(0, Number(rawD ?? 50));
+    const diff = r - d;
+
+    if (diff >= 25) {
+        return {
+            key: 'righteous',
+            righteous: r,
+            demonic: d,
+            diff,
+            title: '☀️ Hạo Nhiên Chính Khí',
+            badgeClass: 'alignment-title-badge--righteous',
+            atkPercent: 0,
+            defPercent: 0.15,
+            critBonus: 0,
+            hpRegenMult: 1.20,
+            tauHoaReduction: 0.25,
+            lifestealPercent: 0,
+            qiRateMult: 1.0,
+            qiRateMultiplier: 1.0,
+            linhKhiRateMultiplier: 1.0,
+            tribulationBonus: 0,
+            tamMaPerMinute: 0,
+            lines: [
+                '+15% Phòng Ngự toàn thân',
+                '+20% Tốc độ Hồi Phục HP',
+                '-25% Tỉ lệ Tẩu Hỏa Nhập Ma khi Độ Kiếp'
+            ],
+            tooltip: '☀️ Hạo Nhiên Chính Khí: +15% Phòng Ngự, +20% Hồi Phục HP, giảm 25% tỉ lệ Tẩu Hỏa Nhập Ma khi Độ Kiếp'
+        };
+    }
+    if ((d - r) >= 25) {
+        return {
+            key: 'demonic',
+            righteous: r,
+            demonic: d,
+            diff,
+            title: '🌙 Thiên Ma Sát Ý',
+            badgeClass: 'alignment-title-badge--demonic',
+            atkPercent: 0.20,
+            defPercent: 0,
+            critBonus: 12,
+            hpRegenMult: 1.0,
+            tauHoaReduction: 0,
+            lifestealPercent: 0.08,
+            qiRateMult: 1.0,
+            qiRateMultiplier: 1.0,
+            linhKhiRateMultiplier: 1.0,
+            tribulationBonus: 0,
+            tamMaPerMinute: 1,
+            lines: [
+                '+20% Công Kích toàn thân',
+                '+12% Tỉ lệ Bạo Kích',
+                '+8% Hút Máu khi đánh Trấn Yêu Tháp'
+            ],
+            tooltip: '🌙 Thiên Ma Sát Ý: +20% Công Kích, +12% Bạo Kích, +8% Hút Máu khi đánh Trấn Yêu Tháp'
+        };
+    }
+    return {
+        key: 'neutral',
+        righteous: r,
+        demonic: d,
+        diff,
+        title: '☯️ Thái Cực Hỗn Nguyên',
+        badgeClass: 'alignment-title-badge--neutral',
+        atkPercent: 0,
+        defPercent: 0,
+        critBonus: 0,
+        hpRegenMult: 1.0,
+        tauHoaReduction: 0,
+        lifestealPercent: 0,
+        qiRateMult: 1.12,
+        qiRateMultiplier: 1.12,
+        linhKhiRateMultiplier: 1.0,
+        tribulationBonus: 0,
+        tamMaPerMinute: 0,
+        lines: [
+            '+12% Tốc Độ Tụ Khí (Cân bằng Chính - Tà)'
+        ],
+        tooltip: '☯️ Thái Cực Hỗn Nguyên: +12% Tốc Độ Tụ Khí'
+    };
+}
+
+function getClaimedAchievementBonuses(targetState) {
+    const s = targetState
+        || (typeof window !== 'undefined' ? (window.state || window.GameState) : null)
+        || (typeof state !== 'undefined' ? state : {});
+    const bonuses = {
+        atk: 0,
+        def: 0,
+        hp: 0,
+        crit: 0,
+        atkPercent: 0,
+        defPercent: 0,
+        hpPercent: 0,
+        allStatsPercent: 0,
+        cultivationRate: 0
+    };
+    const claimed = s?.achievementsClaimed || {};
+    const list = (typeof ACHIEVEMENTS_CONFIG !== 'undefined' && Array.isArray(ACHIEVEMENTS_CONFIG))
+        ? ACHIEVEMENTS_CONFIG
+        : (typeof window !== 'undefined' && Array.isArray(window.ACHIEVEMENTS_CONFIG) ? window.ACHIEVEMENTS_CONFIG : []);
+    list.forEach(ach => {
+        if (!ach || !claimed[ach.id] || !ach.reward?.statBonus) return;
+        const b = ach.reward.statBonus;
+        if (b.atk) bonuses.atk += Number(b.atk) || 0;
+        if (b.def) bonuses.def += Number(b.def) || 0;
+        if (b.hp) bonuses.hp += Number(b.hp) || 0;
+        if (b.crit) bonuses.crit += Number(b.crit) || 0;
+        if (b.atkPercent) bonuses.atkPercent += (Number(b.atkPercent) || 0) / 100;
+        if (b.defPercent) bonuses.defPercent += (Number(b.defPercent) || 0) / 100;
+        if (b.hpPercent) bonuses.hpPercent += (Number(b.hpPercent) || 0) / 100;
+        if (b.allStatsPercent) bonuses.allStatsPercent += (Number(b.allStatsPercent) || 0) / 100;
+        if (b.cultivationRate) bonuses.cultivationRate += Number(b.cultivationRate) || 0;
+    });
+    return bonuses;
+}
+
 if (typeof window !== 'undefined') {
     window.STATS_TIER_MULTIPLIERS = STATS_TIER_MULTIPLIERS;
     window.getRealmSuppression = getRealmSuppression;
@@ -924,6 +1254,15 @@ if (typeof window !== 'undefined') {
     window.syncLeftPanelStatsUI = syncLeftPanelStatsUI;
     window.sendStatsToDemonTowerIframe = sendStatsToDemonTowerIframe;
     window.calculateCP = calculateCP;
+    window.hasActiveInjuryTimer = hasActiveInjuryTimer;
+    window.reconcileHeavyInjuryState = reconcileHeavyInjuryState;
+    window.isHeavyInjuryActive = isHeavyInjuryActive;
+    window.computeDaoAlignmentState = computeDaoAlignmentState;
+    window.getClaimedAchievementBonuses = getClaimedAchievementBonuses;
+    window.formatCompactNumber = formatCompactNumber;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.formatCompactNumber = formatCompactNumber;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -939,6 +1278,12 @@ if (typeof module !== 'undefined' && module.exports) {
         recalculatePlayerStats,
         syncLeftPanelStatsUI,
         sendStatsToDemonTowerIframe,
-        calculateCP
+        calculateCP,
+        hasActiveInjuryTimer,
+        reconcileHeavyInjuryState,
+        isHeavyInjuryActive,
+        computeDaoAlignmentState,
+        getClaimedAchievementBonuses,
+        formatCompactNumber
     };
 }

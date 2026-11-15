@@ -117,6 +117,7 @@
                     if (data.hero.def !== undefined) towerState.hero.def = Number(data.hero.def);
                     if (data.hero.crit !== undefined) towerState.hero.crit = Number(data.hero.crit);
                     if (data.hero.critDmg !== undefined) towerState.hero.critDmg = Number(data.hero.critDmg);
+                    if (data.hero.lifesteal !== undefined) towerState.hero.lifesteal = Number(data.hero.lifesteal) || 0;
                     if (data.hero.eva !== undefined) towerState.hero.eva = Number(data.hero.eva);
                     towerState.hero.tier = data.hero.tier;
                     towerState.hero.realmIndex = data.hero.realmIndex;
@@ -242,10 +243,11 @@
         /**
          * 6. ÂM LUẬT KIẾM HIỆP SYNTHESIZER
          */
-        let audioCtx = null;
+        const _globalPlaySound = (typeof window !== 'undefined' && typeof window.playSound === 'function') ? window.playSound : null;
         function playSound(type) {
-            // Vô hiệu hóa Web Audio procedural synthesis để triệt tiêu stutter và lag
-            return;
+            if (!_globalPlaySound) return;
+            const forceForTower = Boolean(towerState && towerState.sfxEnabled && typeof window !== 'undefined' && window.soundEnabled);
+            _globalPlaySound(type, forceForTower);
         }
 
         function toggleSoundFX() {
@@ -4414,30 +4416,37 @@
             const defCp = Number(defender.cp || (defender.atk * 3 + defMaxHp * 0.1)) || 10000;
             const cpRatio = atkCp / Math.max(1, defCp);
 
-            // Chênh lệch lực chiến áp đảo (> 5 lần): đòn đánh kết liễu nhanh hoặc chip damage tối thiểu
+            // Chênh lệch lực chiến áp đảo (> 5 lần) hoặc quá yếu (< 0.2 lần) hay cân bằng
+            let totalDmg = 100;
             if (cpRatio >= 5.0) {
                 const rawOverkill = Math.max(atkVal * 2.2, defMaxHp * 0.65) * multiplier;
-                return Math.round(isCrit ? rawOverkill * critDamage : rawOverkill);
-            }
-            if (cpRatio <= 0.2) {
+                totalDmg = Math.max(1, Math.round(isCrit ? rawOverkill * critDamage : rawOverkill));
+            } else if (cpRatio <= 0.2) {
                 const chip = Math.max(10, Math.round(defMaxHp * 0.015 * multiplier));
-                return Math.round(isCrit ? chip * critDamage : chip);
+                totalDmg = Math.max(1, Math.round(isCrit ? chip * critDamage : chip));
+            } else {
+                const basePacingFraction = 0.046; // Cân bằng nhịp độ giao tranh kịch tính 8-15 hiệp
+                const cpPacingFactor = Math.pow(Math.max(0.3, Math.min(3.0, cpRatio)), 0.45);
+                const statFactor = Math.max(0.4, Math.min(2.5, (atkVal + 100) / Math.max(100, defVal + 100)));
+
+                let baseDmg = defMaxHp * basePacingFraction * cpPacingFactor * Math.sqrt(statFactor) * multiplier;
+                baseDmg *= (0.93 + Math.random() * 0.14);
+
+                if (isCrit) {
+                    baseDmg *= (critDamage || 1.5);
+                }
+                totalDmg = Math.max(1, Math.round(baseDmg));
             }
 
-            // Trận đấu ngang cấp / cân bằng (CP lệch dưới 5x):
-            // Sát thương cơ bản mỗi hiệp kéo nhịp giao tranh diễn ra kịch tính trong 8 đến 15 hiệp
-            const basePacingFraction = 0.046; // Cân bằng nhịp độ giao tranh kịch tính 8-15 hiệp
-            const cpPacingFactor = Math.pow(Math.max(0.3, Math.min(3.0, cpRatio)), 0.45);
-            const statFactor = Math.max(0.4, Math.min(2.5, (atkVal + 100) / Math.max(100, defVal + 100)));
-
-            let baseDmg = defMaxHp * basePacingFraction * cpPacingFactor * Math.sqrt(statFactor) * multiplier;
-            baseDmg *= (0.93 + Math.random() * 0.14);
-
-            if (isCrit) {
-                baseDmg *= (critDamage || 1.5);
+            const lsRate = Number(attacker === towerState.hero ? (towerState.hero.lifesteal || 0) : 0);
+            if (lsRate > 0 && towerState.inCombat && towerState.hero.hp > 0) {
+                const healHp = Math.max(1, Math.round(totalDmg * lsRate));
+                towerState.hero.hp = Math.min(towerState.hero.maxHp, towerState.hero.hp + healHp);
+                if (typeof spawnFloatingText === 'function') {
+                    spawnFloatingText('hero-stage-anchor', `+${fmt(healHp)} 🩸`, 'heal');
+                }
             }
-
-            return Math.max(1, Math.round(baseDmg));
+            return totalDmg;
         }
         let combatTurnBusy = false;
         function playCombatTurn() {
@@ -6002,7 +6011,6 @@
     if (typeof applyMainGameData === 'function') window.applyMainGameData = applyMainGameData;
     if (typeof tryDirectSyncFromParent === 'function') window.tryDirectSyncFromParent = tryDirectSyncFromParent;
     if (typeof isTowerActive === 'function') window.isTowerActive = isTowerActive;
-    if (typeof playSound === 'function') window.playSound = playSound;
     if (typeof toggleSoundFX === 'function') window.toggleSoundFX = toggleSoundFX;
     if (typeof togglePhapTuongMode === 'function') window.togglePhapTuongMode = togglePhapTuongMode;
     if (typeof toggleDivineWings === 'function') window.toggleDivineWings = toggleDivineWings;

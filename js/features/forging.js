@@ -514,10 +514,109 @@
             }
         }
 
+        let activeForgingTab = 'recipes';
+        function switchForgingTab(tab) {
+            activeForgingTab = tab;
+            renderBlueprints();
+        }
+        window.switchForgingTab = switchForgingTab;
+
+        function renderArtifactsForgingTab(container) {
+            const s = (typeof window !== 'undefined' && window.state) ? window.state : playerState;
+            if (typeof window.ensureArtifactsInit === 'function') window.ensureArtifactsInit();
+            const artifacts = s.artifacts || [];
+            const rIdx = Number(s.realmIndex) || 0;
+            const tier = Math.max(1, Math.floor(rIdx / 4) + 1);
+
+            const grid = document.createElement('div');
+            grid.className = 'space-y-3';
+            grid.innerHTML = artifacts.map(art => {
+                const lvl = Math.max(1, Math.min(15, Number(art.level) || 1));
+                const isMax = lvl >= 15;
+                const costStones = lvl * 300;
+                const costOre = Math.max(1, Math.floor(lvl / 2) + 1);
+                const currentStones = Number(s.stones || 0);
+                const oreKey = art.oreType || (art.id === 'bead' ? 'tuTinh' : 'huyenThiet');
+                const oreName = art.oreName || (oreKey === 'tuTinh' ? 'Tử Tinh' : 'Huyền Thiết');
+                const currentOre = (typeof window.getArtifactOre === 'function') ? window.getArtifactOre(oreKey) : (s.materials?.[oreKey] || 0);
+                const canAfford = !isMax && currentStones >= costStones && currentOre >= costOre;
+
+                let statLabel = 'Công Kích';
+                let statVal = Math.round(80 * tier * (1 + lvl * 0.12));
+                let statNextVal = Math.round(80 * tier * (1 + (lvl + 1) * 0.12));
+                if (art.id === 'mirror') {
+                    statLabel = 'Phòng Ngự';
+                    statVal = Math.round(60 * tier * (1 + lvl * 0.12));
+                    statNextVal = Math.round(60 * tier * (1 + (lvl + 1) * 0.12));
+                } else if (art.id === 'bead') {
+                    statLabel = 'Khí Huyết';
+                    statVal = Math.round(400 * tier * (1 + lvl * 0.12));
+                    statNextVal = Math.round(400 * tier * (1 + (lvl + 1) * 0.12));
+                }
+
+                return `
+                    <article class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 flex flex-col gap-2.5 shadow-md">
+                        <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                            <span class="font-serif font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                                <i class="fa-solid ${art.icon || 'fa-certificate'} text-amber-400"></i> ${art.name}
+                            </span>
+                            <span class="text-xs font-mono font-bold text-yellow-300 px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40">
+                                Bậc ${lvl}/15
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Gia trì hiện tại:</span>
+                            <b class="text-emerald-400 font-mono">+${statVal} ${statLabel} (+${lvl * 12}%)</b>
+                        </div>
+                        ${!isMax ? `
+                            <div class="flex items-center justify-between text-[11px] text-slate-300">
+                                <span class="text-slate-400">Lên Bậc ${lvl + 1}:</span>
+                                <b class="text-cyan-300 font-mono">+${statNextVal} ${statLabel} (+12%)</b>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+                                <span class="text-slate-400">Tiêu hao:</span>
+                                <span class="font-mono font-bold space-x-1">
+                                    <span class="${currentStones >= costStones ? 'text-amber-300' : 'text-rose-400'}">${costStones} LT</span>
+                                    <span class="text-slate-600">•</span>
+                                    <span class="${currentOre >= costOre ? 'text-cyan-300' : 'text-rose-400'}">${costOre} ${oreName}</span>
+                                </span>
+                            </div>
+                        ` : `
+                            <div class="text-center py-1 text-xs text-yellow-300 font-bold bg-amber-950/40 rounded-xl border border-amber-500/30">
+                                ✦ ĐÃ ĐẠT CỰC CẢNH TỐI THƯỢNG (+15) ✦
+                            </div>
+                        `}
+                        <button type="button"
+                                ${isMax || !canAfford ? 'disabled' : ''}
+                                onclick="if(typeof window.upgradeArtifact==='function') { window.upgradeArtifact('${art.id}'); if(typeof window.renderBlueprints==='function') window.renderBlueprints(); }"
+                                class="w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : (canAfford ? 'bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60')}">
+                            <i class="fa-solid fa-hammer"></i>
+                            <span>${isMax ? 'Đã Đạt Cực Cảnh' : (canAfford ? `Cường Hóa Lên Bậc ${lvl + 1} (+12%)` : 'Thiếu Nguyên Liệu')}</span>
+                        </button>
+                    </article>
+                `;
+            }).join('');
+            container.appendChild(grid);
+        }
+
         function renderBlueprints() {
             const container = document.getElementById('blueprints-list');
             if (!container) return;
-            container.innerHTML = '';
+            container.innerHTML = `
+                <div class="forging-subtabs mb-3 flex gap-2 w-full pb-2 border-b border-slate-800">
+                    <button type="button" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition cursor-pointer ${activeForgingTab === 'recipes' ? 'bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-700/60'}" onclick="window.switchForgingTab('recipes')">
+                        <i class="fa-solid fa-scroll mr-1 text-amber-400"></i> Đồ Phổ Đúc Khí
+                    </button>
+                    <button type="button" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition cursor-pointer ${activeForgingTab === 'artifacts' ? 'bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-700/60'}" onclick="window.switchForgingTab('artifacts')">
+                        <i class="fa-solid fa-shield-halved mr-1 text-amber-400"></i> Cường Hóa Bản Mệnh (+1~15)
+                    </button>
+                </div>
+            `;
+
+            if (activeForgingTab === 'artifacts') {
+                renderArtifactsForgingTab(container);
+                return;
+            }
 
             CRAFTING_RECIPES.forEach(recipe => {
                 const realmMet = playerState.realmIndex >= recipe.reqRealmIndex;
@@ -844,6 +943,7 @@
             }
 
             if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+            if (typeof window.renderQuickEquipSlots === 'function') window.renderQuickEquipSlots();
             if (typeof window.playSound === 'function') window.playSound('bell');
             if (typeof window.spawnFloatingText === 'function') {
                 window.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Dung Luyện Thành ${nextTierName}!`, 'text-amber-300 font-bold text-lg');
@@ -950,6 +1050,7 @@
             }
 
             if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+            if (typeof window.renderQuickEquipSlots === 'function') window.renderQuickEquipSlots();
             if (typeof window.playSound === 'function') window.playSound('breakthrough');
             if (typeof window.spawnFloatingText === 'function') {
                 window.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Cường Hóa +${newLvl}!`, 'text-amber-300 font-bold text-lg');
@@ -1131,11 +1232,20 @@
                 window.state.inventory.unshift(itemPayload);
             }
 
-            if (window.GameState) window.GameState.hasForgedGear = true;
-            if (window.state) window.state.hasForgedGear = true;
+            if (window.GameState) {
+                window.GameState.hasForgedGear = true;
+                window.GameState.forgedGearCount = (Number(window.GameState.forgedGearCount) || 0) + 1;
+            }
+            if (window.state) {
+                window.state.hasForgedGear = true;
+                if (window.state !== window.GameState) {
+                    window.state.forgedGearCount = (Number(window.state.forgedGearCount) || 0) + 1;
+                }
+            }
             if (typeof window.updateMainQuestUI === 'function') window.updateMainQuestUI();
 
             if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+            if (typeof window.renderQuickEquipSlots === 'function') window.renderQuickEquipSlots();
             const newCp = typeof window.getCombatPower === 'function' ? window.getCombatPower() : 0;
             const cpDelta = Math.max(800, newCp - prevCp);
 

@@ -110,17 +110,17 @@
 
                     <!-- KHỐI 1: CẢNH GIỚI BẢN MỆNH (REALM EMBLEM) -->
                     <div class="cbar-realm-block">
+                        <!-- Biểu tượng Trọng Thương siêu nhỏ gọn nằm sát bên trái ô Yin-Yang -->
+                        <div id="heavy-injury-status" class="hidden cbar-injury-badge shrink-0" onclick="if(typeof vanCongDieuTuc==='function') vanCongDieuTuc();" title="Trọng Thương (-70% Tụ Khí) — Bấm để Vận Công Điều Tức (15s hồi phục)">
+                            <span class="cbar-injury-icon-group"><i class="fa-solid fa-heart-crack text-rose-400"></i><i class="fa-solid fa-fire text-amber-400 text-[8px] -ml-0.5"></i></span>
+                            <span id="heavy-injury-time" class="cbar-injury-text">Trọng Thương</span>
+                        </div>
                         <div class="cbar-realm-emblem" id="cbar-realm-icon-frame" title="Đan Điền Bản Mệnh">
                             <i class="fa-solid fa-yin-yang cbar-yin-yang"></i>
                         </div>
                         <div class="cbar-realm-info">
                             <div class="cbar-realm-header">
                                 <span class="cbar-sub-tag">CẢNH GIỚI</span>
-                                <!-- Trạng thái Trọng Thương (nếu có) -->
-                                <div id="heavy-injury-status" class="hidden text-[11px] text-rose-300 font-sans flex items-center gap-1.5 font-bold shrink-0 bg-rose-950/90 px-2 py-0.5 rounded border border-rose-500/70 shadow-[0_0_10px_rgba(244,63,94,0.45)] animate-pulse cursor-pointer hover:brightness-125 transition" onclick="if(typeof vanCongDieuTuc==='function') vanCongDieuTuc();" title="Bấm để Vận Công Điều Tức (15s hồi phục)">
-                                    <i class="fa-solid fa-heart-crack text-rose-400"></i>
-                                    <span id="heavy-injury-time">Trọng Thương (-70% Tụ Khí) [Vận Công]</span>
-                                </div>
                                 <!-- Chỉ báo Thiên Đạo Áp Chế -->
                                 <div id="heavenly-suppression" class="hidden shrink-0">
                                     <button id="heavenly-suppression-toggle" class="text-purple-400 text-xs" type="button" aria-label="Thiên Đạo Áp Chế" onclick="toggleHeavenlySuppressionInfo()"><i class="fa-solid fa-cloud-bolt"></i></button>
@@ -153,14 +153,55 @@
                         </div>
                     </div>
 
-                    <!-- KHỐI 3: TỐC ĐỘ THỔ NẠP (QI RATE BADGE) -->
-                    <div class="cbar-rate-block" id="btn-cultivate" title="Tốc độ thổ nạp thiên địa linh khí">
+                    <!-- KHỐI 3: TỐC ĐỘ THỔ NẠP (QI RATE BADGE) & POPOVER CHI TIẾT GIA TRÌ -->
+                    <div class="cbar-rate-block relative cursor-pointer" id="btn-cultivate" title="Tốc độ thổ nạp thiên địa linh khí (Bấm để xem chi tiết gia trì)" onclick="if(typeof toggleCultivationRatePopover==='function') toggleCultivationRatePopover(event);">
                         <span class="cbar-rate-sub">LINH TỐC</span>
-                        <button id="btn-be-quan-x5" type="button" onclick="if(typeof activateBeQuanX5==='function') activateBeQuanX5();" class="ml-1.5 px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/60 text-amber-300 text-[10px] font-bold cursor-pointer transition whitespace-nowrap" title="Tiêu hao 500 Linh Thạch (hoặc 1 Tụ Khí Đan) để Đốn Ngộ x5 Tốc Độ trong 60s">🔥 Bế Quan x5</button>
                         <div class="cbar-rate-num tabular-nums">
                             <i class="fa-solid fa-bolt text-cyan-400 text-xs mr-0.5"></i>
                             <span id="idle-rate-badge">+6 / s</span>
                         </div>
+                        <!-- Popover Bảng Chi Tiết Gia Trì Linh Tốc -->
+                        <div id="cultivation-rate-popover" class="cultivation-rate-popover hidden" onclick="event.stopPropagation();">
+                            <div class="crp-header">
+                                <span class="crp-title">⚡ CHI TIẾT GIA TRÌ LINH TỐC</span>
+                                <span id="crp-total-rate" class="crp-total">+6 / s</span>
+                            </div>
+                            <div class="crp-body">
+                                <div class="crp-row">
+                                    <span class="crp-label">🌿 Cảnh giới bản mệnh:</span>
+                                    <span id="crp-base-rate" class="crp-val text-amber-300">+5 / s</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">🧬 Linh căn phẩm giai:</span>
+                                    <span id="crp-root-bonus" class="crp-val text-cyan-300">x1.0</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">📜 Công pháp thổ nạp:</span>
+                                    <span id="crp-skill-bonus" class="crp-val text-emerald-300">+0%</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">🌸 Đạo lữ tương trợ:</span>
+                                    <span id="crp-companion-bonus" class="crp-val text-pink-300">+0%</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">🌌 Thiên cơ dị tượng:</span>
+                                    <span id="crp-omen-bonus" class="crp-val text-purple-300">+0%</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">☯️ Đạo tâm cân bằng:</span>
+                                    <span id="crp-dao-bonus" class="crp-val text-yellow-300">+0%</span>
+                                </div>
+                                <div class="crp-row">
+                                    <span class="crp-label">🔥 Đốn ngộ / Tịnh tu:</span>
+                                    <span id="crp-focus-bonus" class="crp-val text-teal-300">+0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tuvi-focus-group flex items-center gap-1.5 shrink-0">
+                        <button id="btn-be-quan-x5" type="button" onclick="if(typeof activateBeQuanX5==='function') activateBeQuanX5();" class="px-2.5 py-1.5 rounded bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/60 text-amber-300 text-[11px] font-bold cursor-pointer transition whitespace-nowrap shrink-0" title="Tiêu hao 500 Linh Thạch (hoặc 1 Tụ Khí Đan) để Đốn Ngộ x5 Tốc Độ trong 60s">🔥 Bế Quan x5</button>
+                        <button id="btn-tinh-tu-focus" type="button" onclick="if(typeof toggleFocusMeditation==='function') toggleFocusMeditation();" class="px-2.5 py-1.5 rounded bg-teal-500/15 hover:bg-teal-500/35 border border-teal-400/50 text-teal-200 text-[11px] font-bold cursor-pointer transition whitespace-nowrap shrink-0" title="Bế Quan Tịnh Tu 25 phút: +50% Linh Tốc suốt thời gian nhập định. Hoàn tất nhận 1 Rương Đốn Ngộ + 1.000 Linh Thạch + 5 Tiên Ngọc!">🧘 Tịnh Tu (25p)</button>
+                        <button id="btn-tinh-tu-stop" type="button" onclick="if(typeof stopFocusMeditation==='function') stopFocusMeditation();" class="hidden px-2 py-1.5 rounded bg-rose-950/60 hover:bg-rose-800/70 border border-rose-400/50 text-rose-200 text-[10px] font-bold cursor-pointer transition whitespace-nowrap shrink-0" title="Dừng Bế Quan Tịnh Tu">✕</button>
                     </div>
 
                     <!-- KHỐI 4: NÚT ĐỘT PHÁ CẢNH GIỚI (BREAKTHROUGH ACTION) -->
@@ -196,8 +237,8 @@
                 <img id="ui-avatar" class="topbar-avatar-img" src="./assets/images/avatar_lone_cultivator.jpg" onerror="this.src='./assets/images/avatar_lone_cultivator.jpg'" alt="Tu Sĩ">
             </div>
             <div class="topbar-identity-info">
-                <span id="ui-player-name" class="topbar-player-name">Tiêu Dao Tử</span>
-                <span id="ui-realm-title" class="topbar-player-realm">Trúc Cơ - Sơ Kỳ</span>
+                <span class="topbar-name-row"><span id="ui-player-name" class="topbar-player-name">Tiêu Dao Tử</span><span id="ui-player-title-badge" class="topbar-title-badge hidden"></span></span>
+                <span id="ui-realm-title" class="topbar-player-realm">Luyện Khí - Sơ Kỳ</span>
             </div>
         </div>
 
@@ -231,7 +272,7 @@
         </div>
 
         <!-- CỤM 3: KHỐI CÂN BẰNG ĐẠO TÂM (CHÍNH / TÀ - SUN & MOON) -->
-        <div class="dao-balance-card" id="top-dao-card" title="Trục Cân Bằng Đạo Tâm: Chính Đạo vs Ma Đạo (Click mở Nhật Ký Kỳ Ngộ)" onclick="if(typeof openEncounterModal==='function') openEncounterModal(); else if(typeof openFeature==='function') openFeature('the-gioi');">
+        <div class="dao-balance-card" id="top-dao-card" title="Trục Cân Bằng Đạo Tâm: Di chuột hoặc bấm để xem Đạo Thể & Buff thực chiến" onclick="if(typeof toggleDaoAlignmentPopover==='function') toggleDaoAlignmentPopover(event);">
             <!-- Cực Thái Dương (Chính) -->
             <div id="pole-sun" class="dao-pole-btn dao-pole--sun">
                 <i class="fa-solid fa-sun"></i>
@@ -259,6 +300,18 @@
             <span id="player-name" style="display:none;"></span>
             <span id="realm-location-badge" style="display:none;"></span>
             <span id="alignment-title-badge" style="display:none;"></span>
+            <div id="dao-alignment-popover" class="dao-alignment-popover" onclick="event.stopPropagation();">
+                <div class="dao-pop-header">
+                    <span id="dao-pop-title" class="dao-pop-title">☯️ Thái Cực Hỗn Nguyên</span>
+                    <span id="dao-pop-scores" class="dao-pop-scores">Chính 50 • Tà 50</span>
+                </div>
+                <ul id="dao-pop-buffs" class="dao-pop-buffs">
+                    <li>• +12% Tốc Độ Tụ Khí (Hồn Phách Viên Dung)</li>
+                </ul>
+                <div class="dao-pop-footer">
+                    <button type="button" class="dao-pop-encounter-btn" onclick="event.stopPropagation(); if(typeof toggleDaoAlignmentPopover==='function') { const c=document.getElementById('top-dao-card'); if(c) c.classList.remove('is-popover-open'); } if(typeof openEncounterModal==='function') openEncounterModal(); else if(typeof openFeature==='function') openFeature('the-gioi');">🗺️ Mở Nhật Ký Kỳ Ngộ</button>
+                </div>
+            </div>
         </div>
 
         <!-- CỤM NÚT CÔNG CỤ / HỆ THỐNG GÓC PHẢI -->
@@ -276,6 +329,10 @@
                 <i class="fa-solid fa-book-bookmark text-amber-400"></i>
             </button>
             <button type="button" onclick="if(typeof openDailyBlessingModal==='function') openDailyBlessingModal();" id="btn-daily-blessing" class="topbar-tool-btn text-amber-300 border-amber-400/50" title="Phúc Lợi Thiên Đạo Hàng Ngày">🎁</button>
+            <button type="button" onclick="if(typeof openAchievementModal==='function') openAchievementModal(); else navigateTo('page-achievement');" id="btn-achievement-roadmap" class="topbar-tool-btn relative text-amber-300 border-amber-400/50" title="Đạo Lộ Thành Tựu & Danh Hiệu Vĩnh Viễn">
+                🏆
+                <span id="btn-achievement-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-slate-950 animate-pulse"></span>
+            </button>
             <button type="button" onclick="openGameSettings()" id="btn-immersion" class="topbar-tool-btn" title="Cài đặt hiển thị / Ngắm cảnh">
                 <i class="fa-solid fa-gear"></i>
             </button>
@@ -578,17 +635,23 @@
                 <!-- Vùng chứa Nhân Vật Đả Tọa + Pháp Trận Bát Quái 3D Dưới Chân + Bản Mệnh Phi Kiếm -->
                 <div class="character-wrapper relative flex justify-center items-end w-[380px] h-[380px]">
 
-                    <!-- PHÁP TRẬN BÁT QUÁI 3D XOAY CHẬM DƯỚI CHÂN NHÂN VẬT (ĐỔI MÀU THEO CẢNH GIỚI) -->
+                    <!-- PHÁP TRẬN BÁT QUÁI 3D XOAY CHẬM DƯỚI CHÂN NHÂN VẬT (ĐỔI MÀU THEO CẢNH GIỚI & ĐẠO TÂM) -->
                     <div id="bagua-formation-3d" aria-hidden="true">
                         <div class="bagua-ring-outer"></div>
+                        <div class="bagua-ring-runic"></div>
                         <div class="bagua-trigrams"></div>
                         <div class="bagua-ring-inner"></div>
+                        <div class="bagua-core-glow"></div>
                     </div>
 
-                    <!-- BẢN MỆNH PHI KIẾM LƠ LỬNG THEO NHỊP THỞ QUANH NHÂN VẬT -->
+                    <!-- BẢN MỆNH PHI KIẾM LƠ LỬNG THEO CẢNH GIỚI (MỞ TỪ TRÚC CƠ TRỞ LÊN) -->
                     <div id="natal-flying-swords" aria-hidden="true">
-                        <div class="natal-sword natal-sword--left"></div>
-                        <div class="natal-sword natal-sword--right"></div>
+                        <div class="natal-sword natal-sword--1"></div>
+                        <div class="natal-sword natal-sword--2"></div>
+                        <div class="natal-sword natal-sword--3"></div>
+                        <div class="natal-sword natal-sword--4"></div>
+                        <div class="natal-sword natal-sword--5"></div>
+                        <div class="natal-sword natal-sword--6"></div>
                     </div>
 
                     <!-- KHUNG NHÂN VẬT LƠ LỬNG NHỊP THỞ (FLOATING RIG) -->
@@ -607,8 +670,9 @@
                              src="./assets/images/image_11.png" 
                              alt="Bản Thể Tu Sĩ Đả Tọa" 
                              class="character-sprite character-avatar w-[340px] h-[360px]" 
+                             onclick="if(typeof window.onAvatarTap==='function') { window.onAvatarTap(event); } else if(typeof window.spawnFloatingText==='function') { window.spawnFloatingText(window.innerWidth/2, window.innerHeight/2 - 90, '✨ Tụ Khí Đả Tọa!', 'text-cyan-300 font-bold text-xs'); }"
                              onerror="this.src='./assets/images/nu_tu_trong_suot.png'" 
-                             style="position: relative; object-fit: contain; z-index: 2; margin-bottom: 0px; pointer-events: auto; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.75));" />
+                             style="position: relative; object-fit: contain; z-index: 2; margin-bottom: 0px; pointer-events: auto; cursor: pointer; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.75));" />
                     </div>
 
                 </div>
@@ -628,15 +692,15 @@
                 <div id="right-card-body" class="sidebar-body sidebar-body--log sidebar-content flex flex-col h-full overflow-hidden">
                     <!-- PHÍA TRÊN: THẺ NHIỆM VỤ CHÍNH TUYẾN (LỆNH BÀI VÀNG KIM NHỎ GỌN) -->
                     <div id="main-quest-widget" class="main-quest-card relative overflow-hidden transition-all duration-300 shrink-0">
-                        <div class="flex items-center justify-between mb-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold border border-amber-500/40">
+                        <div class="flex items-center justify-between mb-1 gap-2 whitespace-nowrap">
+                            <div class="flex items-center gap-1.5 min-w-0 shrink-0">
+                                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold border border-amber-500/40 shrink-0">
                                     <i class="fa-solid fa-scroll text-[9px]"></i>
                                 </span>
-                                <span class="text-[11px] font-bold text-amber-300 tracking-wider uppercase font-serif">Lệnh Bài Chính Tuyến</span>
-                                <span id="main-quest-step-badge" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 tabular-nums">1/10</span>
+                                <span class="text-[11px] font-bold text-amber-300 tracking-wider uppercase font-serif whitespace-nowrap">Chính Tuyến</span>
+                                <span id="main-quest-step-badge" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 tabular-nums shrink-0">1/10</span>
                             </div>
-                            <span id="main-quest-status-text" class="text-[9.5px] text-slate-400 font-medium">Đang tu hành</span>
+                            <span id="main-quest-status-text" class="text-[10px] text-slate-400 font-medium whitespace-nowrap shrink-0 ml-auto">Đang thực hiện</span>
                         </div>
 
                         <div class="quest-content-area cursor-pointer group" onclick="if(typeof handleMainQuestClick==='function') handleMainQuestClick(event)" title="Nhấn để đi đến địa điểm làm nhiệm vụ">
@@ -833,6 +897,51 @@
         <div class="popup-subnav-bar"><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-inventory')">📦 Túi Đồ</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-skills')">📜 Công Pháp</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-root')">🌿 Căn Cơ</button><button type="button" class="popup-subnav-btn " onclick="navigateTo('page-artifact')">⚔️ Pháp Bảo</button><button type="button" class="popup-subnav-btn is-active" onclick="navigateTo('page-pet')">🦊 Linh Thú</button></div>
         <div id="pet-page-content" class="max-w-6xl mx-auto"></div>
     </section>
+
+    <!-- ========================================================================
+         PAGE: 🏆 ĐẠO LỘ THÀNH TỰU & DANH HIỆU VĨNH VIỄN
+         ======================================================================== -->
+    <section id="page-achievement" class="feature-popup feature-page game-page hidden fixed inset-0 z-40 bg-black/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 select-none">
+        <button type="button" class="btn-close-modal" onclick="navigateTo('main-screen')" title="Đóng về Màn Hình Chính">✖ ĐÓNG</button>
+        <div class="page-header-title max-w-6xl mx-auto flex items-center justify-between pb-3 border-b border-amber-500/20 mb-5">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold font-serif text-amber-300 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span>🏆 ĐẠO LỘ THÀNH TỰU & DANH HIỆU VĨNH VIỄN</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">Minh chứng con đường nghịch thiên tu chân • Lãnh thưởng Tiên Ngọc & gia trì thuộc tính</p>
+            </div>
+        </div>
+        <div id="achievement-page-content" class="max-w-6xl mx-auto"></div>
+    </section>
+
+    <!-- ========================================================================
+         MODAL: 🎁 PHÚC LỢI THIÊN ĐẠO HÀNG NGÀY (DAILY SIGN-IN BLESSING)
+         ======================================================================== -->
+    <div id="modal-daily-blessing" class="feature-popup hidden fixed inset-0 z-[1000] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 select-none">
+        <div class="relative w-full max-w-2xl bg-gradient-to-b from-slate-900/98 via-slate-950/98 to-indigo-950/95 border-2 border-amber-500/40 rounded-3xl p-5 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.25)] flex flex-col gap-4">
+            <button type="button" class="btn-close-modal" onclick="closeDailyBlessingModal()" title="Đóng">✖ ĐÓNG</button>
+            <div class="flex items-center gap-3.5 border-b border-amber-500/20 pb-3">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 text-2xl shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    🎁
+                </div>
+                <div>
+                    <h3 class="font-serif font-black text-lg sm:text-xl text-amber-300">PHÚC LỢI THIÊN ĐẠO • ĐIỂM DANH 7 NGÀY</h3>
+                    <p class="text-xs text-slate-400">Mỗi ngày đăng nhập bái nhận ân trạch trời ban để nhận Linh Thạch, Đan Dược & Tiên Ngọc</p>
+                </div>
+            </div>
+            <div id="daily-blessing-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 my-2">
+                <!-- Sẽ được render động qua JS -->
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                <span id="daily-blessing-status-text" class="text-xs text-amber-200/80 font-mono">Đã điểm danh: 0/7 ngày</span>
+                <button id="btn-claim-daily-blessing" type="button" onclick="claimDailyBlessing()" class="px-5 py-2.5 rounded-xl font-bold font-serif text-sm bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)] transition cursor-pointer flex items-center gap-2">
+                    <i class="fa-solid fa-gift"></i>
+                    <span>NHẬN PHÚC LỢI HÔM NAY</span>
+                </button>
+            </div>
+        </div>
+    </div>
     
 
     <!-- ========================================================================
@@ -2567,6 +2676,38 @@
 
             <!-- BẢNG NÚT HÀNH ĐỘNG ĐỘ KIẾP -->
             <div class="trib-bottom-controls-wrap">
+                <!-- THANH TỤ LỰC THIÊN KIẾP & CỬA SỔ PHẢN PHỆ -->
+                <div id="trib-buildup-container" class="trib-buildup-container" style="display: none;">
+                    <div class="trib-buildup-label-row">
+                        <span id="trib-buildup-title" class="trib-buildup-title"><i class="fa-solid fa-bolt-lightning text-yellow-400 mr-1 animate-pulse"></i> Thiên Lôi Đang Tụ Khí...</span>
+                        <span id="trib-buildup-timer" class="trib-buildup-timer font-mono text-yellow-300">1.50s</span>
+                    </div>
+                    <div class="trib-buildup-track">
+                        <div id="trib-buildup-fill" class="trib-buildup-fill"></div>
+                        <div class="trib-parry-marker" title="Cửa sổ Phản Phệ (0.45s cuối)"></div>
+                    </div>
+                </div>
+
+                <!-- PHÍM TẮT ĐAN DƯỢC NHANH (QUICK PILL BAR) -->
+                <div id="trib-quick-pill-bar" class="trib-quick-pill-bar">
+                    <span class="quick-pill-label"><i class="fa-solid fa-capsules text-emerald-400"></i> Đan Dược:</span>
+                    <button type="button" class="btn-quick-pill" onclick="if(typeof window.useTribulationQuickPill==='function') window.useTribulationQuickPill('dan_ho_tam');" id="btn-quick-pill-hotam" title="Hộ Tâm Đan: +30% Chân Khí, miễn tử 1 lần">
+                        <span class="pill-dot pill-dot--gold"></span>
+                        <span class="pill-name">Hộ Tâm</span>
+                        <span class="pill-qty" id="qty-pill-hotam">0</span>
+                    </button>
+                    <button type="button" class="btn-quick-pill" onclick="if(typeof window.useTribulationQuickPill==='function') window.useTribulationQuickPill('dan_tu_khi');" id="btn-quick-pill-tukhi" title="Tụ Khí Đan: Hồi phục 25% Chân Khí tức thì">
+                        <span class="pill-dot pill-dot--cyan"></span>
+                        <span class="pill-name">Tụ Khí</span>
+                        <span class="pill-qty" id="qty-pill-tukhi">0</span>
+                    </button>
+                    <button type="button" class="btn-quick-pill" onclick="if(typeof window.useTribulationQuickPill==='function') window.useTribulationQuickPill('dan_thanh_tam');" id="btn-quick-pill-thanhtam" title="Thanh Tâm Đan: Trừ 25% Đan Độc, ổn định đạo tâm">
+                        <span class="pill-dot pill-dot--purple"></span>
+                        <span class="pill-name">Thanh Tâm</span>
+                        <span class="pill-qty" id="qty-pill-thanhtam">0</span>
+                    </button>
+                </div>
+
                 <!-- Nút Đón Thiên Kiếp riêng biệt ở giữa, nằm trên thanh chức năng -->
                 <div class="trib-primary-action-slot" id="trib-primary-action-slot">
                     <button type="button" id="btn-start-dokiep" class="btn-trib-start" onclick="startDoKiepStrikes()">
@@ -2607,788 +2748,6 @@
          MODAL OVERLAY: TIÊN MÔN GIA VIÊN • ĐỘNG PHỦ (#modal-gia-vien)
          Khôi phục và tái thiết kế theo chuẩn tien_mon_gia_vien_demo.html
          ======================================================================== -->
-    <style id="style-modal-gia-vien">
-/* ==========================================================================
-   7. TIÊN MÔN GIA VIÊN • ĐỘNG PHỦ (#modal-gia-vien) — ISOLATED SPA MODULE
-   Khôi phục 100% card glassmorphism theo chuẩn tien_mon_gia_vien_demo.html
-   ========================================================================== */
-#modal-gia-vien {
-    --bg-deep: #06090e;
-    --bg-panel: rgba(13, 20, 32, 0.78);
-    --bg-card: rgba(18, 28, 45, 0.75);
-    --border-glass: rgba(56, 189, 248, 0.22);
-    --border-gold: rgba(234, 179, 8, 0.35);
-    --gold-light: #fef08a;
-    --gold-base: #eab308;
-    --cyan-glow: #38bdf8;
-    --emerald-glow: #10b981;
-    --purple-glow: #a855f7;
-    --rose-glow: #f43f5e;
-    --amber-glow: #f59e0b;
-
-    display: none !important;
-    flex-direction: column !important;
-    pointer-events: none !important;
-    opacity: 0;
-    position: fixed !important;
-    inset: 0 !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    z-index: 10000 !important;
-    background: #06090e !important;
-    background-image: 
-        radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(234, 179, 8, 0.04) 0%, transparent 60%),
-        linear-gradient(180deg, #06090e 0%, #0b1320 100%) !important;
-    color: #f1f5f9 !important;
-    font-family: 'Noto Serif', serif, -apple-system, sans-serif !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-#modal-gia-vien.active,
-#modal-gia-vien.is-open,
-#modal-gia-vien.is-active,
-#modal-gia-vien.flex {
-    display: flex !important;
-    flex-direction: column !important;
-    pointer-events: auto !important;
-    opacity: 1 !important;
-}
-
-#modal-gia-vien::-webkit-scrollbar { width: 6px; height: 6px; }
-#modal-gia-vien::-webkit-scrollbar-track { background: rgba(10, 16, 26, 0.6); }
-#modal-gia-vien::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.35); border-radius: 4px; }
-#modal-gia-vien::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.6); }
-
-/* HEADER BAR GIA VIÊN */
-#modal-gia-vien .estate-header-bar {
-    background: rgba(11, 19, 32, 0.94) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    border-bottom: 1px solid rgba(56, 189, 248, 0.22) !important;
-    padding: 0.75rem 1.5rem !important;
-    padding-right: 140px !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 1rem !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 50 !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
-}
-
-#modal-gia-vien .estate-brand {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-}
-
-#modal-gia-vien .estate-brand-icon {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 12px !important;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(16, 185, 129, 0.25)) !important;
-    border: 1.5px solid #38bdf8 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #bae6fd !important;
-    font-size: 1.4rem !important;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3) !important;
-}
-
-#modal-gia-vien .estate-brand-title {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.15rem !important;
-    font-weight: 800 !important;
-    color: #f8fafc !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-    letter-spacing: 0.5px !important;
-    margin: 0 !important;
-}
-
-#modal-gia-vien .estate-brand-sub {
-    font-size: 0.72rem !important;
-    color: #94a3b8 !important;
-    font-family: 'Noto Serif', serif !important;
-    letter-spacing: normal !important;
-    margin: 0 !important;
-}
-
-#modal-gia-vien .player-vault-shelf {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-    flex-wrap: wrap !important;
-}
-
-#modal-gia-vien .vault-pill {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.45rem !important;
-    background: rgba(15, 23, 42, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 0.35rem 0.85rem !important;
-    border-radius: 999px !important;
-    font-size: 0.78rem !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-}
-
-#modal-gia-vien .vault-pill span { color: #94a3b8 !important; }
-#modal-gia-vien .vault-pill b { font-family: 'JetBrains Mono', monospace !important; font-weight: 700 !important; }
-
-#modal-gia-vien .vault-pill--gold { border-color: rgba(234, 179, 8, 0.4) !important; color: #fef08a !important; }
-#modal-gia-vien .vault-pill--gold b { color: #facc15 !important; }
-#modal-gia-vien .vault-pill--tuvi { border-color: rgba(56, 189, 248, 0.4) !important; color: #bae6fd !important; }
-#modal-gia-vien .vault-pill--tuvi b { color: #38bdf8 !important; }
-#modal-gia-vien .vault-pill--herb { border-color: rgba(16, 185, 129, 0.4) !important; color: #a7f3d0 !important; }
-#modal-gia-vien .vault-pill--herb b { color: #10b981 !important; }
-#modal-gia-vien .vault-pill--ore { border-color: rgba(168, 85, 247, 0.4) !important; color: #e9d5ff !important; }
-#modal-gia-vien .vault-pill--ore b { color: #c084fc !important; }
-
-/* VIEWPORT & LORE BANNER */
-#modal-gia-vien .estate-viewport {
-    flex: 1 !important;
-    padding: 1.5rem 2rem 6rem 2rem !important;
-    max-width: 1560px !important;
-    width: 100% !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1.5rem !important;
-    box-sizing: border-box !important;
-}
-
-#modal-gia-vien .estate-lore-banner {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.08)) !important;
-    border: 1px solid rgba(56, 189, 248, 0.25) !important;
-    border-radius: 1rem !important;
-    padding: 0.85rem 1.25rem !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 1rem !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-}
-
-#modal-gia-vien .lore-banner-text {
-    font-size: 0.8rem !important;
-    color: #cbd5e1 !important;
-    line-height: 1.5 !important;
-}
-#modal-gia-vien .lore-banner-text b { color: #f8fafc !important; }
-
-#modal-gia-vien .auto-status-indicator {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.45rem !important;
-    background: rgba(15, 23, 42, 0.7) !important;
-    border: 1px solid #10b981 !important;
-    padding: 0.35rem 0.85rem !important;
-    border-radius: 999px !important;
-    font-size: 0.74rem !important;
-    color: #a7f3d0 !important;
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
-    white-space: nowrap !important;
-}
-#modal-gia-vien .auto-status-indicator.is-disabled {
-    border-color: rgba(148, 163, 184, 0.3) !important;
-    color: #94a3b8 !important;
-    box-shadow: none !important;
-}
-
-/* ==========================================================================
-   1. GRID 4 KHỐI TÀI NGUYÊN (ESTATE NODES GRID) — BẮT BUỘC 4 CỘT
-   ========================================================================== */
-#modal-gia-vien .estate-nodes-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 1.25rem !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-/* ==========================================================================
-   2. KHÔI PHỤC CSS CARD (.node-card) SANG TRỌNG KÍNH MỜ
-   ========================================================================== */
-#modal-gia-vien .node-card {
-    background: rgba(18, 28, 45, 0.75) !important;
-    border: 1px solid rgba(56, 189, 248, 0.22) !important;
-    border-radius: 1.25rem !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    position: relative !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-#modal-gia-vien .node-card:hover {
-    transform: translateY(-4px) !important;
-    border-color: rgba(56, 189, 248, 0.5) !important;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.2) !important;
-}
-
-#modal-gia-vien .node-card.is-full {
-    border-color: rgba(244, 63, 94, 0.6) !important;
-    box-shadow: 0 0 20px rgba(244, 63, 94, 0.25) !important;
-}
-
-/* ==========================================================================
-   3. HEADER CARD: ICON PHÁT SÁNG & HUY HIỆU CẤP ĐỘ
-   ========================================================================== */
-#modal-gia-vien .node-card-header {
-    padding: 1rem 1.25rem 0.75rem 1.25rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-    position: relative !important;
-    z-index: 2 !important;
-}
-
-#modal-gia-vien .node-meta {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-}
-
-#modal-gia-vien .node-icon-frame {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 12px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1.5rem !important;
-    position: relative !important;
-    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6) !important;
-    flex-shrink: 0 !important;
-}
-
-#modal-gia-vien .node-icon-frame--tuvi {
-    background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
-    border: 1.5px solid #38bdf8 !important;
-    color: #38bdf8 !important;
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.35) !important;
-}
-
-#modal-gia-vien .node-icon-frame--herb {
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
-    border: 1.5px solid #10b981 !important;
-    color: #10b981 !important;
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.35) !important;
-}
-
-#modal-gia-vien .node-icon-frame--ore {
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
-    border: 1.5px solid #a855f7 !important;
-    color: #c084fc !important;
-    box-shadow: 0 0 15px rgba(168, 85, 247, 0.35) !important;
-}
-
-#modal-gia-vien .node-icon-frame--gold {
-    background: radial-gradient(circle, rgba(234, 179, 8, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
-    border: 1.5px solid #eab308 !important;
-    color: #facc15 !important;
-    box-shadow: 0 0 15px rgba(234, 179, 8, 0.35) !important;
-}
-
-#modal-gia-vien .node-title-group h3 {
-    font-size: 0.95rem !important;
-    font-weight: 800 !important;
-    color: #f8fafc !important;
-    font-family: 'Cinzel', serif !important;
-    line-height: 1.2 !important;
-    margin: 0 !important;
-}
-
-#modal-gia-vien .node-title-group span {
-    font-size: 0.72rem !important;
-    color: #94a3b8 !important;
-    font-family: 'JetBrains Mono', monospace !important;
-}
-
-#modal-gia-vien .node-level-badge {
-    padding: 0.2rem 0.55rem !important;
-    border-radius: 6px !important;
-    font-size: 0.7rem !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-weight: 700 !important;
-    background: rgba(234, 179, 8, 0.15) !important;
-    border: 1px solid rgba(234, 179, 8, 0.4) !important;
-    color: #fef08a !important;
-}
-
-/* ==========================================================================
-   4. BODY CARD: TIẾN ĐỘ BỒN CHỨA & PHÁI CỬ ĐẠO LỮ
-   ========================================================================== */
-#modal-gia-vien .node-card-body {
-    padding: 1rem 1.25rem !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1rem !important;
-    flex: 1 !important;
-    position: relative !important;
-    z-index: 2 !important;
-}
-
-#modal-gia-vien .storage-status-block {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.4rem !important;
-}
-
-#modal-gia-vien .storage-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: baseline !important;
-    font-size: 0.75rem !important;
-}
-
-#modal-gia-vien .storage-label {
-    color: #94a3b8 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.35rem !important;
-}
-
-#modal-gia-vien .storage-numbers {
-    font-family: 'JetBrains Mono', monospace !important;
-    font-weight: 700 !important;
-    color: #f1f5f9 !important;
-}
-
-#modal-gia-vien .storage-numbers.is-maxed {
-    color: #fb7185 !important;
-    animation: pulseText 1.5s infinite alternate !important;
-}
-
-@keyframes pulseText {
-    0% { opacity: 0.8; }
-    100% { opacity: 1; text-shadow: 0 0 10px rgba(251, 113, 133, 0.8); }
-}
-
-#modal-gia-vien .storage-track {
-    width: 100% !important;
-    height: 10px !important;
-    background: rgba(15, 23, 42, 0.8) !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    position: relative !important;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6) !important;
-}
-
-#modal-gia-vien .storage-fill {
-    height: 100% !important;
-    border-radius: 999px !important;
-    transition: width 0.35s ease !important;
-    position: relative !important;
-}
-
-#modal-gia-vien .storage-fill--tuvi {
-    background: linear-gradient(90deg, #0284c7, #38bdf8) !important;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
-}
-
-#modal-gia-vien .storage-fill--herb {
-    background: linear-gradient(90deg, #059669, #10b981) !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5) !important;
-}
-
-#modal-gia-vien .storage-fill--ore {
-    background: linear-gradient(90deg, #7c3aed, #a855f7) !important;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5) !important;
-}
-
-#modal-gia-vien .storage-fill--gold {
-    background: linear-gradient(90deg, #d97706, #eab308) !important;
-    box-shadow: 0 0 10px rgba(234, 179, 8, 0.5) !important;
-}
-
-#modal-gia-vien .rate-and-dispatch-row {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 0.75rem !important;
-    background: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 12px !important;
-    padding: 0.65rem 0.85rem !important;
-}
-
-#modal-gia-vien .production-rate-info {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.15rem !important;
-}
-
-#modal-gia-vien .rate-title {
-    font-size: 0.7rem !important;
-    color: #94a3b8 !important;
-}
-
-#modal-gia-vien .rate-value {
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
-    color: #38bdf8 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.25rem !important;
-}
-
-#modal-gia-vien .rate-bonus-tag {
-    font-size: 0.65rem !important;
-    color: #facc15 !important;
-    background: rgba(234, 179, 8, 0.15) !important;
-    padding: 0.05rem 0.3rem !important;
-    border-radius: 4px !important;
-    font-family: 'JetBrains Mono', monospace !important;
-}
-
-#modal-gia-vien .dispatch-slot-box {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-    cursor: pointer !important;
-    padding: 0.3rem 0.5rem !important;
-    border-radius: 10px !important;
-    background: rgba(30, 41, 59, 0.5) !important;
-    border: 1px dashed rgba(56, 189, 248, 0.3) !important;
-    transition: all 0.2s !important;
-}
-
-#modal-gia-vien .dispatch-slot-box:hover {
-    background: rgba(56, 189, 248, 0.12) !important;
-    border-color: rgba(56, 189, 248, 0.6) !important;
-}
-
-#modal-gia-vien .dispatch-avatar {
-    width: 34px !important;
-    height: 34px !important;
-    border-radius: 8px !important;
-    object-fit: cover !important;
-    border: 1.5px solid rgba(234, 179, 8, 0.5) !important;
-}
-
-#modal-gia-vien .dispatch-placeholder {
-    width: 34px !important;
-    height: 34px !important;
-    border-radius: 8px !important;
-    background: rgba(15, 23, 42, 0.8) !important;
-    border: 1px dashed rgba(148, 163, 184, 0.4) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #64748b !important;
-    font-size: 0.85rem !important;
-}
-
-#modal-gia-vien .dispatch-label-col {
-    display: flex !important;
-    flex-direction: column !important;
-    text-align: left !important;
-}
-
-#modal-gia-vien .dispatch-label-col span:first-child {
-    font-size: 0.65rem !important;
-    color: #94a3b8 !important;
-}
-
-#modal-gia-vien .dispatch-label-col span:last-child {
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
-    color: #e2e8f0 !important;
-    max-width: 90px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-/* ==========================================================================
-   5. FOOTER CARD: 2 NÚT HÀNH ĐỘNG GRADIENT (THU NẠP & NÂNG CẤP)
-   ========================================================================== */
-#modal-gia-vien .node-card-footer {
-    padding: 0.85rem 1.25rem 1.25rem 1.25rem !important;
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.6rem !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
-    position: relative !important;
-    z-index: 2 !important;
-    background: rgba(11, 19, 32, 0.4) !important;
-}
-
-#modal-gia-vien .btn-node-action {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0.4rem !important;
-    padding: 0.55rem 0.6rem !important;
-    border-radius: 10px !important;
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    border: 1px solid transparent !important;
-    font-family: inherit !important;
-}
-
-#modal-gia-vien .btn-claim {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.6)) !important;
-    border-color: rgba(16, 185, 129, 0.6) !important;
-    color: #ecfdf5 !important;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
-}
-
-#modal-gia-vien .btn-claim:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(5, 150, 105, 0.8)) !important;
-    transform: translateY(-1.5px) !important;
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
-}
-
-#modal-gia-vien .btn-claim:disabled {
-    background: rgba(30, 41, 59, 0.5) !important;
-    border-color: rgba(71, 85, 105, 0.3) !important;
-    color: #64748b !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-#modal-gia-vien .btn-upgrade {
-    background: rgba(30, 41, 59, 0.8) !important;
-    border-color: rgba(234, 179, 8, 0.35) !important;
-    color: #fef08a !important;
-}
-
-#modal-gia-vien .btn-upgrade:hover:not(:disabled) {
-    background: rgba(234, 179, 8, 0.18) !important;
-    border-color: rgba(234, 179, 8, 0.7) !important;
-    color: #ffffff !important;
-    transform: translateY(-1.5px) !important;
-}
-
-#modal-gia-vien .btn-upgrade:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-}
-
-/* ==========================================================================
-   6. FOOTER TOÀN CỤC & NÚT THU THẬP TẤT CẢ
-   ========================================================================== */
-#modal-gia-vien .estate-bottom-control-bar {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    background: rgba(11, 19, 32, 0.95) !important;
-    border-top: 1px solid rgba(56, 189, 248, 0.22) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    padding: 0.85rem 2rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 1.5rem !important;
-    z-index: 60 !important;
-    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.7) !important;
-}
-
-#modal-gia-vien .control-summary-text {
-    display: flex !important;
-    align-items: center !important;
-    gap: 1rem !important;
-    font-size: 0.85rem !important;
-    color: #cbd5e1 !important;
-}
-
-#modal-gia-vien .btn-claim-all-huge {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    border: 1px solid #34d399 !important;
-    color: #ffffff !important;
-    padding: 0.85rem 2.2rem !important;
-    border-radius: 1rem !important;
-    font-size: 0.95rem !important;
-    font-weight: 800 !important;
-    font-family: 'Cinzel', serif !important;
-    letter-spacing: 0.5px !important;
-    cursor: pointer !important;
-    box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.6rem !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    position: relative !important;
-    overflow: hidden !important;
-}
-
-#modal-gia-vien .btn-claim-all-huge:hover:not(:disabled) {
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 0 35px rgba(16, 185, 129, 0.65), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-}
-
-#modal-gia-vien .btn-claim-all-huge:disabled {
-    background: #1e293b !important;
-    border-color: #334155 !important;
-    color: #64748b !important;
-    box-shadow: none !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-}
-
-/* ==========================================================================
-   7. DISPATCH MODAL & TOAST
-   ========================================================================== */
-#modal-gia-vien .dispatch-modal-backdrop {
-    position: fixed !important;
-    inset: 0 !important;
-    background: rgba(0, 0, 0, 0.8) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    z-index: 100 !important;
-    display: none !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 1.25rem !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: opacity 0.25s ease !important;
-}
-
-#modal-gia-vien .dispatch-modal-backdrop.is-open,
-#modal-gia-vien .dispatch-modal-backdrop.is-active,
-#modal-gia-vien .dispatch-modal-backdrop.active {
-    display: flex !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-
-#modal-gia-vien .dispatch-modal-dialog {
-    background: rgba(15, 23, 42, 0.95) !important;
-    border: 1px solid rgba(234, 179, 8, 0.35) !important;
-    border-radius: 1.25rem !important;
-    width: 100% !important;
-    max-width: 480px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9) !important;
-    padding: 1.5rem !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1.2rem !important;
-    transform: scale(0.95) !important;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-#modal-gia-vien .dispatch-modal-backdrop.is-open .dispatch-modal-dialog {
-    transform: scale(1) !important;
-}
-
-#modal-gia-vien .dispatch-modal-dialog .modal-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding-bottom: 0.75rem !important;
-}
-
-#modal-gia-vien .dispatch-modal-dialog .modal-title {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.1rem !important;
-    color: #fef08a !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-}
-
-#modal-gia-vien .dispatch-modal-dialog .btn-close-modal,
-#modal-gia-vien .dispatch-modal-dialog .btn-close-dispatch {
-    background: none !important;
-    border: none !important;
-    color: #94a3b8 !important;
-    font-size: 1.25rem !important;
-    cursor: pointer !important;
-    position: static !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-#modal-gia-vien .companions-select-list {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.6rem !important;
-    max-height: 280px !important;
-    overflow-y: auto !important;
-    padding-right: 0.25rem !important;
-}
-
-#modal-gia-vien .companion-select-item {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    background: rgba(30, 41, 59, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding: 0.65rem 0.85rem !important;
-    border-radius: 10px !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-}
-
-#modal-gia-vien .companion-select-item:hover {
-    background: rgba(56, 189, 248, 0.15) !important;
-    border-color: rgba(56, 189, 248, 0.4) !important;
-}
-
-#modal-gia-vien .toast-bubble {
-    position: fixed !important;
-    bottom: 2rem !important;
-    left: 50% !important;
-    transform: translateX(-50%) translateY(20px) !important;
-    background: rgba(15, 23, 42, 0.95) !important;
-    border: 1px solid #10b981 !important;
-    color: #ecfdf5 !important;
-    padding: 0.75rem 1.5rem !important;
-    border-radius: 999px !important;
-    font-size: 0.85rem !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.3) !important;
-    pointer-events: none !important;
-    opacity: 0 !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    z-index: 200 !important;
-}
-
-#modal-gia-vien .toast-bubble.is-active {
-    opacity: 1 !important;
-    transform: translateX(-50%) translateY(0) !important;
-}
-
-</style>
     <div id="modal-gia-vien" class="feature-popup" style="display: none;">
         <!-- Nút Đóng Gia Viên Chuẩn Toàn Hệ Thống -->
         <button type="button" class="btn-close-modal" onclick="closeGiaVienModal()" title="Thoát về Màn Hình Tu Tiên">✖ ĐÓNG</button>
@@ -4600,9 +3959,6 @@
     <!-- Component Canvas VFX Global (pointer-events-none, fixed, inset-0, z-50) -->
     <canvas id="global-vfx-canvas" class="pointer-events-none fixed inset-0 w-full h-full z-50"></canvas>
     <!-- Các script demo cũ đã được chuyển hóa sang js/features/*.js, vô hiệu hóa để tránh ghi đè hàm & rò rỉ timer -->
-    <!-- <script src="./js/integrated_rooms.js"></script> -->
-    <!-- <script src="./js/master_demos.js"></script> -->
-    <!-- <script src="./js/dong_phu_ecosystem.js"></script> -->
 
     <!-- ========================================================================
          MODAL HỆ THỐNG TÀI KHOẢN & CHỈNH SỬA BẢN THỂ (ACCOUNT & PROFILE MODAL)
@@ -5063,21 +4419,174 @@
     <script src="./js/features/encounter.js" defer></script>
     <script src="./js/features/bootstrap.js" defer></script>
     <script src="./js/tribulation_visuals.js" defer></script>
+    <!-- MODAL BẾ QUAN THU HOẠCH OFFLINE -->
+    <div id="offline-reward-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="offline-reward-title">
+        <div class="offline-jade-card">
+            <div class="flex items-center justify-between gap-3 border-b border-amber-500/25 pb-3 mb-4">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.22em] text-amber-300/80 font-bold">Ngọc Giản Bế Quan</p>
+                    <h2 id="offline-reward-title" class="text-lg font-extrabold text-amber-200 tracking-wide mt-0.5">Bế Quan Thu Hoạch</h2>
+                </div>
+                <span id="offline-reward-duration" class="px-2.5 py-1 rounded border border-amber-400/40 bg-amber-950/50 text-amber-200 text-xs font-mono font-bold">0 phút</span>
+            </div>
+
+            <p class="text-xs text-slate-300/90 leading-relaxed mb-4">
+                Trong thời gian đạo hữu ẩn thế bế quan, bản mệnh công pháp vẫn tự vận hành hấp thu thiên địa linh khí (hiệu suất 60%).
+            </p>
+
+            <div class="grid grid-cols-3 gap-2.5 mb-5">
+                <div class="p-3 rounded-lg bg-slate-900/80 border border-cyan-500/30 text-center">
+                    <div class="text-[11px] text-cyan-300/80 font-semibold">Tu Vi Tích Lũy</div>
+                    <div id="offline-reward-exp" class="text-sm font-extrabold font-mono text-cyan-200 mt-1">+0</div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/80 border border-emerald-500/30 text-center">
+                    <div class="text-[11px] text-emerald-300/80 font-semibold">Linh Khí Hồi Phục</div>
+                    <div id="offline-reward-linhkhi" class="text-sm font-extrabold font-mono text-emerald-200 mt-1">+0</div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/80 border border-amber-500/30 text-center">
+                    <div class="text-[11px] text-amber-300/80 font-semibold">Linh Thạch</div>
+                    <div id="offline-reward-stones" class="text-sm font-extrabold font-mono text-amber-200 mt-1">+0</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <button id="btn-claim-offline-1x" type="button" onclick="window.claimOfflineReward(1)"
+                    class="flex-1 py-2.5 px-4 rounded-lg border border-slate-500/60 bg-slate-800/90 hover:bg-slate-700/90 text-slate-100 text-xs font-bold tracking-wide transition cursor-pointer">
+                    Thu Nạp Tu Vi
+                </button>
+                <button id="btn-claim-offline-2x" type="button" onclick="window.claimOfflineReward(2)"
+                    class="flex-1 py-2.5 px-4 rounded-lg border border-amber-400/70 bg-gradient-to-r from-amber-700/85 to-yellow-700/85 hover:from-amber-600/90 hover:to-yellow-600/90 text-amber-100 text-xs font-extrabold tracking-wide shadow-lg shadow-amber-900/40 transition cursor-pointer">
+                    Đốn Ngộ x2 (5 Tiên Ngọc)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ========================================================================
          MASTER OVERRIDE: LƯU BẤT TỬ (VTL_PERMANENT_SAVE) & CHỮ BAY +TU VI
          ======================================================================== -->
     <script>
     (function () {
         const PERM_KEY = 'VTL_PERMANENT_SAVE';
+        let pendingOfflineReward = null;
+
+        function formatOfflineDuration(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            if (h > 0 && m > 0) return h + ' giờ ' + m + ' phút';
+            if (h > 0) return h + ' giờ';
+            return Math.max(1, m) + ' phút';
+        }
+
+        window.showOfflineRewardModal = function (reward) {
+            if (!reward) return;
+            pendingOfflineReward = reward;
+            window.__OFFLINE_REWARD_PENDING__ = true;
+            window.__OFFLINE_REWARD_HANDLED__ = true;
+            document.getElementById('offline-progression-modal')?.remove();
+
+            const modal = document.getElementById('offline-reward-modal');
+            const elDur = document.getElementById('offline-reward-duration');
+            const elExp = document.getElementById('offline-reward-exp');
+            const elLk = document.getElementById('offline-reward-linhkhi');
+            const elStones = document.getElementById('offline-reward-stones');
+            const btn2x = document.getElementById('btn-claim-offline-2x');
+            if (!modal) return;
+
+            if (elDur) elDur.textContent = formatOfflineDuration(reward.seconds || 0);
+            if (elExp) elExp.textContent = '+' + Math.floor(reward.exp || 0).toLocaleString('vi-VN');
+            if (elLk) elLk.textContent = '+' + Math.floor(reward.linhKhi || 0).toLocaleString('vi-VN');
+            if (elStones) elStones.textContent = '+' + Math.floor(reward.stones || 0).toLocaleString('vi-VN');
+
+            const gs = window.GameState || window.state || {};
+            if (btn2x) {
+                const jade = Number(gs.immortalJade || 0);
+                btn2x.style.opacity = jade >= 5 ? '1' : '0.6';
+            }
+            modal.classList.remove('hidden');
+        };
+
+        window.claimOfflineReward = function (mult) {
+            const factor = Number(mult) === 2 ? 2 : 1;
+            const reward = pendingOfflineReward;
+            const modal = document.getElementById('offline-reward-modal');
+            if (!reward) {
+                window.__OFFLINE_REWARD_PENDING__ = false;
+                if (modal) modal.classList.add('hidden');
+                return false;
+            }
+
+            const gs = window.state || window.GameState || window.player;
+            if (!gs || typeof gs !== 'object') return false;
+
+            if (factor === 2) {
+                const jade = Number(gs.immortalJade ?? window.GameState?.immortalJade ?? 0);
+                if (jade < 5) {
+                    if (typeof window.showToast === 'function') window.showToast('Không đủ 5 Tiên Ngọc để Đốn Ngộ x2!', 'error');
+                    if (typeof window.addLog === 'function') window.addLog('⚠️ Không đủ 5 Tiên Ngọc để kích hoạt Đốn Ngộ x2.', 'warning');
+                    return false;
+                }
+                gs.immortalJade = jade - 5;
+            }
+
+            const gainExp = Math.floor((reward.exp || 0) * factor);
+            const rawLkGain = Math.floor((reward.linhKhi || 0) * factor);
+            const gainStones = Math.floor((reward.stones || 0) * factor);
+            const maxLk = Math.max(0, typeof window.getLinhKhiMax === 'function' ? Number(window.getLinhKhiMax()) : Number(gs.maxLinhKhi || 100));
+            const curLk = Math.max(0, Number(gs.linhKhi || 0));
+            const actualLkGain = Math.max(0, Math.min(maxLk - curLk, rawLkGain));
+
+            gs.exp = (Number(gs.exp) || 0) + gainExp;
+            gs.linhKhi = Math.min(maxLk, curLk + actualLkGain);
+            gs.stones = (Number(gs.stones) || 0) + gainStones;
+            const nowTs = Date.now();
+            gs.lastActiveTimestamp = nowTs;
+            gs.lastSavedAt = nowTs;
+            gs.lastOnlineTime = nowTs;
+
+            [window.GameState, window.state, window.player].forEach(function (target) {
+                if (target && target !== gs && typeof target === 'object') {
+                    target.exp = gs.exp;
+                    target.linhKhi = gs.linhKhi;
+                    target.stones = gs.stones;
+                    target.immortalJade = gs.immortalJade;
+                    target.lastActiveTimestamp = gs.lastActiveTimestamp;
+                    target.lastSavedAt = gs.lastSavedAt;
+                    target.lastOnlineTime = gs.lastOnlineTime;
+                }
+            });
+
+            pendingOfflineReward = null;
+            window.__OFFLINE_REWARD_PENDING__ = false;
+            if (modal) modal.classList.add('hidden');
+
+            if (typeof window.playSound === 'function') window.playSound('bell');
+            if (typeof window.addLog === 'function') {
+                window.addLog('🧘 Bế Quan Thu Hoạch' + (factor === 2 ? ' (Đốn Ngộ x2)' : '') + ': +' + gainExp.toLocaleString('vi-VN') + ' Tu Vi, +' + actualLkGain.toLocaleString('vi-VN') + ' Linh Khí, +' + gainStones.toLocaleString('vi-VN') + ' Linh Thạch.', 'success');
+            }
+            if (typeof window.updateHUD === 'function') window.updateHUD();
+            if (typeof window.updateUI === 'function') window.updateUI();
+            if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
+            if (typeof window.updateFocusMeditationUI === 'function') window.updateFocusMeditationUI();
+            if (typeof window.syncAllUI === 'function') window.syncAllUI();
+            window.forceSaveNow();
+            return true;
+        };
 
         window.forceSaveNow = function () {
             if (window.__LOCK_SAVE__) return false;
             try {
-                const gs = window.GameState || window.state || window.player;
+                const gs = window.state || window.GameState || window.player;
                 if (!gs || typeof gs !== 'object') return false;
+                const nowTs = Date.now();
+                gs.lastActiveTimestamp = nowTs;
+                gs.lastSavedAt = nowTs;
+                gs.lastOnlineTime = nowTs;
                 const payload = JSON.stringify(gs);
                 localStorage.setItem(PERM_KEY, payload);
                 localStorage.setItem('VAN_THIEN_LUC_MASTER_SAVE', payload);
+                localStorage.setItem('VAN_THIEN_LUC_SAVE_V1', payload);
+                localStorage.setItem('van_co_tu_tien_save_v2', payload);
                 return true;
             } catch (e) {
                 console.warn('[forceSaveNow]', e);
@@ -5086,14 +4595,31 @@
         };
 
         window.addEventListener('DOMContentLoaded', function () {
+            let loadedSaved = null;
+            let rawOfflineSeconds = 0;
             try {
-                const raw = localStorage.getItem(PERM_KEY) || localStorage.getItem('VAN_THIEN_LUC_MASTER_SAVE');
+                const raw = localStorage.getItem(PERM_KEY) || localStorage.getItem('VAN_THIEN_LUC_MASTER_SAVE') || localStorage.getItem('VAN_THIEN_LUC_SAVE_V1');
                 if (raw) {
                     const saved = JSON.parse(raw);
                     if (saved && typeof saved === 'object') {
-                        [window.GameState, window.state, window.player].forEach(function (target) {
-                            if (target && typeof target === 'object') Object.assign(target, saved);
-                        });
+                        loadedSaved = saved;
+                        const prevTs = Number(saved.lastActiveTimestamp || saved.lastSavedAt || saved.lastOnlineTime || 0);
+                        if (prevTs > 0) {
+                            rawOfflineSeconds = Math.max(0, Math.floor((Date.now() - prevTs) / 1000));
+                        }
+                        if (rawOfflineSeconds >= 120) {
+                            window.__OFFLINE_REWARD_PENDING__ = true;
+                        }
+                        const activeState = window.state || window.GameState || window.player || {};
+                        if (saved && typeof saved === 'object') {
+                            Object.assign(activeState, saved);
+                        }
+                        window.state = activeState;
+                        window.GameState = activeState;
+                        window.player = activeState;
+                        globalThis.state = activeState;
+                        globalThis.GameState = activeState;
+                        globalThis.player = activeState;
                     }
                 }
             } catch (e) {
@@ -5103,9 +4629,56 @@
             window.__LOCK_SAVE__ = false;
             window.__IS_GAME_LOADED = true;
 
+            const finalState = window.state || window.GameState || window.player;
+            if (finalState) {
+                window.state = finalState;
+                window.GameState = finalState;
+                window.player = finalState;
+                globalThis.state = finalState;
+                globalThis.GameState = finalState;
+                globalThis.player = finalState;
+            }
+
+            if (typeof window.reconcileHeavyInjuryState === 'function') {
+                window.reconcileHeavyInjuryState(window.state || window.GameState, { save: false, skipStats: true, updateUi: false });
+            }
             if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+            if (typeof window.reconcileHeavyInjuryState === 'function') {
+                window.reconcileHeavyInjuryState(window.state || window.GameState, { save: true, updateUi: false });
+            }
+            if (typeof window.syncRealmTheme === 'function') window.syncRealmTheme();
+            if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
             if (typeof window.updateUI === 'function') window.updateUI();
             if (typeof window.syncAllUI === 'function') window.syncAllUI();
+
+            if (loadedSaved && rawOfflineSeconds >= 120) {
+                window.addEventListener('load', function () {
+                    setTimeout(function () {
+                        const offlineSeconds = Math.min(43200, rawOfflineSeconds);
+                        const gs = window.state || window.GameState || {};
+                        const cultRate = typeof window.getIdleRate === 'function' ? Number(window.getIdleRate()) || 0 : Number(gs.qiRate || 5);
+                        const lkRate = typeof window.getLinhKhiRate === 'function' ? Number(window.getLinhKhiRate()) || 0 : 1;
+                        const maxLk = Math.max(0, typeof window.getLinhKhiMax === 'function' ? Number(window.getLinhKhiMax()) : Number(gs.maxLinhKhi || 100));
+                        const curLk = Math.max(0, Number(gs.linhKhi || 0));
+                        const realmIdx = Math.max(0, Number(gs.realmIndex || 0));
+
+                        const offlineExp = Math.floor(cultRate * offlineSeconds * 0.6);
+                        const offlineLinhKhi = Math.max(0, Math.min(maxLk - curLk, Math.floor(lkRate * offlineSeconds * 0.6)));
+                        const offlineStones = Math.floor((realmIdx + 1) * 2 * (offlineSeconds / 60));
+
+                        if (offlineExp > 0 || offlineLinhKhi > 0 || offlineStones > 0) {
+                            window.showOfflineRewardModal({
+                                seconds: offlineSeconds,
+                                exp: offlineExp,
+                                linhKhi: offlineLinhKhi,
+                                stones: offlineStones
+                            });
+                        } else {
+                            window.__OFFLINE_REWARD_PENDING__ = false;
+                        }
+                    }, 80);
+                }, { once: true });
+            }
 
             // Khởi tạo container chữ bay +Tu Vi độc lập trên đầu nhân vật
             function ensureFloatingBoxStyle() {
@@ -5120,8 +4693,6 @@
             let lastExp = Number((window.GameState || window.state || {}).exp) || 0;
 
             setInterval(function () {
-                window.forceSaveNow();
-
                 const gs = window.GameState || window.state || {};
                 const currentExp = Number(gs.exp) || 0;
                 const delta = Math.floor(currentExp - lastExp);

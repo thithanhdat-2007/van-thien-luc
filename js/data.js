@@ -2686,19 +2686,6 @@ const AVATARS_DATA = [
 // 4.13. HỆ THỐNG THÀNH TỰU THIÊN ĐẠO (ACHIEVEMENTS CONFIG)
 // ==========================================
 const ACHIEVEMENTS_CONFIG = [
-    // 1. CẢNH GIỚI TU CHÂN
-    {
-        id: "ach_realm_1",
-        category: "realm",
-        categoryName: "Cảnh Giới",
-        title: "Sơ Nhập Tiên Đồ",
-        desc: "Đạt đến cảnh giới Luyện Khí Tầng 3",
-        icon: "fa-seedling",
-        color: "text-emerald-400",
-        border: "border-emerald-500/30",
-        bg: "bg-emerald-950/40",
-        reward: { stones: 1000, jade: 30, title: "Sơ Nhập Tiên Đồ", statDesc: "+5% Tốc Độ Tu Luyện", statBonus: { cultivationRate: 5 } }
-    },
     {
         id: "ach_realm_2",
         category: "realm",
@@ -2709,7 +2696,7 @@ const ACHIEVEMENTS_CONFIG = [
         color: "text-sky-400",
         border: "border-sky-500/30",
         bg: "bg-sky-950/40",
-        reward: { stones: 3000, jade: 80, title: "Trúc Cơ Thượng Nhân", statDesc: "+5% Phòng Ngự Cơ Bản", statBonus: { defPercent: 5 } }
+        reward: { stones: 3000, jade: 80, title: "Trúc Cơ Thượng Nhân", statDesc: "+80 Khí Huyết gốc, +15 Phòng Ngự gốc", statBonus: { hp: 80, def: 15 } }
     },
     {
         id: "ach_realm_3",
@@ -2721,45 +2708,91 @@ const ACHIEVEMENTS_CONFIG = [
         color: "text-amber-400",
         border: "border-amber-500/30",
         bg: "bg-amber-950/40",
-        reward: { stones: 8000, jade: 150, title: "Kim Đan Chân Quân", statDesc: "+8% Công Kích Cơ Bản", statBonus: { atkPercent: 8 } }
+        reward: { stones: 8000, jade: 150, title: "Kim Đan Chân Quân", statDesc: "+45 Công Kích gốc, +25 Phòng Ngự gốc", statBonus: { atk: 45, def: 25 } }
     },
     {
-        id: "ach_realm_4",
-        category: "realm",
-        categoryName: "Cảnh Giới",
-        title: "Nguyên Anh Tôn Giả",
-        desc: "Đột phá thành công cảnh giới Nguyên Anh Kỳ",
-        icon: "fa-dharmachakra",
-        color: "text-purple-400",
-        border: "border-purple-500/30",
-        bg: "bg-purple-950/40",
-        reward: { stones: 20000, jade: 300, title: "Nguyên Anh Lão Tổ", statDesc: "+10% Khí Huyết Tối Đa", statBonus: { hpPercent: 10 } }
-    },
-    {
-        id: "ach_realm_5",
-        category: "realm",
-        categoryName: "Cảnh Giới",
-        title: "Hóa Thần Chi Cảnh",
-        desc: "Bước chân vào cảnh giới Hóa Thần Kỳ thông thiên triệt địa",
-        icon: "fa-yin-yang",
-        color: "text-rose-400",
-        border: "border-rose-500/30",
-        bg: "bg-rose-950/40",
-        reward: { stones: 50000, jade: 600, title: "Hóa Thần Đại Năng", statDesc: "+12% Toàn Bộ Thuộc Tính", statBonus: { allStatsPercent: 12 } }
-    },
-
-    // 2. CHIẾN ĐẤU & BÍ CẢNH
-    {
-        id: "ach_combat_first",
+        id: "ach_tower_10",
         category: "combat",
-        categoryName: "Chiến Đấu",
-        title: "Trảm Yêu Sơ Thí",
-        desc: "Vượt qua Bí Cảnh Đầm Lầy Hắc Thủy lần đầu tiên",
-        icon: "fa-swords",
+        categoryName: "Trấn Yêu Tháp",
+        title: "Trấn Yêu Tầng 10",
+        desc: "Chinh phục thành công Trấn Yêu Tháp Tầng 10",
+        icon: "fa-dungeon",
         color: "text-emerald-400",
         border: "border-emerald-500/30",
         bg: "bg-emerald-950/40",
-        reward: { stones: 1200, jade: 40, title: "Trảm Yêu Dũng Sĩ", statDesc: "+50 Công Kích", statBonus: { atk: 50 } }
+        reward: { stones: 5000, jade: 80, title: "Trấn Yêu Tiên Phong", statDesc: "+120 Khí Huyết gốc, +30 Công Kích gốc", statBonus: { hp: 120, atk: 30 } }
+    },
+    {
+        id: "ach_tower_20",
+        category: "combat",
+        categoryName: "Trấn Yêu Tháp",
+        title: "Trấn Yêu Tầng 20",
+        desc: "Chinh phục thành công Trấn Yêu Tháp Tầng 20",
+        icon: "fa-torii-gate",
+        color: "text-violet-400",
+        border: "border-violet-500/30",
+        bg: "bg-violet-950/40",
+        reward: { stones: 15000, jade: 180, title: "Hàng Ma Chân Nhân", statDesc: "+60 Công Kích gốc, +40 Phòng Ngự gốc", statBonus: { atk: 60, def: 40 } }
+    },
+    {
+        id: "ach_tower_50",
+        category: "combat",
+        categoryName: "Trấn Yêu Tháp",
+        title: "Đăng Đỉnh Trấn Yêu Tháp",
+        desc: "Vượt qua đỉnh cao Tầng 50 của Trấn Yêu Tháp",
+        icon: "fa-crown",
+        color: "text-rose-400",
+        border: "border-rose-500/30",
+        bg: "bg-rose-950/40",
+        reward: { stones: 50000, jade: 500, title: "Vạn Yêu Chi Chủ", statDesc: "+250 Công Kích gốc, +180 Phòng Ngự gốc, +1.500 Khí Huyết gốc", statBonus: { atk: 250, def: 180, hp: 1500 } }
+    },
+    {
+        id: "ach_alchemy_20",
+        category: "arts",
+        categoryName: "Tiên Nghệ",
+        title: "Đan Đạo Tông Sư",
+        desc: "Luyện chế thành công tổng cộng 20 viên Đan Dược",
+        icon: "fa-flask",
+        color: "text-teal-400",
+        border: "border-teal-500/30",
+        bg: "bg-teal-950/40",
+        reward: { stones: 4500, jade: 90, title: "Dược Vương Tái Thế", statDesc: "+100 Khí Huyết gốc, +5% Tốc Độ Tụ Khí", statBonus: { hp: 100, cultivationRate: 5 } }
+    },
+    {
+        id: "ach_forge_10",
+        category: "arts",
+        categoryName: "Tiên Nghệ",
+        title: "Thần Tượng Đúc Binh",
+        desc: "Rèn đúc thành công tổng cộng 10 món Pháp Khí / Trang Bị",
+        icon: "fa-hammer",
+        color: "text-orange-400",
+        border: "border-orange-500/30",
+        bg: "bg-orange-950/40",
+        reward: { stones: 6000, jade: 110, title: "Luyện Khí Tông Sư", statDesc: "+50 Công Kích gốc, +20 Phòng Ngự gốc", statBonus: { atk: 50, def: 20 } }
+    },
+    {
+        id: "ach_cp_100k",
+        category: "combat",
+        categoryName: "Chiến Đấu",
+        title: "Chiến Lực Vô Song",
+        desc: "Đạt cột mốc 100.000 Chiến Lực toàn thân",
+        icon: "fa-bolt",
+        color: "text-amber-300",
+        border: "border-amber-500/30",
+        bg: "bg-amber-950/40",
+        reward: { stones: 20000, jade: 250, title: "Cửu Thiên Chiến Thần", statDesc: "+120 Công Kích gốc, +80 Phòng Ngự gốc, +500 Khí Huyết gốc", statBonus: { atk: 120, def: 80, hp: 500 } }
+    },
+    {
+        id: "ach_wealth_2",
+        category: "wealth",
+        categoryName: "Tiên Tài",
+        title: "Vạn Bảo Cự Phú",
+        desc: "Sở hữu cùng lúc từ 100.000 Linh Thạch trở lên",
+        icon: "fa-gem",
+        color: "text-cyan-400",
+        border: "border-cyan-500/30",
+        bg: "bg-cyan-950/40",
+        reward: { stones: 25000, jade: 300, title: "Vạn Bảo Phú Hào", statDesc: "+10% Tốc Độ Tụ Khí", statBonus: { cultivationRate: 10 } }
     },
     {
         id: "ach_combat_ten",
@@ -2768,122 +2801,10 @@ const ACHIEVEMENTS_CONFIG = [
         title: "Bách Chiến Thần Binh",
         desc: "Chiến thắng hoặc càn quét Bí Cảnh tổng cộng 10 lần",
         icon: "fa-skull-crossbones",
-        color: "text-rose-400",
-        border: "border-rose-500/30",
-        bg: "bg-rose-950/40",
-        reward: { stones: 5000, jade: 100, title: "Bách Chiến Tiên Tôn", statDesc: "+5% Sát Thương Vật Lý", statBonus: { physicalDamagePercent: 5 } }
-    },
-    {
-        id: "ach_combat_dungeon_4",
-        category: "combat",
-        categoryName: "Chiến Đấu",
-        title: "Trấn Ma Xuất Thế",
-        desc: "Chinh phục Bí Cảnh Trấn Ma Tháp Tầng 10",
-        icon: "fa-torii-gate",
-        color: "text-violet-400",
-        border: "border-violet-500/30",
-        bg: "bg-violet-950/40",
-        reward: { stones: 15000, jade: 250, title: "Trấn Ma Chân Nhân", statDesc: "+150 Phòng Ngự", statBonus: { def: 150 } }
-    },
-    {
-        id: "ach_arena_top",
-        category: "combat",
-        categoryName: "Chiến Đấu",
-        title: "Phong Thần Đăng Đỉnh",
-        desc: "Vươn lên Top 50 bảng xếp hạng Đấu Pháp Đài",
-        icon: "fa-trophy",
-        color: "text-amber-400",
-        border: "border-amber-500/30",
-        bg: "bg-amber-950/40",
-        reward: { stones: 18000, jade: 200, title: "Đấu Pháp Cuồng Ma", statDesc: "+5% Tỷ Lệ Bạo Kích", statBonus: { crit: 5 } }
-    },
-
-    // 3. TIÊN TÀI & PHƯỜNG THỊ
-    {
-        id: "ach_wealth_1",
-        category: "wealth",
-        categoryName: "Tiên Tài",
-        title: "Tích Tiểu Thành Đại",
-        desc: "Sở hữu cùng lúc hơn 10,000 Linh Thạch",
-        icon: "fa-coins",
-        color: "text-yellow-400",
-        border: "border-yellow-500/30",
-        bg: "bg-yellow-950/40",
-        reward: { stones: 3000, jade: 50, title: "Tiểu Phú Hào", statDesc: "+3% Tốc Độ Tu Luyện", statBonus: { cultivationRate: 3 } }
-    },
-    {
-        id: "ach_wealth_2",
-        category: "wealth",
-        categoryName: "Tiên Tài",
-        title: "Vạn Bảo Cự Phú",
-        desc: "Sở hữu cùng lúc hơn 100,000 Linh Thạch",
-        icon: "fa-gem",
-        color: "text-cyan-400",
-        border: "border-cyan-500/30",
-        bg: "bg-cyan-950/40",
-        reward: { stones: 25000, jade: 300, title: "Vạn Bảo Phú Hào", statDesc: "+10% Tốc Độ Tu Luyện", statBonus: { cultivationRate: 10 } }
-    },
-    {
-        id: "ach_auction_win",
-        category: "wealth",
-        categoryName: "Tiên Tài",
-        title: "Nhất Trịch Thiên Kim",
-        desc: "Đấu giá thắng ít nhất 1 trân bảo quý giá tại Đấu Giá Hội",
-        icon: "fa-gavel",
-        color: "text-amber-300",
-        border: "border-amber-500/30",
-        bg: "bg-amber-950/40",
-        reward: { stones: 8000, jade: 150, title: "Kỳ Trân Cự Phách", statDesc: "+4% Phòng Ngự Toàn Thân", statBonus: { defPercent: 4 } }
-    },
-
-    // 4. TIÊN NGHỆ & ĐẠO LỮ
-    {
-        id: "ach_pet_grow",
-        category: "arts",
-        categoryName: "Tiên Nghệ",
-        title: "Ngự Thú Tinh Thông",
-        desc: "Bồi dưỡng Linh Thú Hộ Tộc đạt đến Cấp 5",
-        icon: "fa-dragon",
-        color: "text-emerald-400",
-        border: "border-emerald-500/30",
-        bg: "bg-emerald-950/40",
-        reward: { stones: 6000, jade: 100, title: "Ngự Thú Tông Sư", statDesc: "+80 Công Kích", statBonus: { atk: 80 } }
-    },
-    {
-        id: "ach_companion_bond",
-        category: "arts",
-        categoryName: "Tiên Nghệ",
-        title: "Tiên Lữ Đồng Tâm",
-        desc: "Nâng độ thân mật của bất kỳ Đạo Lữ nào lên 30 điểm",
-        icon: "fa-heart",
-        color: "text-pink-400",
-        border: "border-pink-500/30",
-        bg: "bg-pink-950/40",
-        reward: { stones: 7000, jade: 120, title: "Tiên Lữ Tình Thâm", statDesc: "+600 Khí Huyết Tối Đa", statBonus: { hp: 600 } }
-    },
-    {
-        id: "ach_talisman_master",
-        category: "arts",
-        categoryName: "Tiên Nghệ",
-        title: "Phù Đạo Đại Sư",
-        desc: "Vẽ thành công tổng cộng 5 lá Linh Phù tại Họa Phù Các",
-        icon: "fa-scroll",
-        color: "text-amber-300",
-        border: "border-amber-500/30",
-        bg: "bg-amber-950/40",
-        reward: { stones: 5000, jade: 100, title: "Phù Lục Chân Sư", statDesc: "+5% Công Kích", statBonus: { atkPercent: 5 } }
-    },
-    {
-        id: "ach_avatar_expedition",
-        category: "arts",
-        categoryName: "Tiên Nghệ",
-        title: "Ngoại Thân Hóa Thần",
-        desc: "Phân Thần hoàn thành 3 chuyến Du Ngoạn Thám Hiểm",
-        icon: "fa-person-walking-arrow-right",
         color: "text-indigo-400",
         border: "border-indigo-500/30",
         bg: "bg-indigo-950/40",
-        reward: { stones: 6000, jade: 120, title: "Thiên Lý Hóa Thần", statDesc: "+5% Tốc Độ Tu Luyện", statBonus: { cultivationRate: 5 } }
+        reward: { stones: 5000, jade: 100, title: "Bách Chiến Tiên Tôn", statDesc: "+40 Công Kích gốc, +3% Tỉ Lệ Bạo Kích", statBonus: { atk: 40, crit: 3 } }
     }
 ];
 
@@ -3837,12 +3758,19 @@ const DEFAULT_STATE = {
     linhKhi: 6000000,
     maxLinhKhi: 50000,
     linhKhiRegen: 100,
-    stones: 0,
+    stones: 888,
     immortalJade: 0,
     jade: 0,
     sectPoints: 0,
-    herbs: 0,
-    ores: 0,
+    herbs: 30,
+    ores: 30,
+    materials: {
+        huyenThiet: 30,
+        linhChi: 30,
+        tinhThuy: 15,
+        ngocSam: 15,
+        yeuDan: 5
+    },
     hp: 500,
     maxHp: 500,
     baseHp: 500,
@@ -3995,8 +3923,14 @@ const DEFAULT_STATE = {
     ],
     dungeonsCleared: {},
     achievementsClaimed: {},
+    unlockedAchievementTitles: [],
     equippedTitle: "",
     talismanCraftedCount: 0,
+    pillsCraftedCount: 0,
+    forgedGearCount: 0,
+    maxCombatPower: 0,
+    focusMeditationUntil: 0,
+    towerLifesteal: 0,
     avatarTripsCompleted: 0,
     celestialOmen: {
         currentOmenId: "tu_khi_dong_lai",
@@ -4156,7 +4090,7 @@ const DEFAULT_STATE = {
             name: "Tụ Khí Đan",
             type: "Đan Dược",
             rarity: 2,
-            count: 0,
+            count: 3,
             desc: "Nuốt vào tăng ngay 60 Tu Vi Linh Khí.",
             effect: { exp: 60 },
             icon: "fa-pills",
@@ -4211,7 +4145,7 @@ const DEFAULT_STATE = {
             name: "Tử Linh Chi",
             type: "Thảo Dược",
             rarity: 3,
-            count: 0,
+            count: 5,
             desc: "Linh thảo ngàn năm dùng luyện Tụ Khí Đan.",
             icon: "fa-leaf",
             image: "./assets/images/item_bamboo_scroll.jpg"
@@ -4221,7 +4155,7 @@ const DEFAULT_STATE = {
             name: "Huyết Ngọc Sâm",
             type: "Thảo Dược",
             rarity: 4,
-            count: 0,
+            count: 3,
             desc: "Dược liệu quý dùng luyện Trúc Cơ Đan.",
             icon: "fa-seedling",
             image: "./assets/images/item_bamboo_scroll.jpg"
@@ -4822,26 +4756,30 @@ Object.defineProperties(GameState, {
     righteous: {
         get() {
             const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
-            return Number(s?.alignment?.righteous ?? 50);
+            return Number(s?.alignment?.righteous ?? s?.righteous ?? 50);
         },
         set(v) {
             const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
             if (s) {
+                const clamped = Math.max(0, Math.min(100, Number(v) || 0));
                 if (!s.alignment) s.alignment = {};
-                s.alignment.righteous = Math.max(0, Math.min(100, Number(v) || 0));
+                s.alignment.righteous = clamped;
+                s.righteous = clamped;
             }
         }
     },
     demonic: {
         get() {
             const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
-            return Number(s?.alignment?.demonic ?? 50);
+            return Number(s?.alignment?.demonic ?? s?.demonic ?? 50);
         },
         set(v) {
             const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
             if (s) {
+                const clamped = Math.max(0, Math.min(100, Number(v) || 0));
                 if (!s.alignment) s.alignment = {};
-                s.alignment.demonic = Math.max(0, Math.min(100, Number(v) || 0));
+                s.alignment.demonic = clamped;
+                s.demonic = clamped;
             }
         }
     },
@@ -5540,10 +5478,18 @@ function syncAllUI() {
 
         // Thanh Tu Vi
         const realmBadgeEl = document.getElementById('realm-badge');
+        const rawRealmName = (typeof getRealmDisplayName === 'function')
+            ? getRealmDisplayName(GameState.realmIndex, GameState.subRealmIndex)
+            : ((typeof window !== 'undefined' && typeof window.getRealmDisplayName === 'function')
+                ? window.getRealmDisplayName(GameState.realmIndex, GameState.subRealmIndex)
+                : (GameState.full_realm_name || GameState.realm || 'Luyện Khí Tầng 1'));
         if (realmBadgeEl) {
-            const rawRealmName = GameState.full_realm_name || GameState.realm || 'Luyện Khí';
             realmBadgeEl.textContent = rawRealmName;
             realmBadgeEl.setAttribute('title', `Cảnh giới hiện tại: ${rawRealmName}`);
+        }
+        const uiRealmTitleEl = document.getElementById('ui-realm-title');
+        if (uiRealmTitleEl) {
+            uiRealmTitleEl.textContent = rawRealmName;
         }
 
         const expTextEl = document.getElementById('exp-text-desktop');
@@ -5589,14 +5535,29 @@ function syncAllUI() {
         const lifespanBarEl = document.getElementById('ui-lifespan-bar');
         if (lifespanBarEl) lifespanBarEl.style.width = `${Math.min(100, Math.max(0, (lifespan / maxLifespan) * 100)).toFixed(1)}%`;
 
+        const fmtCompact = (typeof formatCompactNumber === 'function')
+            ? formatCompactNumber
+            : ((typeof window !== 'undefined' && typeof window.formatCompactNumber === 'function')
+                ? window.formatCompactNumber
+                : (n => n.toLocaleString('vi-VN')));
+
         const atkEl = document.getElementById('ui-stat-atk');
-        if (atkEl) atkEl.textContent = atk.toLocaleString('vi-VN');
+        if (atkEl) {
+            atkEl.textContent = fmtCompact(atk);
+            atkEl.title = atk.toLocaleString('vi-VN');
+        }
 
         const defEl = document.getElementById('ui-stat-def');
-        if (defEl) defEl.textContent = def.toLocaleString('vi-VN');
+        if (defEl) {
+            defEl.textContent = fmtCompact(def);
+            defEl.title = def.toLocaleString('vi-VN');
+        }
 
         const spdEl = document.getElementById('ui-stat-spd');
-        if (spdEl) spdEl.textContent = spd.toLocaleString('vi-VN');
+        if (spdEl) {
+            spdEl.textContent = fmtCompact(spd);
+            spdEl.title = spd.toLocaleString('vi-VN');
+        }
 
         const critEl = document.getElementById('ui-stat-crit');
         if (critEl) critEl.textContent = `${crit.toFixed(1)}%`;
@@ -5718,7 +5679,7 @@ if (typeof window !== 'undefined') {
     if (window._autoSaveGlobalIntervalId) clearInterval(window._autoSaveGlobalIntervalId);
     window._autoSaveGlobalIntervalId = setInterval(() => {
         saveGame();
-    }, 5000);
+    }, 15000);
     if (window._autoSaveGlobalIntervalId && typeof window._autoSaveGlobalIntervalId.unref === 'function') {
         window._autoSaveGlobalIntervalId.unref();
     }

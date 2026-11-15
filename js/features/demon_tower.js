@@ -293,6 +293,7 @@
                 def: def,
                 crit: crit,
                 critDmg: 1.5 + finite(effStats.critDamageBonus),
+                lifesteal: finite(effStats.lifesteal ?? s.towerLifesteal ?? s.alignmentBuffs?.lifestealPercent),
                 eva: eva,
                 cp: cp,
                 armorPen: finite(effStats.armorPen ?? s.armorPen),
@@ -331,10 +332,23 @@
         // Trọng Thương khi thua tháp
         if (payload.isInjured) {
             s.isInjured = true;
-            if (window.state && window.state !== s) window.state.isInjured = true;
+            const maxCap = Math.max(2, Number(s.maxHp) || 100);
+            if (Number(s.hp ?? maxCap) >= maxCap) {
+                s.hp = Math.max(1, Math.floor(maxCap * 0.2));
+            }
+            if (window.state && window.state !== s) {
+                window.state.isInjured = true;
+                window.state.hp = s.hp;
+            }
+            if (window.GameState && window.GameState !== s) {
+                window.GameState.isInjured = true;
+                window.GameState.hp = s.hp;
+            }
             if (typeof window.updateHUD === 'function') window.updateHUD();
-            if (typeof window.showXianxiaToast === 'function') {
-                window.showXianxiaToast('⚠️ Thua trận Trấn Yêu Tháp! Rơi vào trạng thái Trọng Thương (-70% Tụ Khí)! Hãy Vận Công Điều Tức (15s)!', 'danger');
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast('⚠️ Thua trận Trấn Yêu Tháp! Rơi vào trạng thái Trọng Thương (-70% Tụ Khí)! Hãy Vận Công Điều Tức!', 'error');
+            } else if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast('⚠️ Thua trận Trấn Yêu Tháp! Rơi vào trạng thái Trọng Thương (-70% Tụ Khí)! Hãy Vận Công Điều Tức!', 'danger');
             }
         }
 
@@ -484,7 +498,13 @@
 
     function openDemonTowerModal() {
         const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
-        if (s?.isInjured || (s?.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
+        if (s && typeof window.reconcileHeavyInjuryState === 'function') {
+            window.reconcileHeavyInjuryState(s, { save: true, updateUi: true });
+        }
+        const stillInjured = s && (typeof window.isHeavyInjuryActive === 'function'
+            ? window.isHeavyInjuryActive(s)
+            : (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)));
+        if (stillInjured) {
             if (typeof window.showXianxiaToast === 'function') {
                 window.showXianxiaToast('⚠️ Kinh mạch đang bị Trọng Thương! Cần Vận Công Điều Tức (15s) hoặc dùng Hồi Huyết Đan/Hộ Tâm Đan trước khi vào Trấn Yêu Tháp!', 'danger');
             } else if (typeof window.addLog === 'function') {
@@ -707,9 +727,11 @@
         // Trừ HP & Cập nhật thanh máu động
         defender.hp = Math.max(0, defender.hp - finalDmg);
 
-        // Hồi máu hút máu nếu có
-        if (isPlayer && isSkillTriggered && attacker.equippedSkill?.lifestealPercent) {
-            const lifestealHp = Math.round(finalDmg * attacker.equippedSkill.lifestealPercent);
+        // Hồi máu hút máu nếu có (từ Công Pháp hoặc Thiên Ma Sát Ý +8%)
+        const totalLifestealPct = (isPlayer && isSkillTriggered && attacker.equippedSkill?.lifestealPercent ? Number(attacker.equippedSkill.lifestealPercent) : 0)
+            + (isPlayer ? Number((window.GameState || window.state)?.towerLifesteal || (window.GameState || window.state)?.alignmentBuffs?.lifestealPercent || 0) : 0);
+        if (isPlayer && finalDmg > 0 && totalLifestealPct > 0) {
+            const lifestealHp = Math.max(1, Math.round(finalDmg * totalLifestealPct));
             attacker.hp = Math.min(attacker.maxHp, attacker.hp + lifestealHp);
             appendLog(`🩸 [Hút Máu] Huyết quang lượn quanh, hút <b>+${lifestealHp.toLocaleString()} HP</b> hồi phục chân thân!`, 'log-entry--heal text-emerald-400');
             triggerFloatingDamage(`+${lifestealHp.toLocaleString()} HP`, 'damage-number-pop--heal', 'player');

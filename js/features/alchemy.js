@@ -752,13 +752,21 @@
             }
         }
 
-        // Tự động đẩy tiến độ Nhiệm Vụ Tông Môn (Luyện Đan)
+        // Tự động đẩy tiến độ Nhiệm Vụ Tông Môn & Thành Tựu (Luyện Đan)
         if (successCount > 0) {
             if (typeof window.progressSectQuest === 'function') {
                 window.progressSectQuest('alchemy', 15 * successCount);
             }
-            if (window.GameState) window.GameState.hasCraftedPill = true;
-            if (window.state) window.state.hasCraftedPill = true;
+            if (window.GameState) {
+                window.GameState.hasCraftedPill = true;
+                window.GameState.pillsCraftedCount = (Number(window.GameState.pillsCraftedCount) || 0) + successCount;
+            }
+            if (window.state) {
+                window.state.hasCraftedPill = true;
+                if (window.state !== window.GameState) {
+                    window.state.pillsCraftedCount = (Number(window.state.pillsCraftedCount) || 0) + successCount;
+                }
+            }
             if (typeof window.updateMainQuestUI === 'function') window.updateMainQuestUI();
         }
 

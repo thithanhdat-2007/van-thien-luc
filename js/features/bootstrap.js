@@ -120,6 +120,8 @@ globalThis.closeDongPhuModal = closeDongPhuModal;
             s.localAccountId = window.localAccountId || s.localAccountId || localStorage.getItem('VAN_THIEN_LUC_LOCAL_ACCOUNT_ID');
             s.lastSaveTime = Date.now();
             s.lastActiveTime = s.lastSaveTime;
+            s.lastActiveTimestamp = s.lastSaveTime;
+            s.lastSavedAt = s.lastSaveTime;
 
             const payload = JSON.stringify(s);
             localStorage.setItem(KEY, payload);
@@ -155,9 +157,10 @@ globalThis.closeDongPhuModal = closeDongPhuModal;
     globalThis.saveGame = window.masterSaveGame;
     window.saveGameState = window.masterSaveGame;
 
+    // Lưu tự động mỗi 15 giây (tránh lag JSON.stringify liên tục)
     setInterval(() => {
         if (window.__IS_GAME_LOADED !== false) {
             window.masterSaveGame();
         }
-    }, 2000);
+    }, 15000);
 })();

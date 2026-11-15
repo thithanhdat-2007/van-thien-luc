@@ -9771,16 +9771,18 @@ section.feature-page {
 }
 
 #cultivation-log {
-    background: rgba(3, 7, 18, 0.75) !important;
-    border: 1px solid rgba(56, 189, 248, 0.2) !important;
-    border-radius: 10px !important;
-    padding: 8px 10px !important;
-    max-height: 160px !important;
-    min-height: 110px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 6px 4px !important;
+    max-height: none !important;
+    min-height: 80px !important;
     overflow-y: auto !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: none !important;
     scrollbar-width: thin !important;
     scrollbar-color: rgba(56, 189, 248, 0.4) transparent !important;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 22%) !important;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%) !important;
 }
 
 #cultivation-log::-webkit-scrollbar {
@@ -11472,7 +11474,6 @@ body.is-item-dragging .char-equip-dropzone:hover #char-modal-avatar-img {
 #left-panel .root-absorption-banner,
 #left-panel .origin-dashboard .xianxia-glass-panel,
 #right-panel .automation-panel,
-#right-panel #cultivation-log,
 #right-panel .sidebar-header,
 #right-panel .sidebar-content,
 #world-name-banner {
@@ -12861,5 +12862,356 @@ body.is-item-dragging .char-equip-dropzone:hover #char-modal-avatar-img {
 @media (prefers-reduced-motion: reduce) {
     .cultivation-float-text {
         animation: fadeCultivationReduced 1.2s linear forwards;
+    }
+}
+
+/* ==========================================================================
+   POPOVER CHI TIẾT GIA TRÌ LINH TỐC (#cultivation-rate-popover)
+   ========================================================================== */
+.cultivation-rate-popover {
+    position: absolute !important;
+    bottom: calc(100% + 14px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 290px !important;
+    background: rgba(8, 12, 24, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 18px rgba(245, 158, 11, 0.15) !important;
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+    font-family: inherit !important;
+}
+
+.cultivation-rate-popover::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 7px solid transparent !important;
+    border-top-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+.cultivation-rate-popover.hidden {
+    display: none !important;
+}
+
+.crp-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.25) !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 8px !important;
+}
+
+.crp-title {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #fef08a !important;
+    font-family: serif !important;
+    letter-spacing: 0.5px !important;
+}
+
+.crp-total {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #38bdf8 !important;
+    font-family: monospace !important;
+}
+
+.crp-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.crp-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 11px !important;
+}
+
+.crp-label {
+    color: #94a3b8 !important;
+}
+
+.crp-val {
+    font-weight: 700 !important;
+    font-family: monospace !important;
+}
+
+/* ==========================================================================
+   HOTFIX: THANH TU VI (#tu-vi-bar), CÔ LẬP TRỌNG THƯƠNG & CHỐNG TRÀN TÊN CẢNH GIỚI
+   ========================================================================== */
+#tu-vi-bar,
+#tu-vi-bar.cultivation-breakthrough-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 720px) !important;
+    min-width: 680px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 10px 16px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+#tu-vi-bar .cbar-realm-block,
+#tu-vi-bar .cultivation-col-realm {
+    min-width: 0 !important;
+    max-width: 250px !important;
+    flex: 0 0 auto !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#tu-vi-bar .cbar-realm-emblem {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+}
+
+#tu-vi-bar .cbar-realm-info {
+    min-width: 0 !important;
+    max-width: 165px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    flex: 1 1 auto !important;
+}
+
+#tu-vi-bar .cbar-realm-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    line-height: 1 !important;
+}
+
+#tu-vi-bar .cbar-sub-tag {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: #94a3b8 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+#tu-vi-bar .cbar-realm-name,
+#tu-vi-bar #realm-badge,
+#tu-vi-bar .realm-title {
+    font-family: 'Cinzel', serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    color: #fef08a !important;
+    letter-spacing: 0.5px !important;
+    text-shadow: 0 0 12px rgba(234, 179, 8, 0.5) !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    display: block !important;
+}
+
+/* Biểu tượng Trọng Thương siêu nhỏ gọn nằm sát bên trái ô Yin-Yang */
+#tu-vi-bar #heavy-injury-status,
+.cbar-injury-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    background: linear-gradient(135deg, rgba(136, 19, 55, 0.95), rgba(76, 5, 25, 0.95)) !important;
+    border: 1px solid rgba(244, 63, 94, 0.75) !important;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.5), inset 0 0 5px rgba(244, 63, 94, 0.25) !important;
+    color: #fecdd3 !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    animation: cbarInjuryPulse 1.6s ease-in-out infinite !important;
+    user-select: none !important;
+    transition: all 0.2s ease !important;
+}
+
+#tu-vi-bar #heavy-injury-status:hover {
+    filter: brightness(1.25) !important;
+    border-color: rgba(251, 146, 60, 0.9) !important;
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.8), 0 0 6px rgba(251, 146, 60, 0.5) !important;
+}
+
+#tu-vi-bar #heavy-injury-status.hidden {
+    display: none !important;
+}
+
+.cbar-injury-icon-group {
+    display: inline-flex !important;
+    align-items: center !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+}
+
+.cbar-injury-text,
+#tu-vi-bar #heavy-injury-time {
+    font-size: 9px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    letter-spacing: 0.2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 75px !important;
+}
+
+@keyframes cbarInjuryPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(244, 63, 94, 0.45);
+        border-color: rgba(244, 63, 94, 0.65);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 14px rgba(244, 63, 94, 0.85), 0 0 6px rgba(251, 146, 60, 0.6);
+        border-color: rgba(251, 113, 133, 0.95);
+    }
+}
+
+#tu-vi-bar .cbar-progress-block {
+    flex: 1 1 100px !important;
+    min-width: 95px !important;
+    overflow: hidden !important;
+}
+
+#tu-vi-bar .cbar-progress-meta {
+    gap: 4px !important;
+    font-size: 0.68rem !important;
+}
+
+#tu-vi-bar .cbar-label-group {
+    gap: 3px !important;
+}
+
+#tu-vi-bar .cbar-qi-title {
+    font-size: 0.64rem !important;
+    letter-spacing: 0 !important;
+}
+
+#tu-vi-bar #exp-text-desktop {
+    min-width: 0 !important;
+    font-size: 0.72rem !important;
+}
+
+#tu-vi-bar .cbar-rate-block,
+#tu-vi-bar #btn-cultivate {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 78px !important;
+    padding: 4px 8px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    gap: 1px !important;
+}
+
+#tu-vi-bar #btn-be-quan-x5 {
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 5px 7px !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+}
+
+#tu-vi-bar .cbar-action-block {
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+#tu-vi-bar #btn-cultivate-action {
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    min-width: 112px !important;
+    height: 36px !important;
+    padding: 0 9px !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.1px !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 1024px) {
+    #tu-vi-bar,
+    #tu-vi-bar.cultivation-breakthrough-bar {
+        min-width: 0 !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding: 8px 12px !important;
+    }
+    #tu-vi-bar .cbar-realm-block {
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+    #tu-vi-bar .cbar-progress-block {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    #tu-vi-bar,
+    #tu-vi-bar.cultivation-breakthrough-bar {
+        gap: 8px !important;
+        max-width: calc(100vw - 630px) !important;
+        padding: 8px 12px !important;
+    }
+    #tu-vi-bar .cbar-realm-block {
+        max-width: 235px !important;
+        gap: 6px !important;
+    }
+    #tu-vi-bar .cbar-rate-block,
+    #tu-vi-bar #btn-cultivate {
+        min-width: 72px !important;
+        padding: 4px 6px !important;
+    }
+    #tu-vi-bar #btn-be-quan-x5,
+    #tu-vi-bar #btn-tinh-tu-focus,
+    #tu-vi-bar #btn-tinh-tu-stop {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+    }
+    #tu-vi-bar #btn-cultivate-action {
+        min-width: 102px !important;
+        padding: 0 8px !important;
     }
 }

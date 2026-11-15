@@ -580,8 +580,13 @@ function takeLightning(boltIndex = null, customConfig = null) {
     const playerMaxHp = effectiveStats.maxHp || gState?.maxHp || 1000;
 
     // 3. Công thức: rawDamage = (config.baseDamage * boltMultiplier) - (playerDef * 2.5)
-    // Áp dụng Tâm Ma Phệ Thể: Base Damage nhân với (1 + tamMa / 100). Nếu tamMa = 100, sát thương lôi kiếp x2!
-    const tamMaVal = gState ? (gState.tamMa != null ? gState.tamMa : Math.max(0, 100 - (gState.daoTam ?? 100))) : 0;
+    // Áp dụng Tâm Ma Phệ Thể: Base Damage nhân với (1 + tamMa / 100), được Hạo Nhiên Chính Khí giảm 25% tỉ lệ Tẩu Hỏa Nhập Ma!
+    const rawTamMaVal = gState ? (gState.tamMa != null ? gState.tamMa : Math.max(0, 100 - (gState.daoTam ?? 100))) : 0;
+    const alignState = (typeof window !== 'undefined' && typeof window.computeDaoAlignmentState === 'function')
+        ? window.computeDaoAlignmentState(gState)
+        : (gState?.alignmentBuffs || null);
+    const tauHoaReduction = Number(alignState?.tauHoaReduction || 0);
+    const tamMaVal = Math.max(0, Math.round(rawTamMaVal * (1 - tauHoaReduction)));
     const demonFactor = 1 + (tamMaVal / 100);
     const effectiveBaseDamage = Math.round(config.baseDamage * demonFactor);
 

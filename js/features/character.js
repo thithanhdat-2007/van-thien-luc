@@ -184,7 +184,7 @@
         const effective = typeof window.getEffectiveStats === 'function' ? window.getEffectiveStats() : {};
 
         // Tên cảnh giới từ REALMS
-        let realmName = "Trúc Cơ - Sơ Kỳ";
+        let realmName = (typeof window !== 'undefined' && typeof window.getRealmDisplayName === 'function') ? window.getRealmDisplayName(s.realmIndex, s.subRealmIndex) : ((typeof getRealmDisplayName === 'function') ? getRealmDisplayName(s.realmIndex, s.subRealmIndex) : "Luyện Khí Tầng 1");
         if (typeof REALMS !== 'undefined' && Array.isArray(REALMS) && REALMS[s.realmIndex]) {
             realmName = REALMS[s.realmIndex].name;
         } else if (s.realmName) {
@@ -295,10 +295,16 @@
         // Header
         const nameEl = document.getElementById('ui-player-name');
         setTextIfChanged(nameEl, p.name);
+        const titleBadgeEl = document.getElementById('ui-player-title-badge');
+        if (titleBadgeEl) {
+            const equipped = (p.equippedTitle || (window.state && window.state.equippedTitle) || (window.GameState && window.GameState.equippedTitle) || '').trim();
+            titleBadgeEl.textContent = equipped ? `[${equipped}]` : '';
+            titleBadgeEl.classList.toggle('hidden', !equipped);
+        }
         const worldEl = document.getElementById('ui-world-badge');
         setTextIfChanged(worldEl, p.world);
         const realmEl = document.getElementById('ui-realm-title');
-        setTextIfChanged(realmEl, p.realmName);
+        setTextIfChanged(realmEl, p.realmName); const realmBadgeEl = document.getElementById('realm-badge'); if (realmBadgeEl) setTextIfChanged(realmBadgeEl, p.realmName);
         const avatarEl = document.getElementById('ui-avatar');
         if (avatarEl && (p.avatar_url || p.avatar)) {
             const nextAvatar = p.avatar_url || p.avatar;
@@ -353,11 +359,11 @@
 
         // Panel 2: Combat Stats
         const atkEl = document.getElementById('ui-stat-atk');
-        if (atkEl) atkEl.textContent = Number(p.combat.atk).toLocaleString();
+        if (atkEl) { atkEl.textContent = (typeof formatCompactNumber === 'function' ? formatCompactNumber(p.combat.atk) : (window.formatCompactNumber ? window.formatCompactNumber(p.combat.atk) : Number(p.combat.atk).toLocaleString())); atkEl.title = Number(p.combat.atk || 0).toLocaleString('vi-VN'); }
         const defEl = document.getElementById('ui-stat-def');
-        if (defEl) defEl.textContent = Number(p.combat.def).toLocaleString();
+        if (defEl) { defEl.textContent = (typeof formatCompactNumber === 'function' ? formatCompactNumber(p.combat.def) : (window.formatCompactNumber ? window.formatCompactNumber(p.combat.def) : Number(p.combat.def).toLocaleString())); defEl.title = Number(p.combat.def || 0).toLocaleString('vi-VN'); }
         const spdEl = document.getElementById('ui-stat-spd');
-        if (spdEl) spdEl.textContent = Number(p.combat.spd).toLocaleString();
+        if (spdEl) { spdEl.textContent = (typeof formatCompactNumber === 'function' ? formatCompactNumber(p.combat.spd) : (window.formatCompactNumber ? window.formatCompactNumber(p.combat.spd) : Number(p.combat.spd).toLocaleString())); spdEl.title = Number(p.combat.spd || 0).toLocaleString('vi-VN'); }
         const critEl = document.getElementById('ui-stat-crit');
         if (critEl) critEl.textContent = p.combat.critRate + "%";
         const penEl = document.getElementById('ui-stat-pen');
@@ -484,6 +490,17 @@
                     if (actIcon) actIcon.className = 'fa-solid fa-yin-yang fa-spin mr-1.5 text-emerald-400/80';
                 }
             }
+
+            // Đồng bộ Tỉ lệ Độ Kiếp ở Cột Trái (bao gồm Chính Đạo Tiên Phong +15% & Tâm Ma)
+            const tribEl = document.getElementById('ui-tribulation-rate');
+            if (tribEl) {
+                const baseChance = Number(curRealmObj.baseChance || 80);
+                const rootBonus = (typeof window.getRootTier === 'function' && window.getRootTier()?.breakthroughBonus) || 0;
+                const alignBonus = Number((window.GameState?.alignmentBuffs?.tribulationBonus) ?? s.alignmentBuffs?.tribulationBonus) || 0;
+                const tamMaVal = s.tamMa != null ? Number(s.tamMa) : Math.max(0, 100 - Number(s.daoTam ?? 100));
+                const totalRate = Math.max(5, Math.min(100, Math.round(baseChance + rootBonus + alignBonus - tamMaVal)));
+                setTextIfChanged(tribEl, `${totalRate}%`);
+            }
         }
 
         // Cập nhật legacy fallback elements nếu có
@@ -522,7 +539,8 @@
     }
 
     // Xuất khẩu các hàm ra window và globalThis
-    window.player = player;
+    const activePlayerRef = (typeof window !== 'undefined' && window.state) ? window.state : player;
+    window.player = activePlayerRef;
     window.calculateCP = calculateCP;
     window.getSpiritRootMultiplier = getSpiritRootMultiplier;
     window.advanceAge = advanceAge;
@@ -534,7 +552,7 @@
     window.syncCharacterSkills = syncCharacterSkills;
     window.renderCharacterSkills = renderCharacterSkills;
 
-    globalThis.player = player;
+    globalThis.player = activePlayerRef;
     globalThis.calculateCP = calculateCP;
     globalThis.getSpiritRootMultiplier = getSpiritRootMultiplier;
     globalThis.advanceAge = advanceAge;

@@ -2,7 +2,89 @@
 // FILE: js/app.js - Logic Vòng Lặp Tu Luyện, HUD, Drawer & Bí Cảnh
 // ==========================================
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-if (typeof window !== 'undefined') window.state = state;
+
+// =========================================================================
+// KIẾN TRÚC HỢP NHẤT DỮ LIỆU ĐỘC TÔN (SINGLE SOURCE OF TRUTH STATE ARCHITECTURE)
+// window.state === window.GameState === window.player (Cùng 1 tham chiếu bộ nhớ)
+// =========================================================================
+function setupUnifiedStateReference(targetState) {
+    if (!targetState || typeof targetState !== 'object') return targetState;
+    if (typeof GameState !== 'undefined' && GameState !== targetState) {
+        ['syncFromState', 'applyToState', 'set', 'update', 'subscribe'].forEach(fnName => {
+            if (typeof GameState[fnName] === 'function' && typeof targetState[fnName] !== 'function') {
+                targetState[fnName] = function(...args) {
+                    try { return GameState[fnName].apply(targetState, args); } catch (_) { return targetState; }
+                };
+            }
+        });
+        if (GameState._listeners && !targetState._listeners) {
+            targetState._listeners = GameState._listeners;
+        }
+    }
+    const defineAlias = (prop, getter, setter) => {
+        if (!Object.prototype.hasOwnProperty.call(targetState, prop)) {
+            try {
+                Object.defineProperty(targetState, prop, {
+                    get: getter,
+                    set: setter,
+                    configurable: true,
+                    enumerable: true
+                });
+            } catch (_) {}
+        }
+    };
+    defineAlias('tuVi', () => targetState.exp, (v) => { targetState.exp = Number(v) || 0; });
+    defineAlias('linhThach', () => targetState.stones, (v) => { targetState.stones = Number(v) || 0; });
+    defineAlias('spiritStones', () => targetState.stones, (v) => { targetState.stones = Number(v) || 0; });
+    defineAlias('xianYu', () => targetState.immortalJade, (v) => { targetState.immortalJade = Number(v) || 0; });
+    defineAlias('tienNgoc', () => targetState.immortalJade, (v) => { targetState.immortalJade = Number(v) || 0; });
+    defineAlias('characterName', () => targetState.player?.name || targetState.name || 'Tiêu Dao Tử', (v) => { if (targetState.player) targetState.player.name = v; targetState.name = v; });
+
+    if (!targetState.core) {
+        Object.defineProperty(targetState, 'core', {
+            get() {
+                return {
+                    get hp() { return targetState.hp; }, set hp(v) { targetState.hp = v; },
+                    get maxHp() { return targetState.maxHp; }, set maxHp(v) { targetState.maxHp = v; },
+                    get mp() { return targetState.mp; }, set mp(v) { targetState.mp = v; },
+                    get maxMp() { return targetState.maxMp; }, set maxMp(v) { targetState.maxMp = v; },
+                    get daoTamPoints() { return targetState.daoTam; }, set daoTamPoints(v) { targetState.daoTam = v; },
+                    get age() { return targetState.ageYears || 18; }, set age(v) { targetState.ageYears = v; },
+                    get maxLifespan() { return targetState.lifespan || 200; }, set maxLifespan(v) { targetState.lifespan = v; }
+                };
+            },
+            configurable: true
+        });
+    }
+    if (!targetState.combat) {
+        Object.defineProperty(targetState, 'combat', {
+            get() {
+                return {
+                    get atk() { return targetState.totalAtk || targetState.atk || 28; },
+                    get def() { return targetState.totalDef || targetState.def || 14; },
+                    get spd() { return targetState.speed || 20; },
+                    get critRate() { return targetState.crit || 10; },
+                    get armorPen() { return targetState.armorPen || 12; },
+                    get dodge() { return targetState.dodge || 8.5; }
+                };
+            },
+            configurable: true
+        });
+    }
+    if (typeof window !== 'undefined') {
+        window.state = targetState;
+        window.GameState = targetState;
+        window.player = targetState;
+    }
+    if (typeof globalThis !== 'undefined') {
+        globalThis.state = targetState;
+        globalThis.GameState = targetState;
+        globalThis.player = targetState;
+    }
+    return targetState;
+}
+
+setupUnifiedStateReference(state);
 if (typeof syncGameState === 'function') syncGameState(state);
 try {
     normalizeSpiritualRootState(state);
@@ -461,7 +543,7 @@ function getEffectiveStats() {
     }
 
     // Hình phạt [Trọng Thương] do Thiên Kiếp đánh bại: Giảm 50% chỉ số trong 1 giờ
-    if (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil) {
+    if (typeof hasActiveInjuryTimer === 'function' ? hasActiveInjuryTimer(state, nowTs) : (state.heavyInjuryUntil && nowTs < state.heavyInjuryUntil)) {
         finalAtk = Math.max(1, Math.floor(finalAtk * 0.5));
         finalDef = Math.max(1, Math.floor(finalDef * 0.5));
         finalMaxHp = Math.max(1, Math.floor(finalMaxHp * 0.5));
@@ -536,14 +618,18 @@ function getEffectiveStats() {
     finalDef = Math.round((finalDef + achDefAdd) * (1 + (achDefPercent + divineDefPercent) / 100) * omenDefMult);
     finalMaxHp = Math.round((finalMaxHp + achHpAdd) * (1 + (achHpPercent + divineHpPercent) / 100));
 
-    // Gia trì từ Đạo Tâm (Ma Đạo Cự Phách: +20% Công Kích & +20% Bạo Kích)
+    // Gia trì từ Đạo Tâm (Chính Đạo Tiên Phong: +20% DEF; Ma Đạo Cự Phách: +15% ATK & +25% Crit Damage)
     const alignBuffs = (typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || state.alignmentBuffs || null;
     if (alignBuffs?.atkBonus) {
         finalAtk = Math.round(finalAtk * (1 + alignBuffs.atkBonus));
     }
+    if (alignBuffs?.defBonus) {
+        finalDef = Math.round(finalDef * (1 + alignBuffs.defBonus));
+    }
     if (alignBuffs?.critBonus) {
         omenCritAdd += alignBuffs.critBonus;
     }
+    const alignCritDmgBonus = Number(alignBuffs?.critDamageBonus) || 0;
 
     // Buff Linh Căn Khởi Nguyên (Tạp Linh Căn: +25% Khí Huyết)
     if (state.linhCanType === 'tap_linh_can' || state.hpBonus) {
@@ -568,7 +654,7 @@ function getEffectiveStats() {
         dodge: Number(((state.dodge || 5) + flatDodge).toFixed(1)),
         speed: Number(((state.speed || 100) + flatSpeed).toFixed(1)),
         armorPen: Number(((state.armorPen || 0) + flatArmorPen).toFixed(1)),
-        critDamageBonus: (titleEffects.critDamageAdd || 0) + companionCritDmgAdd + rootBonus.critDamage,
+        critDamageBonus: (titleEffects.critDamageAdd || 0) + companionCritDmgAdd + rootBonus.critDamage + alignCritDmgBonus,
         critResist: rootBonus.critResist,
         elementalDamageMultiplier: titleEffects.elementalDamageMultiplier || 1,
         elementalWeaknessTaken: titleEffects.elementalWeaknessTaken || 1,
@@ -639,8 +725,16 @@ function getHpRegenPerSec(target = state) {
         }
     }
 
+    // Gia trì Hồi Phục HP từ Trục Cân Bằng Đạo Tâm (+20% khi Hạo Nhiên Chính Khí)
+    const alignState = (typeof computeDaoAlignmentState === 'function')
+        ? computeDaoAlignmentState(target)
+        : (target.alignmentBuffs || null);
+    if (alignState?.hpRegenMult && alignState.hpRegenMult !== 1) {
+        regenMultiplier *= Number(alignState.hpRegenMult);
+    }
+
     // Hình phạt [Trọng Thương] do Thiên Kiếp đánh bại: Giảm 50% hồi phục nếu đang trọng thương
-    if (target.heavyInjuryUntil && Date.now() < target.heavyInjuryUntil) {
+    if (typeof hasActiveInjuryTimer === 'function' ? hasActiveInjuryTimer(target, Date.now()) : (target.heavyInjuryUntil && Date.now() < target.heavyInjuryUntil)) {
         regenMultiplier *= 0.5;
     }
 
@@ -649,22 +743,59 @@ function getHpRegenPerSec(target = state) {
 window.getHpRegenPerSec = getHpRegenPerSec;
 
 function loadGameState() {
+            const parseKey = (k) => {
+                try {
+                    const obj = JSON.parse(localStorage.getItem(k) || 'null');
+                    return (obj && typeof obj === 'object') ? obj : null;
+                } catch (e) { return null; }
+            };
+            const candidates = [
+                { key: 'van_co_tu_tien_save_v2', data: parseKey('van_co_tu_tien_save_v2') },
+                { key: 'VTL_PERMANENT_SAVE', data: parseKey('VTL_PERMANENT_SAVE') },
+                { key: 'VAN_THIEN_LUC_MASTER_SAVE', data: parseKey('VAN_THIEN_LUC_MASTER_SAVE') }
+            ].filter(c => c.data);
             let saved = null;
-            try { saved = JSON.parse(localStorage.getItem('van_co_tu_tien_save_v2') || 'null'); } catch (e) {}
+            let loadedFromPerm = false;
+            if (candidates.length > 0) {
+                candidates.sort((a, b) => {
+                    const ta = Number(a.data.lastActiveTimestamp || a.data.lastSavedAt || a.data.lastOnlineTime || 0);
+                    const tb = Number(b.data.lastActiveTimestamp || b.data.lastSavedAt || b.data.lastOnlineTime || 0);
+                    return tb - ta;
+                });
+                saved = candidates[0].data;
+                loadedFromPerm = candidates[0].key !== 'van_co_tu_tien_save_v2';
+            }
             if (saved) {
                 try {
                     const backupKey = 'van_co_tu_tien_save_pre_math_hotfix';
                     if (!localStorage.getItem(backupKey)) localStorage.setItem(backupKey, JSON.stringify(saved));
                 } catch (_) { /* Continue when browser storage is unavailable. */ }
             }
-            // Explicit player-requested reset: persist once, then allow normal progression.
+            // Explicit player-requested reset: persist once, then allow normal progression (never wipe valid permanent saves).
             const resetKey = 'van_co_tu_tien_progress_reset_20261112_v1';
             if (!localStorage.getItem(resetKey)) {
-                saved = createFreshGameplayState(saved);
-                localStorage.setItem('van_co_tu_tien_save_v2', JSON.stringify(saved));
+                const hasExistingProgress = loadedFromPerm || (saved && (
+                    Number(saved.exp) > 0 ||
+                    Number(saved.realmIndex) > 0 ||
+                    Number(saved.immortalJade) > 0 ||
+                    Number(saved.lastActiveTimestamp || saved.lastSavedAt) > 0
+                ));
+                if (!hasExistingProgress) {
+                    saved = createFreshGameplayState(saved);
+                    localStorage.setItem('van_co_tu_tien_save_v2', JSON.stringify(saved));
+                }
                 localStorage.setItem(resetKey, 'done');
             }
             state = { ...structuredClone(DEFAULT_STATE), ...(saved && typeof saved === 'object' ? saved : {}) };
+            if (saved && typeof saved.righteous === 'number' && !saved.alignment) {
+                state.alignment = { righteous: saved.righteous, demonic: Number(saved.demonic ?? 50) };
+            }
+            if (state.alignment && typeof state.alignment === 'object') {
+                if (state.righteous === undefined) state.righteous = Number(state.alignment.righteous ?? 50);
+                if (state.demonic === undefined) state.demonic = Number(state.alignment.demonic ?? 50);
+                state.alignment.righteous = Number(state.righteous ?? state.alignment.righteous ?? 50);
+                state.alignment.demonic = Number(state.demonic ?? state.alignment.demonic ?? 50);
+            }
             // Older object-based rewards were stored as {id: reward, name: reward}.
             // Recover the original metadata and quantity instead of discarding loot.
             state.inventory = (Array.isArray(state.inventory) ? state.inventory : []).map(normalizeInventoryEntry);
@@ -754,6 +885,11 @@ function loadGameState() {
             if (typeof state.equippedTitle !== 'string') state.equippedTitle = '';
             if (typeof state.talismanCraftedCount !== 'number') state.talismanCraftedCount = 0;
             if (typeof state.avatarTripsCompleted !== 'number') state.avatarTripsCompleted = 0;
+            if (typeof state.pillsCraftedCount !== 'number') state.pillsCraftedCount = 0;
+            if (typeof state.forgedGearCount !== 'number') state.forgedGearCount = 0;
+            if (typeof state.maxCombatPower !== 'number') state.maxCombatPower = 0;
+            if (typeof state.focusMeditationUntil !== 'number') state.focusMeditationUntil = 0;
+            if (!Array.isArray(state.unlockedAchievementTitles)) state.unlockedAchievementTitles = [];
             if (!state.celestialOmen || typeof state.celestialOmen !== 'object') {
                 state.celestialOmen = {
                     currentOmenId: "tu_khi_dong_lai",
@@ -796,13 +932,22 @@ function loadGameState() {
                     state.def = Math.max(Number(state.def) || 0, Number(currentLoadedRealm.baseDef) || Number(currentLoadedRealm.def) || 14);
                 }
             }
-            if (typeof window !== 'undefined') window.state = state;
+            if (typeof setupUnifiedStateReference === 'function') {
+                setupUnifiedStateReference(state);
+            } else if (typeof window !== 'undefined') {
+                window.state = state;
+                window.GameState = state;
+                window.player = state;
+            }
             if (typeof syncGameState === 'function') syncGameState(state);
             const loadedStats = getEffectiveStats();
             if (state.hp >= state.maxHp) state.hp = loadedStats.maxHp;
             if (state.mp >= state.maxMp) state.mp = loadedStats.maxMp;
 
             CultivationMathEngine.clampResources(state, loadedStats, getLinhKhiMax());
+            if (typeof reconcileHeavyInjuryState === 'function') {
+                reconcileHeavyInjuryState(state, { save: true, updateUi: false });
+            }
             const rawOfflineSeconds = saved && Number.isFinite(Number(saved.lastOnlineTime))
                 ? Math.max(0, Math.floor((Date.now() - Number(saved.lastOnlineTime)) / 1000)) : 0;
             // Giới hạn thời gian offline tối đa 24h để bảo toàn cân bằng game
@@ -821,9 +966,9 @@ function loadGameState() {
                 state.tamMa = Math.max(0, 100 - state.daoTam);
             }
 
-            // 2. Tu Vi: Bể chứa vô hạn, tiếp tục tích lũy khi offline không bị chặn trần
+            // 2. Tu Vi: Bể chứa vô hạn (nếu >=120s đã chuyển sang Ngọc Giản Bế Quan Thu Hoạch)
             let gainedTuVi = 0;
-            if (offlineSeconds > 0 && realm && !state.isDead && !state.beQuanTuQua?.active) {
+            if (offlineSeconds > 0 && offlineSeconds < 120 && realm && !state.isDead && !state.beQuanTuQua?.active) {
                 const adjustedGainPerSec = getAdjustedCultivationGain(getIdleRate()).gainedAmount;
                 gainedTuVi = Math.round(offlineSeconds * adjustedGainPerSec);
                 state.exp = (Number(state.exp) || 0) + gainedTuVi;
@@ -839,8 +984,8 @@ function loadGameState() {
                 state.ageYears = Math.min(Math.max(0, maxLifespan - 1), state.ageYears + yearsToAdd);
             }
 
-            // 4. Linh Khí Động Phủ
-            if (offlineSeconds > 0 && realm && !state.isDead && state.linhKhi < getLinhKhiMax()) {
+            // 4. Linh Khí Động Phủ (nếu <120s cộng thẳng; >=120s do Ngọc Giản Bế Quan Thu Hoạch phát)
+            if (offlineSeconds > 0 && offlineSeconds < 120 && realm && !state.isDead && state.linhKhi < getLinhKhiMax()) {
                 state.linhKhi = Math.min(getLinhKhiMax(), state.linhKhi + Math.round(offlineSeconds * getLinhKhiRate()));
             }
 
@@ -894,14 +1039,19 @@ function loadGameState() {
             return { seconds: rawOfflineSeconds, gained: state.exp - previousExp, linhKhiGained: state.linhKhi - previousLinhKhi, yearsAged: state.ageYears - ageBefore };
         }
 function saveGameState() {
-            if (window.__IS_GAME_LOADED === false) return;
-            state.lastOnlineTime = Date.now();
-            state.lastActiveTime = state.lastOnlineTime;
+            if (window.__IS_GAME_LOADED === false || window.__LOCK_SAVE__) return;
+            const nowTs = Date.now();
+            state.lastOnlineTime = nowTs;
+            state.lastActiveTime = nowTs;
+            state.lastActiveTimestamp = nowTs;
+            state.lastSavedAt = nowTs;
             try {
                 const payload = JSON.stringify(state);
                 localStorage.setItem('VAN_THIEN_LUC_SAVE_V1', payload);
                 localStorage.setItem('van_co_tu_tien_save_v2', payload);
                 localStorage.setItem('VAN_THIEN_LUC_ACCOUNT_SAVE', payload);
+                localStorage.setItem('VTL_PERMANENT_SAVE', payload);
+                localStorage.setItem('VAN_THIEN_LUC_MASTER_SAVE', payload);
             } catch (e) {
                 console.warn('[saveGameState] Lỗi ghi localStorage:', e);
             }
@@ -1039,6 +1189,24 @@ function getIdleRate() {
     if (state.companionBuffs && state.companionBuffs.ratePercent) {
         rate *= (1 + Number(state.companionBuffs.ratePercent) / 100);
     }
+    // Gia trì Đạo Tâm (Thái Cực Hỗn Nguyên: +12% Tốc Độ Tụ Khí)
+    const alignState = (typeof computeDaoAlignmentState === 'function')
+        ? computeDaoAlignmentState(state)
+        : ((typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || state?.alignmentBuffs || null);
+    const qiRateMult = Number(alignState?.qiRateMult || alignState?.qiRateMultiplier || 1);
+    if (qiRateMult && qiRateMult !== 1) {
+        rate *= qiRateMult;
+    }
+    // Bế Quan Tịnh Tu (25 phút Focus Meditation): +50% Linh Tốc trong suốt thời gian nhập định
+    const focusUntil = Number(state?.focusMeditationUntil || (typeof window !== 'undefined' ? window.GameState?.focusMeditationUntil : 0) || 0);
+    if (focusUntil > Date.now()) {
+        rate *= 1.50;
+    }
+    // Đốn Ngộ Nhất Niệm (10 giây x2 tốc độ tu luyện)
+    const epiphanyUntil = Number(state?.epiphanyUntil || (typeof window !== 'undefined' ? window.GameState?.epiphanyUntil : 0) || 0);
+    if (epiphanyUntil > Date.now()) {
+        rate *= 2.0;
+    }
     return rate * CULTIVATION_BALANCE_RULES.pacingDampener;
 }
 
@@ -1060,8 +1228,9 @@ function getLinhKhiRate(targetState = null) {
     const baseRegen = (typeof BASE_LINH_KHI_REGEN !== 'undefined' ? BASE_LINH_KHI_REGEN : 100) + (arrayLvl - 1) * 25;
     let finalRegen = Math.floor(baseRegen * Math.pow(1.2, realmIndex) * (1 + mocLevel * 0.02));
     const alignBuffs = (typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || s?.alignmentBuffs || null;
-    if (alignBuffs?.qiRateMultiplier) {
-        finalRegen = Math.floor(finalRegen * alignBuffs.qiRateMultiplier);
+    const lkMult = Number(alignBuffs?.linhKhiRateMultiplier || alignBuffs?.qiRateMultiplier || 1);
+    if (lkMult && lkMult !== 1) {
+        finalRegen = Math.floor(finalRegen * lkMult);
     }
     return finalRegen;
 }
@@ -1069,6 +1238,248 @@ function getLinhKhiRate(targetState = null) {
 function getThoNguyenMax() {
     return Math.max(0, REALMS[state.realmIndex].lifespan + state.lifespanBonus - state.lifespanPenalty);
 }
+
+// =========================================================================
+// BẢNG BÓC TÁCH GIA TRÌ LINH TỐC (#cultivation-rate-popover)
+// =========================================================================
+function getCultivationRateBreakdown() {
+    const realmsList = (typeof window !== 'undefined' && Array.isArray(window.REALMS) && window.REALMS.length > 0)
+        ? window.REALMS
+        : ((typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : []);
+    const idx = (typeof state !== 'undefined' && Number.isInteger(state.realmIndex)) ? state.realmIndex : 0;
+    const currentRealm = realmsList[idx] || realmsList[0] || { rate: 5, name: 'Luyện Khí' };
+    const base = Number(currentRealm.rate) || 5;
+
+    const rootMultiplier = (typeof getActiveFoundationEffects === 'function' ? getActiveFoundationEffects()?.cultivationSpeedMultiplier : 1) ?? 1;
+    const rootPercent = Math.round((rootMultiplier - 1) * 100);
+
+    let skillPercent = 0;
+    if (Array.isArray(state?.skills)) {
+        state.skills.forEach(sk => {
+            if (sk.bonusType === 'rate' || sk.id === 'skill_breath') {
+                skillPercent += (Number(sk.level) || 1) * 20;
+            }
+        });
+    }
+
+    let companionPercent = 0;
+    if (state?.companionBuffs?.ratePercent) {
+        companionPercent += Number(state.companionBuffs.ratePercent);
+    }
+
+    let omenPercent = 0;
+    if (state?.celestialOmen && typeof CELESTIAL_OMENS_CONFIG !== 'undefined') {
+        const omen = CELESTIAL_OMENS_CONFIG.find(o => o.id === state.celestialOmen.currentOmenId);
+        if (omen?.effects?.cultivationRateMult) {
+            omenPercent = Math.round((omen.effects.cultivationRateMult - 1) * 100);
+        }
+    }
+
+    let daoPercent = 0;
+    const alignState = (typeof computeDaoAlignmentState === 'function')
+        ? computeDaoAlignmentState(state)
+        : ((typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || state?.alignmentBuffs || null);
+    const qiRateMult = Number(alignState?.qiRateMult || alignState?.qiRateMultiplier || 1);
+    if (qiRateMult && qiRateMult !== 1) {
+        daoPercent = Math.round((qiRateMult - 1) * 100);
+    }
+
+    let focusPercent = 0;
+    const focusUntil = Number(state?.focusMeditationUntil || 0);
+    if (focusUntil > Date.now()) {
+        focusPercent += 50;
+    }
+    if (state?.beQuanTuQua?.active && (Date.now() - state.beQuanTuQua.startTime < 60000)) {
+        focusPercent += 400; // x5
+    }
+
+    let epiphanyPercent = 0;
+    const epiphanyUntil = Number(state?.epiphanyUntil || (typeof window !== 'undefined' ? window.GameState?.epiphanyUntil : 0) || 0);
+    if (epiphanyUntil > Date.now()) {
+        epiphanyPercent = 100; // x2
+    }
+
+    const totalRate = typeof getIdleRate === 'function' ? Math.round(getIdleRate() * (state?.timeScale || 1)) : base;
+
+    return {
+        base,
+        rootMultiplier: rootMultiplier.toFixed(2),
+        rootPercent,
+        skillPercent,
+        companionPercent,
+        omenPercent,
+        daoPercent,
+        focusPercent,
+        epiphanyPercent,
+        totalRate
+    };
+}
+window.getCultivationRateBreakdown = getCultivationRateBreakdown;
+
+function toggleCultivationRatePopover(e) {
+    if (e) e.stopPropagation();
+    const pop = document.getElementById('cultivation-rate-popover');
+    if (!pop) return;
+    const isHidden = pop.classList.contains('hidden');
+    if (isHidden) {
+        updateCultivationRatePopover();
+        pop.classList.remove('hidden');
+    } else {
+        pop.classList.add('hidden');
+    }
+}
+window.toggleCultivationRatePopover = toggleCultivationRatePopover;
+
+function updateCultivationRatePopover() {
+    const pop = document.getElementById('cultivation-rate-popover');
+    if (!pop || pop.classList.contains('hidden')) return;
+    const b = getCultivationRateBreakdown();
+    const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setT('crp-total-rate', `+${b.totalRate} / s`);
+    setT('crp-base-rate', `+${b.base} / s`);
+    setT('crp-root-bonus', `x${b.rootMultiplier} (${b.rootPercent >= 0 ? '+' : ''}${b.rootPercent}%)`);
+    setT('crp-skill-bonus', `+${b.skillPercent}%`);
+    setT('crp-companion-bonus', `+${b.companionPercent}%`);
+    setT('crp-omen-bonus', `${b.omenPercent >= 0 ? '+' : ''}${b.omenPercent}%`);
+    setT('crp-dao-bonus', `${b.daoPercent >= 0 ? '+' : ''}${b.daoPercent}%`);
+    setT('crp-focus-bonus', `+${b.focusPercent}%`);
+}
+window.updateCultivationRatePopover = updateCultivationRatePopover;
+
+// =========================================================================
+// PHÚC LỢI THIÊN ĐẠO HÀNG NGÀY & ĐẠO LỘ THÀNH TỰU
+// =========================================================================
+const DAILY_BLESSING_REWARDS = [
+    { day: 1, name: '500 Linh Thạch & 5 Tử Linh Chi', stones: 500, jade: 0, items: [{ id: 'herb_spirit', count: 5, name: 'Tử Linh Chi' }], icon: 'fa-gem' },
+    { day: 2, name: '1.000 Linh Thạch & 3 Tụ Khí Đan', stones: 1000, jade: 0, items: [{ id: 'pill_qi', count: 3, name: 'Tụ Khí Đan' }], icon: 'fa-pills' },
+    { day: 3, name: '1.500 Linh Thạch & 10 Huyền Thiết', stones: 1500, jade: 0, materials: { huyenThiet: 10 }, icon: 'fa-cubes' },
+    { day: 4, name: '2.000 Linh Thạch & 1 Trúc Cơ Đan', stones: 2000, jade: 0, items: [{ id: 'pill_foundation', count: 1, name: 'Trúc Cơ Đan' }], icon: 'fa-circle-radiation' },
+    { day: 5, name: '3.000 Linh Thạch & 15 Tử Tinh', stones: 3000, jade: 0, materials: { tuTinh: 15 }, icon: 'fa-gem' },
+    { day: 6, name: '5.000 Linh Thạch & 10 Tiên Ngọc', stones: 5000, jade: 10, icon: 'fa-diamond' },
+    { day: 7, name: '10.000 Linh Thạch & 50 Tiên Ngọc', stones: 10000, jade: 50, icon: 'fa-crown' }
+];
+
+function openDailyBlessingModal() {
+    const modal = document.getElementById('modal-daily-blessing');
+    if (!modal) return;
+    renderDailyBlessingUI();
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
+}
+window.openDailyBlessingModal = openDailyBlessingModal;
+
+function closeDailyBlessingModal() {
+    const modal = document.getElementById('modal-daily-blessing');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(false);
+}
+window.closeDailyBlessingModal = closeDailyBlessingModal;
+
+function renderDailyBlessingUI() {
+    if (!state.dailyBlessing) {
+        state.dailyBlessing = {
+            claimedDays: 0,
+            lastClaimDate: ''
+        };
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const hasClaimedToday = state.dailyBlessing.lastClaimDate === today;
+    const currentDay = Math.min(7, (state.dailyBlessing.claimedDays % 7) + 1);
+
+    const grid = document.getElementById('daily-blessing-grid');
+    if (grid) {
+        grid.innerHTML = DAILY_BLESSING_REWARDS.map(r => {
+            const isPast = r.day < currentDay || (r.day === currentDay && hasClaimedToday);
+            const isToday = r.day === currentDay && !hasClaimedToday;
+            return `
+                <div class="p-3 rounded-2xl border flex flex-col items-center justify-between text-center transition ${isToday ? 'bg-amber-950/70 border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse' : (isPast ? 'bg-slate-900/60 border-slate-700/60 opacity-60' : 'bg-slate-950/80 border-slate-800')}">
+                    <span class="text-[10px] font-mono font-bold ${isToday ? 'text-amber-300' : 'text-slate-400'}">Ngày ${r.day}</span>
+                    <div class="w-10 h-10 my-1 rounded-xl bg-slate-900 flex items-center justify-center text-lg ${isToday ? 'text-amber-300' : (isPast ? 'text-emerald-400' : 'text-slate-400')}">
+                        ${isPast ? '<i class="fa-solid fa-check"></i>' : `<i class="fa-solid ${r.icon}"></i>`}
+                    </div>
+                    <span class="text-[11px] font-serif font-bold text-slate-200 leading-tight">${r.name}</span>
+                    <span class="text-[9px] mt-1 font-mono ${isPast ? 'text-emerald-400 font-bold' : (isToday ? 'text-yellow-300' : 'text-slate-500')}">
+                        ${isPast ? 'Đã Nhận' : (isToday ? 'Có Thể Nhận' : 'Chưa Mở')}
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const statusEl = document.getElementById('daily-blessing-status-text');
+    if (statusEl) {
+        statusEl.textContent = `Chu kỳ điểm danh: ${state.dailyBlessing.claimedDays}/7 ngày ${hasClaimedToday ? '(Hôm nay đã nhận)' : '(Hôm nay chưa nhận)'}`;
+    }
+
+    const btn = document.getElementById('btn-claim-daily-blessing');
+    if (btn) {
+        btn.disabled = hasClaimedToday;
+        btn.textContent = hasClaimedToday ? 'HÔM NAY ĐÃ NHẬN' : 'NHẬN PHÚC LỢI HÔM NAY';
+        btn.classList.toggle('opacity-50', hasClaimedToday);
+        btn.classList.toggle('cursor-not-allowed', hasClaimedToday);
+    }
+}
+
+function claimDailyBlessing() {
+    if (!state.dailyBlessing) {
+        state.dailyBlessing = { claimedDays: 0, lastClaimDate: '' };
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (state.dailyBlessing.lastClaimDate === today) {
+        if (typeof showGameToast === 'function') showGameToast('Hôm nay đạo hữu đã nhận phúc lợi rồi, mai hãy quay lại!', 'warning');
+        return;
+    }
+    const currentDay = Math.min(7, (state.dailyBlessing.claimedDays % 7) + 1);
+    const reward = DAILY_BLESSING_REWARDS[currentDay - 1];
+    if (!reward) return;
+
+    state.dailyBlessing.claimedDays += 1;
+    state.dailyBlessing.lastClaimDate = today;
+
+    if (reward.stones) state.stones = (Number(state.stones) || 0) + reward.stones;
+    if (reward.jade) state.immortalJade = (Number(state.immortalJade) || 0) + reward.jade;
+    if (reward.materials) {
+        if (!state.materials) state.materials = {};
+        Object.entries(reward.materials).forEach(([k, v]) => {
+            state.materials[k] = (Number(state.materials[k]) || 0) + v;
+        });
+    }
+    if (reward.items && Array.isArray(state.inventory)) {
+        reward.items.forEach(it => {
+            const found = state.inventory.find(i => i.id === it.id);
+            if (found) found.count = (Number(found.count) || 0) + it.count;
+            else state.inventory.push({ ...it, equipped: false });
+        });
+    }
+
+    if (typeof showGameToast === 'function') showGameToast(`Đã nhận phúc lợi Ngày ${currentDay}: ${reward.name}!`, 'success');
+    if (typeof addLog === 'function') addLog(`🎁 [Phúc Lợi Thiên Đạo] Nhận thưởng Ngày ${currentDay}: ${reward.name}.`, 'text-amber-300 font-bold');
+
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    renderDailyBlessingUI();
+}
+window.claimDailyBlessing = claimDailyBlessing;
+
+function openAchievementModal() {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('page-achievement');
+    } else {
+        const p = document.getElementById('page-achievement');
+        if (p) {
+            p.classList.remove('hidden');
+            p.classList.add('active');
+            p.style.display = 'block';
+            if (typeof window.renderAchievementHub === 'function') {
+                window.renderAchievementHub(document.getElementById('achievement-page-content'));
+            }
+        }
+    }
+}
+window.openAchievementModal = openAchievementModal;
 
 function Trigger_Death() {
     if (state.isDead || state.ageYears < getThoNguyenMax()) return false;
@@ -1198,8 +1609,13 @@ function getAdjustedCultivationGain(amount) {
         : 1;
     let gained = rawAmount * suppressionMultiplier;
 
+    // Giải trừ Trọng Thương ảo trước khi tính tốc độ tụ khí
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(state, { save: false, updateUi: false });
+    }
+
     // Hình phạt [Trọng Thương] (Độ Kiếp thất bại hoặc Thua Tháp): Giảm 70% tốc độ tu vi (chỉ còn 30%)
-    if (state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil)) {
+    if (typeof isHeavyInjuryActive === 'function' ? isHeavyInjuryActive(state) : (state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil))) {
         gained = Math.max(1, Math.floor(gained * 0.3));
     }
 
@@ -1683,7 +2099,7 @@ function getCombatPowerBreakdown(target = state) {
     let total = canCoCP + equipmentCP + skillsCP + petCP + sectCP + karmaCP + companionBonus;
 
     // Hình phạt Trọng Thương do Thiên Kiếp đánh bại: Giảm 50%
-    if (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil) {
+    if (typeof hasActiveInjuryTimer === 'function' ? hasActiveInjuryTimer(s, Date.now()) : (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
         total = Math.max(1, Math.round(total * 0.5));
     }
 
@@ -4023,6 +4439,7 @@ function toggleDropup(menuId, event) {
     closeAllDropups();
 
     if (!isCurrentlyOpen) {
+        if (typeof window.playSound === 'function') window.playSound('bell');
         targetMenu.style.setProperty('display', 'flex', 'important');
         targetMenu.classList.add('active');
         const parentWrap = targetMenu.closest('.nav-item-wrapper');
@@ -4071,7 +4488,9 @@ function closeAllDropupMenus() {
  *             Ngược lại, chỉ hiển thị ĐÚNG trang vừa được bấm chọn.
  */
 // ============================================================================
+// ============================================================================
 // GLOBAL STATE MANAGEMENT (GAME_STATE SINGLETON)
+// ============================================================================
 // ============================================================================
 // Preserve and extend the unified GameState from js/data.js
 if (typeof window !== 'undefined' && !window.GameState) {
@@ -4425,6 +4844,10 @@ function switchPage(pageId) {
             }
             return;
         }
+    }
+    if (pageId === 'page-achievement' || pageId === 'achievement' || pageId === 'thanh-tuu' || pageId === 'character-achievement') {
+        openHubModal('character', 'achievement');
+        return;
     }
     if (pageId.startsWith('character-')) {
         const sub = pageId.replace('character-', '');
@@ -6966,13 +7389,13 @@ function upgradeArtifact(artId) {
     const art = state.artifacts.find(a => a.id === artId);
     if (!art) return;
     const curLvl = Number(art.level) || 1;
-    if (curLvl >= 10) {
-        if (typeof showGameToast === 'function') showGameToast(`[${art.name}] đã đạt Thập Trọng Cực Cảnh tối thượng!`, 'info');
-        if (typeof addLog === 'function') addLog(`👑 [${art.name}] đã đạt Thập Trọng Cực Cảnh, uy áp thiên địa khôn lường!`, 'text-amber-400 font-bold');
+    if (curLvl >= 15) {
+        if (typeof showGameToast === 'function') showGameToast(`[${art.name}] đã đạt Thập Ngũ Trọng Cực Cảnh tối thượng (+15)!`, 'info');
+        if (typeof addLog === 'function') addLog(`👑 [${art.name}] đã đạt Thập Ngũ Trọng Cực Cảnh, uy áp thiên địa khôn lường!`, 'text-amber-400 font-bold');
         return;
     }
 
-    const costStones = curLvl * 350;
+    const costStones = curLvl * 300;
     const oreKey = art.oreType || (art.id === 'bead' ? 'tuTinh' : 'huyenThiet');
     const oreName = art.oreName || (oreKey === 'tuTinh' ? 'Tử Tinh' : 'Huyền Thiết');
     const costOre = Math.max(1, Math.floor(curLvl / 2) + 1);
@@ -7014,15 +7437,16 @@ function upgradeArtifact(artId) {
     }
 
     let milestoneDesc = '';
-    if (art.level === 4) milestoneDesc = ' 🌟 [Khí Linh Thức Tỉnh - Đạt Trung Giai]';
-    else if (art.level === 7) milestoneDesc = ' ⚡ [Hoàng Kim Linh Quang - Đạt Hậu Giai]';
-    else if (art.level === 10) milestoneDesc = ' 👑 [THẬP TRỌNG CỰC CẢNH - ĐẠT CHÍ TÔN PHẨM]';
+    if (art.level === 5) milestoneDesc = ' 🌟 [Khí Linh Thức Tỉnh - Đạt Trung Giai]';
+    else if (art.level === 9) milestoneDesc = ' ⚡ [Hoàng Kim Linh Quang - Đạt Hậu Giai]';
+    else if (art.level === 13) milestoneDesc = ' 🔮 [Cực Phẩm Viên Mãn]';
+    else if (art.level === 15) milestoneDesc = ' 👑 [THẬP NGŨ TRỌNG CỰC CẢNH - ĐẠT CHÍ TÔN PHẨM]';
 
     if (typeof addLog === 'function') {
-        addLog(`✨ [Tôi Luyện Thần Binh] ${art.name} thăng hoa lên Bậc ${art.level}!${milestoneDesc} Chiến Lực tăng +${cpGain.toLocaleString('vi-VN')}!`, 'text-amber-300 font-bold');
+        addLog(`✨ [Tôi Luyện Thần Binh] ${art.name} thăng hoa lên Bậc ${art.level}!${milestoneDesc} Tăng +12% uy lực! Chiến Lực tăng +${cpGain.toLocaleString('vi-VN')}!`, 'text-amber-300 font-bold');
     }
     if (typeof showGameToast === 'function') {
-        showGameToast(`Tôi luyện thành công: ${art.name} đạt Bậc ${art.level}!`, 'success');
+        showGameToast(`Tôi luyện thành công: ${art.name} đạt Bậc ${art.level}! (+12% Uy Lực)`, 'success');
     }
 
     if (typeof updateHUD === 'function') updateHUD();
@@ -7046,15 +7470,15 @@ function renderArtifactHub(content) {
     const hasResonance = equippedCount >= 3;
     const resonanceMultiplier = hasResonance ? 1.15 : 1.0;
 
-    // Tính tổng thuộc tính từ các pháp bảo đã trang bị (khớp hoàn toàn với js/stats.js)
+    // Tính tổng thuộc tính từ các pháp bảo đã trang bị (khớp hoàn toàn với js/stats.js: +12% mỗi cấp cường hóa)
     let totalArtAtk = 0, totalArtDef = 0, totalArtHp = 0;
     state.artifacts.forEach(art => {
         if (!art.equipped) return;
-        const lvl = Number(art.level) || 1;
-        const extremeMultiplier = lvl >= 10 ? 1.2 : 1.0;
-        if (art.id === 'sword') totalArtAtk += Math.round(lvl * 45 * tier * resonanceMultiplier * extremeMultiplier);
-        else if (art.id === 'mirror') totalArtDef += Math.round(lvl * 35 * tier * resonanceMultiplier * extremeMultiplier);
-        else if (art.id === 'bead') totalArtHp += Math.round(lvl * 250 * tier * resonanceMultiplier * extremeMultiplier);
+        const lvl = Math.max(1, Math.min(15, Number(art.level) || 1));
+        const artMultiplier = 1 + (lvl * 0.12);
+        if (art.id === 'sword') totalArtAtk += Math.round(80 * tier * artMultiplier * resonanceMultiplier);
+        else if (art.id === 'mirror') totalArtDef += Math.round(60 * tier * artMultiplier * resonanceMultiplier);
+        else if (art.id === 'bead') totalArtHp += Math.round(400 * tier * artMultiplier * resonanceMultiplier);
     });
 
     const huyenThietTotal = getArtifactOre('huyenThiet');
@@ -7066,10 +7490,10 @@ function renderArtifactHub(content) {
             <header class="p-4 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-indigo-950/70 border border-amber-500/40 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
                     <h3 class="text-base sm:text-lg font-bold text-amber-300 font-serif flex items-center gap-2">
-                        <i class="fa-solid fa-certificate text-amber-400"></i> Tam Đại Bản Mệnh Pháp Bảo
+                        <i class="fa-solid fa-certificate text-amber-400"></i> Tam Đại Bản Mệnh Pháp Bảo (+1 đến +15)
                     </h3>
                     <p class="text-xs text-slate-300 mt-1 font-sans">
-                        Bản mệnh tương thông, uẩn dưỡng khí linh. Tôi luyện thần binh đạt đến Thập Trọng Cực Cảnh để mở khóa toàn bộ uy lực.
+                        Bản mệnh tương thông, uẩn dưỡng khí linh. Mỗi cấp cường hóa tăng +12% uy lực thần binh, đạt Thập Ngũ Trọng để mở khóa cảnh giới Chí Tôn.
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -7111,10 +7535,10 @@ function renderArtifactHub(content) {
             <!-- DANH SÁCH 3 BẢN MỆNH PHÁP BẢO -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 ${state.artifacts.map(art => {
-                    const lvl = Number(art.level) || 1;
+                    const lvl = Math.max(1, Math.min(15, Number(art.level) || 1));
                     const isEquipped = Boolean(art.equipped);
-                    const isMax = lvl >= 10;
-                    const costStones = lvl * 350;
+                    const isMax = lvl >= 15;
+                    const costStones = lvl * 300;
                     const oreKey = art.oreType || (art.id === 'bead' ? 'tuTinh' : 'huyenThiet');
                     const oreName = art.oreName || (oreKey === 'tuTinh' ? 'Tử Tinh' : 'Huyền Thiết');
                     const costOre = Math.max(1, Math.floor(lvl / 2) + 1);
@@ -7122,41 +7546,43 @@ function renderArtifactHub(content) {
                     const currentOre = getArtifactOre(oreKey);
                     const canAfford = !isMax && currentStones >= costStones && currentOre >= costOre;
 
-                    // Phân loại phẩm giai theo cấp bậc (1-3: Sơ Giai, 4-6: Trung Giai, 7-9: Hậu Giai, 10: Cực Cảnh)
                     let stageName = 'Sơ Giai (Hạ Phẩm)';
                     let stageBadgeStyle = 'border-cyan-500/40 text-cyan-300 bg-cyan-950/80';
                     let glowBorder = isEquipped ? 'border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'border-slate-800 hover:border-cyan-500/50';
 
-                    if (lvl >= 10) {
-                        stageName = 'Thập Trọng Cực Cảnh (Chí Tôn)';
+                    if (lvl >= 15) {
+                        stageName = 'Thập Ngũ Trọng Cực Cảnh (Chí Tôn)';
                         stageBadgeStyle = 'border-yellow-400 text-yellow-200 bg-gradient-to-r from-amber-900/90 to-purple-900/90 shadow-[0_0_15px_rgba(250,204,21,0.5)]';
                         glowBorder = isEquipped ? 'border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.4)]' : 'border-amber-500/60';
-                    } else if (lvl >= 7) {
+                    } else if (lvl >= 13) {
+                        stageName = 'Viên Mãn (Cực Phẩm)';
+                        stageBadgeStyle = 'border-rose-400 text-rose-200 bg-rose-950/80 shadow-[0_0_12px_rgba(244,63,94,0.35)]';
+                        glowBorder = isEquipped ? 'border-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.35)]' : 'border-slate-800 hover:border-rose-500/50';
+                    } else if (lvl >= 9) {
                         stageName = 'Hậu Giai (Thượng Phẩm)';
                         stageBadgeStyle = 'border-amber-400/60 text-amber-200 bg-amber-950/80 shadow-[0_0_12px_rgba(245,158,11,0.3)]';
                         glowBorder = isEquipped ? 'border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.35)]' : 'border-slate-800 hover:border-amber-500/50';
-                    } else if (lvl >= 4) {
+                    } else if (lvl >= 5) {
                         stageName = 'Trung Giai (Trung Phẩm)';
                         stageBadgeStyle = 'border-purple-400/50 text-purple-300 bg-purple-950/80 shadow-[0_0_12px_rgba(168,85,247,0.25)]';
                         glowBorder = isEquipped ? 'border-purple-400 shadow-[0_0_18px_rgba(168,85,247,0.3)]' : 'border-slate-800 hover:border-purple-500/50';
                     }
 
-                    const extremeMultiplier = lvl >= 10 ? 1.2 : 1.0;
                     let statVal = 0;
                     let statNextVal = 0;
                     let statLabel = '';
                     if (art.id === 'sword') {
                         statLabel = 'Công Kích';
-                        statVal = Math.round(lvl * 45 * tier * resonanceMultiplier * extremeMultiplier);
-                        statNextVal = Math.round((lvl + 1) * 45 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                        statVal = Math.round(80 * tier * (1 + lvl * 0.12) * resonanceMultiplier);
+                        statNextVal = Math.round(80 * tier * (1 + (lvl + 1) * 0.12) * resonanceMultiplier);
                     } else if (art.id === 'mirror') {
                         statLabel = 'Phòng Ngự';
-                        statVal = Math.round(lvl * 35 * tier * resonanceMultiplier * extremeMultiplier);
-                        statNextVal = Math.round((lvl + 1) * 35 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                        statVal = Math.round(60 * tier * (1 + lvl * 0.12) * resonanceMultiplier);
+                        statNextVal = Math.round(60 * tier * (1 + (lvl + 1) * 0.12) * resonanceMultiplier);
                     } else if (art.id === 'bead') {
                         statLabel = 'Khí Huyết';
-                        statVal = Math.round(lvl * 250 * tier * resonanceMultiplier * extremeMultiplier);
-                        statNextVal = Math.round((lvl + 1) * 250 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                        statVal = Math.round(400 * tier * (1 + lvl * 0.12) * resonanceMultiplier);
+                        statNextVal = Math.round(400 * tier * (1 + (lvl + 1) * 0.12) * resonanceMultiplier);
                     }
 
                     return `
@@ -7167,7 +7593,7 @@ function renderArtifactHub(content) {
                                     ${isEquipped ? '✦ ĐANG NGỰ DỤNG' : 'CHƯA TRANG BỊ'}
                                 </span>
                                 <span class="text-xs font-mono font-black ${stageBadgeStyle} px-2 py-0.5 rounded border">
-                                    Bậc ${lvl}/10
+                                    Bậc ${lvl}/15
                                 </span>
                             </div>
 
@@ -7179,7 +7605,7 @@ function renderArtifactHub(content) {
                                 <div class="min-w-0">
                                     <h4 class="font-bold text-slate-100 text-sm font-serif truncate">${art.name}</h4>
                                     <span class="text-[10px] text-amber-400 font-mono block">${stageName}</span>
-                                    <span class="text-[11px] font-mono font-bold text-emerald-400 mt-0.5 block">+${statVal.toLocaleString('vi-VN')} ${statLabel}</span>
+                                    <span class="text-[11px] font-mono font-bold text-emerald-400 mt-0.5 block">+${statVal.toLocaleString('vi-VN')} ${statLabel} (+${lvl * 12}%)</span>
                                 </div>
                             </div>
 
@@ -7187,10 +7613,10 @@ function renderArtifactHub(content) {
                             <div class="space-y-1">
                                 <div class="flex justify-between text-[10px] font-mono text-slate-400">
                                     <span>Tiến Độ Cực Cảnh:</span>
-                                    <span class="text-amber-300 font-bold">${Math.round((lvl / 10) * 100)}%</span>
+                                    <span class="text-amber-300 font-bold">${Math.round((lvl / 15) * 100)}%</span>
                                 </div>
                                 <div class="w-full h-1.5 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style="width: ${(lvl / 10) * 100}%"></div>
+                                    <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style="width: ${(lvl / 15) * 100}%"></div>
                                 </div>
                             </div>
 
@@ -7207,7 +7633,7 @@ function renderArtifactHub(content) {
                                 ${!isMax ? `
                                     <div class="flex justify-between pt-1 border-t border-slate-800/70 text-[10px]">
                                         <span class="text-slate-400">Lên Bậc ${lvl + 1}:</span>
-                                        <b class="text-emerald-400">+${statNextVal.toLocaleString('vi-VN')} ${statLabel}</b>
+                                        <b class="text-emerald-400">+${statNextVal.toLocaleString('vi-VN')} ${statLabel} (+12%)</b>
                                     </div>
                                     <div class="flex justify-between text-[10px]">
                                         <span class="text-slate-400">Cần Tài Nguyên:</span>
@@ -7219,7 +7645,7 @@ function renderArtifactHub(content) {
                                     </div>
                                 ` : `
                                     <div class="text-center pt-1 border-t border-slate-800/70 text-[10px] text-yellow-300 font-bold">
-                                        ✦ ĐÃ ĐẠT CỰC CẢNH TỐI THƯỢNG ✦
+                                        ✦ ĐÃ ĐẠT CỰC CẢNH TỐI THƯỢNG (+15) ✦
                                     </div>
                                 `}
                             </div>
@@ -7237,7 +7663,7 @@ function renderArtifactHub(content) {
                                         ${isMax || !canAfford ? 'disabled' : ''}
                                         class="w-full py-2 px-3 rounded-xl ${isMax ? 'bg-yellow-950/40 text-yellow-500/60 border border-yellow-600/30 cursor-not-allowed' : (canAfford ? 'bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.35)]' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60')} text-xs transition flex items-center justify-center gap-1.5 active:scale-95">
                                     <i class="fa-solid ${isMax ? 'fa-crown' : 'fa-hammer'}"></i>
-                                    <span>${isMax ? '👑 Thập Trọng Cực Cảnh (Max)' : (canAfford ? `Tôi Luyện Lên Bậc ${lvl + 1}` : 'Thiếu Tài Nguyên Tôi Luyện')}</span>
+                                    <span>${isMax ? '👑 Thập Ngũ Trọng Cực Cảnh (Max)' : (canAfford ? `Cường Hóa Lên Bậc ${lvl + 1} (+12%)` : 'Thiếu Tài Nguyên Tôi Luyện')}</span>
                                 </button>
                             </div>
                         </article>
@@ -7958,7 +8384,10 @@ function challengeDungeon(dungeonIdx) {
         return;
     }
 
-    if (gs.isInjured || (gs.heavyInjuryUntil && Date.now() < gs.heavyInjuryUntil) || (gs.hp !== undefined && gs.hp <= 0)) {
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(gs, { save: true, updateUi: true });
+    }
+    if ((typeof isHeavyInjuryActive === 'function' ? isHeavyInjuryActive(gs) : (gs.isInjured || (gs.heavyInjuryUntil && Date.now() < gs.heavyInjuryUntil))) || (gs.hp !== undefined && gs.hp <= 0)) {
         const warnMsg = '⚠️ Đang trọng thương, kinh mạch hỗn loạn! Hãy điều tức hoặc cắn đan hồi phục trước khi khiêu chiến!';
         if (typeof window.showGameToast === 'function') window.showGameToast(warnMsg, 'error');
         else if (typeof addLog === 'function') addLog(warnMsg, 'text-rose-400');
@@ -9387,26 +9816,51 @@ function updateHUD() {
                 ? window.REALMS_DATA
                 : ((typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : []);
             const currentRealm = realmsList[state.realmIndex] || realmsList[0] || { name: 'Luyện Khí', maxExp: 100 };
-            const percent = Math.min(100, Math.floor((state.exp / (currentRealm.maxExp || 1)) * 100));
+            const percent = Math.min(100, Math.max(0, Math.floor((state.exp / (currentRealm.maxExp || 1)) * 100)));
             syncRealmTheme();
 
+            const displayName = (typeof getRealmDisplayName === 'function')
+                ? getRealmDisplayName(state.realmIndex, state.subRealmIndex)
+                : ((typeof window !== 'undefined' && typeof window.getRealmDisplayName === 'function')
+                    ? window.getRealmDisplayName(state.realmIndex, state.subRealmIndex)
+                    : (currentRealm.name || 'Luyện Khí Tầng 1'));
+
             const realmBadgeEl = document.getElementById('realm-badge') || document.getElementById('ui-realm-badge');
-            if (realmBadgeEl) realmBadgeEl.textContent = currentRealm.name;
+            if (realmBadgeEl) {
+                realmBadgeEl.textContent = displayName;
+                realmBadgeEl.setAttribute('title', `Cảnh giới hiện tại: ${displayName}`);
+            }
+            const uiRealmTitleEl = document.getElementById('ui-realm-title');
+            if (uiRealmTitleEl) {
+                uiRealmTitleEl.textContent = displayName;
+            }
+
+            // Hiển thị Danh Hiệu Vĩnh Viễn cạnh tên nhân vật & chấm báo Thành Tựu
+            const titleBadgeEl = document.getElementById('ui-player-title-badge');
+            if (titleBadgeEl) {
+                const activeTitle = state.equippedTitle || window.GameState?.equippedTitle || '';
+                titleBadgeEl.textContent = activeTitle ? `[${activeTitle}]` : '';
+                titleBadgeEl.classList.toggle('hidden', !activeTitle);
+            }
+            const achDotEl = document.getElementById('btn-achievement-dot');
+            if (achDotEl && typeof hasClaimableAchievement === 'function') {
+                achDotEl.classList.toggle('hidden', !hasClaimableAchievement());
+            }
 
             // Shared profile elements are rendered by the character controller.
             // Cập nhật trạng thái [Trọng Thương] do Thiên Kiếp hoặc Thua Tháp
+            if (typeof reconcileHeavyInjuryState === 'function') {
+                reconcileHeavyInjuryState(state, { save: false, updateUi: false });
+            }
             const heavyInjuryEl = document.getElementById('heavy-injury-status');
             const heavyInjuryTimeEl = document.getElementById('heavy-injury-time');
             if (heavyInjuryEl && heavyInjuryTimeEl) {
-                const isInjured = Boolean(state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil));
+                const isInjured = (typeof isHeavyInjuryActive === 'function')
+                    ? isHeavyInjuryActive(state)
+                    : Boolean(state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil));
                 heavyInjuryEl.classList.toggle('hidden', !isInjured);
                 if (isInjured) {
-                    if (state.isMeditatingRecover) {
-                        const remSec = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
-                        heavyInjuryTimeEl.textContent = `Đang Điều Tức... (${remSec}s)`;
-                    } else {
-                        heavyInjuryTimeEl.textContent = `Trọng Thương (-70% Tụ Khí) [Vận Công]`;
-                    }
+                    heavyInjuryTimeEl.textContent = `Trọng Thương [Vận Công]`;
                 }
             }
             const suppressionIndicator = document.getElementById('heavenly-suppression');
@@ -9480,6 +9934,7 @@ function updateHUD() {
             const currentSpeed = state.isDead ? 0 : getAdjustedCultivationGain(getIdleRate() * state.timeScale).gainedAmount;
             const idleRateBadgeEl = document.getElementById('idle-rate-badge') || document.getElementById('tuvi-rate-badge');
             if (idleRateBadgeEl) idleRateBadgeEl.textContent = `+${formatCultivationNumber(currentSpeed)} / s`;
+            if (typeof updateCultivationRatePopover === 'function') updateCultivationRatePopover();
             
             // Khí Huyết (HP) & Linh Lực (MP) — Bảo vệ chống số âm & định dạng chuẩn số học
             const effectiveStats = getEffectiveStats();
@@ -9618,12 +10073,28 @@ function updateHUD() {
             if (cpLeftEl) cpLeftEl.textContent = formatCultivationNumber(currentCP);
 
             // Cập nhật Cột Trái (#left-panel Thuộc Tính Chiến Đạo)
+            const fmtCompact = (typeof formatCompactNumber === 'function')
+                ? formatCompactNumber
+                : ((typeof window !== 'undefined' && typeof window.formatCompactNumber === 'function')
+                    ? window.formatCompactNumber
+                    : formatCultivationNumber);
+
             const uiStatAtk = document.getElementById('ui-stat-atk');
-            if (uiStatAtk) uiStatAtk.textContent = formatCultivationNumber(effectiveStats.atk);
+            if (uiStatAtk) {
+                uiStatAtk.textContent = fmtCompact(effectiveStats.atk);
+                uiStatAtk.title = Number(effectiveStats.atk || 0).toLocaleString('vi-VN');
+            }
             const uiStatDef = document.getElementById('ui-stat-def');
-            if (uiStatDef) uiStatDef.textContent = formatCultivationNumber(effectiveStats.def);
+            if (uiStatDef) {
+                uiStatDef.textContent = fmtCompact(effectiveStats.def);
+                uiStatDef.title = Number(effectiveStats.def || 0).toLocaleString('vi-VN');
+            }
             const uiStatSpd = document.getElementById('ui-stat-spd');
-            if (uiStatSpd) uiStatSpd.textContent = effectiveStats.speed || (100 + (state.realmStage || 0) * 15);
+            if (uiStatSpd) {
+                const spdVal = effectiveStats.speed || (100 + (state.realmStage || 0) * 15);
+                uiStatSpd.textContent = fmtCompact(spdVal);
+                uiStatSpd.title = Number(spdVal || 0).toLocaleString('vi-VN');
+            }
             const uiStatCrit = document.getElementById('ui-stat-crit');
             if (uiStatCrit) uiStatCrit.textContent = `${effectiveStats.crit}%`;
             const uiStatPen = document.getElementById('ui-stat-pen');
@@ -9738,22 +10209,16 @@ function updateHUD() {
                 if (barRight) barRight.style.width = `${rightPct}%`;
                 if (barDemon) barDemon.style.width = `${demonPct}%`;
 
-                if (titleBadge) {
-                    if (state.alignment.demonic >= 75) {
-                        titleBadge.textContent = "Cực Hắc Ma Tôn";
-                        titleBadge.className = "text-[9px] text-rose-400 font-bold tracking-tight";
-                    } else if (state.alignment.demonic >= 60) {
-                        titleBadge.textContent = "Ma Đạo Cuồng Đồ";
-                        titleBadge.className = "text-[9px] text-pink-300 font-semibold tracking-tight";
-                    } else if (state.alignment.righteous >= 75) {
-                        titleBadge.textContent = "Thanh Hư Chân Tiên";
-                        titleBadge.className = "text-[9px] text-emerald-300 font-bold tracking-tight";
-                    } else if (state.alignment.righteous >= 60) {
-                        titleBadge.textContent = "Chính Khí Lẫm Nhiên";
-                        titleBadge.className = "text-[9px] text-teal-300 font-semibold tracking-tight";
+                if (typeof window.syncTopResourceBarFromState === 'function') {
+                    window.syncTopResourceBarFromState();
+                } else if (titleBadge) {
+                    const diff = (Number(state.alignment.righteous) || 50) - (Number(state.alignment.demonic) || 50);
+                    if (diff >= 20) {
+                        titleBadge.textContent = "Chính Đạo Tiên Phong";
+                    } else if (diff <= -20) {
+                        titleBadge.textContent = "Ma Đạo Cự Phách";
                     } else {
-                        titleBadge.textContent = "Chính Tà Cân Bằng";
-                        titleBadge.className = "text-[9px] text-amber-200 font-medium tracking-tight";
+                        titleBadge.textContent = "Tiêu Dao Trung Lập";
                     }
                 }
             }
@@ -9868,63 +10333,240 @@ function updateHUD() {
 
 let vanCongTimer = null;
 function vanCongDieuTuc() {
-    if (!state.isInjured && (!state.heavyInjuryUntil || Date.now() >= state.heavyInjuryUntil)) {
-        if (typeof showXianxiaToast === 'function') {
+    if (vanCongTimer) {
+        clearInterval(vanCongTimer);
+        vanCongTimer = null;
+    }
+
+    const s = (typeof window !== 'undefined' && (window.GameState || window.state)) || state;
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(s, { save: false, updateUi: false });
+    }
+
+    const activeInjury = (typeof isHeavyInjuryActive === 'function')
+        ? isHeavyInjuryActive(s)
+        : Boolean(s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil));
+    const maxHpVal = Math.max(1, Number(s.maxHp || state.maxHp || 100));
+    const needHeal = Number(s.hp ?? maxHpVal) < maxHpVal;
+
+    if (!activeInjury && !needHeal) {
+        if (typeof reconcileHeavyInjuryState === 'function') {
+            reconcileHeavyInjuryState(s, { forceClear: true, save: true, updateUi: true });
+        }
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast('Kinh mạch hoàn hảo, không có đạo thương cần điều tức!', 'info');
+        } else if (typeof showXianxiaToast === 'function') {
             showXianxiaToast('Kinh mạch hoàn hảo, không có đạo thương cần điều tức!', 'info');
         }
         return;
     }
-    if (state.isMeditatingRecover) {
-        if (typeof showXianxiaToast === 'function') {
-            const rem = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
-            showXianxiaToast(`Đang vận công điều tức, còn ${rem} giây...`, 'warning');
+
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(s, { forceClear: true, save: false, updateUi: false });
+    } else {
+        state.isMeditatingRecover = false;
+        state.meditateRecoverEnd = 0;
+        state.isInjured = false;
+        state.heavyInjuryUntil = 0;
+        state.heavyInjuryTime = 0;
+        state.injuryEndTime = 0;
+        if (window.GameState) {
+            window.GameState.isInjured = false;
+            window.GameState.heavyInjuryUntil = 0;
+            window.GameState.heavyInjuryTime = 0;
+            window.GameState.injuryEndTime = 0;
         }
-        return;
     }
 
-    state.isMeditatingRecover = true;
-    state.meditateRecoverEnd = Date.now() + 15000;
-    if (typeof playSound === 'function') playSound('bell');
-    if (typeof showXianxiaToast === 'function') {
-        showXianxiaToast('🧘 Bắt đầu Vận Công Điều Tức (15 giây)... Kinh mạch đang tuần hoàn chữa lành!', 'warning');
+    if (typeof window.recalculatePlayerStats === 'function') {
+        window.recalculatePlayerStats();
+    }
+    const restoredMaxHp = Math.max(1, Number(state.maxHp || window.GameState?.maxHp || maxHpVal));
+    state.hp = restoredMaxHp;
+    if (window.state) window.state.hp = restoredMaxHp;
+    if (window.GameState) window.GameState.hp = restoredMaxHp;
+
+    const badge = document.getElementById('heavy-injury-status');
+    if (badge) badge.classList.add('hidden');
+
+    if (typeof playSound === 'function') playSound('breakthrough');
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast('Vận công điều tức thành công, thương thế đã bình phục!', 'success');
+    } else if (typeof showXianxiaToast === 'function') {
+        showXianxiaToast('Vận công điều tức thành công, thương thế đã bình phục!', 'success');
     }
     if (typeof addLog === 'function') {
-        addLog('🧘 <span class="text-amber-300 font-bold">[Vận Công Điều Tức]</span> Ngồi xếp bằng đả tọa, dẫn dắt chân khí tẩy rửa kinh mạch thương tổn (15s)...', 'warning');
+        addLog('✨ <span class="text-emerald-400 font-bold">[Kinh Mạch Khôi Phục]</span> Vận công điều tức thành công, thương thế đã bình phục! Khí huyết 100%, tốc độ tụ khí khôi phục hoàn toàn!', 'success');
     }
-    updateHUD();
 
-    if (vanCongTimer) clearInterval(vanCongTimer);
-    vanCongTimer = setInterval(() => {
-        if (!state.isMeditatingRecover) {
-            clearInterval(vanCongTimer);
-            vanCongTimer = null;
-            return;
-        }
-        const remaining = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
-        updateHUD();
-        if (remaining <= 0) {
-            clearInterval(vanCongTimer);
-            vanCongTimer = null;
-            state.isMeditatingRecover = false;
-            state.isInjured = false;
-            state.heavyInjuryUntil = 0;
-            if (window.GameState) window.GameState.isInjured = false;
-            state.hp = state.maxHp;
-            if (typeof playSound === 'function') playSound('breakthrough');
-            if (typeof showXianxiaToast === 'function') {
-                showXianxiaToast('✨ Vận Công Điều Tức hoàn tất! Đạo thương khỏi hẳn, tốc độ tụ khí khôi phục 100%!', 'success');
-            }
-            if (typeof addLog === 'function') {
-                addLog('✨ <span class="text-emerald-400 font-bold">[Kinh Mạch Khôi Phục]</span> Trọng thương đã lành! Khí huyết dồi dào, có thể tiếp tục khiêu chiến Trấn Yêu Tháp và Độ Kiếp!', 'success');
-            }
-            updateHUD();
-            if (typeof saveGameState === 'function') saveGameState();
-        }
-    }, 1000);
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof syncAllUI === 'function') syncAllUI();
+    if (typeof window.updateUI === 'function') window.updateUI();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else if (typeof saveGameState === 'function') saveGameState();
 }
 window.vanCongDieuTuc = vanCongDieuTuc;
 // ============================================================================
+// HỆ THỐNG BẾ QUAN TỊNH TU (25 PHÚT FOCUS MEDITATION TIMER)
+// ============================================================================
+const FOCUS_MEDITATION_DURATION_MS = 25 * 60 * 1000;
+
+function formatMeditationCountdown(ms) {
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function awardFocusChestToInventory() {
+    const chestPayload = {
+        id: 'ruong_don_ngo',
+        name: 'Rương Đốn Ngộ',
+        type: 'Bảo Rương',
+        category: 'chest',
+        rarity: 'Epic',
+        icon: '🎁',
+        image: './assets/images/item_qi_pill_bottle.jpg',
+        desc: 'Phần thưởng hoàn thành 25 phút Bế Quan Tịnh Tu. Mở ra để nhận Tu Vi, Linh Thạch và Tiên Ngọc!',
+        count: 1
+    };
+    if (typeof window.addItemToInventory === 'function') {
+        window.addItemToInventory(chestPayload, 1);
+    } else {
+        if (!Array.isArray(state.inventory)) state.inventory = [];
+        const existing = state.inventory.find(i => i.id === 'ruong_don_ngo');
+        if (existing) existing.count = (Number(existing.count) || 0) + 1;
+        else state.inventory.push(chestPayload);
+    }
+}
+
+function completeFocusMeditation(targetState) {
+    const s = targetState || state;
+    if (!s) return;
+    s.focusMeditationUntil = 0;
+    if (window.state) window.state.focusMeditationUntil = 0;
+    if (window.GameState) window.GameState.focusMeditationUntil = 0;
+
+    s.stones = (Number(s.stones) || 0) + 1000;
+    s.immortalJade = (Number(s.immortalJade) || 0) + 5;
+    if (window.state && window.state !== s) {
+        window.state.stones = s.stones;
+        window.state.immortalJade = s.immortalJade;
+    }
+    if (window.GameState && window.GameState !== s) {
+        window.GameState.stones = s.stones;
+        window.GameState.immortalJade = s.immortalJade;
+    }
+
+    awardFocusChestToInventory();
+    if (typeof playSound === 'function') playSound('victory');
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast('🧘 Bế Quan Tịnh Tu 25p hoàn thành! +1 Rương Đốn Ngộ, +1.000 Linh Thạch, +5 Tiên Ngọc!', 'success');
+    }
+    if (typeof addLog === 'function') {
+        addLog('🧘 <span class="text-emerald-400 font-bold">[Tịnh Tu Viên Mãn]</span> Hoàn thành 25 phút nhập định! Thu hoạch <b>1 Rương Đốn Ngộ</b> + <b class="text-amber-300">+1.000 Linh Thạch</b> + <b class="text-purple-300">+5 Tiên Ngọc</b>!', 'success');
+    }
+    updateFocusMeditationUI(s);
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else if (typeof saveGameState === 'function') saveGameState();
+}
+
+function updateFocusMeditationUI(targetState) {
+    const s = targetState || (typeof window !== 'undefined' ? (window.state || window.GameState) : null) || state;
+    if (!s) return false;
+    const until = Number(s.focusMeditationUntil || window.GameState?.focusMeditationUntil || 0);
+    const now = Date.now();
+
+    if (until > 0 && now >= until) {
+        completeFocusMeditation(s);
+        return true;
+    }
+
+    const btn = document.getElementById('btn-tinh-tu-focus');
+    const stopBtn = document.getElementById('btn-tinh-tu-stop');
+    const isActive = until > now;
+
+    if (btn) {
+        if (isActive) {
+            btn.textContent = `🧘 ${formatMeditationCountdown(until - now)}`;
+            btn.classList.add('is-focus-active');
+        } else {
+            btn.textContent = '🧘 Tịnh Tu (25p)';
+            btn.classList.remove('is-focus-active');
+        }
+    }
+    if (stopBtn) {
+        stopBtn.classList.toggle('hidden', !isActive);
+    }
+    return false;
+}
+
+function startFocusMeditation() {
+    const s = (typeof window !== 'undefined' && (window.state || window.GameState)) || state;
+    if (!s) return;
+    const now = Date.now();
+    if (Number(s.focusMeditationUntil || 0) > now) {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`🧘 Đang trong trạng thái Tịnh Tu (+50% Linh Tốc, còn ${formatMeditationCountdown(s.focusMeditationUntil - now)}).`, 'info');
+        }
+        return;
+    }
+    const endAt = now + FOCUS_MEDITATION_DURATION_MS;
+    s.focusMeditationUntil = endAt;
+    if (window.state) window.state.focusMeditationUntil = endAt;
+    if (window.GameState) window.GameState.focusMeditationUntil = endAt;
+
+    if (typeof playSound === 'function') playSound('bell');
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast('🧘 Bắt đầu Bế Quan Tịnh Tu 25 phút! Linh Tốc +50% trong suốt thời gian nhập định.', 'success');
+    }
+    if (typeof addLog === 'function') {
+        addLog('🧘 <span class="text-teal-300 font-bold">[Bế Quan Tịnh Tu]</span> Khai mở đồng hồ nhập định 25 phút (+50% Linh Tốc). Hoàn tất sẽ nhận 1 Rương Đốn Ngộ + 1.000 Linh Thạch + 5 Tiên Ngọc!', 'text-teal-300');
+    }
+    updateFocusMeditationUI(s);
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else if (typeof saveGameState === 'function') saveGameState();
+}
+
+function stopFocusMeditation() {
+    const s = (typeof window !== 'undefined' && (window.state || window.GameState)) || state;
+    if (!s || !Number(s.focusMeditationUntil || 0)) return;
+    s.focusMeditationUntil = 0;
+    if (window.state) window.state.focusMeditationUntil = 0;
+    if (window.GameState) window.GameState.focusMeditationUntil = 0;
+
+    updateFocusMeditationUI(s);
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast('Đã dừng Bế Quan Tịnh Tu, xuất quan nhẹ nhàng.', 'info');
+    }
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else if (typeof saveGameState === 'function') saveGameState();
+}
+
+function toggleFocusMeditation() {
+    const s = (typeof window !== 'undefined' && (window.state || window.GameState)) || state;
+    if (Number(s?.focusMeditationUntil || 0) > Date.now()) {
+        stopFocusMeditation();
+    } else {
+        startFocusMeditation();
+    }
+}
+
+window.startFocusMeditation = startFocusMeditation;
+window.stopFocusMeditation = stopFocusMeditation;
+window.toggleFocusMeditation = toggleFocusMeditation;
+window.completeFocusMeditation = completeFocusMeditation;
+window.updateFocusMeditationUI = updateFocusMeditationUI;
+// ============================================================================
+// ============================================================================
 // BẢN THỂ NHÂN VẬT (LOTTIE MODEL) & PHÁP TƯỚNG THEO CẢNH GIỚI
+// ============================================================================
 // ============================================================================
 const CHARACTER_MODELS = {
     "female-luyen-khi": "./assets/animations/female_luyen_khi.json",
@@ -9992,19 +10634,289 @@ window.CHARACTER_MODELS = CHARACTER_MODELS;
 window.updateCharacterModel = updateCharacterModel;
 
 function syncRealmTheme() {
-            const realmTheme = (typeof REALM_THEME_BY_INDEX !== 'undefined' && REALM_THEME_BY_INDEX[state.realmIndex]) || 'luyen-khi';
+            const gs = (typeof window !== 'undefined' && window.GameState) ? window.GameState : state;
+            const curRealmIdx = Number(gs?.realmIndex ?? state?.realmIndex ?? 0);
+            const curWorld = gs?.currentWorld ?? state?.currentWorld;
+            const realmObj = (typeof REALMS !== 'undefined' && REALMS[curRealmIdx]) || null;
+            const realmTheme = (typeof REALM_THEME_BY_INDEX !== 'undefined' && REALM_THEME_BY_INDEX[curRealmIdx]) || 'luyen-khi';
+            const realmTier = String(realmObj?.realmTier || (realmObj?.majorIndex !== undefined ? realmObj.majorIndex + 1 : Math.min(5, Math.floor(curRealmIdx / 4) + 1)));
             const worldTheme = BACKGROUNDS[state.bgIndex]?.themeKey;
             const activeTheme = worldTheme || realmTheme;
+            const r = Number(gs?.righteous ?? gs?.alignment?.righteous ?? state?.righteous ?? state?.alignment?.righteous ?? 50);
+            const d = Number(gs?.demonic ?? gs?.alignment?.demonic ?? state?.demonic ?? state?.alignment?.demonic ?? 50);
+            const alignDiff = r - d;
+            const alignKey = alignDiff >= 20 ? 'righteous' : (alignDiff <= -20 ? 'demonic' : 'neutral');
+
             if (document && document.body) {
                 if (document.body.dataset.realm !== activeTheme) document.body.dataset.realm = activeTheme;
                 if (document.body.dataset.cultivationRealm !== realmTheme) document.body.dataset.cultivationRealm = realmTheme;
+                if (document.body.dataset.realmTier !== realmTier) document.body.dataset.realmTier = realmTier;
+                if (document.body.dataset.alignment !== alignKey) document.body.dataset.alignment = alignKey;
                 if (document.body.dataset.world !== (worldTheme || 'realm')) document.body.dataset.world = worldTheme || 'realm';
             }
+
+            // Đổi cảnh nền Linh Giới khi Phi Thăng (M2 - Linh Giới hoặc realmIndex >= 16)
+            const isSpiritWorld = curWorld === 'M2 - Linh Giới' || curRealmIdx >= 16;
+            const bgArtEl = document.getElementById('scene-bg-art');
+            if (bgArtEl && isSpiritWorld && bgArtEl.dataset.worldBg !== 'linh-gioi') {
+                bgArtEl.dataset.worldBg = 'linh-gioi';
+                bgArtEl.style.backgroundImage = "url('./assets/images/bg_tu_tieu_peak.jpg')";
+                bgArtEl.style.backgroundSize = 'cover';
+                bgArtEl.style.backgroundPosition = 'center bottom';
+            }
+
             if (typeof updateCharacterModel === 'function' && syncRealmTheme.lastModelTheme !== realmTheme) {
                 updateCharacterModel(realmTheme);
                 syncRealmTheme.lastModelTheme = realmTheme;
             }
         }
+
+// =========================================================================
+// TRỤ CỘT 1 & 4: TƯƠNG TÁC ĐẢ TỌA, LINH QUANG CƠ DUYÊN & THIÊN CƠ NHẬT KÝ
+// =========================================================================
+const EPIPHANY_POEMS = [
+    "✨ Đốn ngộ nhất niệm: Bồ đề bản vô thụ, minh kính diệc phi đài!",
+    "✨ Đốn ngộ nhất niệm: Triêu văn đạo, tịch tử khả hĩ!",
+    "✨ Đốn ngộ nhất niệm: Thiên địa vi lô, tạo hóa vi công!",
+    "✨ Đốn ngộ nhất niệm: Vạn vật giai không, duy đạo độc tôn!",
+    "✨ Đốn ngộ nhất niệm: Nhất tức thượng tồn, đạo tâm bất diệt!",
+    "✨ Đốn ngộ nhất niệm: Ngộ triệt huyền cơ, tu vi tăng vọt x2!",
+    "✨ Đốn ngộ nhất niệm: Nhân pháp địa, địa pháp thiên, thiên pháp đạo, đạo pháp tự nhiên!",
+    "✨ Đốn ngộ nhất niệm: Tâm như bàn thạch, kiếm khí tung hoành vạn dặm!"
+];
+
+function onAvatarTap(event) {
+    if (event) event.stopPropagation();
+    const gs = (typeof window !== 'undefined' && window.GameState) ? window.GameState : (typeof state !== 'undefined' ? state : null);
+    if (!gs) return;
+
+    // Hiệu ứng sóng xung kích Linh Khí (Qi Burst Ripple)
+    const x = event?.clientX ?? (window.innerWidth / 2);
+    const y = event?.clientY ?? (window.innerHeight / 2);
+
+    const ripple = document.createElement('div');
+    ripple.className = 'qi-burst-ripple';
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    ripple.style.width = '140px';
+    ripple.style.height = '140px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 750);
+
+    // 10% tỷ lệ kích hoạt trạng thái "✨ Đốn Ngộ Nhất Niệm" trong 10 giây
+    const isEpiphanyRoll = Math.random() < 0.10;
+    const now = Date.now();
+    const isAlreadyEpiphany = Number(gs.epiphanyUntil || 0) > now;
+
+    if (isEpiphanyRoll && !isAlreadyEpiphany) {
+        gs.epiphanyUntil = now + 10000;
+        if (window.state) window.state.epiphanyUntil = gs.epiphanyUntil;
+        if (window.GameState) window.GameState.epiphanyUntil = gs.epiphanyUntil;
+
+        const charRig = document.getElementById('char-floating-rig');
+        const charImg = document.getElementById('char-main-img');
+        if (charRig) charRig.classList.add('avatar-epiphany-active');
+        if (charImg) charImg.classList.add('avatar-epiphany-active');
+
+        setTimeout(() => {
+            if (Date.now() >= Number(gs.epiphanyUntil || 0)) {
+                if (charRig) charRig.classList.remove('avatar-epiphany-active');
+                if (charImg) charImg.classList.remove('avatar-epiphany-active');
+            }
+        }, 10200);
+
+        const poem = EPIPHANY_POEMS[Math.floor(Math.random() * EPIPHANY_POEMS.length)];
+        if (typeof window.spawnFloatingText === 'function') {
+            window.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 110, poem, 'text-yellow-300 font-bold text-sm tracking-wide');
+        }
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast('✨ ĐỐN NGỘ NHẤT NIỆM! Tốc độ tu luyện x2 trong 10 giây!', 'success');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`<span class="text-yellow-400 font-bold">✨ [Đốn Ngộ Nhất Niệm]</span> ${poem} (10 giây tu luyện x2)!`, 'text-yellow-400');
+        }
+    } else {
+        // Nhấp bình thường: Tụ khí nhanh và hiệu ứng nổi chữ
+        const idleRate = typeof getIdleRate === 'function' ? getIdleRate() : 5;
+        const tapGain = Math.max(1, Math.round(idleRate * 0.5));
+        if (typeof window.addExp === 'function') {
+            window.addExp(tapGain);
+        } else if (gs.exp !== undefined) {
+            gs.exp += tapGain;
+        }
+
+        const tapTexts = ['✨ +Tụ Khí!', '⚡ Chu Thiên Vận Chuyển', '🌸 Đạo Tâm Tĩnh Lặng', '💫 Khí Cơ Thông Suốt'];
+        const text = tapTexts[Math.floor(Math.random() * tapTexts.length)];
+        if (typeof window.spawnFloatingText === 'function') {
+            window.spawnFloatingText(x, y - 40, `${text} (+${tapGain})`, 'text-cyan-300 font-bold text-xs');
+        }
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+}
+window.onAvatarTap = onAvatarTap;
+
+function spawnCelestialWisp() {
+    if (document.getElementById('celestial-wisp-orb')) return;
+    const orb = document.createElement('div');
+    orb.id = 'celestial-wisp-orb';
+    orb.className = 'celestial-wisp-orb';
+    orb.title = 'Linh Quang Cơ Duyên (Bấm để lĩnh ngộ)';
+    orb.setAttribute('role', 'button');
+    orb.setAttribute('aria-label', 'Linh Quang Cơ Duyên');
+    orb.onclick = function(e) {
+        if (typeof window.claimCelestialWisp === 'function') {
+            window.claimCelestialWisp(e);
+        }
+    };
+    document.body.appendChild(orb);
+
+    setTimeout(() => {
+        const activeOrb = document.getElementById('celestial-wisp-orb');
+        if (activeOrb) activeOrb.remove();
+    }, 14000);
+}
+window.spawnCelestialWisp = spawnCelestialWisp;
+
+function claimCelestialWisp(event) {
+    if (event) event.stopPropagation();
+    const orb = document.getElementById('celestial-wisp-orb');
+    if (!orb) return;
+
+    const rect = orb.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    for (let i = 0; i < 8; i++) {
+        const sp = document.createElement('div');
+        sp.className = 'celestial-wisp-sparkle';
+        sp.style.left = `${cx}px`;
+        sp.style.top = `${cy}px`;
+        const angle = (i * 45) * Math.PI / 180;
+        const dist = 30 + Math.random() * 40;
+        sp.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        sp.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+        document.body.appendChild(sp);
+        setTimeout(() => sp.remove(), 800);
+    }
+
+    orb.remove();
+
+    const gs = (typeof window !== 'undefined' && window.GameState) ? window.GameState : (typeof state !== 'undefined' ? state : {});
+    const curRealmIdx = Number(gs.realmIndex || 0);
+    const realmTier = Math.min(5, Math.floor(curRealmIdx / 4) + 1);
+
+    const roll = Math.random();
+    if (roll < 0.40) {
+        const rewardStones = Math.round((500 + Math.random() * 1000) * realmTier);
+        gs.spiritStones = Number(gs.spiritStones || 0) + rewardStones;
+        if (window.state) window.state.spiritStones = gs.spiritStones;
+        if (typeof window.spawnFloatingText === 'function') {
+            window.spawnFloatingText(cx, cy - 30, `✨ +${rewardStones.toLocaleString()} Linh Thạch!`, 'text-amber-300 font-bold text-sm');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`✨ <span class="text-amber-300 font-bold">[Linh Quang Cơ Duyên]</span> Lĩnh ngộ thiên địa linh quang, thu được <strong>${rewardStones.toLocaleString()} Linh Thạch</strong>!`, 'text-amber-300');
+        }
+    } else if (roll < 0.75) {
+        const rewardHerbs = Math.round((10 + Math.random() * 15) * realmTier);
+        if (!gs.materials) gs.materials = {};
+        gs.materials.herbs = Number(gs.materials.herbs || 0) + rewardHerbs;
+        if (window.state) {
+            if (!window.state.materials) window.state.materials = {};
+            window.state.materials.herbs = gs.materials.herbs;
+        }
+        if (typeof window.spawnFloatingText === 'function') {
+            window.spawnFloatingText(cx, cy - 30, `🌿 +${rewardHerbs} Thảo Dược!`, 'text-emerald-300 font-bold text-sm');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`🌿 <span class="text-emerald-300 font-bold">[Linh Quang Cơ Duyên]</span> Linh quang ngưng tụ thành thảo mộc tinh hoa, thu được <strong>+${rewardHerbs} Thảo Dược</strong>!`, 'text-emerald-300');
+        }
+    } else {
+        const prevDanDoc = Number(gs.danDoc || 0);
+        const newDanDoc = Math.max(0, prevDanDoc - 5);
+        gs.danDoc = newDanDoc;
+        if (window.state) window.state.danDoc = newDanDoc;
+        if (typeof window.spawnFloatingText === 'function') {
+            window.spawnFloatingText(cx, cy - 30, `💧 Thanh Lọc -5% Đan Độc!`, 'text-teal-300 font-bold text-sm');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`💧 <span class="text-teal-300 font-bold">[Linh Quang Cơ Duyên]</span> Thiên địa tịnh hóa linh quang gột rửa kinh mạch, tiêu trừ <strong>-5% Đan Độc</strong> (Còn: ${newDanDoc}%)!`, 'text-teal-300');
+        }
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+}
+window.claimCelestialWisp = claimCelestialWisp;
+
+if (typeof window !== 'undefined' && !window._celestialWispInterval) {
+    window._celestialWispInterval = setInterval(() => {
+        if (document.hidden) return;
+        if (Math.random() < 0.65) {
+            spawnCelestialWisp();
+        }
+    }, 48000);
+}
+
+const XIANXIA_LORE_LOGS = [
+    // 1. Cơ Duyên Vàng Kim
+    { text: "✨ [Cơ Duyên] Tụ khí ngưng thần, bắt gặp tử khí đông lai, đan điền ấm áp lạ thường.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Dưới chân bỗng phát sinh linh tuyền vi ti, một luồng thuần dương khí rót thẳng vào kinh mạch.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Ngước nhìn tinh tú, chợt ngộ ra huyền cơ biến ảo của Bắc Đẩu Thất Tinh.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Trong hư không vẳng lại tiếng chuông đạo ngân vang, thần hồn thanh tịnh như ngọc.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Một đóa hoa sen mờ ảo ngưng tụ trên đỉnh đầu rồi hòa tan vào đan điền, linh khí cuồn cuộn.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Thần du thái hư, chạm tới một tia thiên đạo quy tắc, tu vi ngưng tụ vững chắc.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Hít thở thuận theo nhịp trời đất, mây ngũ sắc lượn lờ quanh đỉnh đầu suốt ba khắc.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Tĩnh tọa giữa gió núi, linh khí phương đông tụ về như trăm sông đổ ra biển lớn.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Đột nhiên thấy linh giác mở rộng vạn dặm, nghe được tiếng cỏ cây sinh sôi.", color: "text-amber-300" },
+    { text: "✨ [Cơ Duyên] Đạo cơ rung nhẹ, gạt bỏ một tầng cặn bã trong kinh lạc, toàn thân nhẹ bẫng tựa lông hồng.", color: "text-amber-300" },
+
+    // 2. Tâm Ma Đỏ Thẫm
+    { text: "🔥 [Tâm Ma] Tiếng nỉ non của huyễn tượng tiền kiếp vọng về, đạo tâm thoáng chấn động nhưng lập tức quy nhất.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Huyết khí trào dâng, một tia sát niệm chợt lóe lên trong đan điền, bị thanh tâm quyết trấn áp.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Vực sâu vạn trượng hiện ra trong tâm tưởng, ngươi bấm niệm chân quyết, phá tan huyễn cảnh.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Tạp niệm nhân gian như tơ vò quấn lấy thần thức, chém đứt ba ngàn phiền não ti!", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Cảm ứng thấy lôi kiếp sắp tới gần, tâm cảnh gợn sóng rồi lại phẳng lặng như gương nước mùa thu.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Một đạo huyết ảnh lướt qua thức hải, ngươi quát khẽ một tiếng, lôi âm chấn vỡ tà ma.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Dục vọng trường sinh bùng cháy mãnh liệt, định thần giữ vững bản tâm 'Thuận theo tự nhiên'.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Ký ức ngày đầu bước lên con đường nghịch thiên hiện về, đạo tâm thêm kiên cố bất dịch.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Khí tức nghịch chuyển kinh mạch, ngươi dẫn khí quy nguyên, chuyển nguy thành an.", color: "text-rose-400" },
+    { text: "🔥 [Tâm Ma] Hư vô huyễn cảnh hóa thành mỹ nhân mê hoặc, kiếm ý bản mệnh xuất vỏ chém tan sương mù.", color: "text-rose-400" },
+
+    // 3. Đột Phá Ngọc Bích
+    { text: "🌿 [Thổ Nạp] Chân khí vận hành ba mươi sáu chu thiên, mười hai đại khiếu huyệt phát sáng như bảo thạch.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Khí hải đan điền dâng trào như sóng cồn, một tầng bình cảnh mỏng manh dần tan rã.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Tinh khí quy nguyên, thần hoa nội liễm, cốt cách phát ra tiếng lách tách giòn giã.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Ngũ hành linh lực giao thoa nơi khí phủ, sinh sôi không ngừng nghỉ.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Pháp lực trong cơ thể cô đọng đặc quánh, dần chuyển hóa thành chất lỏng óng ánh.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Tinh túy thiên địa thẩm thấu qua lỗ chân lông, gột rửa nhục thân không chút tỳ vết.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Vận hành tâm pháp tầng cao, tiếng lôi minh trầm đục phát ra từ sâu trong cốt tủy.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Hơi thở dài vô tận, đan điền như động không đáy dung nạp vạn dặm linh khí xung quanh.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Ý niệm hợp nhất với bản mệnh nguyên thần, cảm nhận ranh giới cảnh giới kế tiếp đang rộng mở.", color: "text-emerald-300" },
+    { text: "🌿 [Thổ Nạp] Kinh mạch mở rộng thêm ba phần, tốc độ chuyển hóa chu thiên tăng vọt rõ rệt.", color: "text-emerald-300" },
+
+    // 4. Linh Thú & Đạo Lữ Lam Ngọc
+    { text: "🕊️ [Linh Hạc] Linh hạc bay lượn trên mây đỉnh núi, cất tiếng hót thanh thoát hòa vào nhịp thở tu hành.", color: "text-cyan-300" },
+    { text: "🦊 [Linh Thú] Thần thú bên cạnh dụi đầu vào ống tay áo, truyền sang một luồng thuần khiết nguyên khí.", color: "text-cyan-300" },
+    { text: "🌸 [Đạo Lữ] Trong cơn nhập định, chợt ngửi thấy hương lan thoang thoảng của đạo lữ, tâm thần thư thái.", color: "text-cyan-300" },
+    { text: "🍵 [Khuê Phòng] Một chén ngộ đạo trà để trên án đá, dư vị đắng ngọt lan tỏa giúp giải tỏa mọi mệt mỏi.", color: "text-cyan-300" },
+    { text: "🌙 [Tịnh Dạ] Trăng sáng vằng vặc soi bóng kiếm bên song cửa sổ, một đêm tĩnh tọa bằng mười năm công phu.", color: "text-cyan-300" },
+    { text: "🏮 [Động Phủ] Khói hương trầm lượn lờ quanh trận pháp, linh thực ngoài vườn đâm chồi nảy lộc xanh mướt.", color: "text-cyan-300" },
+    { text: "✨ [Cộng Hưởng] Tâm ấn đạo lữ ấm lên nơi lồng ngực, cảm giác có người đồng hành trên con đường tịch mịch trường sinh.", color: "text-cyan-300" },
+    { text: "🍃 [Thanh Sơn] Tiếng suối reo hòa cùng tiếng thông reo, trời đất như ngừng trôi trong một khắc tịnh tu.", color: "text-cyan-300" },
+    { text: "⚔️ [Kiếm Minh] Phi kiếm bên hông khẽ rung lên reng reng, tựa như khát khao cùng chủ nhân chém rách mây trời.", color: "text-cyan-300" },
+    { text: "🌌 [Thiên Cơ] Thiên cơ biến ảo vô cùng, một giọt sương mai trên lá sen cũng ẩn chứa càn khôn đại đạo.", color: "text-cyan-300" }
+];
+window.XIANXIA_LORE_LOGS = XIANXIA_LORE_LOGS;
+
+if (typeof window !== 'undefined' && !window._xianxiaLoreLogInterval) {
+    window._xianxiaLoreLogInterval = setInterval(() => {
+        if (document.hidden) return;
+        if (typeof window.addLog === 'function') {
+            const entry = XIANXIA_LORE_LOGS[Math.floor(Math.random() * XIANXIA_LORE_LOGS.length)];
+            window.addLog(entry.text, entry.color);
+        }
+    }, 18000);
+}
 function renderQuickEquipSlots() {
             const grid = document.getElementById('quick-equip-grid');
             if (!grid) return;
@@ -10840,6 +11752,26 @@ function useInventoryItem(itemId, isAuto = false) {
             if (!item || item.count <= 0) return;
 
             item.count--;
+            if (itemId === 'ruong_don_ngo' || item.id === 'ruong_don_ngo') {
+                const realm = (typeof REALMS !== 'undefined' && REALMS[state.realmIndex]) || { maxExp: 500 };
+                const bonusExp = Math.max(500, Math.round((Number(realm.maxExp) || 500) * 0.25));
+                const expGain = typeof addExp === 'function' ? addExp(bonusExp).gainedAmount : bonusExp;
+                state.stones = (Number(state.stones) || 0) + 500;
+                state.immortalJade = (Number(state.immortalJade) || 0) + 3;
+                if (typeof playSound === 'function') playSound('victory');
+                if (typeof window.showGameToast === 'function') {
+                    window.showGameToast(`🎁 Mở Rương Đốn Ngộ: +${expGain.toLocaleString('vi-VN')} Tu Vi, +500 Linh Thạch, +3 Tiên Ngọc!`, 'success');
+                }
+                addLog(`🎁 <span class="text-amber-300 font-bold">[Mở Rương Đốn Ngộ]</span> Ngộ đạo khai tâm! Thu hoạch <b>+${expGain.toLocaleString('vi-VN')} Tu Vi</b>, <b>+500 Linh Thạch</b> & <b>+3 Tiên Ngọc</b>!`, 'reward');
+                saveGameState();
+                updateHUD();
+                if (typeof window.syncAllUI === 'function') window.syncAllUI();
+                const invPageEl = document.getElementById('page-inventory');
+                if (invPageEl && !invPageEl.classList.contains('hidden') && typeof renderCharacterHub === 'function') {
+                    renderCharacterHub('inventory', document.getElementById('inventory-page-content'));
+                }
+                return;
+            }
             if (itemId === 'pill_thanh_tam' || item.id === 'pill_thanh_tam') {
                 state.daoTam = Math.min(100, (state.daoTam != null ? state.daoTam : 100) + 10);
                 state.tamMa = Math.max(0, 100 - state.daoTam);
@@ -10883,11 +11815,17 @@ function useInventoryItem(itemId, isAuto = false) {
                 item.name?.includes('Hồi Huyết') || item.name?.includes('Hộ Tâm') || item.name?.includes('Sinh Cơ') || item.name?.includes('Hộ Mạch') ||
                 (item.effect && item.effect.hp)
             );
-            if (isHealingInjuryPill && (state.isInjured || state.heavyInjuryUntil > 0)) {
-                state.isInjured = false;
-                state.heavyInjuryUntil = 0;
-                state.isMeditatingRecover = false;
-                if (window.GameState) window.GameState.isInjured = false;
+            if (isHealingInjuryPill && (typeof isHeavyInjuryActive === 'function' ? isHeavyInjuryActive(state) : (state.isInjured || state.heavyInjuryUntil > 0))) {
+                if (typeof reconcileHeavyInjuryState === 'function') {
+                    reconcileHeavyInjuryState(state, { forceClear: true, save: true, updateUi: true });
+                } else {
+                    state.isInjured = false;
+                    state.heavyInjuryUntil = 0;
+                    state.heavyInjuryTime = 0;
+                    state.injuryEndTime = 0;
+                    state.isMeditatingRecover = false;
+                    if (window.GameState) window.GameState.isInjured = false;
+                }
                 if (typeof showXianxiaToast === 'function') {
                     showXianxiaToast(`💊 Phục dụng ${item.name}! Đạo thương được chữa lành, kinh mạch khôi phục hoàn toàn!`, 'success');
                 }
@@ -11138,7 +12076,9 @@ window.unlockDivineTechnique = unlockDivineTechnique;
 let currentSkillsSubTab = 'manuals'; // 'manuals' | 'divine'
 
 // ============================================================================
+// ============================================================================
 // HỆ THỐNG CÔNG PHÁP TÀNG KINH CÁC V2 (QUỶ CỐC BÁT HOANG - 3 PHÂN KHU ĐỘC LẬP)
+// ============================================================================
 // ============================================================================
 
 const SKILL_MASTERY_RANKS_V2 = [
@@ -11574,7 +12514,9 @@ window.addLearnedSkillOrFragment = addLearnedSkillOrFragment;
 
 
 // ============================================================================
+// ============================================================================
 // HÀM RENDER CHÍNH CHO TÀNG KINH CÁC (3 PHÂN KHU ĐỘC LẬP CHUẨN QUỶ CỐC BÁT HOANG)
+// ============================================================================
 // ============================================================================
 
 function renderSkillsHub(content) {
@@ -12585,8 +13527,12 @@ function updateMinorRateDisplay() {
         if (found) pillBonus = found.bonusChance;
     }
     const rootBonus = (typeof getRootTier === 'function' && getRootTier()?.breakthroughBonus) || 0;
-    const tamMaVal = state.tamMa != null ? state.tamMa : Math.max(0, 100 - (state.daoTam ?? 100));
-    const totalRate = Math.max(5, Math.min(100, baseRate + pillBonus + rootBonus - tamMaVal));
+    const alignState = (typeof computeDaoAlignmentState === 'function') ? computeDaoAlignmentState(state) : (state?.alignmentBuffs || null);
+    const alignTribBonus = Number(alignState?.tribulationBonus || 0);
+    const tauHoaReduction = Number(alignState?.tauHoaReduction || 0);
+    const rawTamMa = state.tamMa != null ? state.tamMa : Math.max(0, 100 - (state.daoTam ?? 100));
+    const tamMaVal = Math.max(0, Math.round(rawTamMa * (1 - tauHoaReduction)));
+    const totalRate = Math.max(5, Math.min(100, baseRate + pillBonus + rootBonus + alignTribBonus - tamMaVal));
 
     const pillBonusEl = document.getElementById('minor-pill-bonus');
     if (pillBonusEl) pillBonusEl.textContent = pillBonus > 0 ? `+${pillBonus}%` : '+0%';
@@ -12670,8 +13616,12 @@ function startMinorBreakthrough() {
                 if (found) pillBonus = found.bonusChance;
             }
             const rootBonus = (typeof getRootTier === 'function' && getRootTier()?.breakthroughBonus) || 0;
-            const tamMaVal = state.tamMa != null ? state.tamMa : Math.max(0, 100 - (state.daoTam ?? 100));
-            const totalRate = Math.max(5, Math.min(100, baseRate + pillBonus + rootBonus - tamMaVal));
+            const alignState = (typeof computeDaoAlignmentState === 'function') ? computeDaoAlignmentState(state) : (state?.alignmentBuffs || null);
+            const alignTribBonus = Number(alignState?.tribulationBonus || 0);
+            const tauHoaReduction = Number(alignState?.tauHoaReduction || 0);
+            const rawTamMa = state.tamMa != null ? state.tamMa : Math.max(0, 100 - (state.daoTam ?? 100));
+            const tamMaVal = Math.max(0, Math.round(rawTamMa * (1 - tauHoaReduction)));
+            const totalRate = Math.max(5, Math.min(100, baseRate + pillBonus + rootBonus + alignTribBonus - tamMaVal));
             const roll = Math.random() * 100;
 
             minorBreakthroughInProgress = false;
@@ -13026,8 +13976,11 @@ function attemptCultivationBreakthrough() {
     const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
     if (!s) return;
 
-    // 1. Kiểm tra trạng thái Trọng Thương
-    if (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
+    // 1. Tự giải trừ Trọng Thương ảo trước khi kiểm tra Đột Phá
+    if (typeof reconcileHeavyInjuryState === 'function') {
+        reconcileHeavyInjuryState(s, { save: true, updateUi: true });
+    }
+    if (typeof isHeavyInjuryActive === 'function' ? isHeavyInjuryActive(s) : (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil))) {
         const msg = '⚠️ Đạo hữu đang bị Trọng Thương, kinh mạch tắc nghẽn, không thể đột phá! Hãy dùng đan dược hoặc đả tọa chữa lành.';
         if (typeof window.showGameToast === 'function') {
             window.showGameToast(msg, 'error');
@@ -13356,7 +14309,7 @@ function startTribulationCutscene(target_realm) {
         maxPlayerHp: 100,
         pillConsumed: false,
         totalDamage: 0,
-        totalChance: (currentRealm?.baseChance || 70) + (breakthroughBonusChance || 0),
+        totalChance: Math.min(100, (currentRealm?.baseChance || 70) + (breakthroughBonusChance || 0) + (Number(window.GameState?.alignmentBuffs?.tribulationBonus ?? state?.alignmentBuffs?.tribulationBonus) || 0)),
         tribConfig: tribConfig,
         config: config,
         inventoryCharges: {
@@ -13941,7 +14894,8 @@ function finishTribulationCutscene(survived = true) {
         const prevExp = state.exp;
         state.exp = Math.floor(state.exp * M1_SYSTEM_RULES.majorFailureExpRetention);
         const lostExp = Math.max(0, prevExp - state.exp);
-        state.hp = Math.max(1, Math.floor(state.hp * 0.2));
+        const maxCap = Math.max(1, Number(state.maxHp) || 100);
+        state.hp = Math.min(Math.max(1, Math.floor((state.hp || maxCap) * 0.2)), Math.max(1, maxCap - 1));
         state.isInjured = true;
         if (window.GameState) {
             window.GameState.exp = state.exp;
@@ -17544,74 +18498,60 @@ window.switchAchievementFilter = switchAchievementFilter;
 
 function getAchievementProgress(ach) {
     if (!ach) return { current: 0, target: 1, percent: 0, isCompleted: false };
-    const s = state;
+    const s = (typeof window !== 'undefined' && (window.state || window.GameState)) || state;
     let current = 0;
     let target = 1;
 
+    const highestTowerFloor = Math.max(
+        Number(s.demonTower?.highestCleared || 0),
+        Math.max(0, (Number(s.towerFloor) || 1) - 1)
+    );
+    const curCp = Math.max(
+        Number(s.maxCombatPower || 0),
+        Number(s.combatPower || 0),
+        typeof window.getCombatPower === 'function' ? Number(window.getCombatPower()) || 0 : 0
+    );
+
     switch (ach.id) {
-        case "ach_realm_1":
-            target = 3;
-            current = (s.realmIndex > 0) ? 3 : Math.min(3, (s.realmStage || 0) + 1);
-            break;
         case "ach_realm_2":
             target = 1;
-            current = Math.min(1, s.realmIndex || 0);
+            current = Math.min(1, Number(s.realmIndex) || 0);
             break;
         case "ach_realm_3":
             target = 2;
-            current = Math.min(2, s.realmIndex || 0);
+            current = Math.min(2, Number(s.realmIndex) || 0);
             break;
-        case "ach_realm_4":
-            target = 3;
-            current = Math.min(3, s.realmIndex || 0);
-            break;
-        case "ach_realm_5":
-            target = 4;
-            current = Math.min(4, s.realmIndex || 0);
-            break;
-        case "ach_combat_first":
-            target = 1;
-            current = (s.dungeonsCleared && s.dungeonsCleared[1]) ? 1 : 0;
-            break;
-        case "ach_combat_ten":
+        case "ach_tower_10":
             target = 10;
-            current = Object.values(s.dungeonsCleared || {}).reduce((acc, curr) => acc + (curr?.count || 0), 0);
+            current = Math.min(10, highestTowerFloor);
             break;
-        case "ach_combat_dungeon_4":
-            target = 1;
-            current = (s.dungeonsCleared && s.dungeonsCleared[4]) ? 1 : 0;
+        case "ach_tower_20":
+            target = 20;
+            current = Math.min(20, highestTowerFloor);
             break;
-        case "ach_arena_top":
+        case "ach_tower_50":
             target = 50;
-            current = Math.max(0, 100 - (s.arenaRank || 100));
+            current = Math.min(50, highestTowerFloor);
             break;
-        case "ach_wealth_1":
-            target = 10000;
-            current = Math.min(10000, s.stones || 0);
+        case "ach_alchemy_20":
+            target = 20;
+            current = Math.min(20, Number(s.pillsCraftedCount || 0));
+            break;
+        case "ach_forge_10":
+            target = 10;
+            current = Math.min(10, Number(s.forgedGearCount || 0));
+            break;
+        case "ach_cp_100k":
+            target = 100000;
+            current = Math.min(100000, Math.round(curCp));
             break;
         case "ach_wealth_2":
             target = 100000;
-            current = Math.min(100000, s.stones || 0);
+            current = Math.min(100000, Number(s.stones || 0));
             break;
-        case "ach_auction_win":
-            target = 1;
-            current = (s.auctionData?.wonLots?.length || 0) >= 1 ? 1 : 0;
-            break;
-        case "ach_pet_grow":
-            target = 5;
-            current = Math.min(5, s.petLevel || 1);
-            break;
-        case "ach_companion_bond":
-            target = 30;
-            current = Math.min(30, Math.max(0, ...(s.companions || []).map(c => c.affinity || 0)));
-            break;
-        case "ach_talisman_master":
-            target = 5;
-            current = Math.min(5, s.talismanCraftedCount || 0);
-            break;
-        case "ach_avatar_expedition":
-            target = 3;
-            current = Math.min(3, s.avatarTripsCompleted || 0);
+        case "ach_combat_ten":
+            target = 10;
+            current = Math.min(10, Object.values(s.dungeonsCleared || {}).reduce((acc, curr) => acc + (curr?.count || 0), 0));
             break;
         default:
             target = 1;
@@ -17623,6 +18563,21 @@ function getAchievementProgress(ach) {
     return { current, target, percent, isCompleted };
 }
 window.getAchievementProgress = getAchievementProgress;
+
+function hasClaimableAchievement() {
+    const list = typeof ACHIEVEMENTS_CONFIG !== 'undefined' ? ACHIEVEMENTS_CONFIG : [];
+    const claimed = state?.achievementsClaimed || {};
+    return list.some(ach => !claimed[ach.id] && getAchievementProgress(ach).isCompleted);
+}
+window.hasClaimableAchievement = hasClaimableAchievement;
+
+function openAchievementModal() {
+    if (typeof closeAllDropups === 'function') closeAllDropups();
+    if (typeof openHubModal === 'function') {
+        openHubModal('character', 'achievement');
+    }
+}
+window.openAchievementModal = openAchievementModal;
 
 function claimAchievement(achId) {
     const list = typeof ACHIEVEMENTS_CONFIG !== 'undefined' ? ACHIEVEMENTS_CONFIG : [];
@@ -17642,18 +18597,39 @@ function claimAchievement(achId) {
     }
 
     state.achievementsClaimed[achId] = true;
+    if (window.GameState) {
+        if (!window.GameState.achievementsClaimed) window.GameState.achievementsClaimed = {};
+        window.GameState.achievementsClaimed[achId] = true;
+    }
     if (ach.reward?.stones) state.stones = (state.stones || 0) + ach.reward.stones;
     if (ach.reward?.jade) state.immortalJade = (state.immortalJade || 0) + ach.reward.jade;
 
+    if (ach.reward?.title) {
+        if (!Array.isArray(state.unlockedAchievementTitles)) state.unlockedAchievementTitles = [];
+        if (!state.unlockedAchievementTitles.includes(ach.reward.title)) {
+            state.unlockedAchievementTitles.push(ach.reward.title);
+        }
+        if (!state.equippedTitle) {
+            state.equippedTitle = ach.reward.title;
+            if (window.GameState) window.GameState.equippedTitle = ach.reward.title;
+        }
+    }
+
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     if (typeof playSound === 'function') playSound('victory');
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Thành Tựu: +${ach.reward?.jade || 0} Tiên Ngọc!`, 'text-amber-300');
     }
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(`🏆 Đạt thành tựu [${ach.title}]! Mở khóa danh hiệu [${ach.reward?.title || ach.title}] & cộng vĩnh viễn ${ach.reward?.statDesc || ''}!`, 'success');
+    }
     addLog(`🏆 Lĩnh ngộ Thiên Đạo Thành Tựu <b class="text-amber-300">[${ach.title}]</b>! Nhận: <span class="text-amber-400">+${ach.reward?.jade || 0} Tiên Ngọc</span>, <span class="text-gold-300">+${(ach.reward?.stones || 0).toLocaleString('vi-VN')} Linh Thạch</span> & vĩnh viễn gia trì <span class="text-emerald-400">${ach.reward?.statDesc || ''}</span>!`, 'text-amber-300 font-bold');
 
     updateHUD();
-    saveGameState();
-    const container = document.getElementById('hub-modal-content');
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else saveGameState();
+    const container = document.getElementById('hub-modal-content') || document.getElementById('char-subtab-container');
     if (container) renderAchievementHub(container);
 }
 window.claimAchievement = claimAchievement;
@@ -17661,15 +18637,22 @@ window.claimAchievement = claimAchievement;
 function equipTitle(title) {
     if (state.equippedTitle === title) {
         state.equippedTitle = '';
+        if (window.GameState) window.GameState.equippedTitle = '';
         addLog(`Đã gỡ danh hiệu [${title}].`, 'text-slate-300');
     } else {
         state.equippedTitle = title;
+        if (window.GameState) window.GameState.equippedTitle = title;
         if (typeof playSound === 'function') playSound('bell');
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`🏅 Đã đeo danh hiệu vĩnh viễn [${title}] cạnh Đạo Hiệu!`, 'success');
+        }
         addLog(`Đã đeo danh hiệu Tiên Đạo <b class="text-amber-300">[${title}]</b>!`, 'text-amber-300');
     }
     updateHUD();
-    saveGameState();
-    const container = document.getElementById('hub-modal-content');
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else saveGameState();
+    const container = document.getElementById('hub-modal-content') || document.getElementById('char-subtab-container');
     if (container) renderAchievementHub(container);
 }
 window.equipTitle = equipTitle;
@@ -17692,7 +18675,7 @@ function renderAchievementHub(content) {
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="font-serif font-bold text-slate-100 text-base">🏆 THIÊN ĐẠO THÀNH TỰU • MINH THỆ BẢNG</h3>
+                            <h3 class="font-serif font-bold text-slate-100 text-base">🏆 ĐẠO LỘ THÀNH TỰU • MINH THỆ BẢNG</h3>
                             ${state.equippedTitle ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-500/40 font-bold">[${state.equippedTitle}]</span>` : ''}
                         </div>
                         <p class="text-xs text-slate-400 mt-0.5">Minh chứng con đường nghịch thiên tu chân. Lãnh thưởng Tiên Ngọc & gia trì thuộc tính vĩnh hằng.</p>
@@ -17853,6 +18836,9 @@ function initializeKeyboardUX() {
 }
 
 function isAutoAssistantUnlocked(key) {
+    if (key === 'alchemy') {
+        return typeof isFeatureUnlocked === 'function' ? isFeatureUnlocked('btn_lo_dan') : true;
+    }
     if (key === 'farm' || key === 'pill') {
         const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
         const rIdx = Number(s?.realmIndex) || 0;
@@ -17876,59 +18862,162 @@ function isAutoAssistantUnlocked(key) {
     return true;
 }
 
-function initializeAutomationControls() {
-    const controls = {
-        'toggle-auto-master': 'enabled',
-        'toggle-auto-pill': 'pill',
-        'toggle-auto-heal': 'heal',
-        'toggle-auto-farm': 'farm',
-        'toggle-auto-alchemy': 'alchemy'
-    };
+function syncAutomationUI() {
+    if (!state.auto || typeof state.auto !== 'object') {
+        state.auto = { enabled: false, pill: false, heal: false, farm: false, alchemy: false };
+    }
+    const auto = state.auto;
+    const masterInput = document.getElementById('toggle-auto-master');
+    const pillInput = document.getElementById('toggle-auto-pill');
+    const healInput = document.getElementById('toggle-auto-heal');
+    const farmInput = document.getElementById('toggle-auto-farm');
+    const alchemyInput = document.getElementById('toggle-auto-alchemy');
 
+    if (masterInput) masterInput.checked = Boolean(auto.enabled);
+    if (pillInput) pillInput.checked = Boolean(auto.pill);
+    if (healInput) healInput.checked = Boolean(auto.heal);
+    if (farmInput) farmInput.checked = Boolean(auto.farm);
+    if (alchemyInput) alchemyInput.checked = Boolean(auto.alchemy);
+
+    if (window.GameState) {
+        if (!window.GameState.auto || typeof window.GameState.auto !== 'object') {
+            window.GameState.auto = auto;
+        } else {
+            Object.assign(window.GameState.auto, auto);
+        }
+    }
+}
+window.syncAutomationUI = syncAutomationUI;
+
+function initializeAutomationControls() {
     if (!state.auto || typeof state.auto !== 'object') {
         state.auto = { enabled: false, pill: false, heal: false, farm: false, alchemy: false };
     }
 
-    Object.entries(controls).forEach(([id, key]) => {
+    const subControls = [
+        { id: 'toggle-auto-pill', key: 'pill', label: 'Nuốt Đan' },
+        { id: 'toggle-auto-heal', key: 'heal', label: 'Hồi Huyết' },
+        { id: 'toggle-auto-farm', key: 'farm', label: 'Linh Điền' },
+        { id: 'toggle-auto-alchemy', key: 'alchemy', label: 'Khai Lò' }
+    ];
+
+    const masterInput = document.getElementById('toggle-auto-master');
+
+    // Khởi tạo trạng thái ban đầu của từng nút
+    subControls.forEach(({ id, key }) => {
         const input = document.getElementById(id);
         if (!input) return;
-        
-        // Tất cả checkbox mặc định tắt nếu chưa được mở khóa hợp lệ
-        if ((key === 'farm' || key === 'pill') && !isAutoAssistantUnlocked(key)) {
+        if (!isAutoAssistantUnlocked(key)) {
             state.auto[key] = false;
             input.checked = false;
         } else {
             input.checked = Boolean(state.auto[key]);
         }
 
-        const handleToggle = (e) => {
-            if ((key === 'farm' || key === 'pill') && !isAutoAssistantUnlocked(key)) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+        const handleSubChange = (e) => {
+            const isChecked = Boolean(input.checked);
+            if (isChecked) {
+                if (!isAutoAssistantUnlocked(key)) {
+                    input.checked = false;
+                    state.auto[key] = false;
+                    const lockMsg = `[${subControls.find(c => c.key === key)?.label || key}] Cần đạt Trúc Cơ Kỳ hoặc Hảo cảm Đạo Lữ cấp 3 để kích hoạt!`;
+                    if (typeof window.showGameToast === 'function') {
+                        window.showGameToast(lockMsg, 'warning');
+                    } else if (typeof showToast === 'function') {
+                        showToast(lockMsg);
+                    }
+                    if (typeof addLog === 'function') addLog(`⚠️ ${lockMsg}`, 'text-amber-400');
+                    syncAutomationUI();
+                    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+                    else saveGameState();
+                    return;
                 }
-                input.checked = false;
+                state.auto[key] = true;
+                // Nếu bật ít nhất 1 mục con -> tự động bật Chu Thiên Auto Tổng
+                state.auto.enabled = true;
+            } else {
                 state.auto[key] = false;
-                const msg = 'Cần đạt Trúc Cơ Kỳ hoặc Hảo cảm Đạo Lữ cấp 3 để kích hoạt!';
-                if (typeof window.showGameToast === 'function') {
-                    window.showGameToast(msg, 'warning');
-                } else if (typeof showXianxiaToast === 'function') {
-                    showXianxiaToast(msg, 'warning');
-                } else if (typeof showToast === 'function') {
-                    showToast(msg);
+                // Nếu tắt hết cả 4 mục con -> tự động tắt Chu Thiên Auto Tổng
+                const anyOn = subControls.some(c => Boolean(state.auto[c.key]));
+                if (!anyOn) {
+                    state.auto.enabled = false;
                 }
-                if (typeof addLog === 'function') addLog(`⚠️ ${msg}`, 'text-amber-400');
-                saveGameState();
-                return false;
             }
-            state.auto[key] = input.checked;
-            addLog(`[Tự động] ${input.checked ? 'Bật' : 'Tắt'} ${key === 'enabled' ? 'toàn bộ trợ lý' : input.closest('label')?.querySelector('span')?.textContent || key}.`);
-            saveGameState();
+            syncAutomationUI();
+            if (typeof addLog === 'function') {
+                addLog(`[Tự động] ${input.checked ? 'Bật' : 'Tắt'} ${subControls.find(c => c.key === key)?.label || key}.`);
+            }
+            if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+            else saveGameState();
         };
 
-        input.onclick = handleToggle;
-        input.onchange = handleToggle;
+        input.onclick = handleSubChange;
+        input.onchange = handleSubChange;
     });
+
+    if (masterInput) {
+        masterInput.checked = Boolean(state.auto.enabled);
+        const handleMasterChange = (e) => {
+            const isTurnOn = Boolean(masterInput.checked);
+            state.auto.enabled = isTurnOn;
+            const lockedLabels = [];
+
+            subControls.forEach(({ id, key, label }) => {
+                const input = document.getElementById(id);
+                if (isTurnOn) {
+                    if (isAutoAssistantUnlocked(key)) {
+                        state.auto[key] = true;
+                        if (input) input.checked = true;
+                    } else {
+                        state.auto[key] = false;
+                        if (input) input.checked = false;
+                        lockedLabels.push(label);
+                    }
+                } else {
+                    state.auto[key] = false;
+                    if (input) input.checked = false;
+                }
+            });
+
+            syncAutomationUI();
+
+            if (isTurnOn) {
+                if (lockedLabels.length > 0) {
+                    const warn = `Đã bật Chu Thiên Auto Tổng! Riêng [${lockedLabels.join(', ')}] chưa đủ điều kiện cảnh giới để tự động hóa.`;
+                    if (typeof window.showGameToast === 'function') {
+                        window.showGameToast(warn, 'warning');
+                    } else if (typeof showToast === 'function') {
+                        showToast(warn);
+                    }
+                    if (typeof addLog === 'function') addLog(`⚠️ ${warn}`, 'text-amber-400');
+                } else {
+                    const succ = 'Đã kích hoạt Chu Thiên Auto Tổng! Toàn bộ 4 trợ lý tự động đã sẵn sàng.';
+                    if (typeof window.showGameToast === 'function') {
+                        window.showGameToast(succ, 'success');
+                    } else if (typeof showToast === 'function') {
+                        showToast(succ);
+                    }
+                    if (typeof addLog === 'function') addLog(`✨ <span class="text-emerald-400 font-bold">[Auto]</span> ${succ}`, 'text-emerald-300');
+                }
+            } else {
+                const off = 'Đã ngưng Chu Thiên Auto Tổng, toàn bộ 4 trợ lý tự động đã tắt.';
+                if (typeof window.showGameToast === 'function') {
+                    window.showGameToast(off, 'info');
+                } else if (typeof showToast === 'function') {
+                    showToast(off);
+                }
+                if (typeof addLog === 'function') addLog(`⏹️ [Auto] ${off}`, 'text-slate-400');
+            }
+
+            if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+            else saveGameState();
+        };
+
+        masterInput.onclick = handleMasterChange;
+        masterInput.onchange = handleMasterChange;
+    }
+
+    syncAutomationUI();
 }
 
 function runAutoAssistants(automationEnabled, loopStats, currentRealm) {
@@ -17951,7 +19040,6 @@ function runAutoAssistants(automationEnabled, loopStats, currentRealm) {
     const autoAlchemy = state.auto.alchemy;
     if (autoAlchemy) {
         if (!isFeatureUnlocked('btn_lo_dan')) {
-            // Tính năng Lò Đan chưa mở khóa -> Bỏ qua trong im lặng, không ghi log lỗi
             return;
         }
         const spiritHerb = state.inventory.find(i => i.id === 'herb_spirit');
@@ -17961,7 +19049,6 @@ function runAutoAssistants(automationEnabled, loopStats, currentRealm) {
     }
 }
 window.runAutoAssistants = runAutoAssistants;
-
 function GameLoop() {
         state.maxLinhKhi = getLinhKhiMax(state);
         state.linhKhiRegen = getLinhKhiRate(state);
@@ -18151,7 +19238,7 @@ window.onload = function() {
     }
     addLog("Chào mừng đạo hữu tiến vào <span class='text-jade-400 font-semibold'>Thanh Vân Động Phủ</span>.");
     addLog("Tụ Linh Trận đã vận hành, linh khí đang tự động hội tụ về đan điền.");
-    if (offline.seconds >= 30 && (offline.gained > 0 || offline.linhKhiGained > 0 || offline.yearsAged > 0)) {
+    if (offline.seconds >= 30 && offline.seconds < 120 && !window.__OFFLINE_REWARD_PENDING__ && (offline.gained > 0 || offline.linhKhiGained > 0 || offline.yearsAged > 0)) {
         const popup = document.getElementById('offline-cultivation-popup');
         if (popup) {
             const setText = (id, value) => {
@@ -18252,6 +19339,7 @@ window.onload = function() {
         if (typeof marketTick === 'function') marketTick();
         if (typeof tickCaveHubDashboard === 'function') tickCaveHubDashboard();
         if (typeof tickSectSystem === 'function') tickSectSystem();
+        const focusChanged = (typeof updateFocusMeditationUI === 'function') ? Boolean(updateFocusMeditationUI(state)) : false;
 
         // Tách biệt tính toán và hiển thị: chỉ gọi updateUI() khi có giá trị thay đổi thực sự trong tick đó
         const nextSnapshot = {
@@ -18273,7 +19361,7 @@ window.onload = function() {
                 prevSnapshot.linhKhi !== nextSnapshot.linhKhi
             );
 
-        if (changed || farmUpdated) {
+        if (changed || farmUpdated || focusChanged) {
             updateUI();
             if (typeof window.syncAllUI === 'function') window.syncAllUI();
         }

@@ -127,6 +127,11 @@
         doKiepState.pillCharges = 2;
         doKiepState.auto = true;
         doKiepState.nextStrikeReady = false;
+        doKiepState.isChargingStrike = false;
+        doKiepState.isParried = false;
+        const buildupBox = document.getElementById('trib-buildup-container');
+        if (buildupBox) buildupBox.style.display = 'none';
+        if (typeof updateQuickPillBar === 'function') updateQuickPillBar();
         const artifactBtn = document.getElementById('btn-te-phap-bao');
         if (artifactBtn) {
             artifactBtn.disabled = true;
@@ -189,6 +194,10 @@
 
     function closeDoKiepModal(isAbandoned = false) {
         window.tribulationVisuals?.clear();
+        doKiepState.isChargingStrike = false;
+        doKiepState.isParried = false;
+        const buildupBox = document.getElementById('trib-buildup-container');
+        if (buildupBox) buildupBox.style.display = 'none';
         if (doKiepState.strikeTimer) {
             clearTimeout(doKiepState.strikeTimer);
             doKiepState.strikeTimer = null;
@@ -199,10 +208,14 @@
         }
 
         if (isAbandoned && doKiepState.inProgress && doKiepState.isStriking) {
-            // Hình phạt Tẩu Hỏa Nhập Ma khi bỏ cuộc giữa chừng
+            // Hình phạt Tẩu Hỏa Nhập Ma khi bỏ cuộc giữa chừng (giảm 25% nếu đạt Hạo Nhiên Chính Khí)
             const gState = window.state || (typeof state !== 'undefined' ? state : null);
             if (gState && gState.exp > 0) {
-                const penalty = Math.round(gState.exp * 0.15);
+                const alignState = (typeof window !== 'undefined' && typeof window.computeDaoAlignmentState === 'function')
+                    ? window.computeDaoAlignmentState(gState)
+                    : (gState?.alignmentBuffs || null);
+                const tauHoaMult = 1 - Number(alignState?.tauHoaReduction || 0);
+                const penalty = Math.round(gState.exp * 0.15 * tauHoaMult);
                 gState.exp = Math.max(0, gState.exp - penalty);
                 if (typeof window.saveGameState === 'function') window.saveGameState();
                 if (typeof window.updateHUD === 'function') window.updateHUD();
@@ -233,10 +246,34 @@
         }
     }
 
+    function checkAndApplyParry() {
+        if (!doKiepState.isChargingStrike || !doKiepState.strikeTargetTime) return false;
+        const remainingMs = doKiepState.strikeTargetTime - Date.now();
+        if (remainingMs >= 0 && remainingMs <= 450) {
+            doKiepState.isParried = true;
+            const parryHeal = Math.round(doKiepState.maxShield * 0.25);
+            doKiepState.currentShield = Math.min(doKiepState.maxShield, doKiepState.currentShield + parryHeal);
+            updateTribulationShield();
+            spawnFloatingDamage(`⚡ NGHỊCH THIÊN PHẢN PHỆ (-70% SÁT THƯƠNG)!`, true);
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast('⚡ NGHỊCH THIÊN PHẢN PHỆ! Canh chuẩn thiên cơ: Giảm 70% sát thương, hồi +25% Chân Khí!', 'success');
+            }
+            if (typeof window.addLog === 'function') {
+                window.addLog(`⚡ <span class="text-yellow-400 font-bold">[Nghịch Thiên Phản Phệ]</span> Canh đúng thời khắc thiên cơ lôi kiếp! Giảm 70% sát thương, phục hồi ${parryHeal.toLocaleString()} Chân Khí!`, 'text-yellow-400');
+            }
+            const bContainer = document.getElementById('trib-buildup-container');
+            if (bContainer) bContainer.classList.add('is-parry-window');
+            return true;
+        }
+        return false;
+    }
+
     // Nút Tế Pháp Bảo
     function defendWithArtifact(event) {
         if (event) event.stopPropagation();
         if (!doKiepState.inProgress || !doKiepState.isStriking) return;
+
+        checkAndApplyParry();
 
         if (doKiepState.artifactCooldown) {
             if (typeof window.addLog === 'function') {
@@ -296,6 +333,7 @@
 
     function raiseTribulationWard() {
         if (!doKiepState.inProgress || !doKiepState.isStriking || doKiepState.wardCharges <= 0 || doKiepState.wardReduction > 0) return;
+        checkAndApplyParry();
         const rules = window.tribulationActionConfig || {};
         doKiepState.wardCharges--;
         doKiepState.wardReduction = rules.wardReduction || 0.5;
@@ -331,6 +369,7 @@
         }
 
         updateTribulationShield();
+        updateQuickPillBar();
         spawnFloatingDamage(`+${heal.toLocaleString()} Chân Khí (Đan Dược)!`, true);
 
         if (typeof window.showGameToast === 'function') {
@@ -343,12 +382,117 @@
         updateTribulationControls();
     }
 
+    function useTribulationQuickPill(pillType) {
+        if (!doKiepState.inProgress || !doKiepState.isStriking) {
+            if (typeof window.showGameToast === 'function') window.showGameToast('Chỉ có thể dùng đan dược khi đang vượt thiên kiếp!', 'warning');
+            return;
+        }
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+        let pillName = 'Hộ Tâm Đan';
+        let healAmount = 0;
+
+        if (pillType === 'dan_ho_tam') {
+            pillName = 'Hộ Tâm Đan';
+            healAmount = Math.round(doKiepState.maxShield * 0.30);
+            doKiepState.currentShield = Math.min(doKiepState.maxShield, doKiepState.currentShield + healAmount);
+            doKiepState.artifactShieldBonus = Math.max(doKiepState.artifactShieldBonus || 0, 0.40);
+        } else if (pillType === 'dan_tu_khi') {
+            pillName = 'Tụ Khí Đan';
+            healAmount = Math.round(doKiepState.maxShield * 0.25);
+            doKiepState.currentShield = Math.min(doKiepState.maxShield, doKiepState.currentShield + healAmount);
+        } else if (pillType === 'dan_thanh_tam') {
+            pillName = 'Thanh Tâm Đan';
+            healAmount = Math.round(doKiepState.maxShield * 0.10);
+            doKiepState.currentShield = Math.min(doKiepState.maxShield, doKiepState.currentShield + healAmount);
+            const gs = window.GameState || window.state;
+            if (gs) gs.danDoc = Math.max(0, (gs.danDoc || 0) - 25);
+        }
+
+        const pillIdx = inv.findIndex(i => i && (i.id === pillType || i.id?.includes(pillType.replace('dan_', '')) || i.name?.includes(pillName)) && (i.count || i.quantity || 0) > 0);
+        if (pillIdx >= 0) {
+            const it = inv[pillIdx];
+            const c = Number(it.count || it.quantity || 1) - 1;
+            it.count = c; it.quantity = c;
+            if (c <= 0) inv.splice(pillIdx, 1);
+        }
+
+        updateTribulationShield();
+        updateQuickPillBar();
+        spawnFloatingDamage(`+${healAmount.toLocaleString()} Chân Khí (${pillName})!`, true);
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`💊 Phục dụng ${pillName}! Hồi phục +${healAmount.toLocaleString()} Chân Khí!`, 'success');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`💊 <span class="text-teal-300 font-bold">[Cắn Đan Độ Kiếp]</span> Nuốt vội <strong>${pillName}</strong>, phục hồi ${healAmount.toLocaleString()} Chân Khí bảo hộ đạo cơ!`, 'text-teal-300');
+        }
+    }
+    window.useTribulationQuickPill = useTribulationQuickPill;
+
+    function updateQuickPillBar() {
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+        const countHotam = inv.filter(i => i && (i.id === 'dan_ho_tam' || i.name?.includes('Hộ Tâm'))).reduce((s, i) => s + (Number(i.count || i.quantity) || 1), 0);
+        const countTukhi = inv.filter(i => i && (i.id === 'dan_tu_khi' || i.id === 'pill_qi' || i.name?.includes('Tụ Khí'))).reduce((s, i) => s + (Number(i.count || i.quantity) || 1), 0);
+        const countThanhtam = inv.filter(i => i && (i.id === 'dan_thanh_tam' || i.name?.includes('Thanh Tâm'))).reduce((s, i) => s + (Number(i.count || i.quantity) || 1), 0);
+
+        const elHoTam = document.getElementById('qty-pill-hotam');
+        const elTuKhi = document.getElementById('qty-pill-tukhi');
+        const elThanhTam = document.getElementById('qty-pill-thanhtam');
+
+        if (elHoTam) elHoTam.textContent = String(countHotam);
+        if (elTuKhi) elTuKhi.textContent = String(countTukhi);
+        if (elThanhTam) elThanhTam.textContent = String(countThanhtam);
+    }
+    window.updateQuickPillBar = updateQuickPillBar;
+
     function advanceTribulationStrike() {
         if (!doKiepState.inProgress || !doKiepState.isStriking || !doKiepState.nextStrikeReady) return;
         if (doKiepState.strikeTimer) clearTimeout(doKiepState.strikeTimer);
         doKiepState.strikeTimer = null;
         doKiepState.nextStrikeReady = false;
-        executeNextStrike();
+
+        const buildupBox = document.getElementById('trib-buildup-container');
+        const buildupFill = document.getElementById('trib-buildup-fill');
+        const buildupTimer = document.getElementById('trib-buildup-timer');
+        const buildupTitle = document.getElementById('trib-buildup-title');
+
+        doKiepState.isChargingStrike = true;
+        doKiepState.isParried = false;
+        const duration = 1500;
+        const startTime = Date.now();
+        doKiepState.strikeTargetTime = startTime + duration;
+
+        if (buildupBox) {
+            buildupBox.style.display = 'block';
+            buildupBox.classList.remove('is-parry-window');
+        }
+        if (buildupFill) buildupFill.style.width = '0%';
+        if (buildupTitle) buildupTitle.innerHTML = '<i class="fa-solid fa-bolt-lightning text-yellow-400 mr-1 animate-pulse"></i> Thiên Lôi Đang Tụ Khí...';
+
+        const tickCharge = () => {
+            if (!doKiepState.inProgress || !doKiepState.isChargingStrike) return;
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, duration - elapsed);
+            const pct = Math.min(100, (elapsed / duration) * 100);
+
+            if (buildupFill) buildupFill.style.width = `${pct}%`;
+            if (buildupTimer) buildupTimer.textContent = `${(remaining / 1000).toFixed(2)}s`;
+
+            if (remaining <= 450 && remaining > 0) {
+                buildupBox?.classList.add('is-parry-window');
+                if (buildupTitle && !doKiepState.isParried) {
+                    buildupTitle.innerHTML = '<i class="fa-solid fa-bolt text-rose-400 mr-1 animate-ping"></i> CỬA SỔ PHẢN PHỆ (TẾ BẢO / HỘ TRẬN NGAY)!';
+                }
+            }
+
+            if (elapsed < duration) {
+                requestAnimationFrame(tickCharge);
+            } else {
+                doKiepState.isChargingStrike = false;
+                if (buildupBox) buildupBox.style.display = 'none';
+                executeNextStrike();
+            }
+        };
+        requestAnimationFrame(tickCharge);
     }
 
     function toggleTribulationAuto() {
@@ -411,6 +555,10 @@
 
         // Tính sát thương của đạo lôi kiếp này
         let strikeDamage = Math.round((doKiepState.maxShield / total) * (0.65 + cur * 0.15));
+        if (doKiepState.isParried) {
+            strikeDamage = Math.round(strikeDamage * 0.30); // Giảm 70% sát thương do Nghịch Thiên Phản Phệ
+            doKiepState.isParried = false;
+        }
         if (doKiepState.artifactShieldBonus > 0) {
             strikeDamage = Math.round(strikeDamage * (1 - doKiepState.artifactShieldBonus));
             doKiepState.artifactShieldBonus = 0; // Đã tiêu hao khiên giảm thương

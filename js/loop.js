@@ -120,6 +120,22 @@ function checkAutoHeal(targetState) {
         s.hp = Math.min(maxHp, Math.round(s.hp + hpRegenPerSec * timeScale));
     }
 
+    // 2.1b Tâm Ấn • Niệm Tương Tri: Hảo cảm Đạo Lữ cấp 3 tự động hồi 20% HP khi máu < 30% (Hồi chiêu 90s)
+    const hasHeartEcho = s.companionBuffs?.hasHeartEcho || (typeof window !== 'undefined' && window.GameState?.companionBuffs?.hasHeartEcho);
+    const nowEcho = Date.now();
+    const lastEcho = Number(s.lastHeartEchoTime || 0);
+    if (hasHeartEcho && s.hp < maxHp * 0.30 && (nowEcho - lastEcho > 90000)) {
+        s.lastHeartEchoTime = nowEcho;
+        const echoHeal = Math.round(maxHp * 0.20);
+        s.hp = Math.min(maxHp, s.hp + echoHeal);
+        if (typeof window !== 'undefined' && typeof window.addLog === 'function') {
+            window.addLog(`🌸 <span class="text-pink-300 font-bold">[Tâm Ấn • Niệm Tương Tri]</span> Đạo lữ tâm linh tương thông, hồi phục cấp tốc <strong>+${echoHeal.toLocaleString()} Khí Huyết</strong>!`, 'text-pink-300');
+        }
+        if (typeof window !== 'undefined' && typeof window.showGameToast === 'function') {
+            window.showGameToast(`🌸 Tâm Ấn • Niệm Tương Tri: +${echoHeal.toLocaleString()} HP!`, 'success');
+        }
+    }
+
     // 2.2 Hồi phục Linh Lực tự nhiên
     if (s.mp === undefined) s.mp = maxMp;
     if (s.mp < maxMp) {
@@ -216,14 +232,46 @@ function executeSafeGameTick(targetState) {
     const s = targetState || (typeof state !== 'undefined' ? state : null);
     if (!s || s.isDead) return { updatedUI: false };
 
+    // 0. Giải trừ Trọng Thương ảo trước khi tính Tu Vi nếu HP đã đầy hoặc hết thời gian
+    const preClearedInjury = (typeof reconcileHeavyInjuryState === 'function')
+        ? reconcileHeavyInjuryState(s, { save: true, updateUi: false })
+        : false;
+
     // 1. Tăng Tu Vi (Base Regen + Buff Động Phủ + Buff Tông Môn)
     const qiResult = gainQi(s);
 
     // 2. Hồi phục HP/MP nếu bật Auto
     const healResult = checkAutoHeal(s);
 
+    // 2.5 Giải trừ Trọng Thương ngay khi vừa hồi đầy 100% Khí Huyết trong tick này
+    const postClearedInjury = (typeof reconcileHeavyInjuryState === 'function')
+        ? reconcileHeavyInjuryState(s, { save: true, updateUi: false })
+        : false;
+
     // 3. Xác suất 0.5% xảy ra Kỳ Ngộ hoặc Tâm Ma
     const eventResult = rollRandomEvent(s);
+
+    // 3.5 Ma Đạo Cự Phách: mỗi 60 giây online tăng +1% Tâm Ma
+    const gsRef = (typeof window !== 'undefined' && window.GameState) ? window.GameState : s;
+    const alignR = Number(gsRef.righteous ?? gsRef.alignment?.righteous ?? s.righteous ?? s.alignment?.righteous ?? 50);
+    const alignD = Number(gsRef.demonic ?? gsRef.alignment?.demonic ?? s.demonic ?? s.alignment?.demonic ?? 50);
+    if ((alignR - alignD) <= -20) {
+        s._demonicTamMaTicks = (Number(s._demonicTamMaTicks) || 0) + 1;
+        if (s._demonicTamMaTicks >= 60) {
+            s._demonicTamMaTicks = 0;
+            const curTamMa = Number(s.tamMa ?? Math.max(0, 100 - (s.daoTam ?? 100))) || 0;
+            if (curTamMa < 100) {
+                s.tamMa = Math.min(100, curTamMa + 1);
+                s.daoTam = Math.max(0, 100 - s.tamMa);
+                if (gsRef && gsRef !== s) {
+                    gsRef.tamMa = s.tamMa;
+                    gsRef.daoTam = s.daoTam;
+                }
+            }
+        }
+    } else {
+        s._demonicTamMaTicks = 0;
+    }
 
     // Hồi phục vé Khiêu Chiến Đấu Pháp Đài (1 vé mỗi 10 phút, tối đa 5 vé)
     if (s.arenaTickets !== undefined && s.arenaTickets < 5) {
@@ -242,8 +290,14 @@ function executeSafeGameTick(targetState) {
         }
     }
 
+    // 3.8 Bế Quan Tịnh Tu (25 phút Focus Meditation Timer)
+    let focusChanged = false;
+    if (typeof updateFocusMeditationUI === 'function') {
+        focusChanged = Boolean(updateFocusMeditationUI(s));
+    }
+
     // 4. Chỉ cập nhật DOM nếu dữ liệu thực sự thay đổi
-    const isDirty = qiResult.changed || healResult.changed || eventResult.triggered || hasStateChangedForUI(s);
+    const isDirty = preClearedInjury || postClearedInjury || focusChanged || qiResult.changed || healResult.changed || eventResult.triggered || hasStateChangedForUI(s);
     if (isDirty && typeof updateHUD === 'function') {
         updateHUD();
     }

@@ -652,6 +652,29 @@
                                     <p>Dùng nhanh bằng phím 1, 2, 3 khi giao chiến.</p>
                                 </div>
                             </details>
+                            <details class="tower-menu tower-menu-up" id="tower-pill-menu">
+                                <summary>
+                                    💊 Đan dược
+                                    <kbd>4–6</kbd>
+                                    <span aria-hidden="true">⌃</span>
+                                </summary>
+                                <div class="tower-popover tower-artifact-popover">
+                                    <h2>Phục Dụng Đan Dược</h2>
+                                    <button onclick="consumeBattlePill('dan_ho_tam')" id="btn-tower-pill-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center justify-between w-full" title="Hộ Tâm Đan: Hồi 35% HP & Giảm 30% sát thương đòn kế (Phím 4)">
+                                        <span>🛡️ Hộ Tâm Đan</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-amber-300 border border-amber-500/40">[4]</kbd>
+                                    </button>
+                                    <button onclick="consumeBattlePill('dan_tu_khi')" id="btn-tower-pill-2" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center justify-between w-full" title="Tụ Khí Đan: Hồi phục 50 MP tức thì (Phím 5)">
+                                        <span>⚡ Tụ Khí Đan (+50 MP)</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-cyan-300 border border-cyan-500/40">[5]</kbd>
+                                    </button>
+                                    <button onclick="consumeBattlePill('dan_thanh_tam')" id="btn-tower-pill-3" class="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/35 border border-purple-400/60 text-purple-200 text-[11px] font-bold transition active:scale-95 flex items-center justify-between w-full" title="Thanh Tâm Đan: Trừ 25% Đan Độc, tĩnh tâm định thần (Phím 6)">
+                                        <span>🌸 Thanh Tâm Đan (-25% Độc)</span>
+                                        <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-purple-300 border border-purple-500/40">[6]</kbd>
+                                    </button>
+                                    <p>Dùng nhanh bằng phím 4, 5, 6 khi giao chiến.</p>
+                                </div>
+                            </details>
                             <button onclick="toggleCombatSpeed()" id="btn-speed" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-amber-300 transition active:scale-95 flex items-center gap-1" title="Tốc độ trận đấu: 1x / 2x / 3x (Phím X)">
                                 <span id="speed-label">1x</span>
                                 <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[X]</kbd>
@@ -1094,6 +1117,10 @@
                     if (data.hero.def !== undefined) gameState.hero.def = Number(data.hero.def);
                     if (data.hero.crit !== undefined) gameState.hero.crit = Number(data.hero.crit);
                     if (data.hero.critDmg !== undefined) gameState.hero.critDmg = Number(data.hero.critDmg);
+                    if (data.companionBuffs?.hasPhoenixHarmony || window.parent?.GameState?.companionBuffs?.hasPhoenixHarmony) {
+                        gameState.hero.crit = Math.min(95, gameState.hero.crit + 15);
+                        gameState.hero.critDmg = (Number(gameState.hero.critDmg) || 2.0) + 0.25;
+                    }
                     if (data.hero.eva !== undefined) gameState.hero.eva = Number(data.hero.eva);
                     gameState.hero.tier = data.hero.tier;
                     gameState.hero.realmIndex = data.hero.realmIndex;
@@ -1837,6 +1864,36 @@
                 gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
             );
         }
+
+        function consumeBattlePill(pillId) {
+            if (!gameState.inCombat) {
+                addLog('⚠️ Chỉ có thể phục dược khi đang giao chiến trong tháp!');
+                return;
+            }
+            const h = gameState.hero;
+            if (pillId === 'dan_ho_tam') {
+                const heal = Math.round(h.maxHp * 0.35);
+                h.hp = Math.min(h.maxHp, h.hp + heal);
+                gameState.shieldBellTurns = Math.max(gameState.shieldBellTurns || 0, 2);
+                spawnFloatingText('hero-stage-anchor', `+${fmtShort(heal)} HP (Hộ Tâm Đan)`, 'heal');
+                addLog(`💊 <span class="text-amber-300 font-bold">[Phục Dược]</span> Nuốt Hộ Tâm Đan, hồi phục ${fmt(heal)} HP và tăng phòng ngự trong 2 hiệp!`);
+            } else if (pillId === 'dan_tu_khi') {
+                h.mp = Math.min(h.maxMp || 100, (h.mp || 0) + 50);
+                spawnFloatingText('hero-stage-anchor', `+50 MP (Tụ Khí Đan)`, 'heal');
+                addLog(`💊 <span class="text-cyan-300 font-bold">[Phục Dược]</span> Nuốt Tụ Khí Đan, chân khí dâng trào hồi phục 50 MP!`);
+            } else if (pillId === 'dan_thanh_tam') {
+                const pgs = window.parent?.GameState || window.parent?.state;
+                if (pgs) pgs.danDoc = Math.max(0, (pgs.danDoc || 0) - 25);
+                spawnFloatingText('hero-stage-anchor', `-25% Đan Độc`, 'heal');
+                addLog(`💊 <span class="text-purple-300 font-bold">[Phục Dược]</span> Nuốt Thanh Tâm Đan, thanh lọc kinh mạch tiêu trừ 25% Đan Độc!`);
+            }
+            updateBarsUI(
+                gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp,
+                gameState.liveBossHp, gameState.liveBossMaxHp, gameState.liveBossMp,
+                gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
+            );
+        }
+        window.consumeBattlePill = consumeBattlePill;
 
         function spawnCalligraphySeal(charText, x, y, color = '#fde047') {
             canvasCalligraphy.push({
@@ -3136,6 +3193,9 @@
                 if (e.key === '1') castActiveArtifact(1);
                 if (e.key === '2') castActiveArtifact(2);
                 if (e.key === '3') castActiveArtifact(3);
+                if (e.key === '4') consumeBattlePill('dan_ho_tam');
+                if (e.key === '5') consumeBattlePill('dan_tu_khi');
+                if (e.key === '6') consumeBattlePill('dan_thanh_tam');
                 if (e.key === 'q' || e.key === 'Q') {
                     castActiveSkillSlot(0);
                 }

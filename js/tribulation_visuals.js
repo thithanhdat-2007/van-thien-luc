@@ -163,8 +163,22 @@
         return artwork[sequence[Math.min(wave - 1, sequence.length - 1)]];
     }
 
+    function clearOldStrikes() {
+        if (stage) {
+            stage.querySelectorAll('.trib-lightning-art-bolt, .trib-impact-shockwave, .trib-spark-arc').forEach(el => el.remove());
+        }
+        if (lightningCtx && lightningCanvas) {
+            lightningCtx.clearRect(0, 0, lightningCanvas.width, lightningCanvas.height);
+        }
+        if (flash) {
+            flash.classList.remove('active');
+            void flash.offsetWidth;
+        }
+    }
+
     function strike(wave, total) {
         if (!modal.classList.contains('active')) return;
+        clearOldStrikes();
         if (!stage) {
             stage = document.createElement('div');
             stage.id = 'trib-lightning-stage';
@@ -270,9 +284,9 @@
         const timer = setTimeout(() => {
             image.remove();
             timers.delete(timer);
-        }, 4200);
+        }, 1400);
         timers.add(timer);
     }
 
-    window.tribulationVisuals = { strike, clear };
+    window.tribulationVisuals = { strike, clear, clearOldStrikes };
 })();
