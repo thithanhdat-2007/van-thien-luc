@@ -19,6 +19,7 @@
         recoveryCharges: 0,
         wardCharges: 0,
         wardReduction: 0,
+        pillCharges: 2,
         auto: true,
         nextStrikeReady: false
     };
@@ -28,10 +29,12 @@
         const active = doKiepState.inProgress && doKiepState.isStriking;
         const recover = document.getElementById('btn-trib-recover');
         const ward = document.getElementById('btn-trib-ward');
+        const pillBtn = document.getElementById('btn-trib-pill');
         const next = document.getElementById('btn-trib-next');
         const auto = document.getElementById('btn-trib-auto');
         if (recover) recover.disabled = !active || !doKiepState.recoveryCharges || doKiepState.currentShield >= doKiepState.maxShield;
         if (ward) ward.disabled = !active || !doKiepState.wardCharges || doKiepState.wardReduction > 0;
+        if (pillBtn) pillBtn.disabled = !active || !doKiepState.pillCharges || doKiepState.currentShield >= doKiepState.maxShield;
         if (next) {
             next.hidden = !active || doKiepState.auto;
             next.disabled = !doKiepState.nextStrikeReady;
@@ -44,6 +47,8 @@
         if (healCount) healCount.textContent = `${doKiepState.recoveryCharges}/${rules.recoveryCharges || 3}`;
         const wardCount = document.getElementById('trib-ward-count');
         if (wardCount) wardCount.textContent = `${doKiepState.wardCharges}/${rules.wardCharges || 1}`;
+        const pillCount = document.getElementById('trib-pill-count');
+        if (pillCount) pillCount.textContent = `${doKiepState.pillCharges}/2`;
         const pips = document.getElementById('trib-strike-pips');
         if (pips) pips.innerHTML = Array.from({ length: doKiepState.totalStrikes }, (_, i) =>
             `<span class="${i < doKiepState.currentStrike ? 'is-spent' : i === doKiepState.currentStrike ? 'is-next' : ''}" aria-label="Đạo ${i + 1}">⚡</span>`).join('');
@@ -59,13 +64,25 @@
 
     function openDoKiepModal(targetRealm = null) {
         // Lấy thông tin cảnh giới hiện tại và mục tiêu
-        const gState = window.state || (typeof state !== 'undefined' ? state : null);
+        const gState = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
         const realmsArr = window.REALMS || (typeof REALMS !== 'undefined' ? REALMS : []);
-        const rIdx = gState?.realmIndex || 0;
+        const rIdx = Number(gState?.realmIndex) || 0;
         const currentRealm = realmsArr[rIdx] || { name: 'Luyện Khí Kỳ', maxExp: 100 };
-        const nextRealm = realmsArr[rIdx + 1];
-        if (!currentRealm.isMajorBottleneck || !nextRealm || Number(gState?.exp || 0) < currentRealm.maxExp) {
-            if (typeof window.addLog === 'function') window.addLog('Độ Kiếp chỉ mở khi đạt Viên Mãn và đủ Tu Vi. Tiểu cảnh giới dùng Xung Kích Bình Cảnh.', 'text-amber-300');
+        const nextRealm = targetRealm || realmsArr[rIdx + 1];
+
+        const isMajor = Boolean(
+            currentRealm.isMajorBottleneck ||
+            String(currentRealm.name || '').includes('Viên Mãn') ||
+            String(currentRealm.name || '').includes('Đỉnh Phong') ||
+            String(currentRealm.name || '').includes('Tầng 10') ||
+            String(currentRealm.name || '').includes('Tầng 9')
+        );
+        const curExp = Number(gState?.exp || 0);
+        const reqExp = Number(currentRealm.maxExp || 100);
+        if (!isMajor || !nextRealm || curExp < reqExp) {
+            const msg = `Độ Kiếp chỉ mở khi đạt Viên Mãn và đủ Tu Vi (${Math.floor(curExp).toLocaleString()}/${reqExp.toLocaleString()}).`;
+            if (typeof window.showGameToast === 'function') window.showGameToast(msg, 'warning');
+            if (typeof window.addLog === 'function') window.addLog(msg, 'text-amber-300');
             return;
         }
         closeAllFeaturePopups();
@@ -87,10 +104,12 @@
         const totalBolts = cfg?.totalBolts || (String(nextRealm?.name || '').includes('Phi Thăng') ? 9 : 3);
         const targetTitle = cfg?.targetName || nextRealm?.name || 'Cảnh Giới Mới';
 
-        // Tính toán lượng Hộ Thể Chân Khí dựa theo chỉ số nhân vật (Khí Huyết + Phòng Ngự)
+        // Tính toán lượng Hộ Thể Chân Khí dựa theo chỉ số nhân vật (Khí Huyết + Phòng Ngự + Đan Dược Đột Phá)
         const playerHp = Number(gState?.hp || gState?.stats?.hp || 1000);
         const playerDef = Number(gState?.def || gState?.stats?.def || 50);
-        const calcShield = Math.max(1000, Math.round(playerHp * 1.5 + playerDef * 15));
+        const pillBonusPct = Math.min(100, Math.max(0, Number(gState?.pillBuffRemaining || window.breakthroughBonusChance || 0)));
+        const pillShieldBonus = 1 + (pillBonusPct / 100);
+        const calcShield = Math.max(1000, Math.round((playerHp * 1.5 + playerDef * 15) * pillShieldBonus));
 
         doKiepState.inProgress = true;
         doKiepState.isStriking = false;
@@ -105,6 +124,7 @@
         doKiepState.recoveryCharges = rules.recoveryCharges || 3;
         doKiepState.wardCharges = rules.wardCharges || 1;
         doKiepState.wardReduction = 0;
+        doKiepState.pillCharges = 2;
         doKiepState.auto = true;
         doKiepState.nextStrikeReady = false;
         const artifactBtn = document.getElementById('btn-te-phap-bao');
@@ -284,6 +304,45 @@
         updateTribulationControls();
     }
 
+    function useTribulationPill(event) {
+        if (event) event.stopPropagation();
+        if (!doKiepState.inProgress || !doKiepState.isStriking) return;
+        if (doKiepState.pillCharges <= 0) {
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast('⚠️ Đã dùng hết Đan Dược Hộ Thể trong lần độ kiếp này (Tối đa 2 lần)!', 'warning');
+            }
+            return;
+        }
+
+        const heal = Math.round(doKiepState.maxShield * 0.35);
+        doKiepState.currentShield = Math.min(doKiepState.maxShield, doKiepState.currentShield + heal);
+        doKiepState.pillCharges--;
+        doKiepState.wardReduction = Math.max(doKiepState.wardReduction || 0, 0.40);
+
+        // Deduct 1 pill from inventory if available
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+        const pillIdx = inv.findIndex(i => i && (i.id?.includes('pill') || i.category === 'Pill') && (i.count || i.quantity || 0) > 0);
+        if (pillIdx >= 0) {
+            const item = inv[pillIdx];
+            const c = Number(item.count || item.quantity || 1) - 1;
+            item.count = c;
+            item.quantity = c;
+            if (c <= 0) inv.splice(pillIdx, 1);
+        }
+
+        updateTribulationShield();
+        spawnFloatingDamage(`+${heal.toLocaleString()} Chân Khí (Đan Dược)!`, true);
+
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`💊 Phục dụng Đan Dược Hộ Thể! +${heal.toLocaleString()} Chân Khí & Giảm 40% Lôi Thương!`, 'success');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`💊 <span class="text-purple-300 font-bold">[Đan Dược Hộ Thể]</span> Nuốt đan dược, dược lực bộc phát hồi phục ${heal.toLocaleString()} Chân Khí, gia cố phòng tuyến trước thiên lôi!`, 'text-purple-300');
+        }
+
+        updateTribulationControls();
+    }
+
     function advanceTribulationStrike() {
         if (!doKiepState.inProgress || !doKiepState.isStriking || !doKiepState.nextStrikeReady) return;
         if (doKiepState.strikeTimer) clearTimeout(doKiepState.strikeTimer);
@@ -457,6 +516,7 @@
     window.startDoKiepStrikes = startDoKiepStrikes;
     window.recoverTribulationShield = recoverTribulationShield;
     window.raiseTribulationWard = raiseTribulationWard;
+    window.useTribulationPill = useTribulationPill;
     window.advanceTribulationStrike = advanceTribulationStrike;
     window.toggleTribulationAuto = toggleTribulationAuto;
     window.openBreakthroughModal = openDoKiepModal;
@@ -467,6 +527,7 @@
     globalThis.startDoKiepStrikes = startDoKiepStrikes;
     globalThis.recoverTribulationShield = recoverTribulationShield;
     globalThis.raiseTribulationWard = raiseTribulationWard;
+    globalThis.useTribulationPill = useTribulationPill;
     globalThis.advanceTribulationStrike = advanceTribulationStrike;
     globalThis.toggleTribulationAuto = toggleTribulationAuto;
     globalThis.openBreakthroughModal = openDoKiepModal;

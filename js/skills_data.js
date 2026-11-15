@@ -156,6 +156,70 @@ const FIVE_ELEMENTS = {
 // 5. DANH SÁCH TOÀN BỘ 48 CÔNG PHÁP CHUẨN NGUYÊN TÁC (SKILLS_DATA)
 const SKILLS_DATA = [
     // =========================================================================
+    // 0. CÔNG PHÁP KHỞI ĐẦU BẢN NGUYÊN (STARTER SKILLS & SYNC)
+    // =========================================================================
+    {
+        id: "skill_breath",
+        alias: "tp_thai_thanh",
+        name: "Thái Thanh Thổ Nạp Quyết",
+        type: "TamPhap",
+        category: "tam_phap",
+        tier: "pham",
+        element: "vo_he",
+        stats: { expPerSec: 2, maxMp: 50 },
+        effect: "+20% Tốc độ hấp thu Linh Khí, +50 Linh Lực tối đa.",
+        desc: "Tâm pháp Thái Thanh thượng cổ, dẫn dắt linh khí thiên địa nhập thể lưu chuyển kinh mạch."
+    },
+    {
+        id: "skill_sword",
+        alias: "vk_thanh_lien",
+        name: "Thanh Liên Kiếm Điển",
+        type: "VuKy",
+        category: "cong_kich",
+        tier: "linh",
+        element: "moc",
+        stats: { atk: 12, critRate: 0.02 },
+        effect: "+12 Công Kích, +2% Bạo Kích mỗi tầng. Kích hoạt kiếm khí hoa sen chém địch.",
+        desc: "Vũ kỹ kiếm tu Thanh Liên Kiếm Tông, mỗi chiêu kiếm nở rộ một đóa hoa sen mộc khí chém phá hộ thể kẻ địch."
+    },
+    {
+        id: "skill_body",
+        alias: "tt_bat_diet",
+        name: "Bất Diệt Kim Thân Quyết",
+        type: "TheThuat",
+        category: "the_thuat",
+        tier: "linh",
+        element: "kim",
+        stats: { hp: 120, def: 6 },
+        effect: "+120 Khí Huyết và +6 Phòng Ngự mỗi tầng. Thân thể cứng như hoàng kim bất hoại.",
+        desc: "Thể thuật tôi luyện gân cốt như hoàng kim bất hoại, đao thương khó tổn thương."
+    },
+    {
+        id: "skill_thunder",
+        alias: "vk_cuu_tieu_loi",
+        name: "Cửu Tiêu Thần Lôi Quyết",
+        type: "VuKy",
+        category: "cong_kich",
+        tier: "huyen",
+        element: "loi",
+        stats: { atk: 25, critRate: 0.05 },
+        effect: "+25 Công Kích và +5% Tỷ Lệ Bạo Kích mỗi tầng. Triệu hồi Cửu Tiêu Thần Lôi giáng đòn hủy diệt.",
+        desc: "Vũ kỹ thượng cổ dẫn động sấm sét 9 tầng trời, chém yêu diệt ma trong chớp mắt."
+    },
+    {
+        id: "skill_wind",
+        alias: "thp_hu_khong",
+        name: "Hư Không Thuấn Di Quyết",
+        type: "ThanPhap",
+        category: "than_phap",
+        tier: "linh",
+        element: "phong",
+        stats: { atk: 10, def: 10, dodge: 0.03 },
+        effect: "+10 Công, +10 Thủ và +3% Né Tránh mỗi tầng. Dịch chuyển hư không né tránh sát thương.",
+        desc: "Thân pháp thần bí dung hợp vào luồng gió hư không, thoắt ẩn thoắt hiện."
+    },
+
+    // =========================================================================
     // 1. TÂM PHÁP (Tăng Tốc độ Tu Vi & Giới hạn Linh Lực)
     // =========================================================================
     {
@@ -2712,6 +2776,11 @@ if (typeof window !== 'undefined') {
     window.triggerSkillCategoryFlash = triggerSkillCategoryFlash;
 }
 
+function findSkillTemplate(id) {
+    if (!id) return null;
+    return SKILLS_DATA.find(s => s.id === id || s.alias === id || (s.name && s.name.toLowerCase() === String(id).toLowerCase())) || null;
+}
+
 // 8. XUẤT MODULE
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -2720,6 +2789,7 @@ if (typeof module !== 'undefined' && module.exports) {
         MASTERY_LEVELS,
         FIVE_ELEMENTS,
         SKILLS_DATA,
+        findSkillTemplate,
         getEquippedSlotsLimit,
         checkFiveElementsSynergy,
         calculatePlayerStats,
@@ -2739,6 +2809,7 @@ if (typeof window !== 'undefined') {
     window.MASTERY_LEVELS = MASTERY_LEVELS;
     window.FIVE_ELEMENTS = FIVE_ELEMENTS;
     window.SKILLS_DATA = SKILLS_DATA;
+    window.findSkillTemplate = findSkillTemplate;
     window.getEquippedSlotsLimit = getEquippedSlotsLimit;
     window.checkFiveElementsSynergy = checkFiveElementsSynergy;
     window.calculatePlayerStats = calculatePlayerStats;

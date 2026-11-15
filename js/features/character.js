@@ -135,6 +135,27 @@
     /**
      * CHUYỂN TAB LINH THÚ / PHÁP BẢO
      */
+    
+    /**
+     * CHUYỂN ĐỔI TỨC THÌ 3 SUB-TAB NGỌC GIẢN CỘT TRÁI (CĂN CƠ | LINH CĂN | ĐỒNG HÀNH)
+     */
+    function switchOriginSubTab(tabName, btnEl) {
+        const key = String(tabName || 'canco').toLowerCase();
+        document.querySelectorAll('.origin-subtab-btn').forEach(btn => {
+            const match = btn === btnEl || btn.getAttribute('data-origin-tab') === key;
+            btn.classList.toggle('active', match);
+        });
+        const map = {
+            canco: 'origin-tab-canco',
+            linhcan: 'origin-tab-linhcan',
+            donghanh: 'origin-tab-donghanh'
+        };
+        const targetId = map[key] || 'origin-tab-canco';
+        document.querySelectorAll('.origin-subtab-pane').forEach(pane => {
+            pane.classList.toggle('active', pane.id === targetId);
+        });
+    }
+
     function switchCompanionTab(tabType, btn) {
         document.querySelectorAll('.comp-tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.comp-tab-content').forEach(c => c.classList.remove('active'));
@@ -368,24 +389,100 @@
         });
 
         // Cập nhật 3 ô Pháp Bảo Bản Mệnh trên Cột Trái nếu người chơi có trang bị
-        if (window.state && window.state.equipped) {
-            const eq = window.state.equipped;
+        if (window.state) {
+            const eq = window.state.equipped || {};
+            const arts = Array.isArray(window.state.artifacts) ? window.state.artifacts : [];
+            const artSword = arts.find(a => a.id === 'sword');
+            const artMirror = arts.find(a => a.id === 'mirror');
+            const artOrb = arts.find(a => a.id === 'bead' || a.id === 'orb');
+
             const swordEl = document.getElementById('ui-artifact-slot-sword');
             if (swordEl) {
-                const wpName = eq.weapon?.name || "Trúc Kiếm Cổ Linh";
+                const wpName = (artSword && artSword.equipped) ? `${artSword.name} (Bậc ${artSword.level || 1})` : (eq.weapon?.name || "Trúc Kiếm Cổ Linh");
                 setTextIfChanged(swordEl, wpName);
             }
             const mirrorEl = document.getElementById('ui-artifact-slot-mirror');
             if (mirrorEl) {
-                const arName = eq.armor?.name || "[Bấm để gắn]";
+                const arName = (artMirror && artMirror.equipped) ? `${artMirror.name} (Bậc ${artMirror.level || 1})` : (eq.armor?.name || "[Bấm để gắn]");
                 setTextIfChanged(mirrorEl, arName);
-                mirrorEl.className = eq.armor?.name ? "text-[10px] text-sky-300 font-mono" : "text-[10px] text-slate-400 font-mono";
+                mirrorEl.className = (artMirror && artMirror.equipped) || eq.armor?.name ? "text-[10px] text-sky-300 font-mono" : "text-[10px] text-slate-400 font-mono";
             }
             const orbEl = document.getElementById('ui-artifact-slot-orb');
             if (orbEl) {
-                const tlName = eq.talisman?.name || "[Bấm để gắn]";
+                const tlName = (artOrb && artOrb.equipped) ? `${artOrb.name} (Bậc ${artOrb.level || 1})` : (eq.talisman?.name || "[Bấm để gắn]");
                 setTextIfChanged(orbEl, tlName);
-                orbEl.className = eq.talisman?.name ? "text-[10px] text-purple-300 font-mono" : "text-[10px] text-slate-400 font-mono";
+                orbEl.className = (artOrb && artOrb.equipped) || eq.talisman?.name ? "text-[10px] text-purple-300 font-mono" : "text-[10px] text-slate-400 font-mono";
+            }
+
+            // Cập nhật ô Linh Thú Hộ Pháp trên Cột Trái
+            const activePetId = window.state.activePet || 'fox';
+            const petLvl = Number(window.state.petLevel) || 1;
+            const petTier = Number(window.state.petTier) || 1;
+            const petsData = typeof DIVINE_PETS_DATA !== 'undefined' ? DIVINE_PETS_DATA : [];
+            const bloodlineTiers = typeof PET_BLOODLINE_TIERS !== 'undefined' ? PET_BLOODLINE_TIERS : [];
+            const curPet = petsData.find(pt => pt.id === activePetId) || petsData[0];
+            const curBloodline = bloodlineTiers[petTier - 1] || bloodlineTiers[0];
+
+            if (curPet) {
+                const petNameEl = document.getElementById('ui-pet-name');
+                if (petNameEl) setTextIfChanged(petNameEl, `${curPet.name} (Cấp ${petLvl})`);
+                const petBadgeEl = document.getElementById('ui-pet-badge');
+                if (petBadgeEl && curBloodline) setTextIfChanged(petBadgeEl, curBloodline.name || 'Ấu Niên Thể');
+                const petDescEl = document.getElementById('ui-pet-desc');
+                if (petDescEl) setTextIfChanged(petDescEl, `${curPet.title} • Hệ ${curPet.element}. ${curPet.skillDesc}`);
+                const petImgEl = document.getElementById('ui-pet-img');
+                const petFrame = petImgEl ? petImgEl.parentElement : document.querySelector('.pet-avatar-frame');
+                if (curPet.id === 'fox') {
+                    if (petImgEl) {
+                        petImgEl.style.display = 'block';
+                        petImgEl.src = curPet.image || './assets/images/pet_fox.jpg';
+                    }
+                    const iconEl = petFrame ? petFrame.querySelector('.pet-avatar-icon') : null;
+                    if (iconEl) iconEl.remove();
+                } else if (petFrame) {
+                    if (petImgEl) petImgEl.style.display = 'none';
+                    let iconEl = petFrame.querySelector('.pet-avatar-icon');
+                    if (!iconEl) {
+                        iconEl = document.createElement('div');
+                        iconEl.className = 'pet-avatar-icon w-full h-full flex flex-col items-center justify-center rounded-xl bg-slate-900 border border-slate-700';
+                        petFrame.appendChild(iconEl);
+                    }
+                    iconEl.innerHTML = `<i class="fa-solid ${curPet.icon || 'fa-paw'} text-2xl ${curPet.textColor || 'text-amber-400'}"></i>`;
+                }
+            }
+        }
+
+        
+        const s = (typeof state !== 'undefined' && state) ? state : (window.GameState || window.state || null);
+        if (s) {
+            const realmsArr = (typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : (window.REALMS || []);
+            const curRealmObj = realmsArr[s.realmIndex || 0] || {};
+            const maxExp = Number(curRealmObj.maxExp || s.maxExp) || 100;
+            const curExp = Number(s.exp) || 0;
+            const lkCur = Number(s.linhKhi) || 0;
+            const lkMax = Math.max(1, Number(s.maxLinhKhi) || 50000);
+            const lkPct = Math.max(15, Math.min(100, Math.round((lkCur / lkMax) * 100)));
+            const lkBar = document.getElementById('ui-root-linhkhi-bar');
+            if (lkBar) lkBar.style.width = lkPct + '%';
+
+            const actBtn = document.getElementById('btn-cultivate-action');
+            const actLbl = document.getElementById('btn-cultivate-label');
+            const actIcon = document.getElementById('btn-cultivate-icon');
+            if (actBtn) {
+                const isReady = curExp >= maxExp;
+                actBtn.classList.toggle('is-ready', isReady);
+                actBtn.classList.toggle('is-breakthrough-ready', isReady);
+                actBtn.classList.toggle('breakthrough-ready', isReady);
+                actBtn.classList.toggle('is-meditating', !isReady);
+                actBtn.setAttribute('data-ready', isReady ? 'true' : 'false');
+                if (isReady) {
+                    actBtn.removeAttribute('disabled');
+                    if (actLbl) actLbl.textContent = curRealmObj.isMajorBottleneck ? 'NGHÊNH ĐÓN THIÊN KIẾP' : 'ĐỘT PHÁ CẢNH GIỚI';
+                    if (actIcon) actIcon.className = 'fa-solid fa-bolt-lightning mr-1.5 text-amber-950 animate-bounce';
+                } else {
+                    if (actLbl) actLbl.textContent = 'ĐANG TỤ KHÍ...';
+                    if (actIcon) actIcon.className = 'fa-solid fa-yin-yang fa-spin mr-1.5 text-emerald-400/80';
+                }
             }
         }
 
@@ -404,24 +501,50 @@
         if (legacyCp) legacyCp.textContent = cp;
     }
 
+    /**
+     * ĐỒNG BỘ CÔNG PHÁP NHÂN VẬT (CHARACTER SKILLS SYNC)
+     */
+    function syncCharacterSkills(targetState) {
+        const s = targetState || (typeof window !== 'undefined' ? window.state : null);
+        if (!s) return [];
+        if (typeof window.ensureLearnedSkillsInit === 'function') {
+            window.ensureLearnedSkillsInit();
+        }
+        return s.learnedSkills || [];
+    }
+
+    function renderCharacterSkills(container) {
+        const host = container || document.getElementById('skills-page-content');
+        if (!host) return;
+        if (typeof window.renderSkillsHub === 'function') {
+            window.renderSkillsHub(host);
+        }
+    }
+
     // Xuất khẩu các hàm ra window và globalThis
     window.player = player;
     window.calculateCP = calculateCP;
     window.getSpiritRootMultiplier = getSpiritRootMultiplier;
     window.advanceAge = advanceAge;
+    window.switchOriginSubTab = switchOriginSubTab;
     window.switchCompanionTab = switchCompanionTab;
     window.renderCharacterUI = renderCharacterUI;
     window.getActivePlayerStats = getActivePlayerStats;
     window.onBreakthroughMajorRealm = onBreakthroughMajorRealm;
+    window.syncCharacterSkills = syncCharacterSkills;
+    window.renderCharacterSkills = renderCharacterSkills;
 
     globalThis.player = player;
     globalThis.calculateCP = calculateCP;
     globalThis.getSpiritRootMultiplier = getSpiritRootMultiplier;
     globalThis.advanceAge = advanceAge;
+    globalThis.switchOriginSubTab = switchOriginSubTab;
     globalThis.switchCompanionTab = switchCompanionTab;
     globalThis.renderCharacterUI = renderCharacterUI;
     globalThis.getActivePlayerStats = getActivePlayerStats;
     globalThis.onBreakthroughMajorRealm = onBreakthroughMajorRealm;
+    globalThis.syncCharacterSkills = syncCharacterSkills;
+    globalThis.renderCharacterSkills = renderCharacterSkills;
 
     // Đảm bảo sau khi DOM sẵn sàng, các thanh điều hướng và khung 3 cột luôn hoạt động chuẩn xác
 })();

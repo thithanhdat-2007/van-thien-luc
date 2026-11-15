@@ -783,43 +783,22 @@
 
         // Khởi động Parallax chiều sâu không gian
         initParallaxVFX();
-
-        // 5. TƯƠNG TÁC TỤ KHÍ KHI CHẠM NHÂN VẬT (Avatar Qi Tap & Guzheng Synesthesia)
-        const charAvatar = document.getElementById('char-main-img') || document.getElementById('player-avatar');
-        if (charAvatar) {
-            charAvatar.addEventListener('pointerdown', (e) => {
-                if (typeof window.triggerQiBurst === 'function') {
-                    window.triggerQiBurst(e.clientX, e.clientY);
-                }
-                if (typeof window.playSound === 'function') {
-                    window.playSound('guzheng');
-                }
-                if (typeof window.addExp === 'function') {
-                    const bonusExp = Math.max(1, Math.round((window.state?.spiritRate || 5) * 0.5));
-                    window.addExp(bonusExp);
-                }
-                const floating = document.getElementById('floating-text-container');
-                if (floating) {
-                    const span = document.createElement('span');
-                    span.className = 'inline-block text-xs font-mono font-bold text-amber-300 animate-bounce pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]';
-                    span.textContent = '+Linh Khí';
-                    floating.appendChild(span);
-                    setTimeout(() => span.remove(), 800);
-                }
-            });
-        }
     }
 
     /**
-     * Parallax Chuẩn Tiên Hiệp 3D (Depth-of-Field Parallax Controller)
-     * Nhẹ nhàng, êm dịu, không giật lag (Lerp 0.06 / requestAnimationFrame)
+     * Parallax Chuẩn Tiên Hiệp 2.5D (Depth-of-Field Parallax Controller)
+     * Nhẹ nhàng, êm dịu, không giật lag (Lerp 0.08 / requestAnimationFrame / tối đa 12px)
      */
     function initParallaxVFX() {
         if (typeof window === 'undefined') return;
         const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (prefersReduced) return;
 
+        const viewport = document.getElementById('game-viewport') || document.body;
         const bgArt = document.getElementById('scene-bg-art');
+        const mistFar = document.getElementById('parallax-mist-layer-far');
+        const mistNear = document.getElementById('parallax-mist-layer-near');
+        const godRays = document.getElementById('god-rays-overlay');
         const mistLayer = document.getElementById('tsparticles');
         const charInner = document.getElementById('char-main-img');
         if (!bgArt) return;
@@ -831,19 +810,33 @@
         let isTicking = false;
         let idleTimer = null;
 
+        const maxOffset = 12; // Dịch chuyển tối đa 12px theo yêu cầu
+
         function updateParallax() {
-            const lerpFactor = 0.06;
-            currentBgX += (targetX * -14 - currentBgX) * lerpFactor;
-            currentBgY += (targetY * -8 - currentBgY) * lerpFactor;
+            const lerpFactor = 0.08;
+            const destBgX = targetX * -maxOffset;
+            const destBgY = targetY * -(maxOffset * 0.58);
 
-            currentMistX += (targetX * -22 - currentMistX) * lerpFactor;
-            currentMistY += (targetY * -12 - currentMistY) * lerpFactor;
+            currentBgX += (destBgX - currentBgX) * lerpFactor;
+            currentBgY += (destBgY - currentBgY) * lerpFactor;
 
-            currentCharX += (targetX * 5 - currentCharX) * lerpFactor;
-            currentCharY += (targetY * 3 - currentCharY) * lerpFactor;
+            currentMistX += (targetX * -(maxOffset * 1.5) - currentMistX) * lerpFactor;
+            currentMistY += (targetY * -(maxOffset * 0.8) - currentMistY) * lerpFactor;
+
+            currentCharX += (targetX * 3.5 - currentCharX) * lerpFactor;
+            currentCharY += (targetY * 2.0 - currentCharY) * lerpFactor;
 
             if (bgArt) {
-                bgArt.style.transform = `translate3d(${currentBgX.toFixed(2)}px, ${currentBgY.toFixed(2)}px, 0) scale(1.035)`;
+                bgArt.style.transform = `translate3d(${currentBgX.toFixed(2)}px, ${currentBgY.toFixed(2)}px, 0) scale(1.025)`;
+            }
+            if (mistFar) {
+                mistFar.style.transform = `translate3d(${(currentBgX * 0.7).toFixed(2)}px, ${(currentBgY * 0.5).toFixed(2)}px, 0)`;
+            }
+            if (mistNear) {
+                mistNear.style.transform = `translate3d(${(currentBgX * 1.3).toFixed(2)}px, ${(currentBgY * 0.9).toFixed(2)}px, 0)`;
+            }
+            if (godRays) {
+                godRays.style.transform = `translate3d(${(currentBgX * 0.4).toFixed(2)}px, ${(currentBgY * 0.3).toFixed(2)}px, 0)`;
             }
             if (mistLayer) {
                 mistLayer.style.transform = `translate3d(${currentMistX.toFixed(2)}px, ${currentMistY.toFixed(2)}px, 0)`;
@@ -852,19 +845,23 @@
                 charInner.style.transform = `translate3d(${currentCharX.toFixed(2)}px, ${currentCharY.toFixed(2)}px, 0)`;
             }
 
-            const delta = Math.abs(currentBgX - targetX * -14) + Math.abs(currentBgY - targetY * -8);
-            if (delta > 0.05) {
+            const delta = Math.abs(currentBgX - destBgX) + Math.abs(currentBgY - destBgY);
+            if (delta > 0.04) {
                 requestAnimationFrame(updateParallax);
             } else {
                 isTicking = false;
             }
         }
 
-        window.addEventListener('mousemove', (e) => {
-            const w = window.innerWidth || 1280;
-            const h = window.innerHeight || 800;
-            targetX = (e.clientX - w / 2) / (w / 2);
-            targetY = (e.clientY - h / 2) / (h / 2);
+        function handlePointerMove(e) {
+            const rect = viewport.getBoundingClientRect();
+            const w = rect.width || window.innerWidth || 1280;
+            const h = rect.height || window.innerHeight || 800;
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+
+            targetX = Math.max(-1, Math.min(1, (clientX - w / 2) / (w / 2)));
+            targetY = Math.max(-1, Math.min(1, (clientY - h / 2) / (h / 2)));
 
             if (!isTicking) {
                 isTicking = true;
@@ -879,10 +876,13 @@
                     isTicking = true;
                     requestAnimationFrame(updateParallax);
                 }
-            }, 3000);
-        }, { passive: true });
+            }, 2500);
+        }
 
-        window.addEventListener('mouseleave', () => {
+        viewport.addEventListener('mousemove', handlePointerMove, { passive: true });
+        window.addEventListener('mousemove', handlePointerMove, { passive: true });
+
+        viewport.addEventListener('mouseleave', () => {
             targetX = 0;
             targetY = 0;
             if (!isTicking) {

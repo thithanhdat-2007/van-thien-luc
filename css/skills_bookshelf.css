@@ -1,0 +1,328 @@
+/* ==========================================================================
+   TÀNG KINH CÁC • THẦN THÔNG CÔNG PHÁP (DIEGETIC BOOKSHELF & BAMBOO SLIPS UI)
+   Chất liệu: Kệ Gỗ Lũa Sẫm (#1c140d), Viền Đồng Cổ (#b45309), Giấy Tuyên Chỉ & Thẻ Trúc Sáng
+   ========================================================================== */
+
+/* 1. KHUNG CHÍNH: KỆ SÁCH GỖ LŨA SẪM (DARK DRIFTWOOD BOOKSHELF) */
+.skills-bookshelf-frame {
+  position: relative;
+  background: radial-gradient(circle at 50% 10%, #2a1a11 0%, #1c120a 55%, #0f0a06 100%);
+  border: 2px solid #b45309;
+  border-radius: 20px;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.95), 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(180, 83, 9, 0.25);
+  overflow: hidden;
+}
+
+/* Vân thớ gỗ lũa cổ (Wood Grain Inset Overlay) */
+.skills-bookshelf-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(180, 83, 9, 0.03) 0px,
+    rgba(180, 83, 9, 0.03) 1px,
+    transparent 1px,
+    transparent 28px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Nẹp đồng cổ 4 góc kệ sách */
+.shelf-bracket {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  z-index: 10;
+}
+.shelf-bracket-tl { top: 4px; left: 4px; border-top: 3px solid #d97706; border-left: 3px solid #d97706; }
+.shelf-bracket-tr { top: 4px; right: 4px; border-top: 3px solid #d97706; border-right: 3px solid #d97706; }
+.shelf-bracket-bl { bottom: 4px; left: 4px; border-bottom: 3px solid #d97706; border-left: 3px solid #d97706; }
+.shelf-bracket-br { bottom: 4px; right: 4px; border-bottom: 3px solid #d97706; border-right: 3px solid #d97706; }
+
+/* 2. CHU THIÊN PHÁP VỊ: KHẢM GỖ BÁT GIÁC & NGỌC LAM THIÊN ĐẠO */
+.chu-thien-shelf-row {
+  background: linear-gradient(180deg, rgba(38, 23, 15, 0.95) 0%, rgba(20, 12, 7, 0.98) 100%);
+  border: 1.5px solid rgba(180, 83, 9, 0.65);
+  border-radius: 14px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9), 0 4px 14px rgba(0, 0, 0, 0.7);
+  position: relative;
+  z-index: 2;
+}
+
+/* Ô Tròn / Bát Giác Khảm Gỗ */
+.chu-thien-slot-diegetic {
+  position: relative;
+  border-radius: 12px;
+  background: radial-gradient(circle at 35% 35%, #1f140d 0%, #0d0805 100%);
+  border: 1.5px solid rgba(180, 83, 9, 0.5);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.chu-thien-slot-diegetic:hover {
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 16px rgba(245, 158, 11, 0.45);
+}
+
+/* Ô có ngọc lắp vào */
+.chu-thien-slot-diegetic.is-equipped {
+  background: radial-gradient(circle at 40% 30%, rgba(30, 48, 70, 0.9) 0%, rgba(10, 16, 26, 0.98) 100%);
+  border-color: rgba(250, 204, 21, 0.8);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px rgba(234, 179, 8, 0.4);
+}
+
+/* Ô khóa có xích phong ấn */
+.chu-thien-slot-diegetic.is-locked {
+  background: radial-gradient(circle at 50% 50%, #150f0b 0%, #090604 100%);
+  border: 1px dashed rgba(120, 53, 15, 0.6);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Vạn Pháp Quy Tông Bảng */
+.van-phap-tablet {
+  background: linear-gradient(135deg, rgba(48, 28, 16, 0.95) 0%, rgba(22, 13, 7, 0.98) 100%);
+  border: 1.5px solid #d97706;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.7), 0 0 14px rgba(217, 119, 6, 0.2);
+}
+
+/* 3. THANH TAB DẢI LỤA / THẺ BÀI GỖ LỌC NHANH (UNROLLED SILK SCROLL TABS) */
+.silk-scroll-tab {
+  position: relative;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: #fde68a;
+  background: linear-gradient(180deg, #2b1a10 0%, #160d07 100%);
+  border: 1.5px solid rgba(180, 83, 9, 0.6);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.silk-scroll-tab:hover {
+  border-color: #f59e0b;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.4);
+}
+.silk-scroll-tab.is-active {
+  background: linear-gradient(180deg, #b45309 0%, #78350f 50%, #451a03 100%);
+  color: #fef08a;
+  border-color: #fde047;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 4. THẺ TRÚC DỰNG ĐỨNG (BAMBOO SLIP CARDS - HIGH CONTRAST) */
+.bamboo-slip-diegetic {
+  aspect-ratio: 3 / 4.15;
+  min-height: 220px;
+  position: relative;
+  border-radius: 12px;
+  /* Giấy Tuyên Chỉ & Thẻ Trúc Sáng: độ sáng cao để chữ và icon tương phản tuyệt đối */
+  background: radial-gradient(circle at 50% 20%, #fefce8 0%, #fef08a 35%, #e2d2a4 70%, #c4ab75 100%);
+  border: 2px solid #854d0e;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.85), inset 0 0 10px rgba(180, 83, 9, 0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 8px 7px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Thớ trúc sọc dọc mờ nghệ thuật */
+.bamboo-slip-diegetic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(120, 53, 15, 0.08) 0px,
+    rgba(120, 53, 15, 0.08) 1.5px,
+    transparent 1.5px,
+    transparent 14px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Trạng thái Hover: Thẻ hơi nhấc lên khỏi giá sách */
+.bamboo-slip-diegetic:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.9), 0 0 20px rgba(245, 158, 11, 0.55);
+  border-color: #d97706;
+}
+
+/* Trạng thái Thẻ được chọn (Selected) */
+.bamboo-slip-diegetic.is-selected {
+  transform: translateY(-6px) scale(1.03);
+  border: 2.5px solid #b45309 !important;
+  box-shadow: 0 0 0 3px #fde047, 0 16px 32px rgba(0, 0, 0, 0.95), 0 0 25px rgba(250, 204, 21, 0.75) !important;
+  z-index: 10;
+}
+
+/* Phân cấp Viền & Hào Quang Thẻ Trúc Theo Phẩm Chất */
+.slip-pham-diegetic {
+  border-color: #64748b;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7);
+}
+.slip-pham-diegetic:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8), 0 0 14px rgba(148, 163, 184, 0.5);
+}
+
+.slip-linh-diegetic {
+  border-color: #059669;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 8px rgba(16, 185, 129, 0.3);
+}
+.slip-linh-diegetic:hover {
+  border-color: #10b981;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.85), 0 0 18px rgba(16, 185, 129, 0.65);
+}
+
+.slip-huyen-diegetic {
+  border-color: #0284c7;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 8px rgba(6, 182, 212, 0.3);
+}
+.slip-huyen-diegetic:hover {
+  border-color: #0ea5e9;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.65);
+}
+
+.slip-dia-diegetic {
+  border-color: #7e22ce;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(168, 85, 247, 0.35);
+}
+.slip-dia-diegetic:hover {
+  border-color: #a855f7;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.85), 0 0 22px rgba(192, 132, 252, 0.7);
+}
+
+.slip-thien-diegetic {
+  border-color: #b45309;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 14px rgba(245, 158, 11, 0.45);
+}
+.slip-thien-diegetic:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.9), 0 0 26px rgba(250, 204, 21, 0.8);
+}
+
+.slip-tien-diegetic {
+  border-color: #db2777;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), 0 0 14px rgba(244, 114, 182, 0.45);
+}
+.slip-tien-diegetic:hover {
+  border-color: #f472b6;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.9), 0 0 28px rgba(244, 114, 182, 0.8);
+}
+
+/* 5. ĐÀI THAM NGỘ CHI TIẾT (ANCIENT ENLIGHTENMENT ALTAR) */
+.enlightenment-altar {
+  background: radial-gradient(circle at 50% 10%, #24160e 0%, #150d08 65%, #0d0805 100%);
+  border: 1.5px solid #b45309;
+  border-radius: 16px;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.95), 0 10px 25px rgba(0, 0, 0, 0.85);
+  position: relative;
+  z-index: 2;
+  padding: 12px 14px 20px !important;
+}
+
+/* Card thuộc tính trong Đài Tham Ngộ */
+.altar-stat-card {
+  background: rgba(18, 12, 7, 0.85);
+  border: 1px solid rgba(180, 83, 9, 0.45);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* 6. CÁC NÚT BẤM HÀNH ĐỘNG ACTION-ORIENTED (CTA) */
+.btn-cta-gold-action {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
+  color: #1a0f07 !important;
+  font-family: 'Cinzel', 'Noto Serif SC', serif !important;
+  font-weight: 900 !important;
+  border: 1.5px solid #fef08a !important;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 18px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+.btn-cta-gold-action:hover:enabled {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 26px rgba(253, 224, 71, 0.85) !important;
+}
+.btn-cta-gold-action:active:enabled {
+  transform: translateY(0);
+}
+.btn-cta-gold-action:disabled {
+  background: #2a1c12 !important;
+  color: #78716c !important;
+  border-color: #57534e !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.btn-cta-danger-action {
+  background: linear-gradient(180deg, #e11d48 0%, #be123c 50%, #881337 100%) !important;
+  color: #ffffff !important;
+  font-family: 'Cinzel', 'Noto Serif SC', serif !important;
+  font-weight: 800 !important;
+  border: 1.5px solid #fecdd3 !important;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 16px rgba(225, 29, 72, 0.5) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-cta-danger-action:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 24px rgba(244, 63, 94, 0.75) !important;
+}
+
+.btn-cta-breakthrough-action {
+  background: linear-gradient(180deg, #9333ea 0%, #7e22ce 50%, #581c87 100%) !important;
+  color: #fef08a !important;
+  font-family: 'Cinzel', 'Noto Serif SC', serif !important;
+  font-weight: 900 !important;
+  border: 1.5px solid #fde047 !important;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 22px rgba(168, 85, 247, 0.6) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-cta-breakthrough-action:hover:enabled {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 30px rgba(217, 70, 239, 0.85) !important;
+}
+
+/* Chữ Cổ Phong Tiêu Đề */
+.font-xianxia-shelf-title {
+  font-family: 'Cinzel', 'Noto Serif SC', 'Playfair Display', serif;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+}
+
+/* Responsive Điều Chỉnh Cho Di Động */
+@media (max-width: 1024px) {
+  .skills-bookshelf-frame {
+    height: auto !important;
+    max-height: none !important;
+  }
+}

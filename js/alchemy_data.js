@@ -432,6 +432,199 @@ const PILLS_DATA = [
         effect: { clearToxicity: 100, clearTamMa: 100, toxicity: 0 },
         icon: "fa-fire-burner",
         image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+
+    // =========================================================================
+    // 15 ĐAN DƯỢC CHUYÊN BIỆT CHUẨN TIÊN HIỆP (CONTENT EXPANSION)
+    // =========================================================================
+    // --- 1. Đan tăng Tu Vi (5 đại cảnh giới) ---
+    {
+        id: "pill_tu_khi_dan",
+        name: "Tụ Khí Đan",
+        type: "Đan Dược",
+        rarity: 1,
+        tier: "ha",
+        count: 1,
+        desc: "Đan dược cơ bản của Luyện Khí Kỳ, uống vào tăng trực tiếp +500 Tu Vi.",
+        effect: { exp: 500, toxicity: 5 },
+        icon: "fa-capsules",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_truc_co_dan",
+        name: "Trúc Cơ Đan",
+        type: "Đan Dược",
+        rarity: 2,
+        tier: "trung",
+        count: 1,
+        desc: "Đan dược ngưng tụ linh dịch đan điền, uống vào tăng trực tiếp +3.500 Tu Vi.",
+        effect: { exp: 3500, toxicity: 8 },
+        icon: "fa-capsules",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_kim_dan_hoan",
+        name: "Kim Đan Hoàn",
+        type: "Đan Dược",
+        rarity: 3,
+        tier: "thuong",
+        count: 1,
+        desc: "Hạt đan óng ánh kim quang trợ giúp kết đan, tăng trực tiếp +25.000 Tu Vi.",
+        effect: { exp: 25000, toxicity: 12 },
+        icon: "fa-atom",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_anh_bien_dan",
+        name: "Anh Biến Đan",
+        type: "Đan Dược",
+        rarity: 4,
+        tier: "thuong",
+        count: 1,
+        desc: "Hóa Kim Đan thành Nguyên Anh, uống vào lập tức tăng +180.000 Tu Vi.",
+        effect: { exp: 180000, toxicity: 15 },
+        icon: "fa-child-reaching",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_hoa_than_dan",
+        name: "Hóa Thần Đan",
+        type: "Đan Dược",
+        rarity: 5,
+        tier: "cuc",
+        count: 1,
+        desc: "Cực phẩm đan dược câu thông thiên địa, tăng trực tiếp +1.200.000 Tu Vi.",
+        effect: { exp: 1200000, toxicity: 10 },
+        icon: "fa-wand-magic-sparkles",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+
+    // --- 2. Đan tăng % tỷ lệ đột phá ---
+    {
+        id: "pill_pha_chuong_dan",
+        name: "Phá Chướng Đan",
+        type: "Đan Dược",
+        rarity: 2,
+        tier: "ha",
+        count: 1,
+        desc: "Phá vỡ bình cảnh tu luyện, tăng +15% tỷ lệ Đột Phá cảnh giới.",
+        effect: { breakBuff: true, breakRate: 15, toxicity: 6 },
+        icon: "fa-spa",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_ho_mach_dan",
+        name: "Hộ Mạch Đan",
+        type: "Đan Dược",
+        rarity: 3,
+        tier: "trung",
+        count: 1,
+        desc: "Bảo hộ kinh mạch khi trùng kích đại cảnh giới, tăng +25% tỷ lệ Đột Phá cảnh giới.",
+        effect: { breakBuff: true, breakRate: 25, toxicity: 10 },
+        icon: "fa-shield-halved",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_thien_linh_dan",
+        name: "Thiên Linh Đan",
+        type: "Đan Dược",
+        rarity: 5,
+        tier: "cuc",
+        count: 1,
+        desc: "Linh đan ngưng tụ thiên đạo vận khí, tăng +40% tỷ lệ Đột Phá cảnh giới thành công.",
+        effect: { breakBuff: true, breakRate: 40, toxicity: 12 },
+        icon: "fa-sun",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+
+    // --- 3. Đan giảm đan độc ---
+    {
+        id: "pill_thanh_tam_dan",
+        name: "Thanh Tâm Đan",
+        type: "Đan Dược",
+        rarity: 2,
+        tier: "trung",
+        count: 1,
+        desc: "Thanh lọc tạp chất đan dược, giảm trừ 30% Đan Độc trong kinh mạch.",
+        effect: { clearToxicity: 30, toxicity: 0 },
+        icon: "fa-shield-virus",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_tinh_hoa_than_dan",
+        name: "Tịnh Hóa Thần Đan",
+        type: "Đan Dược",
+        rarity: 5,
+        tier: "cuc",
+        count: 1,
+        desc: "Cực phẩm thần đan rửa sạch 100% Đan Độc, hồi phục thần hồn vô khuyết.",
+        effect: { clearToxicity: 100, clearTamMa: 100, toxicity: 0 },
+        icon: "fa-dove",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+
+    // --- 4. Đan hồi phục ---
+    {
+        id: "pill_sinh_co_hoan",
+        name: "Sinh Cơ Hoàn",
+        type: "Đan Dược",
+        rarity: 3,
+        tier: "trung",
+        count: 1,
+        desc: "Sinh cơ vô tận, hồi phục 100% Khí Huyết (HP) và Pháp Lực (MP) tức thì.",
+        effect: { fullHeal: true, hpPercent: 1.0, mpPercent: 1.0, toxicity: 4 },
+        icon: "fa-heart-pulse",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_dinh_hon_dan",
+        name: "Định Hồn Đan",
+        type: "Đan Dược",
+        rarity: 3,
+        tier: "thuong",
+        count: 1,
+        desc: "Cố thủ hồn phách vững như bàn thạch, hồi phục trực tiếp +50 Đạo Tâm.",
+        effect: { daoHeart: 50, toxicity: 5 },
+        icon: "fa-yin-yang",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+
+    // --- 5. Đan tăng vĩnh viễn thuộc tính ---
+    {
+        id: "pill_toi_the_dan",
+        name: "Tối Thể Đan",
+        type: "Đan Dược",
+        rarity: 3,
+        tier: "trung",
+        count: 1,
+        desc: "Rèn luyện thể phách, tăng vĩnh viễn +100 Khí Huyết tối đa và +15 Phòng Ngự.",
+        effect: { permanentHp: 100, permanentDef: 15, toxicity: 10 },
+        icon: "fa-bone",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_long_luc_dan",
+        name: "Long Lực Đan",
+        type: "Đan Dược",
+        rarity: 4,
+        tier: "thuong",
+        count: 1,
+        desc: "Dung hợp huyết long lân, tăng vĩnh viễn +30 Công Kích gốc.",
+        effect: { permanentAtk: 30, toxicity: 12 },
+        icon: "fa-dragon",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
+    },
+    {
+        id: "pill_tat_phong_dan",
+        name: "Tật Phong Đan",
+        type: "Đan Dược",
+        rarity: 4,
+        tier: "thuong",
+        count: 1,
+        desc: "Thanh phong quán thể, tăng vĩnh viễn +20 Thân Pháp Tốc Độ gốc.",
+        effect: { permanentSpd: 20, toxicity: 10 },
+        icon: "fa-wind",
+        image: "./assets/images/item_qi_pill_bottle.jpg"
     }
 ];
 
@@ -629,6 +822,173 @@ const RECIPES_DATA = [
         materials: [
             { itemId: "herb_hon_don_thanh_lien", count: 1 },
             { itemId: "herb_bo_de_tam_diep", count: 2 }
+        ]
+    },
+
+    // --- ĐAN PHƯƠNG MỞ RỘNG (15 CHUYÊN ĐAN) ---
+    {
+        id: "recipe_tu_khi_dan",
+        pillId: "pill_tu_khi_dan",
+        name: "Tụ Khí Đan",
+        desc: "Đan phương Luyện Khí Kỳ (+500 Tu Vi).",
+        baseChance: 0.90,
+        materials: [
+            { itemId: "herb_nguyet_hoa_thao", count: 2 },
+            { itemId: "water_linh_tuyen", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_truc_co_dan",
+        pillId: "pill_truc_co_dan",
+        name: "Trúc Cơ Đan",
+        desc: "Đan phương Trúc Cơ Kỳ (+3.500 Tu Vi).",
+        baseChance: 0.80,
+        materials: [
+            { itemId: "herb_tuyet_son_lien", count: 2 },
+            { itemId: "herb_u_linh_chi", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_kim_dan_hoan",
+        pillId: "pill_kim_dan_hoan",
+        name: "Kim Đan Hoàn",
+        desc: "Đan phương Kim Đan Kỳ (+25.000 Tu Vi).",
+        baseChance: 0.70,
+        materials: [
+            { itemId: "herb_thien_linh_qua", count: 2 },
+            { itemId: "core_kim_dan_thu", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_anh_bien_dan",
+        pillId: "pill_anh_bien_dan",
+        name: "Anh Biến Đan",
+        desc: "Đan phương Nguyên Anh Kỳ (+180.000 Tu Vi).",
+        baseChance: 0.60,
+        materials: [
+            { itemId: "herb_ngan_nam_phuc_linh", count: 2 },
+            { itemId: "core_nguyen_anh", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_hoa_than_dan",
+        pillId: "pill_hoa_than_dan",
+        name: "Hóa Thần Đan",
+        desc: "Đan phương Hóa Thần Kỳ (+1.200.000 Tu Vi).",
+        baseChance: 0.50,
+        materials: [
+            { itemId: "herb_dao_tien_ngan_nam", count: 2 },
+            { itemId: "bone_chan_long_cot", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_pha_chuong_dan",
+        pillId: "pill_pha_chuong_dan",
+        name: "Phá Chướng Đan",
+        desc: "Phá vỡ bình cảnh (+15% Tỷ lệ đột phá).",
+        baseChance: 0.85,
+        materials: [
+            { itemId: "herb_nguyet_hoa_thao", count: 3 },
+            { itemId: "herb_tuyet_son_lien", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_ho_mach_dan",
+        pillId: "pill_ho_mach_dan",
+        name: "Hộ Mạch Đan",
+        desc: "Bảo hộ kinh mạch (+25% Tỷ lệ đột phá).",
+        baseChance: 0.75,
+        materials: [
+            { itemId: "herb_tuyet_son_lien", count: 3 },
+            { itemId: "herb_u_linh_chi", count: 2 }
+        ]
+    },
+    {
+        id: "recipe_thien_linh_dan",
+        pillId: "pill_thien_linh_dan",
+        name: "Thiên Linh Đan",
+        desc: "Nghịch thiên cải mệnh (+40% Tỷ lệ đột phá).",
+        baseChance: 0.65,
+        materials: [
+            { itemId: "herb_thien_linh_qua", count: 3 },
+            { itemId: "herb_bo_de_tam_diep", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_thanh_tam_dan",
+        pillId: "pill_thanh_tam_dan",
+        name: "Thanh Tâm Đan",
+        desc: "Thanh lọc cơ thể (-30% Đan Độc).",
+        baseChance: 0.85,
+        materials: [
+            { itemId: "herb_nguyet_hoa_thao", count: 2 },
+            { itemId: "herb_tuyet_son_lien", count: 2 }
+        ]
+    },
+    {
+        id: "recipe_tinh_hoa_than_dan",
+        pillId: "pill_tinh_hoa_than_dan",
+        name: "Tịnh Hóa Thần Đan",
+        desc: "Cực phẩm trừ độc (-100% Đan Độc, -100 Tâm Ma).",
+        baseChance: 0.55,
+        materials: [
+            { itemId: "herb_bo_de_tam_diep", count: 2 },
+            { itemId: "herb_dao_tien_ngan_nam", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_sinh_co_hoan",
+        pillId: "pill_sinh_co_hoan",
+        name: "Sinh Cơ Hoàn",
+        desc: "Hồi phục 100% Khí Huyết và Pháp Lực.",
+        baseChance: 0.80,
+        materials: [
+            { itemId: "herb_tuyet_son_lien", count: 3 },
+            { itemId: "water_linh_tuyen", count: 2 }
+        ]
+    },
+    {
+        id: "recipe_dinh_hon_dan",
+        pillId: "pill_dinh_hon_dan",
+        name: "Định Hồn Đan",
+        desc: "Định thần an phách (+50 Đạo Tâm).",
+        baseChance: 0.70,
+        materials: [
+            { itemId: "herb_u_linh_chi", count: 3 },
+            { itemId: "herb_bo_de_tam_diep", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_toi_the_dan",
+        pillId: "pill_toi_the_dan",
+        name: "Tối Thể Đan",
+        desc: "Tôi rèn thân thể (Vĩnh viễn +100 HP, +15 DEF).",
+        baseChance: 0.75,
+        materials: [
+            { itemId: "herb_u_linh_chi", count: 2 },
+            { itemId: "core_kim_dan_thu", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_long_luc_dan",
+        pillId: "pill_long_luc_dan",
+        name: "Long Lực Đan",
+        desc: "Huyết long luyện cốt (Vĩnh viễn +30 ATK).",
+        baseChance: 0.65,
+        materials: [
+            { itemId: "herb_thien_linh_qua", count: 2 },
+            { itemId: "bone_chan_long_cot", count: 1 }
+        ]
+    },
+    {
+        id: "recipe_tat_phong_dan",
+        pillId: "pill_tat_phong_dan",
+        name: "Tật Phong Đan",
+        desc: "Thanh phong quán thể (Vĩnh viễn +20 SPD).",
+        baseChance: 0.70,
+        materials: [
+            { itemId: "herb_tuyet_son_lien", count: 2 },
+            { itemId: "water_linh_tuyen", count: 2 }
         ]
     }
 ];

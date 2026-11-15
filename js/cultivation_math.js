@@ -38,7 +38,112 @@ const CultivationMathEngine = (() => {
         }
     }
 
-    return Object.freeze({ manaCap, spiritCap, clampResources });
+    function sanitizeResource(val, min = 0, max = Infinity, fallback = 0) {
+        const num = Number(val);
+        if (!Number.isFinite(num) || Number.isNaN(num)) return fallback;
+        return Math.max(min, Math.min(max, num));
+    }
+
+    function clampPercent(val) {
+        return sanitizeResource(val, 0, 100, 0);
+    }
+
+    function safeAdd(current, delta, min = 0, max = Infinity) {
+        const safeCur = Number.isFinite(Number(current)) ? Number(current) : 0;
+        const safeDelta = Number.isFinite(Number(delta)) ? Number(delta) : 0;
+        return Math.max(min, Math.min(max, safeCur + safeDelta));
+    }
+
+    function sanitizeGameState(s) {
+        if (!s || typeof s !== 'object') return s;
+        s.stones = sanitizeResource(s.stones, 0, Infinity, 0);
+        s.immortalJade = sanitizeResource(s.immortalJade ?? s.jade, 0, Infinity, 0);
+        s.exp = sanitizeResource(s.exp, 0, Infinity, 0);
+        s.maxExp = sanitizeResource(s.maxExp, 1, Infinity, 100);
+        s.maxHp = sanitizeResource(s.maxHp, 1, Infinity, 1000);
+        s.hp = sanitizeResource(s.hp, 0, s.maxHp, s.maxHp);
+        s.maxMp = sanitizeResource(s.maxMp, 1, Infinity, 200);
+        s.mp = sanitizeResource(s.mp, 0, s.maxMp, s.maxMp);
+        s.atk = sanitizeResource(s.atk, 1, Infinity, 50);
+        s.def = sanitizeResource(s.def, 0, Infinity, 20);
+        s.speed = sanitizeResource(s.speed, 1, Infinity, 10);
+        s.critRate = sanitizeResource(s.critRate, 0, 100, 5);
+        s.realmIndex = sanitizeResource(s.realmIndex, 0, 100, 0);
+        s.realmStage = sanitizeResource(s.realmStage, 0, 20, 0);
+        return s;
+    }
+
+    function formatNumber(value, options = {}) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return '0';
+        }
+        const val = Number(value);
+        if (!Number.isFinite(val)) {
+            return val > 0 ? '∞' : '-∞';
+        }
+        const isNegative = val < 0;
+        const abs = Math.abs(val);
+
+        if (abs < 10000) {
+            const formatted = (options.decimals !== undefined)
+                ? abs.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: options.decimals })
+                : Math.round(abs).toLocaleString('vi-VN');
+            return isNegative ? `-${formatted}` : formatted;
+        }
+
+        const tiers = [
+            { unit: 1e24, symbol: 'Sp' },
+            { unit: 1e21, symbol: 'Sx' },
+            { unit: 1e18, symbol: 'Qi' },
+            { unit: 1e15, symbol: 'Qa' },
+            { unit: 1e12, symbol: 'T' },
+            { unit: 1e9,  symbol: 'B' },
+            { unit: 1e6,  symbol: 'M' },
+            { unit: 1e3,  symbol: 'K' }
+        ];
+
+        const match = tiers.find(t => abs >= t.unit);
+        if (!match) {
+            return (isNegative ? '-' : '') + Math.round(abs).toLocaleString('vi-VN');
+        }
+
+        const scaled = abs / match.unit;
+        const maxDecimals = options.decimals ?? (scaled >= 100 ? 1 : 2);
+        let str = scaled.toFixed(maxDecimals);
+        if (str.includes('.')) {
+            str = str.replace(/\.?0+$/, '');
+        }
+        return (isNegative ? '-' : '') + str + match.symbol;
+    }
+
+    return Object.freeze({
+        manaCap,
+        spiritCap,
+        clampResources,
+        sanitizeResource,
+        clampPercent,
+        safeAdd,
+        sanitizeGameState,
+        formatNumber
+    });
 })();
-if (typeof window !== 'undefined') window.CultivationMathEngine = CultivationMathEngine;
+
+if (typeof window !== 'undefined') {
+    window.CultivationMathEngine = CultivationMathEngine;
+    window.formatNumber = CultivationMathEngine.formatNumber;
+    window.formatCultivationNumber = CultivationMathEngine.formatNumber;
+    window.sanitizeResource = CultivationMathEngine.sanitizeResource;
+    window.clampPercent = CultivationMathEngine.clampPercent;
+    window.safeAdd = CultivationMathEngine.safeAdd;
+    window.sanitizeGameState = CultivationMathEngine.sanitizeGameState;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.CultivationMathEngine = CultivationMathEngine;
+    globalThis.formatNumber = CultivationMathEngine.formatNumber;
+    globalThis.formatCultivationNumber = CultivationMathEngine.formatNumber;
+    globalThis.sanitizeResource = CultivationMathEngine.sanitizeResource;
+    globalThis.clampPercent = CultivationMathEngine.clampPercent;
+    globalThis.safeAdd = CultivationMathEngine.safeAdd;
+    globalThis.sanitizeGameState = CultivationMathEngine.sanitizeGameState;
+}
 if (typeof module !== 'undefined') module.exports = CultivationMathEngine;

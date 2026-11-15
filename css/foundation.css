@@ -27,321 +27,827 @@
   color:#f5d583;
   background:#b08a2314}
 .root-hybrid {
-  color:#cbd5e1}
+  color: #cbd5e1;
+  font-family: 'Be Vietnam Pro', 'Noto Serif SC', Georgia, serif;
+}
 .root-hybrid-grid {
-  display:grid;
-  grid-template-columns:minmax(270px,.82fr) minmax(490px,1.4fr);
-  gap:18px}
-.root-cross-card,.root-rows-card {
-  min-width:0;
-  border:1px solid #33415580;
-  border-radius:14px;
-  background:linear-gradient(145deg,#0d1724ee,#080e18f5);
-  padding:18px}
-.root-cross-card h3 {
-  display:flex;
-  justify-content:space-between;
-  font-size:11px;
-  letter-spacing:.08em;
-  color:#d9bb78;
-  margin:0}
-.root-cross-card h3 small {
-  color:#64748b;
-  font-size:10px;
-  letter-spacing:0}
+  display: grid;
+  grid-template-columns: minmax(290px, .88fr) minmax(480px, 1.35fr);
+  gap: 16px;
+}
+
+/* ==========================================================================
+   1. TÔNG MÀU & CHẤT LIỆU NỀN (DARK JADE & ANCIENT WEATHERED STONE SLATE)
+   ========================================================================== */
+.root-cross-card, .root-rows-card {
+  min-width: 0;
+  position: relative;
+  border: 1px solid rgba(180, 83, 9, 0.65);
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 15%, rgba(13, 31, 38, 0.95) 0%, rgba(6, 12, 22, 0.98) 60%, rgba(3, 6, 12, 0.99) 100%),
+              radial-gradient(circle at 85% 85%, rgba(69, 26, 3, 0.4) 0%, transparent 70%);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 10px 30px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(217, 119, 6, 0.3);
+  padding: 16px 18px;
+}
+
+/* Nẹp góc cổ phong (Antique Brass Corner Ornaments) */
+.altar-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 5;
+}
+.altar-corner-tl { top: 3px; left: 3px; border-top: 2px solid #d97706; border-left: 2px solid #d97706; }
+.altar-corner-tr { top: 3px; right: 3px; border-top: 2px solid #d97706; border-right: 2px solid #d97706; }
+.altar-corner-bl { bottom: 3px; left: 3px; border-bottom: 2px solid #d97706; border-left: 2px solid #d97706; }
+.altar-corner-br { bottom: 3px; right: 3px; border-bottom: 2px solid #d97706; border-right: 2px solid #d97706; }
+
+/* Tiêu đề cổ phong */
+.altar-header, .slab-header {
+  border-bottom: 1px solid rgba(180, 83, 9, 0.35);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.altar-main-title, .slab-title {
+  font-family: 'Cinzel', 'Noto Serif SC', 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #fde047;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(245, 158, 11, 0.4);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.altar-subtitle, .slab-subtitle {
+  font-family: 'Be Vietnam Pro', 'Noto Serif SC', Georgia, serif;
+  font-size: 10px;
+  color: #94a3b8;
+  font-style: italic;
+  letter-spacing: 0;
+  display: inline-block;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+/* ==========================================================================
+   2. KHU VỰC TRÁI: THÁI CỔ NGŨ HÀNH TRẬN (ANCIENT WUXING MAGIC ARRAY)
+   ========================================================================== */
 .root-cross {
-  position:relative;
-  width:min(100%,320px);
-  aspect-ratio:1;
-  margin:8px auto 12px}
-.root-cross svg {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  fill:none;
-  stroke:#47556970;
-  stroke-width:1;
-  stroke-dasharray:4 6}
+  position: relative;
+  width: min(100%, 310px);
+  aspect-ratio: 1;
+  margin: 6px auto 10px;
+}
+
+/* SVG Ma Phương Trận Pháp */
+.xianxia-array-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 10px rgba(180, 83, 9, 0.3));
+}
+.array-outer-border {
+  fill: none;
+  stroke: #78350f;
+  stroke-width: 1.5;
+}
+.array-outer-runic-ring {
+  fill: none;
+  stroke: #d97706;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.65;
+}
+.array-mid-border {
+  fill: none;
+  stroke: #92400e;
+  stroke-width: 1.2;
+}
+
+/* Trận Pháp xoay chậm (Ancient Array Slow Spin) */
+.spinning-runic-array {
+  transform-origin: 160px 160px;
+  animation: xianxia-array-spin 40s linear infinite;
+}
+.runic-tick {
+  stroke: #d97706;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+.array-dashed-ring {
+  fill: none;
+  stroke: #b45309;
+  stroke-width: 1;
+  stroke-dasharray: 8 5;
+  animation: dashFlow 25s linear infinite;
+  opacity: 0.55;
+}
+.array-pentagon-tuong-sinh {
+  fill: none;
+  stroke: #10b981;
+  stroke-width: 1.6;
+  stroke-dasharray: 8 5;
+  animation: dashFlow 20s linear infinite;
+  filter: drop-shadow(0 0 5px #059669);
+  opacity: 0.8;
+}
+.array-pentagram-tuong-khac {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 2;
+  stroke-dasharray: 10 6;
+  animation: dashFlow 24s linear infinite reverse;
+  filter: drop-shadow(0 0 8px #d97706);
+  opacity: 0.85;
+}
+.array-inner-circle {
+  fill: none;
+  stroke: #78350f;
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.array-core-rim {
+  fill: none;
+  stroke: #b45309;
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+/* Lõi Thái Cực xoay ngược */
+.spinning-core-array {
+  transform-origin: 160px 160px;
+  animation: xianxia-core-spin 35s linear infinite reverse;
+}
+.core-dashed-ring {
+  fill: none;
+  stroke: #d97706;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+.core-yin-yang-flow {
+  fill: none;
+  stroke: #fef08a;
+  stroke-width: 1.5;
+  opacity: 0.5;
+}
+
+/* Tâm Trận: Trận Nhãn / Thái Cực Huy Hiệu */
+.altar-center-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #1e1b18 0%, #080c14 80%, #020408 100%);
+  border: 2px solid #b45309;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 16px rgba(217, 119, 6, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.altar-center-core:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 22px rgba(245, 158, 11, 0.7);
+  border-color: #fde047;
+}
+.center-core-icon {
+  font-size: 18px;
+  color: #fbbf24;
+  text-shadow: 0 0 8px #f59e0b;
+  animation: xianxia-spin-slow 24s linear infinite;
+}
+.center-core-badge {
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-size: 8px;
+  font-weight: 700;
+  color: #fde047;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 1px;
+  text-shadow: 0 1px 2px black;
+}
+
+/* ==========================================================================
+   NODE NGŨ HÀNH (VIÊN LINH THẠCH / NGỌC THẠCH TRONG BỆ ĐÁ LÕM)
+   ========================================================================== */
 .root-cross-node {
-  position:absolute;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:3px;
-  width:65px;
-  height:65px;
-  transform:translate(-50%,-50%);
-  border:1px solid color-mix(in srgb,var(--root-color) 45%,transparent);
-  border-radius:50%;
-  background:#0b1521;
-  color:var(--root-color);
-  font-size:12px;
-  cursor:pointer;
-  transition:border-color .2s,background .2s}
-.root-cross-node i {
-  font-size:13px}
-.root-cross-node small {
-  font-size:10px;
-  color:#94a3b8}
-.node-metal {
-  left:50%;
-  top:15%}
-.node-water {
-  left:50%;
-  top:85%}
-.node-fire {
-  left:15%;
-  top:50%}
-.node-wood {
-  left:85%;
-  top:50%}
-.node-earth {
-  left:50%;
-  top:50%}
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+}
+
+/* Bệ đá lõm (Carved Stone Socket) */
+.stone-socket {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #030712 25%, #181512 75%, #381504 100%);
+  border: 2px solid rgba(180, 83, 9, 0.85);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 2px 6px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Viên Ngọc Thạch Phát Hào Quang (Faceted Elemental Gem Orb) */
+.gem-orb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--gem-highlight, #ffffff) 0%, var(--root-color) 45%, color-mix(in srgb, var(--root-color) 25%, #000000) 90%);
+  box-shadow: 0 0 14px var(--root-color), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.gem-icon {
+  font-size: 13px;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+
+.gem-label {
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fde047;
+  text-shadow: 0 1px 3px black, 0 0 6px rgba(245, 158, 11, 0.5);
+  margin-top: 2px;
+  line-height: 1;
+}
+.gem-level {
+  font-family: monospace;
+  font-size: 9px;
+  color: #fde68a;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 1px 2px black;
+}
+
+/* Tọa độ 5 đỉnh Ngũ Giác */
+.node-metal { left: 50%; top: 14%; --root-color: #fbbf24; --gem-highlight: #fef08a; }
+.node-water { left: 84.2%; top: 38.9%; --root-color: #06b6d4; --gem-highlight: #cffafe; }
+.node-wood { left: 71.1%; top: 79.1%; --root-color: #10b981; --gem-highlight: #a7f3d0; }
+.node-fire { left: 28.9%; top: 79.1%; --root-color: #ef4444; --gem-highlight: #fecaca; }
+.node-earth { left: 15.8%; top: 38.9%; --root-color: #d97706; --gem-highlight: #fde68a; }
+
+/* Hiệu ứng hover & active */
+.root-cross-node:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.root-cross-node:hover .stone-socket {
+  border-color: #f59e0b;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 14px var(--root-color);
+}
+.root-cross-node:hover .gem-orb {
+  box-shadow: 0 0 20px var(--root-color), inset 0 1px 3px #ffffff;
+}
+
+/* Chủ Vị được chọn (is-selected) */
 .root-cross-node.is-selected {
-  border-color:currentColor;
-  box-shadow:0 0 15px color-mix(in srgb,currentColor 55%,transparent);
-  animation:root-node-breathe 3s ease-in-out infinite}
-.root-pool {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:8px;
-  border-top:1px solid #33415570;
-  padding-top:14px;
-  font-size:10px}
-.root-pool strong {
-  color:#8fdaeb;
-  font-size:15px;
-  margin-left:auto}
-.root-pool>small {
-  width:100%;
-  text-align:right;
-  color:#64748b}
-.root-quality {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:16px;
-  font-size:12px}
-.root-quality>small {
-  width:100%;
-  color:#64748b;
-  font-size:9px;
-  letter-spacing:.12em}
-.root-quality>span {
-  margin-left:auto;
-  border:1px solid currentColor;
-  border-radius:6px;
-  padding:2px 7px;
-  font-size:10px}
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.root-cross-node.is-selected .stone-socket {
+  border-color: #fde047;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 20px var(--root-color);
+  animation: xianxia-socket-pulse 2.2s ease-in-out infinite;
+}
+.root-cross-node.is-selected .gem-orb {
+  box-shadow: 0 0 24px var(--root-color), inset 0 0 6px #ffffff;
+}
+.root-cross-node.is-selected .gem-label {
+  color: #ffffff;
+  text-shadow: 0 0 8px var(--root-color), 0 2px 4px black;
+}
+
+/* ==========================================================================
+   3. BỂ LINH KHÍ (THÁI CỔ LINH TUYỀN - ANCIENT SPIRIT FONT)
+   ========================================================================== */
+.xianxia-spirit-pool-altar {
+  background: radial-gradient(circle at 50% 0%, #0d222d 0%, #050d18 75%, #030710 100%);
+  border: 1px solid rgba(180, 83, 9, 0.65);
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9), 0 6px 18px rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  position: relative;
+}
+.spirit-rate-badge {
+  background: rgba(6, 78, 59, 0.55);
+  border: 1px solid rgba(16, 185, 129, 0.6);
+  color: #6ee7b7;
+  text-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+}
+
+/* Rãnh Đá Linh Khí (Liquid Spirit Groove) */
+.root-track.spirit-groove {
+  height: 12px;
+  background: #020408;
+  border: 1.5px solid rgba(120, 53, 15, 0.8);
+  border-radius: 4px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(217, 119, 6, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+.spirit-pool-fluid {
+  background: linear-gradient(90deg, #0284c7 0%, #06b6d4 45%, #38bdf8 80%, #67e8f9 100%);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.spirit-pool-fluid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.65) 50%, transparent 100%);
+  animation: spirit-liquid-drift 2.5s infinite linear;
+}
+
+/* Tư Chất Banner */
+.xianxia-quality-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(180, 83, 9, 0.35);
+  padding-top: 10px;
+}
+
+/* ==========================================================================
+   4. KHU VỰC PHẢI: KINH MẠCH BẢN NGUYÊN (STONE TABLETS & OCTAGONAL TOKENS)
+   ========================================================================== */
 .root-rows {
-  display:grid;
-  gap:8px}
-.root-upgrade-row {
-  height:64px;
-  display:flex;
-  align-items:center;
-  gap:4px;
-  padding:8px 10px;
-  border:1px solid #33415570;
-  border-radius:10px;
-  background:#0f1a2966}
+  display: grid;
+  gap: 8px;
+}
+
+/* Phiến Đá Cổ Giản (Ancient Carved Tablet Row) */
+.root-upgrade-row.xianxia-tablet-row {
+  height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(180, 83, 9, 0.45);
+  border-left: 4.5px solid var(--root-color, #d97706);
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(13, 24, 38, 0.92) 0%, rgba(5, 11, 19, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 10px rgba(0, 0, 0, 0.55);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.root-upgrade-row.xianxia-tablet-row:hover {
+  border-color: rgba(217, 119, 6, 0.85);
+  transform: translateX(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 6px 16px rgba(0, 0, 0, 0.65), 0 0 14px var(--socket-glow, rgba(217, 119, 6, 0.25));
+}
+
 .root-row-label {
-  flex:0 0 116px;
-  display:grid;
-  gap:5px;
-  font-size:12px}
-.root-row-label strong {
-  color:var(--root-color);
-  white-space:nowrap}
-.root-row-label strong small {
-  font-size:10px;
-  color:#cbd5e1}
-.root-row-label>span {
-  font-size:9px;
-  display:flex;
-  gap:6px;
-  align-items:center}
-.root-row-label>span small {
-  color:#64748b}
+  flex: 0 0 120px;
+  display: grid;
+  gap: 4px;
+}
 .root-row-middle {
-  flex:1;
-  min-width:0;
-  padding:0 10px}
-.root-row-middle>small {
-  display:block;
-  text-align:right;
-  font-size:10px;
-  color:#b9c5d5;
-  line-height:1.4;
-  margin-bottom:8px}
-.root-track {
-  height:6px;
-  background:#020617;
-  border-radius:5px;
-  overflow:hidden}
-.root-track>span {
-  display:block;
-  height:100%;
-  border-radius:inherit;
-  background:linear-gradient(90deg,color-mix(in srgb,var(--root-color,#34d399) 45%,#0f172a),var(--root-color,#34d399));
-  position:relative;
-  overflow:hidden;
-  transition:width .2s}
-.root-track>span:after {
-  content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(100deg,transparent, #ffffff40,transparent);
-  transform:translateX(-100%);
-  animation:root-bar-shimmer 5s ease-in-out infinite}
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+}
+.root-row-middle > small {
+  display: block;
+  text-align: right;
+  font-size: 10px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  font-family: 'Noto Serif SC', serif;
+}
+
+/* Rãnh Linh Khí Kinh Mạch */
+.root-row-middle .root-track.spirit-groove {
+  height: 9px;
+  background: #020408;
+  border: 1px solid rgba(120, 53, 15, 0.7);
+  border-radius: 3px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9);
+  position: relative;
+  overflow: hidden;
+}
+.root-row-middle .root-track.spirit-groove > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--root-color, #f59e0b) 40%, #020617) 0%, var(--root-color, #f59e0b) 70%, #ffffff 100%);
+  box-shadow: 0 0 10px var(--root-color, #f59e0b);
+  position: relative;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+.root-row-middle .root-track.spirit-groove > span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.75) 50%, transparent 100%);
+  animation: spirit-vein-pulse 2.8s linear infinite;
+}
+
 .root-row-action {
-  display:flex;
-  align-items:center;
-  gap:9px}
-.root-row-action>small {
-  font-size:10px;
-  min-width:58px;
-  text-align:right;
-  font-variant-numeric:tabular-nums}
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.root-row-action > small {
+  font-size: 11px;
+  min-width: 60px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: monospace;
+}
 .root-row-action .can-afford {
-  color:#ecd9a3}
+  color: #fde047;
+  text-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
 .root-row-action .cannot-afford {
-  color:#88626a}
-.root-row-action button {
-  width:32px;
-  height:32px;
-  flex-shrink:0;
-  border:1px solid var(--root-color);
-  color:var(--root-color);
-  background:#0a1421;
-  border-radius:8px;
-  font-size:21px;
-  cursor:pointer;
-  touch-action:none;
-  transition:transform .15s,background .15s}
-.root-row-action button:hover:enabled {
-  transform:scale(1.05);
-  background:#1e293b}
-.root-row-action button:active:enabled {
-  transform:scale(.95)}
-.root-row-action button:disabled {
-  opacity:.3;
-  cursor:default}
-.root-rare {
-  border:1px dashed #47556980;
-  border-radius:9px;
-  padding:10px;
-  margin-top:12px;
-  text-align:center}
-.root-rare>div {
-  display:flex;
-  justify-content:space-evenly;
-  gap:8px;
-  margin-bottom:6px}
-.root-rare button {
-  font-size:11px;
-  color:#94a3b8;
-  background:transparent;
-  border:0;
-  cursor:pointer}
-.root-rare>small {
-  font-size:9px;
-  color:#64748b}
-.root-resonance {
-  border:1px solid #34d39925;
-  border-radius:9px;
-  padding:10px;
-  margin-top:10px;
-  font-size:10px}
-.root-resonance>div:first-child {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:space-between;
-  gap:6px}
-.root-resonance strong {
-  color:#34d399;
-  font-size:10px}
-.root-resonance small {
-  color:#64748b;
-  font-size:9px}
-.root-resonance>small {
-  display:block;
-  margin-top:7px}
-.root-resonance .root-track {
-  height:4px;
-  margin-top:7px}
-.root-cap-note {
-  color:#64748b;
-  font-size:9px;
-  line-height:1.5;
-  margin:10px 0 0}
-.root-hybrid button:focus-visible {
-  outline:2px solid #e9cd80;
-  outline-offset:3px}
-@keyframes root-node-breathe {
-  50% {
-  box-shadow:0 0 22px color-mix(in srgb,currentColor 35%,transparent)}
+  color: #f87171;
 }
-@keyframes root-bar-shimmer {
-  40%,100% {
-  transform:translateX(100%)}
+
+/* Lệnh Bài Bát Giác Nâng Cấp (Octagonal Jade Token Button) */
+.btn-octagonal-token {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  background: linear-gradient(135deg, #b45309 0%, #78350f 50%, #451a03 100%);
+  border: none;
+  color: #fef08a;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-size: 20px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.75);
+  transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
 }
-@media(max-width:950px) {
-  .root-hybrid-grid {
-  grid-template-columns:1fr}
-.root-cross-card {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  column-gap:24px}
-.root-cross-card h3 {
-  grid-column:1/-1}
-.root-cross {
-  grid-row:2/4}
-.root-pool,.root-quality {
-  align-self:center}
-.root-row-middle>small {
-  font-size:9px}
+.btn-octagonal-token::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  background: radial-gradient(circle at 35% 35%, #1e1b18 0%, #080c14 100%);
+  z-index: 1;
 }
-@media(max-width:540px) {
-  .root-hub-header {
-  flex-wrap:wrap}
-.root-cross-card {
-  display:block}
-.root-rows-card {
-  padding:10px}
-.root-row-label {
-  flex-basis:85px}
-.root-row-middle {
-  padding:0 4px}
-.root-row-middle>small {
-  font-size:8px}
+.btn-octagonal-token span, .btn-octagonal-token > * {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 2px black, 0 0 6px rgba(254, 240, 138, 0.9);
+  line-height: 1;
+  margin-top: -1px;
+}
+.btn-octagonal-token:hover:enabled {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 10px var(--root-color, #f59e0b));
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
+}
+.btn-octagonal-token:active:enabled {
+  transform: scale(0.92);
+  filter: drop-shadow(0 0 4px var(--root-color, #f59e0b));
+}
+.btn-octagonal-token:disabled {
+  filter: grayscale(0.9) opacity(0.35);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Dị Linh Căn & Cộng Hưởng */
+.xianxia-rare-altar {
+  border: 1px dashed rgba(180, 83, 9, 0.5);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 8px 12px;
+}
+.xianxia-rare-altar button {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(180, 83, 9, 0.4);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.xianxia-rare-altar button:hover {
+  border-color: #f59e0b;
+  color: #fef08a;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.xianxia-resonance-altar {
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 0%, rgba(6, 78, 59, 0.2) 0%, rgba(5, 15, 25, 0.6) 100%);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   ANIMATIONS & SPECIAL EFFECTS
+   ========================================================================== */
+@keyframes dashFlow {
+  from { stroke-dashoffset: 200; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes xianxia-array-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes xianxia-core-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes xianxia-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes xianxia-socket-pulse {
+  0%, 100% { box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 14px var(--root-color); }
+  50% { box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 24px var(--root-color); }
+}
+@keyframes spirit-vein-pulse {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(250%); }
+}
+@keyframes spirit-liquid-drift {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(250%); }
+}
+
+/* Tia sáng linh quang hội tụ về Trận Nhãn */
+.spirit-beam-vfx {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+  height: 3px;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--beam-color, #fbbf24) 0%, #ffffff 50%, var(--beam-color, #fbbf24) 100%);
+  box-shadow: 0 0 12px var(--beam-color, #fbbf24), 0 0 4px #ffffff;
+  animation: beamFlashRun 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes beamFlashRun {
+  0% { opacity: 0; transform: scaleX(0.1) scaleY(2); }
+  35% { opacity: 1; transform: scaleX(1) scaleY(1.8); }
+  100% { opacity: 0; transform: scaleX(1) scaleY(0.2); }
+}
+
+/* Chữ số chỉ số bay lên (Floating Stat Text) */
+.floating-stat-num {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--stat-color, #fde047);
+  text-shadow: 0 2px 4px black, 0 0 8px currentColor;
+  animation: floatStatUp 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: nowrap;
+}
+@keyframes floatStatUp {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+  20% { opacity: 1; transform: translate(-50%, -14px) scale(1.15); }
+  75% { opacity: 0.95; transform: translate(-50%, -36px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -52px) scale(0.9); }
+}
+
+/* Trận Nhãn Hào Quang Chủ Vị */
+.altar-center-core.active-core-halo {
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 26px var(--active-element-color, #fbbf24);
+  border-color: var(--active-element-color, #fde047);
+}
+.altar-center-core.active-core-halo .center-core-icon {
+  color: var(--active-element-color, #fde047);
+  text-shadow: 0 0 12px var(--active-element-color, #fbbf24);
+}
+
+/* Nút +1 và +10 trong dòng nâng cấp */
 .root-row-action {
-  gap:4px}
-.root-row-action>small {
-  font-size:9px;
-  min-width:42px}
-.root-upgrade-row {
-  padding:7px 6px}
-.foundation-tabs .hub-tab {
-  padding:8px 12px;
-  white-space:nowrap}
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-@media(prefers-reduced-motion:reduce) {
+.btn-octagonal-plus10 {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 119, 6, 0.7);
+  background: radial-gradient(circle at 50% 50%, #1e1b18 0%, #080c14 100%);
+  color: #fde68a;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+}
+.btn-octagonal-plus10:hover:enabled {
+  transform: scale(1.06);
+  border-color: #f59e0b;
+  color: #ffffff;
+  background: #78350f;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+.btn-octagonal-plus10:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 4 Tab Căn Cơ Headers & Cards */
+.foundation-hub-header-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(180, 83, 9, 0.4);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.foundation-tab-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.foundation-tab-nav::-webkit-scrollbar { display: none; }
+.foundation-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.foundation-tab-btn:hover {
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(30, 41, 59, 0.8);
+}
+.foundation-tab-btn.is-active {
+  color: #fde047;
+  border-color: #d97706;
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.45) 0%, rgba(20, 15, 10, 0.8) 100%);
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.35), inset 0 1px 1px rgba(254, 240, 138, 0.3);
+}
+
+/* Tab 2: Thể Chất (Luyện Thể) Cards */
+.physique-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(420px, 1.4fr);
+  gap: 16px;
+}
+.physique-stat-card {
+  background: radial-gradient(circle at 50% 15%, rgba(20, 24, 33, 0.95) 0%, rgba(8, 12, 18, 0.98) 100%);
+  border: 1px solid rgba(180, 83, 9, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 8px 24px rgba(0,0,0,0.7);
+}
+.physique-action-box {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+/* Tab 3: Thần Thức (Luyện Hồn) Cards */
+.consciousness-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(420px, 1.4fr);
+  gap: 16px;
+}
+
+/* Tab 4: Mệnh Cách (Khí Vận) Grid */
+.destiny-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.destiny-card-item {
+  position: relative;
+  border-radius: 12px;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 10%, rgba(24, 22, 34, 0.95) 0%, rgba(8, 9, 14, 0.98) 100%);
+  border: 1px solid rgba(180, 83, 9, 0.5);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.destiny-card-item.tier-heaven {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 25px rgba(245, 158, 11, 0.15), 0 0 15px rgba(245, 158, 11, 0.2);
+}
+.destiny-card-item.tier-earth {
+  border-color: #a855f7;
+  box-shadow: inset 0 0 25px rgba(168, 85, 247, 0.15), 0 0 15px rgba(168, 85, 247, 0.2);
+}
+.destiny-card-item.tier-human {
+  border-color: #38bdf8;
+  box-shadow: inset 0 0 25px rgba(56, 189, 248, 0.15), 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+@media (max-width: 850px) {
+  .physique-layout-grid, .consciousness-grid {
+    grid-template-columns: 1fr;
+  }
+  .destiny-slots-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE (MOBILE & TABLET)
+   ========================================================================== */
+@media (max-width: 950px) {
+  .root-hybrid-grid {
+    grid-template-columns: 1fr;
+  }
+  .root-cross-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+  }
+  .altar-header {
+    grid-column: 1 / -1;
+  }
+  .root-cross {
+    grid-row: 2 / 4;
+  }
+}
+@media (max-width: 540px) {
+  .root-cross-card {
+    display: block;
+  }
+  .root-upgrade-row.xianxia-tablet-row {
+    height: auto;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+  }
+  .root-row-label {
+    flex: 1 1 100%;
+    margin-bottom: 4px;
+  }
+  .root-row-middle {
+    flex: 1 1 100%;
+    padding: 0;
+    margin-bottom: 6px;
+  }
+  .root-row-action {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
   .root-hybrid *, .root-hybrid *:after {
-  animation:none!important;
-  transition:none!important}
+    animation: none !important;
+    transition: none !important;
+  }
 }
-
-
-.root-hybrid .root-cross svg {
-  display:block!important}
-.root-hybrid .root-cross-node {
-  color:var(--root-color)!important}
-.root-hybrid .root-cross-node.is-selected {
-  color:var(--root-color)!important}
-

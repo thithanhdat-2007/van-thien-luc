@@ -1,3 +1,27 @@
+const MASTER_SAVE_KEY = 'VAN_THIEN_LUC_MASTER_SAVE';
+if (typeof window !== 'undefined') {
+    window.MASTER_SAVE_KEY = MASTER_SAVE_KEY;
+    try {
+        let localAccId = localStorage.getItem('VAN_THIEN_LUC_LOCAL_ACCOUNT_ID');
+        if (!localAccId) {
+            localAccId = 'VC-LOCAL-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+            localStorage.setItem('VAN_THIEN_LUC_LOCAL_ACCOUNT_ID', localAccId);
+        }
+        window.localAccountId = localAccId;
+        const preRaw = localStorage.getItem(MASTER_SAVE_KEY) || localStorage.getItem('VAN_THIEN_LUC_SAVE_V1') || localStorage.getItem('van_co_tu_tien_save_v2');
+        if (preRaw) {
+            const preParsed = JSON.parse(preRaw);
+            if (preParsed && typeof preParsed === 'object') {
+                window.__PRELOADED_MASTER_SAVE = preParsed;
+                window.GameState = window.GameState || {};
+                Object.assign(window.GameState, preParsed);
+            }
+        }
+    } catch (e) {
+        console.warn('[Preload Master Save]', e);
+    }
+}
+
 if (typeof globalThis.structuredClone !== 'function') {
     globalThis.structuredClone = function(obj) {
         if (obj === undefined) return undefined;
@@ -260,7 +284,9 @@ const MAJOR_REALM_ORDER = ["Luyện Khí", "Trúc Cơ", "Kim Đan", "Nguyên Anh
 
 // 1. TIẾN TRÌNH M1: 5 ĐẠI CẢNH GIỚI × 4 TIỂU CẢNH GIỚI (EXPONENTIAL REALM SCALING)
 // Cấp bậc (Realm Tier): Luyện Khí (Tier 1: x1), Trúc Cơ (Tier 2: x10), Kim Đan (Tier 3: x100), Nguyên Anh (Tier 4: x1,000), Hóa Thần (Tier 5: x10,000)
-const REALMS = [
+const REALMS = (typeof window !== 'undefined' && Array.isArray(window.REALMS_DATA) && window.REALMS_DATA.length > 0)
+    ? window.REALMS_DATA
+    : [
     ...[
         {
             major: "Luyện Khí",
@@ -3813,6 +3839,10 @@ const DEFAULT_STATE = {
     linhKhiRegen: 100,
     stones: 0,
     immortalJade: 0,
+    jade: 0,
+    sectPoints: 0,
+    herbs: 0,
+    ores: 0,
     hp: 500,
     maxHp: 500,
     baseHp: 500,
@@ -3838,6 +3868,7 @@ const DEFAULT_STATE = {
     lifespanBonus: 0,
     lifespanPenalty: 0,
     isDead: false,
+    isInjured: false,
     playerSect: null,
     sectRank: 0,
     sectContribution: 0,
@@ -3864,10 +3895,10 @@ const DEFAULT_STATE = {
         activeTitle: "nguy_linh_can"
     },
     auto: {
-        enabled: true,
-        pill: true,
-        heal: true,
-        farm: true,
+        enabled: false,
+        pill: false,
+        heal: false,
+        farm: false,
         alchemy: false
     },
     heavenlyPunishmentCount: 0,
@@ -4619,6 +4650,1080 @@ const GameState = {
     }
 };
 
+// ============================================================================
+// CHUẨN HÓA CÁC TRUY CẬP ĐỒNG BỘ TRỰC TIẾP TRÊN GameState (SINGLE SOURCE OF TRUTH)
+// ============================================================================
+Object.defineProperties(GameState, {
+    name: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return s?.player?.name || s?.characterName || s?.name || "Tiêu Dao Tử";
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                if (!s.player) s.player = {};
+                s.player.name = v;
+                s.name = v;
+            }
+        }
+    },
+    realm: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (!s) return 'Luyện Khí';
+            const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+            return s.realm || realms[s.realmIndex || 0]?.name || 'Luyện Khí';
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.realm = v;
+        }
+    },
+    realmIndex: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.realmIndex) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.realmIndex = Number(v) || 0;
+        }
+    },
+    subRealmIndex: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.realmStage ?? s?.subLevel ?? (Math.floor(Number(s?.realmIndex || 0) % 9))) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                s.realmStage = Number(v) || 0;
+                s.subLevel = Number(v) || 0;
+            }
+        }
+    },
+    current_realm: {
+        get() { return this.realm; },
+        set(v) { this.realm = v; }
+    },
+    full_realm_name: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const rInfo = deriveRealmSubLevelInfo(s?.realmIndex || 0);
+            return rInfo.fullRealmName || 'Luyện Khí Tầng 1 [Sơ Kỳ]';
+        }
+    },
+    exp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.exp) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.exp = Math.max(0, Number(v) || 0);
+            this.player.exp = Math.max(0, Number(v) || 0);
+        }
+    },
+    maxExp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+            return Number(realms[s?.realmIndex || 0]?.maxExp) || 1000;
+        },
+        set(v) {
+            this.player.max_exp = Number(v) || 1000;
+        }
+    },
+    max_exp: {
+        get() { return this.maxExp; },
+        set(v) { this.maxExp = v; }
+    },
+    qiRate: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            let rate = 5;
+            if (typeof window !== 'undefined' && typeof window.getIdleRate === 'function') {
+                rate = window.getIdleRate() * (s?.timeScale || 1);
+            } else {
+                const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+                rate = Number(s?.spiritRate || realms[s?.realmIndex || 0]?.expRate || 5);
+            }
+            if (this.alignmentBuffs?.qiRateMultiplier) {
+                rate = Math.round(rate * this.alignmentBuffs.qiRateMultiplier);
+            }
+            return rate;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.spiritRate = Number(v) || 5;
+        }
+    },
+    expPerSec: {
+        get() { return this.qiRate; },
+        set(v) { this.qiRate = v; }
+    },
+    spiritStones: {
+        get() { return this.stones; },
+        set(v) { this.stones = v; }
+    },
+    stones: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.stones ?? s?.spiritStones ?? s?.linhThach) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const val = Math.max(0, Number(v) || 0);
+            if (s) {
+                s.stones = val;
+                s.spiritStones = val;
+                s.linhThach = val;
+            }
+            if (this.player) this.player.stones = val;
+        }
+    },
+    isInjured: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Boolean(s?.isInjured);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const val = Boolean(v);
+            if (s) s.isInjured = val;
+            if (typeof window !== 'undefined' && window.state && window.state !== s) window.state.isInjured = val;
+        }
+    },
+    immortalJade: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.immortalJade ?? s?.xianYu ?? s?.jade ?? s?.tienNgoc) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const val = Math.max(0, Number(v) || 0);
+            if (s) {
+                s.immortalJade = val;
+                s.xianYu = val;
+                s.jade = val;
+                s.tienNgoc = val;
+            }
+        }
+    },
+    xianYu: {
+        get() { return this.immortalJade; },
+        set(v) { this.immortalJade = v; }
+    },
+    jade: {
+        get() { return this.immortalJade; },
+        set(v) { this.immortalJade = v; }
+    },
+    righteous: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.alignment?.righteous ?? 50);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                if (!s.alignment) s.alignment = {};
+                s.alignment.righteous = Math.max(0, Math.min(100, Number(v) || 0));
+            }
+        }
+    },
+    demonic: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.alignment?.demonic ?? 50);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                if (!s.alignment) s.alignment = {};
+                s.alignment.demonic = Math.max(0, Math.min(100, Number(v) || 0));
+            }
+        }
+    },
+    hp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.hp ?? s?.baseHp ?? 1000);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.hp = Math.max(0, Number(v) || 0);
+        }
+    },
+    maxHp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.maxHp ?? s?.baseHp ?? 1000);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.maxHp = Math.max(1, Number(v) || 1000);
+        }
+    },
+    mp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.mp ?? s?.baseMp ?? 200);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.mp = Math.max(0, Number(v) || 0);
+        }
+    },
+    maxMp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.maxMp ?? s?.baseMp ?? 200);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.maxMp = Math.max(1, Number(v) || 200);
+        }
+    },
+    mind: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.daoTam ?? 100);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                const val = Math.max(0, Math.min(100, Number(v) || 0));
+                s.daoTam = val;
+                s.tamMa = 100 - val;
+            }
+        }
+    },
+    lifespan: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.ageYears ?? s?.lifespan ?? 18);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.ageYears = Number(v) || 18;
+        }
+    },
+    maxLifespan: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+            const r = realms[s?.realmIndex || 0] || realms[0];
+            return (Number(r?.lifespan) || 200) + (Number(s?.lifespanBonus) || 0);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.lifespanBonus = Math.max(0, Number(v) - 200);
+        }
+    },
+    baseStats: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return {
+                get atk() { return Number(s?.atk ?? s?.baseAtk ?? 28); },
+                set atk(v) { if (s) { s.atk = Number(v) || 0; s.baseAtk = Number(v) || 0; } },
+                get def() { return Number(s?.def ?? s?.baseDef ?? 14); },
+                set def(v) { if (s) { s.def = Number(v) || 0; s.baseDef = Number(v) || 0; } },
+                get spd() { return Number(s?.speed ?? 20); },
+                set spd(v) { if (s) s.speed = Number(v) || 20; },
+                get crit() { return Number(s?.crit ?? 10); },
+                set crit(v) { if (s) s.crit = Number(v) || 10; },
+                get pen() { return Number(s?.armorPen ?? 5); },
+                set pen(v) { if (s) s.armorPen = Number(v) || 5; },
+                get dodge() { return Number(s?.dodge ?? 5); },
+                set dodge(v) { if (s) s.dodge = Number(v) || 5; }
+            };
+        }
+    },
+    roots: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (!s?.playerLinhCan) s.playerLinhCan = { kim: 10, moc: 10, thuy: 10, hoa: 10, tho: 10 };
+            const plc = s.playerLinhCan;
+            return {
+                get kim() { return Number(plc.kim ?? 10); },
+                set kim(v) { plc.kim = Number(v) || 0; },
+                get moc() { return Number(plc.moc ?? 10); },
+                set moc(v) { plc.moc = Number(v) || 0; },
+                get thuy() { return Number(plc.thuy ?? 10); },
+                set thuy(v) { plc.thuy = Number(v) || 0; },
+                get hoa() { return Number(plc.hoa ?? 10); },
+                set hoa(v) { plc.hoa = Number(v) || 0; },
+                get tho() { return Number(plc.tho ?? 10); },
+                set tho(v) { plc.tho = Number(v) || 0; }
+            };
+        }
+    },
+    materials: {
+        get() {
+            const countMat = (keys) => {
+                let total = 0;
+                (GameState.inventory || []).forEach(item => {
+                    if (!item) return;
+                    const id = String(item.id || item.key || '').toLowerCase();
+                    const name = String(item.name || '').toLowerCase();
+                    if (keys.some(k => id === k.toLowerCase() || id.includes(k.toLowerCase()) || name.includes(k.toLowerCase()))) {
+                        total += Number(item.count || item.quantity || 1);
+                    }
+                });
+                return total;
+            };
+            const setMat = (keys, defaultId, defaultName, val) => {
+                const targetVal = Math.max(0, Number(val) || 0);
+                const inv = GameState.inventory || [];
+                const idx = inv.findIndex(item => {
+                    if (!item) return false;
+                    const id = String(item.id || item.key || '').toLowerCase();
+                    const name = String(item.name || '').toLowerCase();
+                    return keys.some(k => id === k.toLowerCase() || id.includes(k.toLowerCase()) || name.includes(k.toLowerCase()));
+                });
+                if (idx >= 0) {
+                    if (targetVal <= 0) inv.splice(idx, 1);
+                    else inv[idx].count = targetVal;
+                } else if (targetVal > 0) {
+                    inv.push({
+                        id: defaultId,
+                        name: defaultName,
+                        type: defaultId.startsWith('stone') ? 'ore' : 'herb',
+                        count: targetVal,
+                        desc: `Nguyên liệu ${defaultName} tu hành`,
+                        quality: 'common'
+                    });
+                }
+                GameState.inventory = inv;
+                const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+                if (s) {
+                    if (defaultId.startsWith('stone')) s.ores = targetVal;
+                    else s.herbs = targetVal;
+                }
+            };
+            return {
+                get huyetSam() { return countMat(['herb_huysam', 'herb_blood', 'huyet_sam', 'Huyết Sâm']); },
+                set huyetSam(v) { setMat(['herb_huysam', 'herb_blood', 'huyet_sam', 'Huyết Sâm'], 'herb_huysam', 'Huyết Sâm', v); },
+                get linhChi() { return countMat(['herb_linhchi', 'herb_spirit', 'linh_chi', 'Linh Chi', 'Tử Linh Chi']); },
+                set linhChi(v) { setMat(['herb_linhchi', 'herb_spirit', 'linh_chi', 'Linh Chi', 'Tử Linh Chi'], 'herb_linhchi', 'Tử Linh Chi', v); },
+                get tinhThuy() { return countMat(['herb_tinhthuy', 'tinh_thuy', 'Linh Tinh Thủy']); },
+                set tinhThuy(v) { setMat(['herb_tinhthuy', 'tinh_thuy', 'Linh Tinh Thủy'], 'herb_tinhthuy', 'Linh Tinh Thủy', v); },
+                get yeuDan() { return countMat(['herb_yeudan', 'yeu_dan', 'Yêu Đan']); },
+                set yeuDan(v) { setMat(['herb_yeudan', 'yeu_dan', 'Yêu Đan'], 'herb_yeudan', 'Yêu Đan', v); },
+                get huyenThiet() { return countMat(['stone_ore', 'ore', 'khoang_thach', 'Huyền Thiết Khoáng', 'Huyền Thiết']); },
+                set huyenThiet(v) { setMat(['stone_ore', 'ore', 'khoang_thach', 'Huyền Thiết Khoáng', 'Huyền Thiết'], 'stone_ore', 'Huyền Thiết Khoáng', v); },
+                get tuTinh() { return countMat(['stone_tutinh', 'tu_tinh', 'Tử Tinh', 'Tử Tinh Khoáng']); },
+                set tuTinh(v) { setMat(['stone_tutinh', 'tu_tinh', 'Tử Tinh', 'Tử Tinh Khoáng'], 'stone_tutinh', 'Tử Tinh Khoáng', v); },
+                get ngocSam() { return countMat(['herb_ngocsam', 'ngoc_sam', 'Huyết Ngọc Sâm']); },
+                set ngocSam(v) { setMat(['herb_ngocsam', 'ngoc_sam', 'Huyết Ngọc Sâm'], 'herb_ngocsam', 'Huyết Ngọc Sâm', v); },
+                get herbs() {
+                    return (GameState.inventory || []).filter(i => i?.type === 'herb' || i?.category === 'herbs' || i?.category === 'Material').reduce((sum, i) => sum + (Number(i.count || i.quantity) || 1), 0);
+                },
+                set herbs(v) { setMat(['herb_blood', 'herb_huysam', 'herbs'], 'herb_blood', 'Linh Thảo', v); },
+                get ores() {
+                    return (GameState.inventory || []).filter(i => i?.id === 'stone_ore' || i?.type === 'ore' || i?.category === 'ores').reduce((sum, i) => sum + (Number(i.count || i.quantity) || 1), 0);
+                },
+                set ores(v) { setMat(['stone_ore', 'ores'], 'stone_ore', 'Khoáng Thạch', v); }
+            };
+        },
+        set(obj) {
+            if (obj && typeof obj === 'object') {
+                for (const [k, v] of Object.entries(obj)) {
+                    try { GameState.materials[k] = v; } catch(_) {}
+                }
+            }
+        }
+    },
+    gifts: {
+        get() {
+            const countGift = (keys) => {
+                let total = 0;
+                (GameState.inventory || []).forEach(item => {
+                    if (!item) return;
+                    const id = String(item.id || item.key || '').toLowerCase();
+                    const name = String(item.name || '').toLowerCase();
+                    if (keys.some(k => id === k.toLowerCase() || name.includes(k.toLowerCase()))) {
+                        total += Number(item.count || item.quantity || 1);
+                    }
+                });
+                return total;
+            };
+            const setGift = (keys, defaultId, defaultName, val) => {
+                const targetVal = Math.max(0, Number(val) || 0);
+                const inv = GameState.inventory || [];
+                const idx = inv.findIndex(item => {
+                    if (!item) return false;
+                    const id = String(item.id || item.key || '').toLowerCase();
+                    const name = String(item.name || '').toLowerCase();
+                    return keys.some(k => id === k.toLowerCase() || name.includes(k.toLowerCase()));
+                });
+                if (idx >= 0) {
+                    if (targetVal <= 0) inv.splice(idx, 1);
+                    else inv[idx].count = targetVal;
+                } else if (targetVal > 0) {
+                    inv.push({ id: defaultId, name: defaultName, type: 'gift', count: targetVal, desc: `Quà tặng ${defaultName}` });
+                }
+                GameState.inventory = inv;
+            };
+            return {
+                get tramCai() { return countGift(['gift_hairpin', 'tram_cai', 'Trâm Cài']); },
+                set tramCai(v) { setGift(['gift_hairpin', 'tram_cai', 'Trâm Cài'], 'gift_hairpin', 'Trâm Cài', v); },
+                get luuLy() { return countGift(['gift_glass', 'luu_ly', 'Lưu Ly']); },
+                set luuLy(v) { setGift(['gift_glass', 'luu_ly', 'Lưu Ly'], 'gift_glass', 'Lưu Ly', v); },
+                get hoaLacTinh() { return countGift(['gift_flower', 'hoa_lac_tinh', 'Hoa Lạc Tinh']); },
+                set hoaLacTinh(v) { setGift(['gift_flower', 'hoa_lac_tinh', 'Hoa Lạc Tinh'], 'gift_flower', 'Hoa Lạc Tinh', v); }
+            };
+        },
+        set(obj) {
+            if (obj && typeof obj === 'object') {
+                for (const [k, v] of Object.entries(obj)) {
+                    try { GameState.gifts[k] = v; } catch(_) {}
+                }
+            }
+        }
+    },
+    inventory: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) {
+                if (!Array.isArray(s.inventory)) s.inventory = [];
+                return s.inventory;
+            }
+            return [];
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.inventory = Array.isArray(v) ? v : [];
+        }
+    },
+    equipped: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (!s?.equipped) s.equipped = {};
+            const eq = s.equipped;
+            return {
+                get sword() { return eq.weapon || eq.sword || null; },
+                set sword(v) { eq.weapon = v; eq.sword = v; },
+                get mirror() { return eq.armor || eq.mirror || null; },
+                set mirror(v) { eq.armor = v; eq.mirror = v; },
+                get orb() { return eq.talisman || eq.orb || null; },
+                set orb(v) { eq.talisman = v; eq.orb = v; },
+                get skill() { return eq.skill || null; },
+                set skill(v) { eq.skill = v; },
+                get pet() { return s?.activePet || null; },
+                set pet(v) { if (s) s.activePet = v; }
+            };
+        }
+    },
+    towerFloor: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.towerFloor) || 1;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.towerFloor = Math.max(1, Number(v) || 1);
+        }
+    },
+    lastSaveTime: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.lastSaveTime) || Date.now();
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.lastSaveTime = Number(v) || Date.now();
+        }
+    },
+    mainQuestIndex: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.mainQuestIndex) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.mainQuestIndex = Math.max(0, Number(v) || 0);
+        }
+    },
+    sectContribution: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.sectContribution ?? s?.sectPoints) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const val = Math.max(0, Number(v) || 0);
+            if (s) {
+                s.sectContribution = val;
+                s.sectPoints = val;
+            }
+        }
+    },
+    sectPoints: {
+        get() { return this.sectContribution; },
+        set(v) { this.sectContribution = v; }
+    },
+    sectRank: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.sectRank) || 0;
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.sectRank = Math.max(0, Number(v) || 0);
+        }
+    },
+    cp: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            const atk = Number(this.baseStats?.atk ?? s?.atk ?? 28);
+            const def = Number(this.baseStats?.def ?? s?.def ?? 14);
+            const hp = Number(this.hp ?? s?.hp ?? 500);
+            if (typeof window !== 'undefined' && typeof window.getCombatPower === 'function') {
+                return window.getCombatPower(s);
+            } else if (typeof window !== 'undefined' && typeof window.calculateCP === 'function') {
+                return window.calculateCP(atk, def, hp);
+            }
+            return Math.round((atk * 2) + (def * 1.5) + (hp * 0.1));
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.combatPower = Number(v) || 0;
+        }
+    },
+    herbs: {
+        get() {
+            const mats = this.materials;
+            const getTotalHerbs = () => mats.herbs;
+            return {
+                get huyetSam() { return mats.huyetSam; },
+                set huyetSam(v) { mats.huyetSam = v; },
+                get linhChi() { return mats.linhChi; },
+                set linhChi(v) { mats.linhChi = v; },
+                get tinhThuy() { return mats.tinhThuy; },
+                set tinhThuy(v) { mats.tinhThuy = v; },
+                get yeuDan() { return mats.yeuDan; },
+                set yeuDan(v) { mats.yeuDan = v; },
+                get ngocSam() { return mats.ngocSam; },
+                set ngocSam(v) { mats.ngocSam = v; },
+                get total() { return getTotalHerbs(); },
+                valueOf() { return getTotalHerbs(); },
+                [Symbol.toPrimitive](hint) {
+                    return hint === 'string' ? String(getTotalHerbs()) : getTotalHerbs();
+                }
+            };
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (typeof v === 'number') {
+                const val = Math.max(0, Number(v) || 0);
+                if (s) s.herbs = val;
+                this.materials.herbs = val;
+            } else if (v && typeof v === 'object') {
+                for (const [k, val] of Object.entries(v)) {
+                    try { this.herbs[k] = val; } catch(_) {}
+                }
+            }
+        }
+    },
+    ores: {
+        get() {
+            const mats = this.materials;
+            const getTotalOres = () => mats.ores;
+            return {
+                get huyenThiet() { return mats.huyenThiet; },
+                set huyenThiet(v) { mats.huyenThiet = v; },
+                get tuTinh() { return mats.tuTinh; },
+                set tuTinh(v) { mats.tuTinh = v; },
+                get total() { return getTotalOres(); },
+                valueOf() { return getTotalOres(); },
+                [Symbol.toPrimitive](hint) {
+                    return hint === 'string' ? String(getTotalOres()) : getTotalOres();
+                }
+            };
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (typeof v === 'number') {
+                const val = Math.max(0, Number(v) || 0);
+                if (s) s.ores = val;
+                this.materials.ores = val;
+            } else if (v && typeof v === 'object') {
+                for (const [k, val] of Object.entries(v)) {
+                    try { this.ores[k] = val; } catch(_) {}
+                }
+            }
+        }
+    },
+    alchemyMaterials: {
+        get() { return this.herbs; },
+        set(v) { this.herbs = v; }
+    },
+    forgingMaterials: {
+        get() { return this.ores; },
+        set(v) { this.ores = v; }
+    },
+    unlockedFeatures: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return s?.unlockedFeatures || s?.features || {};
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.unlockedFeatures = v;
+        }
+    },
+    unlockedRooms: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return s?.unlockedRooms || s?.estate?.unlockedRooms || {};
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.unlockedRooms = v;
+        }
+    },
+    isAscended: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Boolean(s?.isAscended);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.isAscended = Boolean(v);
+        }
+    },
+    currentWorld: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return s?.currentWorld || 'M1 - Hạ Giới';
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.currentWorld = v;
+        }
+    },
+    hasClearedTower50: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Boolean(s?.hasClearedTower50);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.hasClearedTower50 = Boolean(v);
+        }
+    },
+    ascensionQiBuff: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return Number(s?.ascensionQiBuff) || (Boolean(s?.isAscended) ? 2 : 1);
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.ascensionQiBuff = Number(v) || 1;
+        }
+    },
+    settings: {
+        get() {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            return s?.settings || {};
+        },
+        set(v) {
+            const s = this._rawState || (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+            if (s) s.settings = v;
+        }
+    }
+});
+
+// ============================================================================
+// HỆ THỐNG LƯU/TẢI & ĐỒNG BỘ GIAO DIỆN TRUNG TÂM (SAVE/LOAD & SYNC ALL UI)
+// ============================================================================
+const SAVE_GAME_KEY = 'van_co_tu_tien_save_v2';
+
+/**
+ * Hợp nhất sâu (Deep Merge) có chọn lọc cho Schema Migration
+ * Đảm bảo các thuộc tính mới từ DEFAULT_STATE không bị mất khi nạp file save cũ
+ */
+function deepMergeState(target, source) {
+    if (!source || typeof source !== 'object') return target;
+    if (!target || typeof target !== 'object') return structuredClone(source);
+
+    for (const key of Object.keys(source)) {
+        const srcVal = source[key];
+        const tgtVal = target[key];
+
+        if (tgtVal === undefined || tgtVal === null) {
+            target[key] = (typeof srcVal === 'object' && srcVal !== null) ? structuredClone(srcVal) : srcVal;
+        } else if (Array.isArray(srcVal)) {
+            if (!Array.isArray(tgtVal)) {
+                target[key] = structuredClone(srcVal);
+            }
+        } else if (typeof srcVal === 'object' && srcVal !== null && typeof tgtVal === 'object' && tgtVal !== null) {
+            deepMergeState(tgtVal, srcVal);
+        }
+    }
+    return target;
+}
+window.deepMergeState = deepMergeState;
+
+/**
+ * Tự động tạo bản sao lưu dự phòng (Backup Save) trước các biến cố lớn
+ */
+function createBackupSave(reason = 'manual') {
+    try {
+        if (typeof localStorage === 'undefined') return false;
+        const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+        if (!s) return false;
+
+        const dataStr = JSON.stringify(s);
+        localStorage.setItem('van_thien_luc_backup_save', dataStr);
+        const meta = {
+            timestamp: Date.now(),
+            timeStr: new Date().toLocaleString('vi-VN'),
+            reason,
+            realmIndex: s.realmIndex || 0,
+            realmName: typeof REALMS !== 'undefined' && REALMS[s.realmIndex]?.name ? REALMS[s.realmIndex].name : 'Luyện Khí',
+            playerName: s.name || s.player?.name || 'Tiêu Dao Tử'
+        };
+        localStorage.setItem('van_thien_luc_backup_meta', JSON.stringify(meta));
+        console.log(`[BackupSave] Đã sao lưu dự phòng thành công (${reason}):`, meta);
+        return true;
+    } catch (e) {
+        console.warn('[createBackupSave error]', e);
+        return false;
+    }
+}
+window.createBackupSave = createBackupSave;
+
+/**
+ * Khôi phục từ bản sao lưu dự phòng (Backup Save)
+ */
+function restoreBackupSave() {
+    try {
+        if (typeof localStorage === 'undefined') return false;
+        const raw = localStorage.getItem('van_thien_luc_backup_save');
+        if (!raw) return false;
+        const backup = JSON.parse(raw);
+        if (!backup || typeof backup !== 'object') return false;
+
+        const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+        if (s) {
+            Object.assign(s, backup);
+            if (typeof GameState !== 'undefined' && typeof GameState.syncFromState === 'function') {
+                GameState.syncFromState(s);
+            }
+            if (typeof syncAllUI === 'function') syncAllUI();
+            if (typeof saveGame === 'function') saveGame();
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('[restoreBackupSave error]', e);
+        return false;
+    }
+}
+window.restoreBackupSave = restoreBackupSave;
+
+function saveGame() {
+    try {
+        if (typeof window !== 'undefined' && window.__IS_GAME_LOADED === false) return false;
+        if (typeof localStorage === 'undefined') {
+            console.warn('[saveGame] localStorage không khả dụng.');
+            return false;
+        }
+        const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+        if (!s) return false;
+        
+        if (typeof window.sanitizeGameState === 'function') {
+            window.sanitizeGameState(s);
+        }
+        s.lastSaveTime = Date.now();
+        s.lastActiveTime = s.lastSaveTime;
+        if (typeof GameState !== 'undefined') {
+            GameState.lastSaveTime = s.lastSaveTime;
+            GameState.lastActiveTime = s.lastSaveTime;
+            if (typeof GameState.syncFromState === 'function') GameState.syncFromState(s);
+        }
+        const dataStr = JSON.stringify(s);
+        localStorage.setItem('VAN_THIEN_LUC_SAVE_V1', dataStr);
+        localStorage.setItem(SAVE_GAME_KEY, dataStr);
+        localStorage.setItem('van_thien_luc_save', dataStr);
+        localStorage.setItem('van_thien_luc_state', dataStr);
+        localStorage.setItem('van_co_tu_tien_save_v2', dataStr);
+        return true;
+    } catch (e) {
+        console.warn('[saveGame] Lỗi ghi localStorage:', e);
+        return false;
+    }
+}
+
+function loadGame() {
+    try {
+        if (typeof localStorage === 'undefined') return false;
+        const raw = localStorage.getItem('VAN_THIEN_LUC_SAVE_V1') || localStorage.getItem(SAVE_GAME_KEY) || localStorage.getItem('van_thien_luc_save') || localStorage.getItem('van_thien_luc_state') || localStorage.getItem('van_co_tu_tien_save_v2');
+        if (!raw) {
+            if (typeof window !== 'undefined') window.__IS_GAME_LOADED = true;
+            return false;
+        }
+        let saved = JSON.parse(raw);
+        if (!saved || typeof saved !== 'object') return false;
+
+        // Áp dụng Schema Migration: Deep Merge với DEFAULT_STATE
+        if (typeof DEFAULT_STATE !== 'undefined') {
+            saved = deepMergeState(saved, DEFAULT_STATE);
+        }
+
+        if (saved.lastSaveTime && typeof window !== 'undefined' && !window._lastSessionSaveTime) {
+            window._lastSessionSaveTime = Number(saved.lastSaveTime);
+        }
+        const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+        if (s) {
+            Object.assign(s, saved);
+            if (typeof window.sanitizeGameState === 'function') {
+                window.sanitizeGameState(s);
+            }
+            if (typeof GameState !== 'undefined' && typeof GameState.syncFromState === 'function') {
+                GameState.syncFromState(s);
+            }
+            if (typeof syncAllUI === 'function') {
+                syncAllUI();
+            }
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('[loadGame error]', e);
+        return false;
+    }
+}
+
+function syncAllUI() {
+    const s = (typeof window !== 'undefined' ? window.state : null) || (typeof state !== 'undefined' ? state : null);
+    if (!s) return;
+    if (typeof GameState !== 'undefined' && typeof GameState.syncFromState === 'function') {
+        GameState.syncFromState(s);
+    }
+
+    // 1. Tính toán Chiến Lực (CP)
+    const atk = Number(GameState.baseStats?.atk ?? s.atk ?? 28);
+    const def = Number(GameState.baseStats?.def ?? s.def ?? 14);
+    const hp = Number(GameState.hp ?? s.hp ?? 500);
+    const maxHp = Number(GameState.maxHp ?? s.maxHp ?? 500);
+    const mp = Number(GameState.mp ?? s.mp ?? 200);
+    const maxMp = Number(GameState.maxMp ?? s.maxMp ?? 200);
+    const mind = Number(GameState.mind ?? s.daoTam ?? 100);
+    const lifespan = Number(GameState.lifespan ?? s.ageYears ?? 18);
+    const maxLifespan = Number(GameState.maxLifespan ?? 200);
+    const spd = Number(GameState.baseStats?.spd ?? s.speed ?? 20);
+    const crit = Number(GameState.baseStats?.crit ?? s.crit ?? 10);
+    const pen = Number(GameState.baseStats?.pen ?? s.armorPen ?? 5);
+    const dodge = Number(GameState.baseStats?.dodge ?? s.dodge ?? 5);
+
+    let totalCp = 0;
+    if (typeof window !== 'undefined' && typeof window.getCombatPower === 'function') {
+        totalCp = window.getCombatPower(s);
+    } else if (typeof window !== 'undefined' && typeof window.calculateCP === 'function') {
+        totalCp = window.calculateCP(atk, def, hp);
+    } else {
+        totalCp = Math.round((atk * 2) + (def * 1.5) + (hp * 0.1));
+    }
+
+    // 2. Đổ dữ liệu thật lên các ID màn hình chính
+    if (typeof document !== 'undefined') {
+        // Top Bar
+        const topStonesEl = document.getElementById('top-spirit-stones');
+        if (topStonesEl) topStonesEl.textContent = Number(GameState.spiritStones || 0).toLocaleString('vi-VN');
+
+        const topJadeEl = document.getElementById('top-immortal-jade');
+        if (topJadeEl) topJadeEl.textContent = Number(GameState.immortalJade || 0).toLocaleString('vi-VN');
+
+        // Thanh Tu Vi
+        const realmBadgeEl = document.getElementById('realm-badge');
+        if (realmBadgeEl) {
+            const rawRealmName = GameState.full_realm_name || GameState.realm || 'Luyện Khí';
+            realmBadgeEl.textContent = rawRealmName;
+            realmBadgeEl.setAttribute('title', `Cảnh giới hiện tại: ${rawRealmName}`);
+        }
+
+        const expTextEl = document.getElementById('exp-text-desktop');
+        if (expTextEl) expTextEl.textContent = `${Math.floor(Number(GameState.exp) || 0).toLocaleString('vi-VN')} / ${Number(GameState.maxExp || 1000).toLocaleString('vi-VN')}`;
+
+        const expBarEl = document.getElementById('exp-bar-desktop');
+        if (expBarEl) {
+            const pct = Math.min(100, Math.max(0, (Number(GameState.exp || 0) / Number(GameState.maxExp || 1000)) * 100));
+            expBarEl.style.width = `${pct.toFixed(1)}%`;
+        }
+
+        const idleRateEl = document.getElementById('idle-rate-badge');
+        if (idleRateEl) idleRateEl.textContent = `+${Number(GameState.qiRate || 5).toLocaleString('vi-VN')} / s`;
+
+        // Cột Trái - Bản Nguyên Tu Sĩ
+        const cpEl = document.getElementById('ui-total-cp');
+        if (cpEl) cpEl.textContent = `${totalCp.toLocaleString('vi-VN')} CP`;
+
+        const hpTextEl = document.getElementById('ui-hp-text');
+        if (hpTextEl) hpTextEl.textContent = `${Math.floor(hp).toLocaleString('vi-VN')} / ${maxHp.toLocaleString('vi-VN')}`;
+
+        const hpBarEl = document.getElementById('ui-hp-bar');
+        if (hpBarEl) hpBarEl.style.width = `${Math.min(100, Math.max(0, (hp / maxHp) * 100)).toFixed(1)}%`;
+
+        const mpTextEl = document.getElementById('ui-mp-text');
+        if (mpTextEl) mpTextEl.textContent = `${Math.floor(mp).toLocaleString('vi-VN')} / ${maxMp.toLocaleString('vi-VN')}`;
+
+        const mpBarEl = document.getElementById('ui-mp-bar');
+        if (mpBarEl) mpBarEl.style.width = `${Math.min(100, Math.max(0, (mp / maxMp) * 100)).toFixed(1)}%`;
+
+        const mindTextEl = document.getElementById('ui-mind-text');
+        if (mindTextEl) mindTextEl.textContent = `${Math.floor(mind)} / 100`;
+
+        const mindBarEl = document.getElementById('ui-mind-bar');
+        if (mindBarEl) mindBarEl.style.width = `${Math.min(100, Math.max(0, (mind / 100) * 100)).toFixed(1)}%`;
+
+        const lifespanBriefEl = document.getElementById('ui-lifespan-brief');
+        if (lifespanBriefEl) lifespanBriefEl.textContent = `${Math.floor(lifespan)} / ${maxLifespan} năm`;
+
+        const lifespanTextEl = document.getElementById('ui-lifespan-text');
+        if (lifespanTextEl) lifespanTextEl.textContent = `${Math.floor(lifespan)} / ${maxLifespan} năm`;
+
+        const lifespanBarEl = document.getElementById('ui-lifespan-bar');
+        if (lifespanBarEl) lifespanBarEl.style.width = `${Math.min(100, Math.max(0, (lifespan / maxLifespan) * 100)).toFixed(1)}%`;
+
+        const atkEl = document.getElementById('ui-stat-atk');
+        if (atkEl) atkEl.textContent = atk.toLocaleString('vi-VN');
+
+        const defEl = document.getElementById('ui-stat-def');
+        if (defEl) defEl.textContent = def.toLocaleString('vi-VN');
+
+        const spdEl = document.getElementById('ui-stat-spd');
+        if (spdEl) spdEl.textContent = spd.toLocaleString('vi-VN');
+
+        const critEl = document.getElementById('ui-stat-crit');
+        if (critEl) critEl.textContent = `${crit.toFixed(1)}%`;
+
+        const penEl = document.getElementById('ui-stat-pen');
+        if (penEl) penEl.textContent = `${pen.toFixed(1)}%`;
+
+        const dodgeEl = document.getElementById('ui-stat-dodge');
+        if (dodgeEl) dodgeEl.textContent = `${dodge.toFixed(1)}%`;
+
+        // Nút Đột Phá / Tụ Khí Chính
+        const mainActionBtn = document.getElementById('btn-cultivate-action');
+        if (mainActionBtn) {
+            const isReady = (Number(GameState.exp) || 0) >= (Number(GameState.maxExp) || 1000);
+            const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+            const curRealm = realms[s.realmIndex || 0] || { isMajorBottleneck: false };
+            const mainActionIcon = document.getElementById('btn-cultivate-icon');
+            const mainActionLabel = document.getElementById('btn-cultivate-label');
+
+            if (isReady) {
+                mainActionBtn.removeAttribute('disabled');
+                mainActionBtn.classList.remove('is-meditating');
+                mainActionBtn.classList.add('is-breakthrough-ready', 'animate-pulse');
+                mainActionBtn.style.setProperty('opacity', '1', 'important');
+                mainActionBtn.style.setProperty('cursor', 'pointer', 'important');
+                if (curRealm.isMajorBottleneck) {
+                    if (mainActionIcon) mainActionIcon.className = "fa-solid fa-cloud-bolt mr-1.5 text-purple-300 animate-bounce";
+                    if (mainActionLabel) mainActionLabel.textContent = "NGHÊNH ĐÓN THIÊN KIẾP";
+                } else {
+                    if (mainActionIcon) mainActionIcon.className = "fa-solid fa-bolt-lightning mr-1.5 text-amber-300 animate-bounce";
+                    if (mainActionLabel) mainActionLabel.textContent = "ĐỘT PHÁ CẢNH GIỚI";
+                }
+            } else {
+                mainActionBtn.setAttribute('disabled', 'disabled');
+                mainActionBtn.classList.remove('is-breakthrough-ready', 'animate-pulse');
+                mainActionBtn.classList.add('is-meditating');
+                if (mainActionIcon) mainActionIcon.className = "fa-solid fa-yin-yang mr-1.5 text-emerald-400/70";
+                if (mainActionLabel) mainActionLabel.textContent = "Đang Tụ Khí...";
+            }
+        }
+
+        // Đồng bộ 4 vị trí trang bị & linh thú trên Cột Trái
+        const swordEl = document.getElementById('ui-equipped-sword-name');
+        if (swordEl) swordEl.textContent = GameState.equipped?.sword ? (GameState.equipped.sword.name || GameState.equipped.sword) : 'Chưa trang bị';
+        const mirrorEl = document.getElementById('ui-equipped-mirror-name');
+        if (mirrorEl) mirrorEl.textContent = GameState.equipped?.mirror ? (GameState.equipped.mirror.name || GameState.equipped.mirror) : 'Chưa trang bị';
+        const orbEl = document.getElementById('ui-equipped-orb-name');
+        if (orbEl) orbEl.textContent = GameState.equipped?.orb ? (GameState.equipped.orb.name || GameState.equipped.orb) : 'Chưa trang bị';
+        const petEl = document.getElementById('ui-equipped-pet-name');
+        if (petEl) petEl.textContent = GameState.equipped?.pet ? (GameState.equipped.pet.name || GameState.equipped.pet) : 'Chưa xuất chiến';
+
+        // Đồng bộ tài nguyên phòng nếu đang mở
+        const gvModal = document.getElementById('modal-gia-vien');
+        if (gvModal && (gvModal.classList.contains('is-open') || gvModal.style.display === 'flex')) {
+            const pvStones = document.getElementById('player-linh-thach');
+            if (pvStones) pvStones.textContent = Number(GameState.spiritStones || 0).toLocaleString('vi-VN');
+            const pvTuVi = document.getElementById('player-tu-vi');
+            if (pvTuVi) pvTuVi.textContent = Math.floor(Number(GameState.exp || 0)).toLocaleString('vi-VN');
+            const pvHerbs = document.getElementById('player-herbs');
+            if (pvHerbs) pvHerbs.textContent = Number(GameState.materials?.herbs || 0).toLocaleString('vi-VN');
+            const pvOres = document.getElementById('player-ores');
+            if (pvOres) pvOres.textContent = Number(GameState.materials?.ores || 0).toLocaleString('vi-VN');
+        }
+
+        const danModal = document.getElementById('modal-luyen-dan');
+        if (danModal && (danModal.classList.contains('is-open') || danModal.style.display === 'flex')) {
+            const hsam = document.getElementById('cnt-huysam');
+            if (hsam) hsam.textContent = Number(GameState.materials?.huyetSam || 0);
+            const lchi = document.getElementById('cnt-linhchi');
+            if (lchi) lchi.textContent = Number(GameState.materials?.linhChi || 0);
+            const tthuy = document.getElementById('cnt-tinhthuy');
+            if (tthuy) tthuy.textContent = Number(GameState.materials?.tinhThuy || 0);
+            const ydan = document.getElementById('cnt-yeudan');
+            if (ydan) ydan.textContent = Number(GameState.materials?.yeuDan || 0);
+        }
+
+        const khiModal = document.getElementById('modal-luyen-khi');
+        if (khiModal && (khiModal.classList.contains('is-open') || khiModal.style.display === 'flex')) {
+            const stones = document.getElementById('display-stones');
+            if (stones) stones.textContent = Number(GameState.spiritStones || 0).toLocaleString('vi-VN');
+            const hthiet = document.getElementById('display-huyen-thiet');
+            if (hthiet) hthiet.textContent = Number(GameState.materials?.huyenThiet || 0);
+            const lchi = document.getElementById('display-linh-chi');
+            if (lchi) lchi.textContent = Number(GameState.materials?.linhChi || 0);
+            const nsam = document.getElementById('display-ngoc-sam');
+            if (nsam) nsam.textContent = Number(GameState.materials?.ngocSam || 0);
+        }
+
+        const khueModal = document.getElementById('modal-khue-phong');
+        if (khueModal && (khueModal.classList.contains('is-open') || khueModal.style.display === 'flex')) {
+            const tc = document.getElementById('gift-cnt-tram-cai');
+            if (tc) tc.textContent = Number(GameState.gifts?.tramCai || 0);
+            const ll = document.getElementById('gift-cnt-luu-ly');
+            if (ll) ll.textContent = Number(GameState.gifts?.luuLy || 0);
+            const hl = document.getElementById('gift-cnt-hoa-lac-tinh');
+            if (hl) hl.textContent = Number(GameState.gifts?.hoaLacTinh || 0);
+        }
+    }
+
+    // 3. Đồng bộ tương thích các hàm legacy nếu có
+    if (typeof window !== 'undefined') {
+        if (typeof window.syncTopResourceBarFromState === 'function') {
+            window.syncTopResourceBarFromState(s);
+        }
+        if (typeof window.updateHUD === 'function') {
+            window.updateHUD();
+        }
+        if (typeof window.updateLeftPanelElements === 'function') {
+            window.updateLeftPanelElements();
+        }
+        if (typeof window.updateMainQuestUI === 'function') {
+            window.updateMainQuestUI();
+        }
+    }
+}
+
+// Khởi tạo auto-save định kỳ 5 giây
+if (typeof window !== 'undefined') {
+    if (window._autoSaveGlobalIntervalId) clearInterval(window._autoSaveGlobalIntervalId);
+    window._autoSaveGlobalIntervalId = setInterval(() => {
+        saveGame();
+    }, 5000);
+    if (window._autoSaveGlobalIntervalId && typeof window._autoSaveGlobalIntervalId.unref === 'function') {
+        window._autoSaveGlobalIntervalId.unref();
+    }
+}
+
 function setGameState(pathOrPatch, value, options) {
     return GameState.set(pathOrPatch, value, options);
 }
@@ -4636,6 +5741,9 @@ if (typeof window !== 'undefined') {
     window.setGameState = setGameState;
     window.updateGameState = updateGameState;
     window.syncGameState = syncGameState;
+    window.saveGame = saveGame;
+    window.loadGame = loadGame;
+    window.syncAllUI = syncAllUI;
     window.FORGE_RECIPES = FORGE_RECIPES;
     window.ALCHEMY_RECIPES = ALCHEMY_RECIPES;
 }
@@ -4644,6 +5752,9 @@ if (typeof globalThis !== 'undefined') {
     globalThis.setGameState = setGameState;
     globalThis.updateGameState = updateGameState;
     globalThis.syncGameState = syncGameState;
+    globalThis.saveGame = saveGame;
+    globalThis.loadGame = loadGame;
+    globalThis.syncAllUI = syncAllUI;
     globalThis.FORGE_RECIPES = FORGE_RECIPES;
     globalThis.ALCHEMY_RECIPES = ALCHEMY_RECIPES;
 }

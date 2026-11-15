@@ -257,6 +257,63 @@
             expReward: 260,
             baseEffect: { type: "crit_buff", val: 5, label: "Vĩnh viễn +5% Bạo Kích & +30,000 Max HP" },
             desc: "Dược lực ma đạo hung hãn kích phát tiềm năng huyết mạch, khiến mỗi đòn đánh bạo phát cuồng nộ."
+        },
+        {
+            id: "recipe_tuyettinh",
+            name: "Bách Thảo Tuyết Tinh Đan",
+            grade: "Huyền Đan",
+            gradeColor: "text-cyan-300",
+            gradeBadge: "bg-cyan-950/80 text-cyan-300 border-cyan-500",
+            icon: "fa-snowflake",
+            reqLevel: 3,
+            reqLevelTitle: "Nhị Giai Luyện Đan Sư (Cấp 3)",
+            materials: [
+                { matId: "herb_tinhthuy", qty: 15 },
+                { matId: "herb_linhchi", qty: 20 },
+                { matId: "herb_huysam", qty: 15 }
+            ],
+            baseTime: 16,
+            expReward: 140,
+            baseEffect: { type: "cleanse_poison", val: 50, healHp: 50000, label: "Đại Thanh Lọc -50% Đan Độc & Hồi 50,000 HP" },
+            desc: "Hút tinh hoa sương tuyết vạn năm, rửa sạch mọi tạp chất độc tố lắng đọng nơi phế phủ kinh mạch."
+        },
+        {
+            id: "recipe_pha_anh",
+            name: "Phá Anh Đan",
+            grade: "Thiên Đan",
+            gradeColor: "text-amber-400",
+            gradeBadge: "bg-amber-950/90 text-amber-300 border-amber-400",
+            icon: "fa-sun",
+            reqLevel: 4,
+            reqLevelTitle: "Tam Giai Đan Vương (Cấp 4)",
+            materials: [
+                { matId: "herb_yeudan", qty: 8 },
+                { matId: "herb_linhchi", qty: 40 },
+                { matId: "herb_tinhthuy", qty: 20 }
+            ],
+            baseTime: 28,
+            expReward: 400,
+            baseEffect: { type: "tribulation_buff", val: 35, expBonus: 50000, label: "+35% Tỷ Lệ Đột Phá & +50,000 Tu Vi" },
+            desc: "Nghịch thiên Thiên Đan trợ Kim Đan phá toái hóa Nguyên Anh, thoát ly phàm thai."
+        },
+        {
+            id: "recipe_hoa_than",
+            name: "Hóa Thần Nghịch Mệnh Đan",
+            grade: "Tiên Đan",
+            gradeColor: "text-rose-300",
+            gradeBadge: "bg-rose-950/90 text-pink-300 border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.5)]",
+            icon: "fa-infinity",
+            reqLevel: 5,
+            reqLevelTitle: "Đan Đạo Thánh Thủ (Cấp 5)",
+            materials: [
+                { matId: "herb_yeudan", qty: 15 },
+                { matId: "herb_linhchi", qty: 60 },
+                { matId: "herb_huysam", qty: 50 }
+            ],
+            baseTime: 35,
+            expReward: 650,
+            baseEffect: { type: "tribulation_buff", val: 50, atkBonus: 150, label: "+50% Tỷ Lệ Đột Phá & +150 Công Kích" },
+            desc: "Chí tôn Tiên Đan ngưng tụ thiên địa tạo hóa, câu thông pháp tắc, trợ tu sĩ ngưng kết Pháp Tướng Hóa Thần."
         }
     ];
 
@@ -264,18 +321,48 @@
     // STATE NGƯỜI CHƠI & TIẾN TRÌNH LUYỆN ĐAN
     // ====================================================================
     const playerState = {
-        level: 2,
-        exp: 300,
-        danDoc: 25,
-        cleansePills: 5,
-        activeCauldronId: "cauldron_2",
-        activeFireId: "fire_lotus",
-        materials: {
-            herb_huysam: 20,
-            herb_linhchi: 25,
-            herb_tinhthuy: 15,
-            herb_yeudan: 5
+        get level() {
+            const s = (typeof window !== 'undefined' && (window.GameState || window.state)) ? (window.GameState || window.state) : {};
+            return Number(s.alchemyLevel) || 1;
         },
+        set level(v) {
+            const val = Math.max(1, Math.min(5, Number(v) || 1));
+            if (typeof window !== 'undefined') {
+                if (window.GameState) window.GameState.alchemyLevel = val;
+                if (window.state) window.state.alchemyLevel = val;
+            }
+        },
+        get exp() {
+            const s = (typeof window !== 'undefined' && (window.GameState || window.state)) ? (window.GameState || window.state) : {};
+            return Number(s.alchemyExp) || 0;
+        },
+        set exp(v) {
+            const val = Math.max(0, Number(v) || 0);
+            if (typeof window !== 'undefined') {
+                if (window.GameState) window.GameState.alchemyExp = val;
+                if (window.state) window.state.alchemyExp = val;
+            }
+        },
+        get danDoc() {
+            const s = (typeof window !== 'undefined' && (window.GameState || window.state)) ? (window.GameState || window.state) : {};
+            return Number(s.danDoc) || 0;
+        },
+        set danDoc(v) {
+            const val = Math.max(0, Math.min(100, Number(v) || 0));
+            if (typeof window !== 'undefined') {
+                if (window.GameState) window.GameState.danDoc = val;
+                if (window.state) window.state.danDoc = val;
+            }
+        },
+        get cleansePills() {
+            const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+            const found = inv.find(i => i && (i.id === 'pill_thanh_tam' || i.id === 'pill_thanh_tam_tinh_hon' || i.id === 'pill_taytuy' || i.name?.includes('Thanh Tâm') || i.name?.includes('Tẩy Tủy') || i.name?.includes('Tuyết Tinh')) && (i.count || i.quantity || 0) > 0);
+            return found ? (Number(found.count || found.quantity) || 0) : 0;
+        },
+        set cleansePills(v) {},
+        activeCauldronId: "cauldron_1",
+        activeFireId: "fire_mortal",
+        materials: {},
         inventoryPills: []
     };
     window.alchemyPlayerState = playerState;
@@ -293,43 +380,112 @@
     };
 
     // ====================================================================
-    // ĐỒNG BỘ NGUYÊN LIỆU VỚI TÚI ĐỒ CHÍNH (BIDIRECTIONAL INVENTORY BRIDGE)
+    // ĐỒNG BỘ NGUYÊN LIỆU VỚI TÚI ĐỒ CHÍNH (SINGLE SOURCE OF TRUTH)
     // ====================================================================
     function getMaterialCount(matId) {
-        if (window.state && Array.isArray(window.state.inventory)) {
-            const found = window.state.inventory.find(i => i && i.id === matId);
-            if (found && typeof found.count === 'number') {
-                return found.count;
-            }
+        if (window.GameState && window.GameState.materials) {
+            if (matId === 'herb_huysam' && typeof window.GameState.materials.huyetSam === 'number') return window.GameState.materials.huyetSam;
+            if (matId === 'herb_linhchi' && typeof window.GameState.materials.linhChi === 'number') return window.GameState.materials.linhChi;
+            if (matId === 'herb_tinhthuy' && typeof window.GameState.materials.tinhThuy === 'number') return window.GameState.materials.tinhThuy;
+            if (matId === 'herb_yeudan' && typeof window.GameState.materials.yeuDan === 'number') return window.GameState.materials.yeuDan;
         }
-        return playerState.materials[matId] || 0;
+        const inv = (typeof window !== 'undefined' && window.GameState && Array.isArray(window.GameState.inventory))
+            ? window.GameState.inventory
+            : (window.state?.inventory || []);
+        
+        // Tìm trực tiếp theo ID nguyên liệu hoặc alias
+        const aliases = {
+            herb_huysam: ['herb_huysam', 'herb_blood', 'huyet_sam', 'Huyết Sâm', 'Huyết Ngọc Sâm', 'ngoc_sam'],
+            herb_linhchi: ['herb_linhchi', 'herb_spirit', 'linh_chi', 'Linh Chi', 'Tử Linh Chi'],
+            herb_tinhthuy: ['herb_tinhthuy', 'tinh_thuy', 'linh_tuyen', 'Tinh Thủy', 'Linh Tinh Thủy'],
+            herb_yeudan: ['herb_yeudan', 'yeu_dan', 'Yêu Đan', 'Yêu Đan Cấp Thấp']
+        };
+        const searchKeys = (aliases[matId] || [matId]).map(k => k.toLowerCase());
+        let total = 0;
+        inv.forEach(i => {
+            if (!i) return;
+            const id = String(i.id || i.key || '').toLowerCase();
+            const name = String(i.name || '').toLowerCase();
+            if (searchKeys.some(k => id === k || id.includes(k) || name.includes(k))) {
+                total += Number(i.count || i.quantity || i.qty || 1);
+            }
+        });
+        return total;
     }
 
     function consumeMaterial(matId, qty) {
-        if (playerState.materials[matId] !== undefined) {
-            playerState.materials[matId] = Math.max(0, (playerState.materials[matId] || 0) - qty);
-        }
-        if (window.state && Array.isArray(window.state.inventory)) {
-            const found = window.state.inventory.find(i => i && i.id === matId);
-            if (found && typeof found.count === 'number') {
-                found.count = Math.max(0, found.count - qty);
+        let handledByGameState = false;
+        if (window.GameState && window.GameState.materials) {
+            const matKeyMap = {
+                herb_huysam: 'huyetSam',
+                herb_linhchi: 'linhChi',
+                herb_tinhthuy: 'tinhThuy',
+                herb_yeudan: 'yeuDan'
+            };
+            const prop = matKeyMap[matId];
+            if (prop && typeof window.GameState.materials[prop] === 'number') {
+                const current = window.GameState.materials[prop];
+                window.GameState.materials[prop] = Math.max(0, current - qty);
+                handledByGameState = true;
             }
         }
-        if (typeof window.saveGameState === 'function') {
+
+        if (!handledByGameState) {
+            const inv = (typeof window !== 'undefined' && window.GameState && Array.isArray(window.GameState.inventory))
+                ? window.GameState.inventory
+                : (window.state?.inventory || []);
+
+            const aliases = {
+                herb_huysam: ['herb_huysam', 'herb_blood', 'huyet_sam', 'Huyết Sâm', 'Huyết Ngọc Sâm', 'ngoc_sam'],
+                herb_linhchi: ['herb_linhchi', 'herb_spirit', 'linh_chi', 'Linh Chi', 'Tử Linh Chi'],
+                herb_tinhthuy: ['herb_tinhthuy', 'tinh_thuy', 'linh_tuyen', 'Tinh Thủy', 'Linh Tinh Thủy'],
+                herb_yeudan: ['herb_yeudan', 'yeu_dan', 'Yêu Đan', 'Yêu Đan Cấp Thấp']
+            };
+            const searchKeys = (aliases[matId] || [matId]).map(k => k.toLowerCase());
+            let remaining = qty;
+
+            for (let idx = inv.length - 1; idx >= 0; idx--) {
+                const item = inv[idx];
+                if (!item) continue;
+                const id = String(item.id || item.key || '').toLowerCase();
+                const name = String(item.name || '').toLowerCase();
+                if (searchKeys.some(k => id === k || id.includes(k) || name.includes(k))) {
+                    const available = Number(item.count || item.quantity || item.qty || 1);
+                    if (available <= remaining) {
+                        remaining -= available;
+                        inv.splice(idx, 1);
+                    } else {
+                        const newQty = available - remaining;
+                        item.count = newQty;
+                        item.quantity = newQty;
+                        if (item.qty !== undefined) item.qty = newQty;
+                        remaining = 0;
+                    }
+                    if (remaining <= 0) break;
+                }
+            }
+        }
+        playerState.materials[matId] = Math.max(0, (playerState.materials[matId] || 0) - qty);
+
+        if (typeof window.saveGame === 'function') {
+            window.saveGame();
+        } else if (typeof window.saveGameState === 'function') {
             window.saveGameState();
         }
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
     }
 
     function syncMaterialsFromInventory() {
-        if (window.state && Array.isArray(window.state.inventory)) {
-            Object.keys(playerState.materials).forEach(matId => {
-                const found = window.state.inventory.find(i => i && i.id === matId);
-                if (found && typeof found.count === 'number') {
-                    playerState.materials[matId] = Math.max(playerState.materials[matId] || 0, found.count);
-                }
-            });
+        const knownMatIds = ['herb_huysam', 'herb_linhchi', 'herb_tinhthuy', 'herb_yeudan'];
+        knownMatIds.forEach(matId => {
+            playerState.materials[matId] = getMaterialCount(matId);
+        });
+        if (typeof renderRecipeList === 'function' && document.getElementById('alchemy-recipe-list')) {
+            renderRecipeList();
         }
     }
+    window.syncMaterialsFromInventory = syncMaterialsFromInventory;
+    window.updateAlchemyUI = syncMaterialsFromInventory;
 
     // ====================================================================
     // TÍNH TOÁN XÁC SUẤT RNG DỰA TRÊN LÒ ĐAN, DỊ HỎA & CẤP NGHỀ
@@ -572,22 +728,38 @@
                 }
 
                 // Đồng bộ vào Càn Khôn Nang của nhân vật
+                const rarityMap = { cuc_pham: 'Mythic', thuong_pham: 'Epic', trung_pham: 'Rare', ha_pham: 'Common' };
+                const pillPayload = {
+                    id: newPill.id,
+                    name: newPill.name,
+                    type: 'Consumable',
+                    category: 'Pill',
+                    rarity: rarityMap[quality.id] || 'Common',
+                    icon: '💊',
+                    effectType: newPill.effectType,
+                    effectVal: newPill.effectVal,
+                    danDoc: newPill.danDoc,
+                    quantity: 1,
+                    count: 1,
+                    desc: `${rec.desc} (${newPill.effectLabel} • Đan Độc +${newPill.danDoc}%)`
+                };
                 if (typeof window.addItemToInventory === 'function') {
-                    const rarityMap = { cuc_pham: 'Mythic', thuong_pham: 'Epic', trung_pham: 'Rare', ha_pham: 'Common' };
-                    window.addItemToInventory({
-                        id: newPill.id,
-                        name: newPill.name,
-                        type: 'Consumable',
-                        category: 'Pill',
-                        rarity: rarityMap[quality.id] || 'Common',
-                        icon: '💊',
-                        effectType: newPill.effectType,
-                        effectVal: newPill.effectVal,
-                        danDoc: newPill.danDoc,
-                        desc: `${rec.desc} (${newPill.effectLabel} • Đan Độc +${newPill.danDoc}%)`
-                    }, 1);
+                    window.addItemToInventory(pillPayload, 1);
+                } else {
+                    const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+                    inv.unshift(pillPayload);
                 }
             }
+        }
+
+        // Tự động đẩy tiến độ Nhiệm Vụ Tông Môn (Luyện Đan)
+        if (successCount > 0) {
+            if (typeof window.progressSectQuest === 'function') {
+                window.progressSectQuest('alchemy', 15 * successCount);
+            }
+            if (window.GameState) window.GameState.hasCraftedPill = true;
+            if (window.state) window.state.hasCraftedPill = true;
+            if (typeof window.updateMainQuestUI === 'function') window.updateMainQuestUI();
         }
 
         // Nếu toàn bộ mẻ đều nổ lò
@@ -664,6 +836,15 @@
         updateHeaderUI();
         renderRecipes();
         renderRecentPills();
+
+        if (typeof window.saveGame === 'function') {
+            window.saveGame();
+        } else if (typeof window.saveGameState === 'function') {
+            window.saveGameState();
+        }
+        if (typeof window.syncAllUI === 'function') {
+            window.syncAllUI();
+        }
     }
 
     function resetBrewingUI() {
@@ -693,10 +874,11 @@
 
         if (pill.effectType === 'heal_hp') {
             msg += `Hồi phục +${pill.effectVal.toLocaleString()} HP!`;
-            if (window.state) {
-                const maxHp = Number(window.state.maxHp || window.state.totalHp || 5800);
-                window.state.hp = Math.min(maxHp, Number(window.state.hp || 0) + pill.effectVal);
-            }
+            const maxHp = Number(window.GameState?.maxHp || window.state?.maxHp || window.state?.totalHp || 5800);
+            const curHp = Number(window.GameState?.hp || window.state?.hp || 0);
+            const newHp = Math.min(maxHp, curHp + pill.effectVal);
+            if (window.GameState) window.GameState.hp = newHp;
+            if (window.state) window.state.hp = newHp;
             if (window.towerPlayer) {
                 window.towerPlayer.hp = Math.min(window.towerPlayer.maxHp, window.towerPlayer.hp + pill.effectVal);
             }
@@ -704,42 +886,72 @@
             msg += `Gia tăng +${pill.effectVal.toLocaleString()} Tu Vi!`;
             if (typeof window.addExp === 'function') {
                 window.addExp(pill.effectVal);
-            } else if (window.state) {
-                window.state.exp = Number(window.state.exp || 0) + pill.effectVal;
+            } else {
+                if (window.GameState) window.GameState.exp = Number(window.GameState.exp || 0) + pill.effectVal;
+                if (window.state) window.state.exp = Number(window.state.exp || 0) + pill.effectVal;
             }
         } else if (pill.effectType === 'tribulation_buff') {
-            msg += `Tăng +${pill.effectVal}% Tỷ lệ Đột Phá / Trúc Cơ thành công!`;
-            window.breakthroughBonusChance = (Number(window.breakthroughBonusChance || 0) + (pill.effectVal / 100));
+            msg += `Tăng +${pill.effectVal}% Tỷ lệ Đột Phá / Độ Kiếp thành công!`;
+            window.breakthroughBonusChance = (Number(window.breakthroughBonusChance || 0) + pill.effectVal);
+            if (window.GameState) {
+                window.GameState.pillBuffRemaining = (Number(window.GameState.pillBuffRemaining || 0) + pill.effectVal);
+            }
             if (window.state) {
                 window.state.pillBuffRemaining = (Number(window.state.pillBuffRemaining || 0) + pill.effectVal);
+            }
+            if (pill.expBonus) {
+                if (typeof window.addExp === 'function') window.addExp(pill.expBonus);
+                else if (window.GameState) window.GameState.exp = Number(window.GameState.exp || 0) + pill.expBonus;
+            }
+            if (pill.atkBonus) {
+                const curAtk = Number(window.GameState?.baseAtk || window.state?.baseAtk || 30);
+                if (window.GameState) window.GameState.baseAtk = curAtk + pill.atkBonus;
+                if (window.state) window.state.baseAtk = curAtk + pill.atkBonus;
             }
         } else if (pill.effectType === 'cleanse_poison') {
             msg += `Thanh lọc tiêu trừ -${pill.effectVal}% Đan Độc!`;
             playerState.danDoc = Math.max(0, playerState.danDoc - pill.effectVal);
+            if (window.GameState) window.GameState.danDoc = playerState.danDoc;
             if (window.state) window.state.danDoc = playerState.danDoc;
+            if (pill.healHp) {
+                const maxHp = Number(window.GameState?.maxHp || window.state?.maxHp || 5800);
+                const curHp = Number(window.GameState?.hp || window.state?.hp || 0);
+                const newHp = Math.min(maxHp, curHp + pill.healHp);
+                if (window.GameState) window.GameState.hp = newHp;
+                if (window.state) window.state.hp = newHp;
+            }
         } else if (pill.effectType === 'atk_buff') {
             msg += `Cố định gia tăng +${pill.effectVal} Công Kích!`;
+            const curAtk = Number(window.GameState?.baseAtk || window.state?.baseAtk || window.state?.atk || 30);
+            const newAtk = curAtk + pill.effectVal;
+            if (window.GameState) {
+                window.GameState.baseAtk = newAtk;
+                window.GameState.atk = newAtk;
+            }
             if (window.state) {
-                window.state.atk = (Number(window.state.atk) || 28) + pill.effectVal;
-                window.state.totalAtk = (Number(window.state.totalAtk) || window.state.atk) + pill.effectVal;
+                window.state.baseAtk = newAtk;
+                window.state.atk = newAtk;
             }
             if (typeof window.addExp === 'function') {
                 window.addExp(Math.round(pill.effectVal * 250));
             }
         } else if (pill.effectType === 'crit_buff') {
             msg += `Vĩnh viễn gia tăng +${pill.effectVal}% Bạo Kích & +30,000 HP!`;
-            if (window.state) {
-                window.state.crit = Math.min(100, (Number(window.state.crit) || 10) + pill.effectVal);
-                const maxHp = Number(window.state.maxHp || window.state.totalHp || 5800) + 30000;
-                window.state.maxHp = maxHp;
-                window.state.hp = Math.min(maxHp, Number(window.state.hp || 0) + 30000);
-            }
+            const curCrit = Number(window.GameState?.crit || window.state?.crit || 10);
+            const newCrit = Math.min(100, curCrit + pill.effectVal);
+            if (window.GameState) window.GameState.crit = newCrit;
+            if (window.state) window.state.crit = newCrit;
+            const curBaseHp = Number(window.GameState?.baseHp || window.state?.baseHp || 500);
+            const newBaseHp = curBaseHp + 30000;
+            if (window.GameState) window.GameState.baseHp = newBaseHp;
+            if (window.state) window.state.baseHp = newBaseHp;
         }
 
         // Tích tụ đan độc (ngoại trừ đan tẩy độc)
         if (pill.effectType !== 'cleanse_poison') {
             playerState.danDoc += pill.danDoc;
         }
+        if (window.GameState) window.GameState.danDoc = playerState.danDoc;
         if (window.state) window.state.danDoc = playerState.danDoc;
         msg += ` (Đan Độc: ${playerState.danDoc}%)`;
 
@@ -755,17 +967,29 @@
             window.addLog(`💊 <span class="text-teal-300 font-bold">[Phục Dược]</span> Đã nuốt <strong>${pill.name}</strong> (${pill.effectLabel}). Đan độc hiện tại: ${playerState.danDoc}%.`, 'text-teal-300');
         }
 
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
         if (typeof window.updateHUD === 'function') window.updateHUD();
-        if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
-        showXianxiaToast(msg, playerState.danDoc > 100 ? 'error' : 'success');
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(msg, playerState.danDoc > 100 ? 'error' : 'success');
+        } else if (typeof showXianxiaToast === 'function') {
+            showXianxiaToast(msg, playerState.danDoc > 100 ? 'error' : 'success');
+        }
+
         updateHeaderUI();
         renderRecentPills();
     }
 
     function swallowAllPills() {
         if (!playerState.inventoryPills.length) {
-            showXianxiaToast("Hồ Lô rỗng, không có đan dược nào để phục dụng!", "info");
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast("Hồ Lô rỗng, không có đan dược nào để phục dụng!", "info");
+            } else if (typeof showXianxiaToast === 'function') {
+                showXianxiaToast("Hồ Lô rỗng, không có đan dược nào để phục dụng!", "info");
+            }
             return;
         }
 
@@ -773,6 +997,7 @@
         let totalExp = 0;
         let totalBuff = 0;
         let totalAtk = 0;
+        let totalCrit = 0;
         let consumedCount = 0;
 
         while (playerState.inventoryPills.length > 0) {
@@ -780,41 +1005,77 @@
 
             // Nếu đan độc vượt ngưỡng nguy hiểm 120%, tự động dừng để bảo hộ kinh mạch
             if (playerState.danDoc + pill.danDoc > 120 && pill.effectType !== 'cleanse_poison') {
-                showXianxiaToast(`🚨 Cảnh Báo: Đã dừng cắn thuốc tại viên thứ ${consumedCount}! Kinh mạch quá tải Đan Độc (${playerState.danDoc}%). Hãy dùng Thanh Tâm Đan!`, "error");
+                const stopMsg = `🚨 Cảnh Báo: Đã dừng cắn thuốc tại viên thứ ${consumedCount}! Kinh mạch quá tải Đan Độc (${playerState.danDoc}%). Hãy dùng Thanh Tâm Đan!`;
+                if (typeof window.showGameToast === 'function') window.showGameToast(stopMsg, "error");
+                else if (typeof showXianxiaToast === 'function') showXianxiaToast(stopMsg, "error");
                 break;
             }
 
             if (pill.effectType === 'heal_hp') {
                 totalHp += pill.effectVal;
-                if (window.state) {
-                    const maxHp = Number(window.state.maxHp || window.state.totalHp || 5800);
-                    window.state.hp = Math.min(maxHp, Number(window.state.hp || 0) + pill.effectVal);
-                }
+                const maxHp = Number(window.GameState?.maxHp || window.state?.maxHp || 5800);
+                const curHp = Number(window.GameState?.hp || window.state?.hp || 0);
+                const newHp = Math.min(maxHp, curHp + pill.effectVal);
+                if (window.GameState) window.GameState.hp = newHp;
+                if (window.state) window.state.hp = newHp;
             } else if (pill.effectType === 'add_exp') {
                 totalExp += pill.effectVal;
                 if (typeof window.addExp === 'function') {
                     window.addExp(pill.effectVal);
-                } else if (window.state) {
-                    window.state.exp = Number(window.state.exp || 0) + pill.effectVal;
+                } else {
+                    if (window.GameState) window.GameState.exp = Number(window.GameState.exp || 0) + pill.effectVal;
+                    if (window.state) window.state.exp = Number(window.state.exp || 0) + pill.effectVal;
                 }
             } else if (pill.effectType === 'tribulation_buff') {
                 totalBuff += pill.effectVal;
-                window.breakthroughBonusChance = (Number(window.breakthroughBonusChance || 0) + (pill.effectVal / 100));
+                window.breakthroughBonusChance = (Number(window.breakthroughBonusChance || 0) + pill.effectVal);
+                if (window.GameState) {
+                    window.GameState.pillBuffRemaining = (Number(window.GameState.pillBuffRemaining || 0) + pill.effectVal);
+                }
                 if (window.state) {
                     window.state.pillBuffRemaining = (Number(window.state.pillBuffRemaining || 0) + pill.effectVal);
                 }
+                if (pill.expBonus) {
+                    totalExp += pill.expBonus;
+                    if (typeof window.addExp === 'function') window.addExp(pill.expBonus);
+                    else if (window.GameState) window.GameState.exp = Number(window.GameState.exp || 0) + pill.expBonus;
+                }
+                if (pill.atkBonus) {
+                    totalAtk += pill.atkBonus;
+                    const curAtk = Number(window.GameState?.baseAtk || window.state?.baseAtk || 30);
+                    if (window.GameState) window.GameState.baseAtk = curAtk + pill.atkBonus;
+                    if (window.state) window.state.baseAtk = curAtk + pill.atkBonus;
+                }
             } else if (pill.effectType === 'cleanse_poison') {
                 playerState.danDoc = Math.max(0, playerState.danDoc - pill.effectVal);
+                if (pill.healHp) {
+                    totalHp += pill.healHp;
+                    const maxHp = Number(window.GameState?.maxHp || window.state?.maxHp || 5800);
+                    const curHp = Number(window.GameState?.hp || window.state?.hp || 0);
+                    const newHp = Math.min(maxHp, curHp + pill.healHp);
+                    if (window.GameState) window.GameState.hp = newHp;
+                    if (window.state) window.state.hp = newHp;
+                }
             } else if (pill.effectType === 'atk_buff') {
                 totalAtk += pill.effectVal;
+                const curAtk = Number(window.GameState?.baseAtk || window.state?.baseAtk || 30);
+                if (window.GameState) {
+                    window.GameState.baseAtk = curAtk + pill.effectVal;
+                    window.GameState.atk = curAtk + pill.effectVal;
+                }
                 if (window.state) {
-                    window.state.atk = (Number(window.state.atk) || 28) + pill.effectVal;
-                    window.state.totalAtk = (Number(window.state.totalAtk) || window.state.atk) + pill.effectVal;
+                    window.state.baseAtk = curAtk + pill.effectVal;
+                    window.state.atk = curAtk + pill.effectVal;
                 }
             } else if (pill.effectType === 'crit_buff') {
-                if (window.state) {
-                    window.state.crit = Math.min(100, (Number(window.state.crit) || 10) + pill.effectVal);
-                }
+                totalCrit += pill.effectVal;
+                const curCrit = Number(window.GameState?.crit || window.state?.crit || 10);
+                const newCrit = Math.min(100, curCrit + pill.effectVal);
+                if (window.GameState) window.GameState.crit = newCrit;
+                if (window.state) window.state.crit = newCrit;
+                const curBaseHp = Number(window.GameState?.baseHp || window.state?.baseHp || 500);
+                if (window.GameState) window.GameState.baseHp = curBaseHp + 30000;
+                if (window.state) window.state.baseHp = curBaseHp + 30000;
             }
 
             if (pill.effectType !== 'cleanse_poison') {
@@ -824,18 +1085,27 @@
             playerState.inventoryPills.shift();
         }
 
+        if (window.GameState) window.GameState.danDoc = playerState.danDoc;
         if (window.state) window.state.danDoc = playerState.danDoc;
+
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
         if (typeof window.updateHUD === 'function') window.updateHUD();
-        if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
         const summaryParts = [];
         if (totalHp > 0) summaryParts.push(`+${totalHp.toLocaleString()} HP`);
         if (totalExp > 0) summaryParts.push(`+${totalExp.toLocaleString()} Tu Vi`);
         if (totalBuff > 0) summaryParts.push(`+${totalBuff}% Tỷ Lệ Đột Phá`);
         if (totalAtk > 0) summaryParts.push(`+${totalAtk} Công Kích`);
+        if (totalCrit > 0) summaryParts.push(`+${totalCrit}% Bạo Kích`);
         const summaryText = summaryParts.length > 0 ? summaryParts.join(', ') : 'Dược lực vận chuyển quanh chu thiên';
 
-        showXianxiaToast(`💊 Đã ẩm thực đồng loạt ${consumedCount} viên đan! (${summaryText} • Đan Độc: ${playerState.danDoc}%)`, "success");
+        const toastSuccess = `💊 Đã ẩm thực đồng loạt ${consumedCount} viên đan! (${summaryText} • Đan Độc: ${playerState.danDoc}%)`;
+        if (typeof window.showGameToast === 'function') window.showGameToast(toastSuccess, "success");
+        else if (typeof showXianxiaToast === 'function') showXianxiaToast(toastSuccess, "success");
+
         if (typeof window.addLog === 'function') {
             window.addLog(`💊 <span class="text-teal-300 font-bold">[Vận Khí Luyện Đan]</span> Đã phục dụng liên tiếp <strong>${consumedCount} viên đan dược</strong> (${summaryText})! Đan độc tích tụ: ${playerState.danDoc}%.`, 'text-teal-300');
         }
@@ -846,38 +1116,49 @@
 
     function drinkCleansePill() {
         if (playerState.danDoc <= 0) {
-            showXianxiaToast("✨ Kinh mạch thanh tịnh, hoàn toàn không có Đan Độc!", "info");
-            return;
-        }
-
-        let hasInventoryCleanse = false;
-        if (window.state && Array.isArray(window.state.inventory)) {
-            const found = window.state.inventory.find(i => i && (i.id === 'pill_thanh_tam' || i.id === 'pill_thanh_tam_tinh_hon') && i.count > 0);
-            if (found) {
-                hasInventoryCleanse = true;
-                found.count = Math.max(0, found.count - 1);
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast("✨ Kinh mạch thanh tịnh, hoàn toàn không có Đan Độc!", "info");
+            } else if (typeof showXianxiaToast === 'function') {
+                showXianxiaToast("✨ Kinh mạch thanh tịnh, hoàn toàn không có Đan Độc!", "info");
             }
-        }
-
-        if (!hasInventoryCleanse && playerState.cleansePills <= 0) {
-            showXianxiaToast("⚠️ Đã hết Thanh Tâm Đan trong người!", "error");
             return;
         }
 
-        if (!hasInventoryCleanse) {
-            playerState.cleansePills--;
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (window.state?.inventory || []);
+        const found = inv.find(i => i && (i.id === 'pill_thanh_tam' || i.id === 'pill_thanh_tam_tinh_hon' || i.id === 'pill_taytuy' || i.name?.includes('Thanh Tâm') || i.name?.includes('Tẩy Tủy') || i.name?.includes('Tuyết Tinh')) && (i.count || i.quantity || 0) > 0);
+
+        if (!found) {
+            const err = "⚠️ Đã hết đan dược thanh tẩy Đan Độc trong người! Hãy luyện thêm hoặc mua tại Vạn Bảo Lâu.";
+            if (typeof window.showGameToast === 'function') window.showGameToast(err, "error");
+            else if (typeof showXianxiaToast === 'function') showXianxiaToast(err, "error");
+            return;
+        }
+
+        const curCount = Number(found.count || found.quantity || 1) - 1;
+        found.count = curCount;
+        found.quantity = curCount;
+        if (curCount <= 0) {
+            const idx = inv.indexOf(found);
+            if (idx >= 0) inv.splice(idx, 1);
         }
 
         playerState.danDoc = Math.max(0, playerState.danDoc - 30);
+        if (window.GameState) window.GameState.danDoc = playerState.danDoc;
         if (window.state) window.state.danDoc = playerState.danDoc;
 
-        showXianxiaToast(`🌿 Đã dùng 1 viên [Thanh Tâm Đan]! Tiêu trừ 30% Đan Độc (Còn lại: ${playerState.danDoc}%).`, "success");
+        const cleanseSuccess = `🌿 Đã dùng 1 viên [${found.name || 'Thanh Tâm Đan'}]! Tiêu trừ 30% Đan Độc (Còn lại: ${playerState.danDoc}%).`;
+        if (typeof window.showGameToast === 'function') window.showGameToast(cleanseSuccess, "success");
+        else if (typeof showXianxiaToast === 'function') showXianxiaToast(cleanseSuccess, "success");
+
         if (typeof window.addLog === 'function') {
-            window.addLog(`🌿 <span class="text-emerald-300 font-bold">[Thanh Lọc Đan Độc]</span> Phục dụng Thanh Tâm Đan, thanh lọc kinh mạch, giảm 30% Đan Độc (Hiện còn: ${playerState.danDoc}%).`, 'text-emerald-300');
+            window.addLog(`🌿 <span class="text-emerald-300 font-bold">[Thanh Lọc Đan Độc]</span> Phục dụng ${found.name || 'Thanh Tâm Đan'}, thanh lọc kinh mạch, giảm 30% Đan Độc (Hiện còn: ${playerState.danDoc}%).`, 'text-emerald-300');
         }
 
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
         if (typeof window.updateHUD === 'function') window.updateHUD();
-        if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
         updateHeaderUI();
     }
@@ -1301,9 +1582,12 @@
         if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
         const el = document.getElementById('modal-luyen-dan');
         if (el) {
-            el.style.setProperty('display', 'block', 'important');
+            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('pointer-events', 'auto', 'important');
+            el.style.setProperty('z-index', '10000', 'important');
+            el.style.setProperty('opacity', '1', 'important');
             el.classList.remove('hidden');
-            el.classList.add('active');
+            el.classList.add('active', 'is-open', 'flex');
             brewingProcess.modalIsOpen = true;
             syncMaterialsFromInventory();
             renderRecipes();
@@ -1325,11 +1609,30 @@
         if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
     }
 
+    function performQuickAlchemyAuto() {
+        if (brewingProcess.isBrewing) return;
+        const recipes = (typeof ALCHEMY_RECIPES_DATA !== 'undefined') ? ALCHEMY_RECIPES_DATA : [];
+        for (const recipe of recipes) {
+            if (!recipe || !Array.isArray(recipe.ingredients)) continue;
+            const canCraft = recipe.ingredients.every(ing => getMaterialCount(ing.id) >= ing.count);
+            if (canCraft) {
+                playerState.selectedRecipeId = recipe.id;
+                startAlchemy();
+                break;
+            }
+        }
+    }
+
     window.openLuyenDanModal = openLuyenDanModal;
     window.closeLuyenDanModal = closeLuyenDanModal;
     globalThis.openLuyenDanModal = openLuyenDanModal;
     globalThis.closeLuyenDanModal = closeLuyenDanModal;
 
+    window.performQuickAlchemyAuto = performQuickAlchemyAuto;
+    globalThis.performQuickAlchemyAuto = performQuickAlchemyAuto;
+
+    window.getMaterialCount = getMaterialCount;
+    window.consumeMaterial = consumeMaterial;
     window.startAlchemy = startAlchemy;
     window.finishAlchemy = finishAlchemy;
     window.resetBrewingUI = resetBrewingUI;

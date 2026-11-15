@@ -60,23 +60,17 @@ function renderSectPage(tab = activeSectTab || 'quests', hostContainer = null) {
 
     const playerRealmIndex = (typeof state !== 'undefined' && typeof state.realmIndex === 'number') ? state.realmIndex : 0;
 
-    // ĐIỀU KIỆN MỞ KHÓA: Luyện Khí Tầng 3 (realmIndex >= 2)
-    if (playerRealmIndex < 2) {
-        renderSectLockedView(content, playerRealmIndex);
-        return;
-    }
-
-    // NẾU CHƯA GIA NHẬP TÔNG MÔN: HIỂN THỊ GIAO DIỆN CHỌN MÔN PHÁI
+    // Đảm bảo luôn có môn phái mặc định để giao diện hoạt động mượt mà
     if (!state.playerSect || !SECTS_DATA[state.playerSect]) {
-        renderSectSelectionView(content);
-        return;
+        state.playerSect = 'thanh_van';
     }
 
     // ĐÃ GIA NHẬP TÔNG MÔN
     const sect = SECTS_DATA[state.playerSect];
-    const rankCfg = (typeof SECT_RANKS !== 'undefined' && SECT_RANKS[state.sectRank || 0]) ? SECT_RANKS[state.sectRank || 0] : SECT_RANKS[0];
-    const contribution = state.sectContribution || 0;
-    const sectArrayLvl = Number(state.sectArrayLevel) || 1;
+    const curRankIdx = Number(window.GameState?.sectRank ?? state.sectRank) || 0;
+    const rankCfg = (typeof SECT_RANKS !== 'undefined' && SECT_RANKS[curRankIdx]) ? SECT_RANKS[curRankIdx] : SECT_RANKS[0];
+    const contribution = Number(window.GameState?.sectPoints ?? window.GameState?.sectContribution ?? state.sectContribution) || 0;
+    const sectArrayLvl = Number(window.GameState?.sectArrayLevel ?? state.sectArrayLevel) || 1;
 
     // Tính toán cooldown Thỉnh An (24h)
     const timeScale = state.timeScale || 1;
@@ -497,30 +491,53 @@ function switchSectTab(tabName) {
 
 // 6. THỈNH AN SƯ TRƯỞNG / LĨNH LƯƠNG NGÀY
 function claimSectHomage() {
-    if (!state.playerSect) return;
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : {});
+    const playerSect = s.playerSect || (typeof state !== 'undefined' ? state.playerSect : null) || 'thanh_van';
+    s.playerSect = playerSect;
+    if (typeof state !== 'undefined') state.playerSect = playerSect;
 
-    const timeScale = state.timeScale || 1;
+    const timeScale = s.timeScale || (typeof state !== 'undefined' ? state.timeScale : 1) || 1;
     const cooldownMs = 86400000 / timeScale;
-    const elapsed = Date.now() - (state.lastSectHomageTime || 0);
+    const lastTime = (s.lastSectHomageTime !== undefined) ? s.lastSectHomageTime : ((typeof state !== 'undefined' && state.lastSectHomageTime) || 0);
+    const elapsed = Date.now() - lastTime;
 
     if (elapsed < cooldownMs) {
-        if (typeof addLog === 'function') {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast("ℹ️ Đạo hữu hôm nay đã thỉnh an sư trưởng rồi, hãy quay lại vào ngày mai!", "info");
+        } else if (typeof addLog === 'function') {
             addLog("Đạo hữu hôm nay đã thỉnh an sư trưởng rồi, hãy quay lại vào ngày mai!", "text-stone-400");
         }
         return;
     }
 
-    const rankIndex = Math.min(SECT_RANKS.length - 1, state.sectRank || 0);
-    const rankCfg = SECT_RANKS[rankIndex];
+    const rankIndex = Math.min(SECT_RANKS.length - 1, Number(s.sectRank ?? (typeof state !== 'undefined' ? state.sectRank : 0)) || 0);
+    const rankCfg = SECT_RANKS[rankIndex] || SECT_RANKS[0];
 
     let stonesGained = rankCfg.dailyStones;
-    if (state.playerSect === 'tan_tu') {
+    if (playerSect === 'tan_tu') {
         stonesGained = Math.round(stonesGained * 1.10);
     }
 
-    state.stones = (state.stones || 0) + stonesGained;
-    state.sectContribution = (state.sectContribution || 0) + rankCfg.dailyContribution;
-    state.lastSectHomageTime = Date.now();
+    const now = Date.now();
+    if (typeof state !== 'undefined') {
+        state.stones = (state.stones || 0) + stonesGained;
+        state.sectContribution = (state.sectContribution || 0) + rankCfg.dailyContribution;
+        state.lastSectHomageTime = now;
+    }
+
+    if (window.GameState) {
+        window.GameState.stones = (Number(window.GameState.stones) || 0) + stonesGained;
+        window.GameState.spiritStones = window.GameState.stones;
+        window.GameState.sectPoints = (Number(window.GameState.sectPoints) || 0) + rankCfg.dailyContribution;
+        window.GameState.sectContribution = window.GameState.sectPoints;
+        window.GameState.lastSectHomageTime = now;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(`⛩️ Thỉnh an thành công: +${stonesGained} Linh Thạch, +${rankCfg.dailyContribution} Cống Hiến!`, 'success');
+    }
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
 
     if (typeof playSound === 'function') playSound('qi');
     if (typeof addLog === 'function') {
@@ -530,53 +547,260 @@ function claimSectHomage() {
     if (typeof saveGameState === 'function') saveGameState();
     if (typeof updateHUD === 'function') updateHUD();
 
-    renderSectModal();
+    if (document.getElementById('page-sect-rank')?.classList.contains('active')) {
+        renderSectPage('rank', document.getElementById('sect-rank-page-content'));
+    } else {
+        renderSectModal();
+    }
 }
 
 // 7. TAB 1: NHIỆM VỤ ĐƯỜNG (SECT QUESTS)
+const DEFAULT_SECT_QUESTS = [
+    {
+        id: "quest_tu_khi",
+        name: "Tụ Khí Nhập Thể",
+        desc: "Ngồi tĩnh tọa tại Tụ Linh Trận môn phái, vận chuyển chu thiên hấp thu linh khí cửu châu.",
+        icon: "fa-person-praying",
+        minRank: 0,
+        mpCost: 2,
+        durationSeconds: 15,
+        rewardContribution: 80,
+        rewardStones: 150,
+        rewardExp: 150
+    },
+    {
+        id: "quest_luyen_dan",
+        name: "Đan Đạo Sơ Tâm",
+        desc: "Khai lò trợ lực Đan Phòng, phụ giúp trưởng lão luyện chế một lô Dưỡng Khí Đan cơ bản.",
+        icon: "fa-fire-burner",
+        minRank: 0,
+        mpCost: 3,
+        durationSeconds: 25,
+        rewardContribution: 150,
+        rewardStones: 250,
+        rewardExp: 220,
+        rewardItem: { id: "pill_tay_cot_sect", name: "Tẩy Cốt Đan", count: 1 }
+    },
+    {
+        id: "quest_tram_yeu",
+        name: "Trảm Yêu Trừ Ma",
+        desc: "Tiến vào Trấn Yêu Tháp hoặc vùng ngoại vi sơn môn trảm sát nghiệt súc quấy nhiễu.",
+        icon: "fa-skull-crossbones",
+        minRank: 1,
+        mpCost: 5,
+        durationSeconds: 35,
+        rewardContribution: 250,
+        rewardStones: 450,
+        rewardExp: 350,
+        rewardItem: { id: "loi_kiep_dich", name: "Yêu Thú Nội Đan", count: 1 }
+    },
+    {
+        id: "quest_thinh_an",
+        name: "Thỉnh An Sư Trưởng",
+        desc: "Đến Chính Điện dâng linh trà vấn an Chưởng Môn và các vị Trưởng Lão hộ pháp.",
+        icon: "fa-hands-praying",
+        minRank: 0,
+        mpCost: 2,
+        durationSeconds: 10,
+        rewardContribution: 60,
+        rewardStones: 120,
+        rewardExp: 80
+    },
+    {
+        id: "quest_cong_nap_khoang",
+        name: "Cống Nạp Huyền Thiết",
+        desc: "Tìm kiếm và cống nạp khoáng thạch Huyền Thiết gia cố Hộ Sơn Đại Trận môn phái.",
+        icon: "fa-hammer",
+        minRank: 1,
+        mpCost: 4,
+        durationSeconds: 30,
+        rewardContribution: 200,
+        rewardStones: 350,
+        rewardExp: 300,
+        rewardItem: { id: "mat_huyen_thiet", name: "Huyền Thiết", count: 2 }
+    }
+];
+
+function refreshSectQuests(forceWithStones = false) {
+    const cost = 50;
+    const now = Date.now();
+    const cooldownMs = 180000; // 3 phút tự động làm mới miễn phí
+    const lastRefresh = state.lastSectQuestRefreshTime || 0;
+    const canFree = (now - lastRefresh) >= cooldownMs;
+
+    if (forceWithStones) {
+        if ((state.stones || 0) < cost) {
+            if (typeof addLog === 'function') addLog(`⚠️ Không đủ Linh Thạch! Cần ${cost} Linh Thạch để làm mới bảng nhiệm vụ ngay lập tức.`, 'text-rose-400');
+            return;
+        }
+        state.stones -= cost;
+        state.lastSectQuestRefreshTime = now;
+        if (window.GameState) window.GameState.spiritStones = state.stones;
+        if (typeof addLog === 'function') {
+            addLog(`🔄 <span class="text-amber-300 font-bold">[Chấp Sự Điện]</span> Tiêu hao <strong>${cost} Linh Thạch</strong> làm mới bảng vàng nhiệm vụ môn phái ngay lập tức!`, "text-amber-300");
+        }
+    } else {
+        state.lastSectQuestRefreshTime = now;
+        if (typeof addLog === 'function') {
+            addLog(`🔄 <span class="text-amber-300 font-bold">[Nhiệm Vụ Đường]</span> Chấp sự điện đã làm mới danh sách bảng vàng nhiệm vụ môn phái!`, "text-amber-300");
+        }
+    }
+
+    if (typeof playSound === 'function') playSound('click');
+    if (typeof window.saveGameState === 'function') window.saveGameState();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+
+    if (document.getElementById('page-sect-quests')?.classList.contains('active')) {
+        renderSectPage('quests', document.getElementById('sect-quests-page-content'));
+    } else {
+        renderSectModal();
+    }
+}
+window.refreshSectQuests = refreshSectQuests;
+
+function ensureSectActiveQuests(s) {
+    if (!s) return [];
+    if (!Array.isArray(s.sectActiveQuests)) {
+        s.sectActiveQuests = [];
+    }
+    if (s.sectQuest && !s.sectActiveQuests.some(q => q && q.id === s.sectQuest.id)) {
+        s.sectActiveQuests.push(s.sectQuest);
+    }
+    return s.sectActiveQuests;
+}
+
+// Hook cộng dồn tiến độ nhiệm vụ từ mọi màn hình (tu luyện, luyện đan, đánh tháp, gia viên)
+function progressSectQuest(actionType, bonusSeconds = 5) {
+    const s = (typeof state !== 'undefined' ? state : null) || window.state || (window.GameState ? window.GameState._rawState : null);
+    if (!s) return;
+    const activeQuests = ensureSectActiveQuests(s);
+    if (!activeQuests.length) return;
+
+    let anyUpdated = false;
+    for (const q of activeQuests) {
+        if (!q || !q.inProgress || q.completed) continue;
+        let applies = false;
+        let reason = '';
+
+        if ((actionType === 'cultivate' || actionType === 'meditate') && (q.id === 'quest_tu_khi' || q.id === 'quest_thinh_an')) {
+            applies = true;
+            reason = 'Tĩnh tọa tu luyện';
+        } else if (actionType === 'alchemy' && q.id === 'quest_luyen_dan') {
+            applies = true;
+            bonusSeconds = Math.max(bonusSeconds, 15);
+            reason = 'Khai lò luyện đan';
+        } else if ((actionType === 'tower' || actionType === 'combat') && q.id === 'quest_tram_yeu') {
+            applies = true;
+            bonusSeconds = Math.max(bonusSeconds, 15);
+            reason = 'Trảm yêu trừ ma';
+        } else if ((actionType === 'estate' || actionType === 'mine') && q.id === 'quest_cong_nap_khoang') {
+            applies = true;
+            bonusSeconds = Math.max(bonusSeconds, 15);
+            reason = 'Khai thác khoáng thạch';
+        } else if (actionType === 'any') {
+            applies = true;
+            reason = 'Hành động tu tiên';
+        }
+
+        if (applies) {
+            anyUpdated = true;
+            q.elapsedSeconds = Math.min(q.durationSeconds, (q.elapsedSeconds || 0) + bonusSeconds);
+            if (q.elapsedSeconds >= q.durationSeconds) {
+                q.elapsedSeconds = q.durationSeconds;
+                q.completed = true;
+                q.inProgress = false;
+                if (typeof addLog === 'function') {
+                    addLog(`⚡ <span class="text-emerald-400 font-bold">[Nhiệm Vụ Tông Môn]</span> Nhờ <strong>${reason}</strong>, nhiệm vụ "${q.name}" đã hoàn tất! Mau tới Nhiệm Vụ Đường lĩnh thưởng!`, "text-emerald-300 font-bold", "sect-quest-ready");
+                }
+            }
+        }
+    }
+
+    if (anyUpdated) {
+        s.sectQuest = activeQuests[0] || null;
+        if (typeof updateSectLiveUI === 'function') updateSectLiveUI();
+    }
+}
+window.progressSectQuest = progressSectQuest;
+globalThis.progressSectQuest = progressSectQuest;
+
 function renderSectQuestsTabHtml() {
     const currentRank = state.sectRank || 0;
-    const activeQuest = state.sectQuest;
-    const quests = SECT_QUESTS;
+    const activeQuests = ensureSectActiveQuests(state);
+    const quests = (typeof DEFAULT_SECT_QUESTS !== 'undefined' && DEFAULT_SECT_QUESTS.length) ? DEFAULT_SECT_QUESTS : (typeof SECT_QUESTS !== 'undefined' ? SECT_QUESTS : []);
+
+    const now = Date.now();
+    const lastRefresh = state.lastSectQuestRefreshTime || now;
+    const remRefreshSec = Math.max(0, Math.ceil((180000 - (now - lastRefresh)) / 1000));
+    const remM = Math.floor(remRefreshSec / 60);
+    const remS = remRefreshSec % 60;
 
     return `
         <div class="space-y-4">
-            <!-- ACTIVE QUEST DISPLAY (NẾU ĐANG LÀM HOẶC ĐÃ HOÀN THÀNH) -->
-            ${activeQuest ? `
-                <div class="p-4 rounded-xl ${activeQuest.completed ? 'bg-emerald-950/40 border-emerald-500/60' : 'bg-slate-900/90 border-amber-500/50'} border shadow-lg space-y-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-8 h-8 rounded-lg ${activeQuest.completed ? 'bg-emerald-900/80 text-emerald-300' : 'bg-amber-950 text-amber-300'} flex items-center justify-center">
-                                <i class="fa-solid ${activeQuest.completed ? 'fa-check' : 'fa-hourglass-half animate-spin-slow'}"></i>
-                            </span>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-100">${activeQuest.name}</h4>
-                                <span class="text-[10px] text-stone-400">
-                                    Thù lao: +${activeQuest.rewardContribution} Cống Hiến, +${activeQuest.rewardStones} Linh Thạch
-                                </span>
+            <!-- HEADER TOOLBAR -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-800">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 text-sm"><i class="fa-solid fa-scroll"></i></span>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200 tracking-wider uppercase">Bảng Vàng Nhiệm Vụ Môn Phái</h4>
+                        <span class="text-[10px] font-mono text-stone-400 block">Đang tiếp nhận: <b class="text-amber-300">${activeQuests.length} / 3 nhiệm vụ</b> • Làm mới sau: <b class="text-amber-400">${remM}:${remS < 10 ? '0' : ''}${remS}</b></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${remRefreshSec <= 0 ? `
+                        <button type="button" onclick="refreshSectQuests(false)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-200 border border-emerald-500/40 text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-sm">
+                            <i class="fa-solid fa-arrows-rotate"></i> Làm Mới (Miễn Phí)
+                        </button>
+                    ` : ''}
+                    <button type="button" onclick="refreshSectQuests(true)" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-bolt"></i> Làm Mới (50 LT)
+                    </button>
+                </div>
+            </div>
+
+            <!-- ACTIVE QUESTS DISPLAY (TỐI ĐA 3 NHIỆM VỤ TIẾP NHẬN ĐỒNG THỜI) -->
+            ${activeQuests.length > 0 ? `
+                <div class="space-y-2.5">
+                    <div class="text-[11px] font-bold text-amber-300/90 flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-check"></i> Nhiệm Vụ Đang Thực Thi (${activeQuests.length}/3):
+                    </div>
+                    ${activeQuests.map(q => `
+                        <div class="p-3.5 rounded-xl ${q.completed ? 'bg-emerald-950/40 border-emerald-500/60' : 'bg-slate-900/90 border-amber-500/50'} border shadow-md space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-7 h-7 rounded-lg ${q.completed ? 'bg-emerald-900/80 text-emerald-300' : 'bg-amber-950 text-amber-300'} flex items-center justify-center text-xs">
+                                        <i class="fa-solid ${q.completed ? 'fa-check' : 'fa-hourglass-half animate-spin-slow'}"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-100">${q.name}</h4>
+                                        <span class="text-[10px] text-stone-400">
+                                            Thù lao: +${q.rewardContribution} Cống Hiến, +${q.rewardStones} Linh Thạch
+                                        </span>
+                                    </div>
+                                </div>
+
+                                ${q.completed ? `
+                                    <button onclick="claimSectQuestReward('${q.id}')" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/30 hover:bg-emerald-500/50 text-emerald-200 border border-emerald-400 font-bold text-xs animate-bounce shadow-md cursor-pointer flex items-center gap-1">
+                                        <i class="fa-solid fa-gift"></i> Lĩnh Thưởng
+                                    </button>
+                                ` : `
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-mono font-bold text-amber-300 px-2 py-0.5 rounded-lg bg-slate-950 border border-amber-500/30">
+                                            ${formatDuration(Math.max(0, q.durationSeconds - (q.elapsedSeconds || 0)))}
+                                        </span>
+                                        <button onclick="cancelSectQuest('${q.id}')" class="text-[11px] text-stone-500 hover:text-rose-400 px-1.5 py-0.5 rounded transition cursor-pointer" title="Hủy nhiệm vụ">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                `}
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-300" style="width: ${Math.min(100, Math.round(((q.elapsedSeconds || 0) / q.durationSeconds) * 100))}%"></div>
                             </div>
                         </div>
-
-                        ${activeQuest.completed ? `
-                            <button onclick="claimSectQuestReward()" class="px-4 py-2 rounded-xl bg-emerald-500/30 hover:bg-emerald-500/50 text-emerald-200 border border-emerald-400 font-bold text-xs animate-bounce shadow-md">
-                                <i class="fa-solid fa-gift mr-1"></i> Lĩnh Thưởng
-                            </button>
-                        ` : `
-                            <div class="flex items-center gap-2">
-                                <span id="sect-active-countdown" class="text-xs font-mono font-bold text-amber-300 px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30">
-                                    ${formatDuration(Math.max(0, activeQuest.durationSeconds - (activeQuest.elapsedSeconds || 0)))}
-                                </span>
-                                <button onclick="cancelSectQuest()" class="text-[11px] text-stone-500 hover:text-rose-400 px-2 py-1 rounded transition" title="Hủy nhiệm vụ">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        `}
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
-                        <div id="sect-active-progress" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-300" style="width: ${Math.min(100, Math.round(((activeQuest.elapsedSeconds || 0) / activeQuest.durationSeconds) * 100))}%"></div>
-                    </div>
+                    `).join('')}
                 </div>
             ` : ''}
 
@@ -584,9 +808,10 @@ function renderSectQuestsTabHtml() {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 ${quests.map(q => {
                     const isRankEnough = currentRank >= q.minRank;
-                    const reqRankCfg = SECT_RANKS[q.minRank];
+                    const reqRankCfg = SECT_RANKS[q.minRank] || { name: 'Môn Phái' };
                     const isMpEnough = (state.mp || 0) >= q.mpCost;
-                    const isBusy = Boolean(activeQuest);
+                    const isAlreadyAccepted = activeQuests.some(aq => aq && aq.id === q.id);
+                    const isMaxQuests = activeQuests.length >= 3;
 
                     return `
                         <div class="p-3.5 rounded-xl bg-slate-900/70 border border-stone-800 flex flex-col justify-between gap-3 hover:border-stone-700 transition">
@@ -615,16 +840,20 @@ function renderSectQuestsTabHtml() {
                                     <button disabled class="w-full py-1.5 rounded-lg bg-stone-900 text-stone-500 border border-stone-800 text-[11px] font-semibold cursor-not-allowed">
                                         Yêu cầu ${reqRankCfg.name}
                                     </button>
-                                ` : isBusy ? `
+                                ` : isAlreadyAccepted ? `
+                                    <button disabled class="w-full py-1.5 rounded-lg bg-emerald-950/40 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold cursor-default">
+                                        ✓ Đang Thực Thi
+                                    </button>
+                                ` : isMaxQuests ? `
                                     <button disabled class="w-full py-1.5 rounded-lg bg-stone-900 text-stone-500 border border-stone-800 text-[11px] font-semibold cursor-not-allowed">
-                                        Đang có nhiệm vụ treo máy
+                                        Đã nhận tối đa 3 nhiệm vụ
                                     </button>
                                 ` : !isMpEnough ? `
                                     <button disabled class="w-full py-1.5 rounded-lg bg-stone-900 text-rose-400/70 border border-rose-900/50 text-[11px] font-semibold cursor-not-allowed">
                                         Thiếu Linh Lực (${state.mp || 0}/${q.mpCost})
                                     </button>
                                 ` : `
-                                    <button onclick="startSectQuest('${q.id}')" class="w-full py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-500/40 text-[11px] font-bold transition shadow-sm">
+                                    <button onclick="startSectQuest('${q.id}')" class="w-full py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-500/40 text-[11px] font-bold transition shadow-sm cursor-pointer">
                                         Tiến Hành Nhiệm Vụ
                                     </button>
                                 `}
@@ -638,12 +867,21 @@ function renderSectQuestsTabHtml() {
 }
 
 function startSectQuest(questId) {
-    if (state.sectQuest) {
-        if (typeof addLog === 'function') addLog("Đạo hữu đang thực thi một nhiệm vụ khác, hãy hoàn thành trước!", "text-stone-400");
+    const activeQuests = ensureSectActiveQuests(state);
+    if (activeQuests.length >= 3) {
+        const msg = "Đạo hữu đã tiếp nhận tối đa 3 nhiệm vụ cùng lúc, hãy hoàn thành trước!";
+        if (typeof addLog === 'function') addLog(msg, "text-stone-400");
+        if (typeof window.showGameToast === 'function') window.showGameToast(msg, "warning");
         return;
     }
 
-    const quest = SECT_QUESTS.find(q => q.id === questId);
+    if (activeQuests.some(q => q && q.id === questId)) {
+        if (typeof addLog === 'function') addLog("Nhiệm vụ này đang được thực thi!", "text-stone-400");
+        return;
+    }
+
+    const questPool = (typeof DEFAULT_SECT_QUESTS !== 'undefined' && Array.isArray(DEFAULT_SECT_QUESTS)) ? DEFAULT_SECT_QUESTS : (typeof SECT_QUESTS !== 'undefined' ? SECT_QUESTS : []);
+    const quest = questPool.find(q => q.id === questId) || (typeof SECT_QUESTS !== 'undefined' ? SECT_QUESTS.find(q => q.id === questId) : null);
     if (!quest) return;
 
     if ((state.sectRank || 0) < quest.minRank) {
@@ -658,8 +896,9 @@ function startSectQuest(questId) {
 
     // Tiêu hao MP
     state.mp -= quest.mpCost;
+    if (window.GameState) window.GameState.mp = state.mp;
 
-    state.sectQuest = {
+    const newQuest = {
         id: quest.id,
         name: quest.name,
         startTime: Date.now(),
@@ -673,20 +912,29 @@ function startSectQuest(questId) {
         completed: false
     };
 
+    activeQuests.push(newQuest);
+    state.sectQuest = activeQuests[0] || newQuest;
+
     if (typeof playSound === 'function') playSound('sword');
     if (typeof addLog === 'function') {
-        addLog(`📜 <span class="text-sky-300 font-bold">[Tông Môn]</span> Tiếp nhận nhiệm vụ <strong>"${quest.name}"</strong>, bắt đầu thực thi!`, "text-sky-300", "sect-quest");
+        addLog(`📜 <span class="text-sky-300 font-bold">[Tông Môn]</span> Tiếp nhận nhiệm vụ <strong>"${quest.name}"</strong> (${activeQuests.length}/3), bắt đầu thực thi!`, "text-sky-300", "sect-quest");
     }
 
     if (typeof saveGameState === 'function') saveGameState();
     if (typeof updateHUD === 'function') updateHUD();
 
-    renderSectModal();
+    if (document.getElementById('page-sect-quests')?.classList.contains('active')) {
+        renderSectPage('quests', document.getElementById('sect-quests-page-content'));
+    } else {
+        renderSectModal();
+    }
 }
 
-function claimSectQuestReward() {
-    const q = state.sectQuest;
-    if (!q || !q.completed) return;
+function claimSectQuestReward(questId) {
+    const activeQuests = ensureSectActiveQuests(state);
+    const targetIdx = questId ? activeQuests.findIndex(q => q && q.id === questId && q.completed) : activeQuests.findIndex(q => q && q.completed);
+    if (targetIdx === -1) return;
+    const q = activeQuests[targetIdx];
 
     const contribGained = q.rewardContribution;
     let stonesGained = q.rewardStones;
@@ -699,13 +947,22 @@ function claimSectQuestReward() {
     state.stones = (state.stones || 0) + stonesGained;
     if (typeof addExp === 'function') addExp(expGained);
 
+    // Đồng bộ GameState
+    if (window.GameState) {
+        window.GameState.sectPoints = (Number(window.GameState.sectPoints) || 0) + contribGained;
+        window.GameState.sectContribution = window.GameState.sectPoints;
+        window.GameState.stones = (Number(window.GameState.stones) || 0) + stonesGained;
+        window.GameState.spiritStones = window.GameState.stones;
+    }
+
     // Phần thưởng vật phẩm nếu có
-    if (q.rewardItem && Array.isArray(state.inventory)) {
-        const existing = state.inventory.find(i => i.id === q.rewardItem.id);
+    if (q.rewardItem) {
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : state.inventory;
+        const existing = inv.find(i => i && i.id === q.rewardItem.id);
         if (existing) {
             existing.count = (existing.count || 0) + q.rewardItem.count;
         } else {
-            state.inventory.push({
+            inv.push({
                 id: q.rewardItem.id,
                 name: q.rewardItem.name,
                 type: "Nguyên Liệu",
@@ -715,46 +972,130 @@ function claimSectQuestReward() {
                 icon: "fa-box-open"
             });
         }
+        if (state.inventory !== inv) state.inventory = inv;
     }
 
-    state.sectQuest = null;
+    // Xóa khỏi danh sách active
+    activeQuests.splice(targetIdx, 1);
+    state.sectQuest = activeQuests[0] || null;
+
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
+    if (typeof saveGameState === 'function') saveGameState();
+    if (typeof updateHUD === 'function') updateHUD();
 
     if (typeof playSound === 'function') playSound('breakthrough');
     if (typeof addLog === 'function') {
         addLog(`🎁 <span class="text-emerald-400 font-bold">[Nhiệm Vụ Hoàn Thành]</span> Nhận: <strong>+${contribGained} Cống Hiến</strong>, <strong>+${stonesGained} Linh Thạch</strong>, <strong>+${expGained} Tu Vi</strong>!`, "text-emerald-300 font-bold", "sect-quest-done");
     }
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(`🎁 Hoàn thành: +${contribGained} Cống Hiến, +${stonesGained} Linh Thạch!`, 'success');
+    }
 
-    if (typeof saveGameState === 'function') saveGameState();
-    if (typeof updateHUD === 'function') updateHUD();
-
-    renderSectModal();
-}
-
-function cancelSectQuest() {
-    if (!state.sectQuest) return;
-
-    if (confirm("Đạo hữu có chắc chắn muốn hủy nhiệm vụ này? Linh lực đã tiêu hao sẽ không được hoàn trả.")) {
-        state.sectQuest = null;
-        if (typeof saveGameState === 'function') saveGameState();
+    if (document.getElementById('page-sect-quests')?.classList.contains('active')) {
+        renderSectPage('quests', document.getElementById('sect-quests-page-content'));
+    } else {
         renderSectModal();
     }
 }
 
+function cancelSectQuest(questId) {
+    const activeQuests = ensureSectActiveQuests(state);
+    const targetIdx = questId ? activeQuests.findIndex(q => q && q.id === questId) : 0;
+    if (targetIdx === -1 || !activeQuests[targetIdx]) return;
+
+    if (confirm("Đạo hữu có chắc chắn muốn hủy nhiệm vụ này? Linh lực đã tiêu hao sẽ không được hoàn trả.")) {
+        activeQuests.splice(targetIdx, 1);
+        state.sectQuest = activeQuests[0] || null;
+        if (typeof saveGameState === 'function') saveGameState();
+        if (document.getElementById('page-sect-quests')?.classList.contains('active')) {
+            renderSectPage('quests', document.getElementById('sect-quests-page-content'));
+        } else {
+            renderSectModal();
+        }
+    }
+}
+
 // 8. TAB 2: TÀNG KINH CÁC (SECT SHOP)
+const SECT_RECIPE_CAULDRON_ITEMS = [
+    {
+        id: "recipe_truc_co_dan",
+        sectId: "all",
+        name: "Đan Phương: Trúc Cơ Đan",
+        type: "Đan Phương",
+        category: "dan_phuong",
+        tier: "linh",
+        minRank: 1,
+        price: 300,
+        icon: "fa-scroll",
+        image: "./assets/images/item_bamboo_scroll.jpg",
+        desc: "Phương thuốc chuẩn mực của môn phái luyện chế Trúc Cơ Đan tăng tỷ lệ phá cảnh.",
+        effect: "Mở khóa công thức luyện Trúc Cơ Đan trong Luyện Đan Phòng"
+    },
+    {
+        id: "recipe_tay_tuy_dan",
+        sectId: "all",
+        name: "Đan Phương: Tẩy Tủy Đan",
+        type: "Đan Phương",
+        category: "dan_phuong",
+        tier: "huyen",
+        minRank: 2,
+        price: 600,
+        icon: "fa-scroll",
+        image: "./assets/images/item_bamboo_scroll.jpg",
+        desc: "Bí pháp phối hợp dược thảo tẩy trần tạp chất, vững bền căn cốt.",
+        effect: "Mở khóa công thức luyện Tẩy Tủy Đan trong Luyện Đan Phòng"
+    },
+    {
+        id: "cauldron_bat_quai",
+        sectId: "all",
+        name: "Bát Quái Huyền Thiết Lò",
+        type: "Lò Đan",
+        category: "lo_dan",
+        tier: "dia",
+        minRank: 2,
+        price: 1000,
+        icon: "fa-fire-burner",
+        image: "./assets/images/item_dan_pot_tier1.jpg",
+        desc: "Lò luyện đan đúc từ Huyền Thiết ngàn năm, tương trợ hỏa hầu đan đạo.",
+        effect: "+25% Tỷ lệ thành đan, +15% Xác suất đan dược cực phẩm"
+    },
+    {
+        id: "cauldron_cuu_long",
+        sectId: "all",
+        name: "Cửu Long Ly Hỏa Đỉnh",
+        type: "Lò Đan",
+        category: "lo_dan",
+        tier: "thien",
+        minRank: 3,
+        price: 2500,
+        icon: "fa-fire-burner",
+        image: "./assets/images/item_dan_pot_tier2.jpg",
+        desc: "Đỉnh lô thượng cổ khắc cửu long, dẫn chân hỏa ngưng tụ cực phẩm linh đan.",
+        effect: "+50% Tỷ lệ thành đan, +35% Tỷ lệ dị biến đan văn"
+    }
+];
+
 function renderSectShopTabHtml() {
     const currentRank = state.sectRank || 0;
     const currentContrib = state.sectContribution || 0;
     const purchased = Array.isArray(state.sectPurchasedSkills) ? state.sectPurchasedSkills : [];
     const playerSectId = state.playerSect;
 
+    // Hợp nhất item kho bí tịch + đan phương + lò đan
+    let allPool = (typeof SECT_SHOP_ITEMS !== 'undefined' && Array.isArray(SECT_SHOP_ITEMS)) ? [...SECT_SHOP_ITEMS] : [];
+    SECT_RECIPE_CAULDRON_ITEMS.forEach(r => {
+        if (!allPool.some(item => item.id === r.id)) allPool.push(r);
+    });
+
     // Lọc vật phẩm cho môn phái hiện tại + vật phẩm chung
-    const items = SECT_SHOP_ITEMS.filter(it => it.sectId === playerSectId || it.sectId === 'all');
+    const items = allPool.filter(it => it.sectId === playerSectId || it.sectId === 'all');
 
     return `
         <div class="space-y-3">
-            <div class="flex items-center justify-between text-xs text-stone-400 pb-1">
-                <span>Tàng Kinh Các độc quyền: Chỉ đổi bằng Điểm Cống Hiến môn phái.</span>
-                <span class="text-amber-300 font-bold">Cống Hiến: ${currentContrib.toLocaleString('vi-VN')}</span>
+            <div class="flex items-center justify-between text-xs text-stone-400 pb-1 border-b border-stone-800">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-book-bookmark text-amber-400"></i> Tàng Kinh Các: Bí tịch, Đan phương & Lò đan độc quyền</span>
+                <span class="text-amber-300 font-bold font-mono">Cống Hiến: ${currentContrib.toLocaleString('vi-VN')}</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -762,11 +1103,15 @@ function renderSectShopTabHtml() {
                     const isSkill = item.type === 'Tâm Pháp' || item.type === 'Vũ Kỹ';
                     const isBought = isSkill && purchased.includes(item.id);
                     const isRankEnough = currentRank >= item.minRank;
-                    const reqRankCfg = SECT_RANKS[item.minRank];
+                    const reqRankCfg = SECT_RANKS[item.minRank] || { name: 'Môn Phái' };
                     const isContribEnough = currentContrib >= item.price;
+                    const tierBorder = item.tier === 'thien' ? 'border-amber-400/80 shadow-[0_0_8px_rgba(245,158,11,0.3)]' :
+                                       item.tier === 'dia' ? 'border-purple-500/70 shadow-[0_0_6px_rgba(168,85,247,0.25)]' :
+                                       item.tier === 'huyen' ? 'border-sky-500/60' :
+                                       item.tier === 'linh' ? 'border-emerald-500/60' : 'border-stone-700';
 
                     return `
-                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-stone-800 flex flex-col justify-between gap-2.5 hover:border-stone-700 transition">
+                        <div class="p-3.5 rounded-xl bg-slate-900/70 border ${tierBorder} flex flex-col justify-between gap-2.5 hover:border-amber-400/60 transition">
                             <div class="space-y-1">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2.5">
@@ -775,7 +1120,7 @@ function renderSectShopTabHtml() {
                                         </div>
                                         <div>
                                             <h5 class="text-xs font-bold text-slate-100">${item.name}</h5>
-                                            <span class="text-[9.5px] text-amber-400/80 font-mono">${item.category === 'tam_phap' ? '📜 Tâm Pháp' : item.category === 'vu_ky' ? '🗡️ Vũ Kỹ' : '💊 Đan Dược'}</span>
+                                            <span class="text-[9.5px] text-amber-400/80 font-mono">${item.category === 'tam_phap' ? '📜 Tâm Pháp' : item.category === 'vu_ky' ? '🗡️ Vũ Kỹ' : item.category === 'dan_phuong' ? '📜 Đan Phương' : item.category === 'lo_dan' ? '🔥 Lò Đan' : '💊 Đan Dược'}</span>
                                         </div>
                                     </div>
                                     <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-950 text-amber-300 border border-stone-800">
@@ -788,7 +1133,7 @@ function renderSectShopTabHtml() {
 
                             <div class="flex items-center justify-between pt-1 border-t border-stone-800/80">
                                 <span class="text-xs font-mono font-bold text-amber-300">
-                                    <i class="fa-solid fa-award text-amber-400 mr-1"></i>${item.price} Điểm
+                                    <i class="fa-solid fa-award text-amber-400 mr-1"></i>${item.price.toLocaleString('vi-VN')} Điểm
                                 </span>
 
                                 <div>
@@ -805,8 +1150,8 @@ function renderSectShopTabHtml() {
                                             Thiếu Cống Hiến
                                         </button>
                                     ` : `
-                                        <button onclick="buySectShopItem('${item.id}')" class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-500/50 text-[11px] font-bold transition shadow-sm">
-                                            Đổi Bí Tịch
+                                        <button onclick="buySectShopItem('${item.id}')" class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-500/50 text-[11px] font-bold transition shadow-sm cursor-pointer">
+                                            Đổi Ngay
                                         </button>
                                     `}
                                 </div>
@@ -820,31 +1165,58 @@ function renderSectShopTabHtml() {
 }
 
 function buySectShopItem(itemId) {
-    const item = SECT_SHOP_ITEMS.find(it => it.id === itemId);
+    let allPool = (typeof SECT_SHOP_ITEMS !== 'undefined' && Array.isArray(SECT_SHOP_ITEMS)) ? [...SECT_SHOP_ITEMS] : [];
+    if (typeof SECT_RECIPE_CAULDRON_ITEMS !== 'undefined' && Array.isArray(SECT_RECIPE_CAULDRON_ITEMS)) {
+        SECT_RECIPE_CAULDRON_ITEMS.forEach(r => {
+            if (!allPool.some(item => item.id === r.id)) allPool.push(r);
+        });
+    }
+    const item = allPool.find(it => it.id === itemId);
     if (!item) return;
 
-    if ((state.sectRank || 0) < item.minRank) {
-        if (typeof addLog === 'function') addLog("Thân phận chưa đủ để đổi vật phẩm này!", "text-rose-400");
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : {});
+    const curRank = Number(s.sectRank ?? (typeof state !== 'undefined' ? state.sectRank : 0)) || 0;
+    if (curRank < item.minRank) {
+        const msg = "Thân phận chưa đủ để đổi vật phẩm này!";
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, "warning");
+        else if (typeof addLog === 'function') addLog(msg, "text-rose-400");
         return;
     }
 
-    if ((state.sectContribution || 0) < item.price) {
-        if (typeof addLog === 'function') addLog("Điểm cống hiến không đủ!", "text-rose-400");
+    const curContrib = Number(s.sectPoints ?? s.sectContribution ?? (typeof state !== 'undefined' ? state.sectContribution : 0)) || 0;
+    if (curContrib < item.price) {
+        const msg = "Điểm cống hiến môn phái không đủ!";
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, "warning");
+        else if (typeof addLog === 'function') addLog(msg, "text-rose-400");
         return;
     }
 
-    if (!Array.isArray(state.sectPurchasedSkills)) state.sectPurchasedSkills = [];
+    const purchasedSkills = s.sectPurchasedSkills || (typeof state !== 'undefined' ? state.sectPurchasedSkills : []) || [];
     const isSkill = item.type === 'Tâm Pháp' || item.type === 'Vũ Kỹ';
-    if (isSkill && state.sectPurchasedSkills.includes(item.id)) {
-        if (typeof addLog === 'function') addLog("Đạo hữu đã lĩnh ngộ bí kíp này rồi!", "text-amber-300");
+    if (isSkill && purchasedSkills.includes(item.id)) {
+        const msg = "Đạo hữu đã lĩnh ngộ bí kíp này rồi!";
+        if (typeof window.showGameToast === 'function') window.showGameToast(`ℹ️ ${msg}`, "info");
+        else if (typeof addLog === 'function') addLog(msg, "text-amber-300");
         return;
     }
 
     // Trừ cống hiến an toàn
-    state.sectContribution = Math.max(0, (state.sectContribution || 0) - item.price);
+    const newContrib = Math.max(0, curContrib - item.price);
+    if (typeof state !== 'undefined') {
+        state.sectContribution = newContrib;
+        if (!Array.isArray(state.sectPurchasedSkills)) state.sectPurchasedSkills = [];
+    }
+    if (window.GameState) {
+        window.GameState.sectPoints = newContrib;
+        window.GameState.sectContribution = newContrib;
+    }
 
     if (isSkill) {
         state.sectPurchasedSkills.push(item.id);
+        if (window.GameState) {
+            if (!Array.isArray(window.GameState.sectPurchasedSkills)) window.GameState.sectPurchasedSkills = [];
+            if (!window.GameState.sectPurchasedSkills.includes(item.id)) window.GameState.sectPurchasedSkills.push(item.id);
+        }
 
         // Đăng ký vào SKILLS_DATA nếu chưa có
         if (typeof SKILLS_DATA !== 'undefined' && Array.isArray(SKILLS_DATA) && !SKILLS_DATA.some(s => s.id === item.id)) {
@@ -866,64 +1238,105 @@ function buySectShopItem(itemId) {
         if (!state.learnedSkills.some(s => s.id === item.id)) {
             state.learnedSkills.push({ id: item.id, level: 1 });
         }
+        if (window.GameState) {
+            if (!Array.isArray(window.GameState.learnedSkills)) window.GameState.learnedSkills = [];
+            if (!window.GameState.learnedSkills.some(s => s.id === item.id)) {
+                window.GameState.learnedSkills.push({ id: item.id, level: 1 });
+            }
+        }
 
         if (typeof playSound === 'function') playSound('breakthrough');
-        if (typeof addLog === 'function') {
-            addLog(`📖 <span class="text-amber-300 font-bold">[Tàng Kinh Các]</span> Đạo hữu dùng ${item.price} Cống Hiến đổi được và lập tức lĩnh ngộ: <strong>${item.name}</strong>!`, "text-amber-300 font-bold", "sect-buy-skill");
-        }
+        const logMsg = `📖 <span class="text-amber-300 font-bold">[Tàng Kinh Các]</span> Đạo hữu dùng ${item.price} Cống Hiến đổi được và lập tức lĩnh ngộ: <strong>${item.name}</strong>!`;
+        if (typeof addLog === 'function') addLog(logMsg, "text-amber-300 font-bold", "sect-buy-skill");
+        if (typeof window.showGameToast === 'function') window.showGameToast(`📖 Lĩnh ngộ thành công: ${item.name}!`, "success");
     } else {
-        // Đan Dược
+        // Đan Phương / Lò Đan / Đan Dược
         if (item.action === 'gain_exp_1000') {
             if (typeof addExp === 'function') addExp(1000);
             if (typeof playSound === 'function') playSound('qi');
-            if (typeof addLog === 'function') {
-                addLog(`💊 <span class="text-emerald-400 font-bold">[Tông Môn Đan Dược]</span> Phục dụng <strong>${item.name}</strong>, gân cốt thông suốt, nhận ngay <strong>+1,000 Tu Vi</strong>!`, "text-emerald-300 font-bold", "sect-use-pill");
-            }
+            const logMsg = `💊 <span class="text-emerald-400 font-bold">[Tông Môn Đan Dược]</span> Phục dụng <strong>${item.name}</strong>, gân cốt thông suốt, nhận ngay <strong>+1,000 Tu Vi</strong>!`;
+            if (typeof addLog === 'function') addLog(logMsg, "text-emerald-300 font-bold", "sect-use-pill");
+            if (typeof window.showGameToast === 'function') window.showGameToast(`💊 Phục dụng ${item.name} (+1.000 Tu Vi)!`, "success");
         } else if (item.action === 'clear_tam_ma_10' || item.id === 'pill_thanh_tam') {
             state.daoTam = Math.min(100, (state.daoTam != null ? state.daoTam : 100) + 10);
             state.tamMa = Math.max(0, 100 - state.daoTam);
-            if (typeof playSound === 'function') playSound('bell');
-            if (typeof addLog === 'function') {
-                addLog(`🌿 <span class="text-teal-300 font-bold">[Thanh Tâm Đan]</span> Dược lực thanh tịnh tan vào thần hồn, tiêu trừ 10 Tâm Ma, Đạo Tâm tăng lên (${state.daoTam}/100)!`, "text-teal-300 font-bold", "sect-use-pill");
+            if (window.GameState) {
+                window.GameState.daoTam = state.daoTam;
+                window.GameState.tamMa = state.tamMa;
             }
+            if (typeof playSound === 'function') playSound('bell');
+            const logMsg = `🌿 <span class="text-teal-300 font-bold">[Thanh Tâm Đan]</span> Dược lực thanh tịnh tan vào thần hồn, tiêu trừ 10 Tâm Ma, Đạo Tâm tăng lên (${state.daoTam}/100)!`;
+            if (typeof addLog === 'function') addLog(logMsg, "text-teal-300 font-bold", "sect-use-pill");
+            if (typeof window.showGameToast === 'function') window.showGameToast(`🌿 Tiêu trừ 10 Tâm Ma, Đạo Tâm đạt ${state.daoTam}!`, "success");
         } else if (item.action === 'gain_perm_stats') {
             if (!state.permPillStats) state.permPillStats = { hp: 0, atk: 0, def: 0 };
             const hpGain = Number(item.stats?.hp) || 0;
             const atkGain = Number(item.stats?.atk) || 0;
             state.permPillStats.hp = (state.permPillStats.hp || 0) + hpGain;
             state.permPillStats.atk = (state.permPillStats.atk || 0) + atkGain;
-            if (typeof playSound === 'function') playSound('bell');
-            if (typeof addLog === 'function') {
-                addLog(`✨ <span class="text-amber-300 font-bold">[Thái Ất Tẩy Tủy]</span> Phục dụng <strong>${item.name}</strong>, gân cốt biến dị vô song, vĩnh viễn tăng <strong>+${hpGain} Khí Huyết</strong> và <strong>+${atkGain} Công Kích</strong>!`, "text-gold-300 font-bold", "sect-use-pill");
+            if (window.GameState) {
+                window.GameState.permPillStats = state.permPillStats;
             }
+            if (typeof playSound === 'function') playSound('bell');
+            const logMsg = `✨ <span class="text-amber-300 font-bold">[Thái Ất Tẩy Tủy]</span> Phục dụng <strong>${item.name}</strong>, gân cốt biến dị vô song, vĩnh viễn tăng <strong>+${hpGain} Khí Huyết</strong> và <strong>+${atkGain} Công Kích</strong>!`;
+            if (typeof addLog === 'function') addLog(logMsg, "text-gold-300 font-bold", "sect-use-pill");
+            if (typeof window.showGameToast === 'function') window.showGameToast(`✨ Tăng vĩnh viễn +${hpGain} Máu, +${atkGain} Công Kích!`, "success");
         } else {
-            // Thêm vào inventory
-            if (Array.isArray(state.inventory)) {
-                const existing = state.inventory.find(i => i.id === item.id);
+            // Thêm vào inventory (Đan Dược / Đan Phương / Lò Đan)
+            const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : state.inventory;
+            if (Array.isArray(inv)) {
+                const existing = inv.find(i => i && i.id === item.id);
                 if (existing) {
                     existing.count = (existing.count || 0) + 1;
+                    existing.quantity = existing.count;
                 } else {
-                    state.inventory.push({
+                    inv.push({
                         id: item.id,
                         name: item.name,
-                        type: "Đan Dược",
+                        type: item.type,
                         count: 1,
-                        rarity: item.tier === 'huyen' ? 4 : 3,
+                        quantity: 1,
+                        rarity: item.tier === 'thien' ? 5 : item.tier === 'dia' ? 4 : item.tier === 'huyen' ? 3 : 2,
                         desc: item.desc,
-                        icon: "fa-pills"
+                        icon: item.icon || (item.category === 'dan_phuong' ? "fa-scroll" : "fa-box")
                     });
                 }
+                if (state.inventory !== inv) state.inventory = inv;
+                if (window.GameState) window.GameState.inventory = inv;
+            }
+            if (item.category === 'dan_phuong') {
+                if (!Array.isArray(state.unlockedRecipes)) state.unlockedRecipes = [];
+                if (!state.unlockedRecipes.includes(item.id)) state.unlockedRecipes.push(item.id);
+                if (window.GameState) {
+                    if (!Array.isArray(window.GameState.unlockedRecipes)) window.GameState.unlockedRecipes = [];
+                    if (!window.GameState.unlockedRecipes.includes(item.id)) window.GameState.unlockedRecipes.push(item.id);
+                }
+                if (typeof window.syncMaterialsFromInventory === 'function') window.syncMaterialsFromInventory();
+                if (typeof window.updateAlchemyUI === 'function') window.updateAlchemyUI();
             }
             if (typeof addLog === 'function') {
-                addLog(`💊 <span class="text-emerald-400 font-bold">[Tông Môn]</span> Đổi thành công <strong>${item.name}</strong> cất vào Túi Trữ Vật!`, "text-emerald-300 font-bold", "sect-buy-pill");
+                addLog(`🎁 <span class="text-emerald-400 font-bold">[Tông Môn]</span> Dùng ${item.price} Cống Hiến đổi thành công <strong>${item.name}</strong> (${item.type}) cất vào Túi Trữ Vật!`, "text-emerald-300 font-bold", "sect-buy-item");
             }
+            if (typeof window.showGameToast === 'function') window.showGameToast(`🎁 Đã đổi thành công: ${item.name}!`, "success");
         }
     }
+
+    if (window.GameState) {
+        window.GameState.sectContribution = state.sectContribution;
+        if (state.inventory) window.GameState.inventory = state.inventory;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
 
     if (typeof saveGameState === 'function') saveGameState();
     if (typeof updateHUD === 'function') updateHUD();
 
-    renderSectModal();
+    if (document.getElementById('page-sect-shop')?.classList.contains('active')) {
+        renderSectPage('shop', document.getElementById('sect-shop-page-content'));
+    } else {
+        renderSectModal();
+    }
 }
 
 // 9. TAB 3: CHẤP SỰ ĐIỆN (THĂNG CẤP THÂN PHẬN)
@@ -947,8 +1360,8 @@ function renderSectRankTabHtml() {
 
     return `
         <div class="space-y-4">
-            <!-- THÂN PHẬN HIỆN TẠI -->
-            <div class="p-4 rounded-xl bg-slate-900/80 border border-stone-800 flex items-center justify-between">
+            <!-- THÂN PHẬN HIỆN TẠI & BỔNG LỘC HÀNG NGÀY -->
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
                 <div>
                     <span class="text-[10px] text-stone-400 uppercase tracking-wider block">Thân Phận Hiện Tại</span>
                     <h4 class="text-sm font-bold text-amber-300 flex items-center gap-2 mt-0.5">
@@ -957,9 +1370,14 @@ function renderSectRankTabHtml() {
                     </h4>
                     <p class="text-[11px] text-stone-400 mt-1">Đặc quyền: ${currentRankCfg.privilege}</p>
                 </div>
-                <div class="text-right">
-                    <span class="text-[10px] text-stone-400 block">Bổng lộc ngày</span>
-                    <span class="text-xs font-mono font-bold text-emerald-400">+${currentRankCfg.dailyStones} Đá / +${currentRankCfg.dailyContribution} Điểm</span>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <span class="text-[10px] text-stone-400 block">Bổng lộc ngày</span>
+                        <span class="text-xs font-mono font-bold text-emerald-400">+${currentRankCfg.dailyStones} Đá / +${currentRankCfg.dailyContribution} Điểm</span>
+                    </div>
+                    <button type="button" onclick="claimSectHomage()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-gift"></i> Nhận Bổng Lộc Ngày
+                    </button>
                 </div>
             </div>
 
@@ -1022,27 +1440,45 @@ function renderSectRankTabHtml() {
 }
 
 function advanceSectRank() {
-    const currentRankIdx = state.sectRank || 0;
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : {});
+    const currentRankIdx = Number(s.sectRank ?? (typeof state !== 'undefined' ? state.sectRank : 0)) || 0;
     if (currentRankIdx >= SECT_RANKS.length - 1) return;
 
     const nextRankCfg = SECT_RANKS[currentRankIdx + 1];
-    const playerRealmIdx = state.realmIndex || 0;
-    const contribution = state.sectContribution || 0;
+    const playerRealmIdx = Number(s.realmIndex ?? (typeof state !== 'undefined' ? state.realmIndex : 0)) || 0;
+    const contribution = Number(s.sectPoints ?? s.sectContribution ?? (typeof state !== 'undefined' ? state.sectContribution : 0)) || 0;
 
     if (playerRealmIdx < nextRankCfg.minRealmIndex || contribution < nextRankCfg.minContributionReq) {
-        if (typeof addLog === 'function') addLog("Đạo hữu chưa thỏa mãn đủ điều kiện khảo hạch thăng cấp!", "text-rose-400");
+        const msg = "Đạo hữu chưa thỏa mãn đủ điều kiện khảo hạch thăng cấp!";
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, "warning");
+        else if (typeof addLog === 'function') addLog(msg, "text-rose-400");
         return;
     }
 
     // Trừ cống hiến an toàn
-    state.sectContribution = Math.max(0, (state.sectContribution || 0) - nextRankCfg.minContributionReq);
-    state.sectRank += 1;
+    const newContrib = Math.max(0, contribution - nextRankCfg.minContributionReq);
+    const newRank = currentRankIdx + 1;
+    if (typeof state !== 'undefined') {
+        state.sectContribution = newContrib;
+        state.sectRank = newRank;
+    }
+
+    if (window.GameState) {
+        window.GameState.sectRank = newRank;
+        window.GameState.sectPoints = newContrib;
+        window.GameState.sectContribution = newContrib;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
 
     if (typeof playSound === 'function') playSound('breakthrough');
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, "Thăng Cấp Thân Phận!", "text-amber-300 font-bold text-lg");
     }
 
+    const toastMsg = `🎉 Tấn thăng chức vị [${nextRankCfg.name}] môn phái!`;
+    if (typeof window.showGameToast === 'function') window.showGameToast(toastMsg, "breakthrough");
     if (typeof addLog === 'function') {
         addLog(`🎉 <span class="text-amber-300 font-bold">[Chấp Sự Điện]</span> Chúc mừng đạo hữu thông qua khảo hạch, chính thức tấn thăng thành: <strong class="text-amber-300">${nextRankCfg.name}</strong>!`, "text-amber-300 font-bold", "advance-sect-rank");
     }
@@ -1050,12 +1486,32 @@ function advanceSectRank() {
     if (typeof saveGameState === 'function') saveGameState();
     if (typeof updateHUD === 'function') updateHUD();
 
-    renderSectModal();
+    if (document.getElementById('page-sect-rank')?.classList.contains('active')) {
+        renderSectPage('rank', document.getElementById('sect-rank-page-content'));
+    } else {
+        renderSectModal();
+    }
 }
 
 // 10. TICK SYSTEM ĐƯỢC GỌI MỖI GIÂY TRONG GAMELOOP
 function tickSectSystem() {
-    if (!state || !state.sectQuest) return;
+    if (!state) return;
+
+    // Tự động làm mới bảng vàng nhiệm vụ mỗi 3 phút (180s)
+    const now = Date.now();
+    if (!state.lastSectQuestRefreshTime) state.lastSectQuestRefreshTime = now;
+    if (now - state.lastSectQuestRefreshTime >= 180000) {
+        state.lastSectQuestRefreshTime = now;
+        if (typeof addLog === 'function') {
+            addLog(`📜 <span class="text-amber-300 font-bold">[Chấp Sự Điện]</span> Đến kỳ hạn 3 phút, Bảng Vàng Nhiệm Vụ môn phái đã tự động làm mới!`, "text-amber-300");
+        }
+        const modal = document.getElementById('sect-modal');
+        if (modal && !modal.classList.contains('hidden') && activeSectTab === 'quests') {
+            renderSectModal();
+        }
+    }
+
+    if (!state.sectQuest) return;
 
     const q = state.sectQuest;
     if (q.inProgress && !q.completed) {
@@ -1176,6 +1632,58 @@ function renderSectArrayTabHtml() {
                     }).join('')}
                 </div>
 
+                <!-- THANH TIẾN ĐỘ CỐNG HIẾN TOÀN PHÁI (ALL-SECT CONTRIBUTION PROGRESS) -->
+                ${(() => {
+                    const reqContrib = nextArray ? nextArray.reqContribution : 10000;
+                    const sectTotalContrib = nextArray ? Math.min(reqContrib, Math.floor(playerContribution + (arrayLvl * (reqContrib / 5)))) : reqContrib;
+                    const contribPct = Math.min(100, Math.round((sectTotalContrib / reqContrib) * 100));
+                    return `
+                        <div class="p-3 bg-slate-950/80 rounded-xl border border-stone-800 space-y-1.5">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-stone-300 font-bold flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users text-amber-400"></i> Tiến Độ Cống Hiến Toàn Phái:
+                                </span>
+                                <span class="font-mono font-bold text-amber-300">${sectTotalContrib.toLocaleString('vi-VN')} / ${reqContrib.toLocaleString('vi-VN')} (${contribPct}%)</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 border border-stone-800 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-emerald-400 transition-all duration-500" style="width: ${contribPct}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- DANH SÁCH GIA TRÌ TRẬN PHÁP ĐANG KÍCH HOẠT -->
+                        <div class="p-3 bg-slate-950/80 rounded-xl border border-stone-800 space-y-2">
+                            <div class="flex items-center justify-between text-xs border-b border-stone-800/80 pb-1">
+                                <span class="font-bold text-slate-200 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-sparkles text-emerald-400"></i> Gia Trì Trận Pháp Đang Kích Hoạt (Toàn Môn Đệ Tử)
+                                </span>
+                                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">Cấp ${arrayLvl} / 5</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+                                <div class="flex items-center gap-2 p-1.5 rounded ${arrayLvl >= 1 ? 'text-emerald-300 bg-emerald-950/40 border border-emerald-500/30' : 'text-stone-500 bg-slate-900/40'}">
+                                    <i class="fa-solid ${arrayLvl >= 1 ? 'fa-check text-emerald-400' : 'fa-lock'}"></i>
+                                    <span>[Cấp 1] +5% Tốc độ Tu Vi (Tụ Linh Toàn Môn)</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-1.5 rounded ${arrayLvl >= 2 ? 'text-emerald-300 bg-emerald-950/40 border border-emerald-500/30' : 'text-stone-500 bg-slate-900/40'}">
+                                    <i class="fa-solid ${arrayLvl >= 2 ? 'fa-check text-emerald-400' : 'fa-lock'}"></i>
+                                    <span>[Cấp 2] +5% Khí Huyết Tối Đa (Bảo Hộ Sơn Môn)</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-1.5 rounded ${arrayLvl >= 3 ? 'text-emerald-300 bg-emerald-950/40 border border-emerald-500/30' : 'text-stone-500 bg-slate-900/40'}">
+                                    <i class="fa-solid ${arrayLvl >= 3 ? 'fa-check text-emerald-400' : 'fa-lock'}"></i>
+                                    <span>[Cấp 3] +8% Sát Thương Công Kích (Chiến Ý Quy Tông)</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-1.5 rounded ${arrayLvl >= 4 ? 'text-emerald-300 bg-emerald-950/40 border border-emerald-500/30' : 'text-stone-500 bg-slate-900/40'}">
+                                    <i class="fa-solid ${arrayLvl >= 4 ? 'fa-check text-emerald-400' : 'fa-lock'}"></i>
+                                    <span>[Cấp 4] +10% Phòng Ngự & +4% Công Kích (Kim Cương Huyền Giáp)</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-1.5 rounded ${arrayLvl >= 5 ? 'text-amber-300 bg-amber-950/50 border border-amber-500/40' : 'text-stone-500 bg-slate-900/40'} col-span-1 sm:col-span-2">
+                                    <i class="fa-solid ${arrayLvl >= 5 ? 'fa-crown text-amber-400' : 'fa-lock'}"></i>
+                                    <span>[Cấp 5] +8% Toàn Chỉ Số & Tứ Tượng Đại Trận Hộ Sơn (+20% Tu Vi Toàn Phần)</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                })()}
+
                 <!-- Thao Tác Nâng Cấp Đại Trận -->
                 <div class="pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-900/40 p-3 rounded-xl border border-stone-800/80">
                     <div class="text-xs text-stone-300 space-y-0.5 text-center sm:text-left">
@@ -1276,48 +1784,221 @@ function renderSectArrayTabHtml() {
                     }).join('')}
                 </div>
             </div>
+
+            <!-- 3. THÍ LUYỆN HỘ SƠN THÚ -->
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-amber-950/20 to-slate-950 border border-amber-500/40 shadow-xl space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-800 pb-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-amber-950/80 border border-amber-500/50 flex items-center justify-center text-amber-400 text-sm shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                            <i class="fa-solid fa-dragon"></i>
+                        </span>
+                        <div>
+                            <h4 class="font-serif font-bold text-sm text-slate-100 flex items-center gap-2">
+                                Thí Luyện Hộ Sơn Thú
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-500/40">
+                                    Thử Thách Chiến Lực
+                                </span>
+                            </h4>
+                            <span class="text-[10px] text-stone-400">Nghênh chiến Thần Thú trấn giữ sơn môn, chứng minh đạo hạnh đoạt kỳ trân dị bảo</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-stone-400 block">Thần Thú: <strong class="text-amber-300">Cửu Tiêu Linh Bằng</strong></span>
+                        <span class="text-xs font-mono font-bold text-rose-400">Chiến Lực: 12,000 CP</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-900/50 p-3 rounded-xl border border-stone-800">
+                    <div class="text-xs text-stone-300 space-y-1">
+                        <div>Thù lao trảm thú: <b class="text-amber-300">+1,000 Linh Thạch</b>, <b class="text-purple-300">+20 Tiên Ngọc</b>, <b class="text-emerald-400">+300 Cống Hiến</b>, <b class="text-rose-400">+1 Yêu Đan Cực Phẩm</b>.</div>
+                        <div class="text-[11px] text-stone-400">Chiến lực hiện tại của Bản Tôn: <strong class="text-emerald-400 font-mono">${((window.GameState && window.GameState.cp) ? window.GameState.cp : 15000).toLocaleString('vi-VN')} CP</strong></div>
+                    </div>
+                    <button type="button" onclick="challengeSectGuardianBeast()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs tracking-wider shadow-lg transition active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
+                        <i class="fa-solid fa-khanda"></i> Khiêu Chiến Hộ Sơn Thú
+                    </button>
+                </div>
+            </div>
         </div>
     `;
 }
 
+function challengeSectGuardianBeast() {
+    const playerCP = (typeof window.getCombatPower === 'function') 
+        ? window.getCombatPower() 
+        : ((window.GameState && Number(window.GameState.cp)) || 15000);
+    const beastCP = 12000;
+    const beastName = "Hộ Sơn Thần Thú - Cửu Tiêu Linh Bằng";
+
+    if (typeof window.startUniversalBattle === 'function') {
+        const ok = window.startUniversalBattle({
+            mode: 'sect_trial',
+            enemyId: 'sect_guardian_beast',
+            name: beastName,
+            titleBadge: '⛩️ HỘ SƠN THẦN THÚ • THÍ LUYỆN',
+            realm: 'Nguyên Anh Sơ Kỳ',
+            element: 'Lôi',
+            hp: Math.round(beastCP * 12),
+            maxHp: Math.round(beastCP * 12),
+            atk: Math.round(beastCP * 1.6),
+            def: Math.round(beastCP * 0.45),
+            crit: 20,
+            eva: 15,
+            cp: beastCP,
+            icon: '🦅',
+            rewards: {
+                title: 'Hộ Sơn Thú Thí Luyện',
+                linhThach: 100000,
+                contribution: 300,
+                badge: 'Thần Thú Hộ Tông'
+            }
+        });
+        if (ok) return;
+    }
+
+    if (playerCP >= beastCP) {
+        const stonesWon = 100000;
+        const contribWon = 300;
+        const jadeWon = 30;
+
+        const newStones = (Number(window.GameState?.stones ?? state.stones) || 0) + stonesWon;
+        const newContrib = (Number(window.GameState?.sectPoints ?? state.sectContribution) || 0) + contribWon;
+        const newJade = (Number(window.GameState?.jade ?? state.immortalJade) || 0) + jadeWon;
+
+        state.stones = newStones;
+        state.sectContribution = newContrib;
+        state.immortalJade = newJade;
+
+        if (!state.materials) state.materials = {};
+        state.materials.yeuDan = (state.materials.yeuDan || 0) + 1;
+
+        // Đẩy vào inventory
+        const inv = (window.GameState && Array.isArray(window.GameState.inventory)) ? window.GameState.inventory : (Array.isArray(state.inventory) ? state.inventory : []);
+        const existingYD = inv.find(i => i && (i.id === 'yeu_dan' || i.name === 'Yêu Đan'));
+        if (existingYD) {
+            existingYD.count = (Number(existingYD.count ?? existingYD.quantity) || 0) + 1;
+            existingYD.quantity = existingYD.count;
+        } else {
+            inv.push({ id: 'yeu_dan', name: 'Yêu Đan Cực Phẩm', type: 'Nguyên Liệu', category: 'materials', count: 1, quantity: 1, rarity: 4, icon: 'fa-certificate', desc: 'Nội đan ngàn năm của Hộ Sơn Thần Thú.' });
+        }
+        state.inventory = inv;
+
+        if (window.GameState) {
+            window.GameState.stones = newStones;
+            window.GameState.spiritStones = newStones;
+            window.GameState.sectPoints = newContrib;
+            window.GameState.sectContribution = newContrib;
+            window.GameState.jade = newJade;
+            window.GameState.immortalJade = newJade;
+            window.GameState.inventory = inv;
+            if (window.GameState.materials) {
+                window.GameState.materials.yeuDan = state.materials.yeuDan;
+            }
+        }
+        if (typeof playSound === 'function') playSound('breakthrough');
+        if (typeof addLog === 'function') {
+            addLog(`🐉 <span class="text-amber-300 font-bold">[Thí Luyện Hộ Sơn Thú]</span> Bản Tôn xuất thủ dũng mãnh, Chiến Lực (${playerCP.toLocaleString('vi-VN')} CP) áp chế <strong>${beastName}</strong>! Nhận: <strong>+${stonesWon.toLocaleString('vi-VN')} Linh Thạch</strong>, <strong>+${jadeWon} Tiên Ngọc</strong>, <strong>+${contribWon} Cống Hiến</strong>, <strong>+1 Yêu Đan Cực Phẩm</strong>!`, "text-amber-300 font-bold");
+        }
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`🐉 Trấn áp Hộ Sơn Thú thành công (+${jadeWon} Ngọc, +${contribWon} Cống Hiến, +1 Yêu Đan)!`, "success");
+        }
+    } else {
+        if (typeof playSound === 'function') playSound('defeat');
+        if (typeof addLog === 'function') {
+            addLog(`⚠️ <span class="text-rose-400 font-bold">[Thí Luyện Thất Bại]</span> Chiến Lực (${playerCP.toLocaleString('vi-VN')} CP) chưa đủ trấn áp <strong>${beastName}</strong> (CP ${beastCP.toLocaleString('vi-VN')}). Hãy nâng cấp căn cơ trước khi tái chiến!`, "text-rose-400");
+        }
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚠️ Chiến lực chưa đủ trấn áp ${beastName}!`, "warning");
+        }
+    }
+
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
+
+    if (document.getElementById('page-sect-array')?.classList.contains('active')) {
+        renderSectPage('array', document.getElementById('sect-array-page-content'));
+    } else {
+        renderSectModal();
+    }
+}
+window.challengeSectGuardianBeast = challengeSectGuardianBeast;
+
 function upgradeSectArray() {
-    if (!state.playerSect) return;
-    const arrayLvl = Number(state.sectArrayLevel) || 1;
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : {});
+    const playerSect = s.playerSect || (typeof state !== 'undefined' ? state.playerSect : null) || 'thanh_van';
+    s.playerSect = playerSect;
+    if (typeof state !== 'undefined') state.playerSect = playerSect;
+
+    const arrayLvl = Number(s.sectArrayLevel ?? (typeof state !== 'undefined' ? state.sectArrayLevel : 1)) || 1;
     const arrayTiers = typeof SECT_ARRAY_TIERS !== 'undefined' ? SECT_ARRAY_TIERS : [];
     if (arrayLvl >= arrayTiers.length) {
-        if (typeof addLog === 'function') addLog('🛡️ Hộ Sơn Đại Trận của tông môn đã đạt Cực Cảnh Cấp 5!', 'text-amber-300');
+        const msg = "🛡️ Hộ Sơn Đại Trận của tông môn đã đạt Cực Cảnh Cấp 5!";
+        if (typeof window.showGameToast === 'function') window.showGameToast(msg, 'info');
+        else if (typeof addLog === 'function') addLog(msg, 'text-amber-300');
         return;
     }
     const nextCfg = arrayTiers[arrayLvl];
-    const playerRank = Number(state.sectRank) || 0;
+    const playerRank = Number(s.sectRank ?? (typeof state !== 'undefined' ? state.sectRank : 0)) || 0;
     if (playerRank < nextCfg.minRank) {
         const reqRankName = SECT_RANKS[nextCfg.minRank]?.name || 'Cao hơn';
-        if (typeof addLog === 'function') addLog(`⚠️ Cần chức vị [${reqRankName}] trở lên để chủ trì đại trận!`, 'text-rose-400');
+        const msg = `Cần chức vị [${reqRankName}] trở lên để chủ trì đại trận!`;
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, 'warning');
+        else if (typeof addLog === 'function') addLog(`⚠️ ${msg}`, 'text-rose-400');
         return;
     }
-    if ((state.sectContribution || 0) < nextCfg.reqContribution) {
-        if (typeof addLog === 'function') addLog(`⚠️ Điểm Cống Hiến không đủ (Cần ${nextCfg.reqContribution} điểm).`, 'text-rose-400');
+    const curContrib = Number(s.sectPoints ?? s.sectContribution ?? (typeof state !== 'undefined' ? state.sectContribution : 0)) || 0;
+    if (curContrib < nextCfg.reqContribution) {
+        const msg = `Điểm Cống Hiến không đủ (Cần ${nextCfg.reqContribution} điểm).`;
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, 'warning');
+        else if (typeof addLog === 'function') addLog(`⚠️ ${msg}`, 'text-rose-400');
         return;
     }
-    if ((state.stones || 0) < nextCfg.reqStones) {
-        if (typeof addLog === 'function') addLog(`⚠️ Linh Thạch không đủ để kích hoạt linh trận (Cần ${nextCfg.reqStones.toLocaleString('vi-VN')} LT).`, 'text-rose-400');
+    const curStones = Number(s.stones ?? s.spiritStones ?? (typeof state !== 'undefined' ? state.stones : 0)) || 0;
+    if (curStones < nextCfg.reqStones) {
+        const msg = `Linh Thạch không đủ để kích hoạt linh trận (Cần ${nextCfg.reqStones.toLocaleString('vi-VN')} LT).`;
+        if (typeof window.showGameToast === 'function') window.showGameToast(`⚠️ ${msg}`, 'warning');
+        else if (typeof addLog === 'function') addLog(`⚠️ ${msg}`, 'text-rose-400');
         return;
     }
 
-    state.sectContribution = Math.max(0, (state.sectContribution || 0) - nextCfg.reqContribution);
-    state.stones = Math.max(0, (state.stones || 0) - nextCfg.reqStones);
-    state.sectArrayLevel = arrayLvl + 1;
+    const newContrib = Math.max(0, curContrib - nextCfg.reqContribution);
+    const newStones = Math.max(0, curStones - nextCfg.reqStones);
+    const newArrayLevel = arrayLvl + 1;
+
+    if (typeof state !== 'undefined') {
+        state.sectContribution = newContrib;
+        state.stones = newStones;
+        state.sectArrayLevel = newArrayLevel;
+    }
+
+    if (window.GameState) {
+        window.GameState.stones = newStones;
+        window.GameState.spiritStones = newStones;
+        window.GameState.sectPoints = newContrib;
+        window.GameState.sectContribution = newContrib;
+        window.GameState.sectArrayLevel = newArrayLevel;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGame === 'function') window.saveGame();
 
     if (typeof playSound === 'function') playSound('bell');
     if (typeof spawnFloatingText === 'function') {
-        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `Hộ Sơn Đại Trận Cấp ${state.sectArrayLevel}!`, 'text-amber-300');
+        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `Hộ Sơn Đại Trận Cấp ${newArrayLevel}!`, 'text-amber-300');
     }
+    const toastMsg = `🛡️ Hộ Sơn Đại Trận đột phá lên [${nextCfg.name}] (Cấp ${newArrayLevel})!`;
+    if (typeof window.showGameToast === 'function') window.showGameToast(toastMsg, 'success');
     if (typeof addLog === 'function') {
         addLog(`🛡️ Tụ linh tế trận thành công! Hộ Sơn Đại Trận đột phá lên [${nextCfg.name}]! Tăng vọt tốc độ tu vi và uy lực môn nhân!`, 'text-amber-300 font-bold');
     }
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGameState === 'function') saveGameState();
-    renderSectModal();
+
+    if (document.getElementById('page-sect-array')?.classList.contains('active')) {
+        renderSectPage('array', document.getElementById('sect-array-page-content'));
+    } else {
+        renderSectModal();
+    }
 }
 
 function startSectTrialCombat(trialId) {
@@ -1335,6 +2016,32 @@ function startSectTrialCombat(trialId) {
     if ((state.realmIndex || 0) < trial.minRealmIdx) {
         if (typeof addLog === 'function') addLog(`⚠️ Cảnh giới chưa đủ để tiếp chiêu Trưởng Lão (Cần ${trial.realmName}).`, 'text-rose-400');
         return;
+    }
+
+    if (typeof window.startUniversalBattle === 'function') {
+        const ok = window.startUniversalBattle({
+            mode: 'sect_trial',
+            enemyId: trial.id,
+            name: `${trial.title} ${trial.name}`,
+            titleBadge: `⛩️ THÍ LUYỆN TRƯỞNG LÃO • ${trial.title.toUpperCase()}`,
+            realm: trial.realmName || 'Kim Đan Hậu Kỳ',
+            element: 'Kim',
+            hp: trial.hp || 35000,
+            maxHp: trial.hp || 35000,
+            atk: trial.atk || 4500,
+            def: trial.def || 1800,
+            crit: 20,
+            eva: 12,
+            cp: Math.round((trial.atk || 4500) * 3 + (trial.hp || 35000) * 0.1),
+            icon: '🧙‍♂️',
+            rewards: {
+                title: trial.name,
+                linhThach: (trial.rewardStones || 50000),
+                contribution: (trial.rewardContrib || 200),
+                badge: `Bại Tướng ${trial.name}`
+            }
+        });
+        if (ok) return;
     }
 
     const container = document.getElementById('sect-subtab-container');
@@ -1456,16 +2163,40 @@ function startSectTrialCombat(trialId) {
         if (elderHp <= 0) {
             clearInterval(sectCombatTimer);
             sectCombatTimer = null;
-            if (!Array.isArray(state.sectTrialsBeaten)) state.sectTrialsBeaten = [];
-            if (!state.sectTrialsBeaten.includes(trial.id)) {
-                state.sectTrialsBeaten.push(trial.id);
+            const rContrib = trial.rewardContribution || 200;
+            const rStones = trial.rewardStones || 5000;
+            const rJade = trial.rewardJade || 50;
+
+            if (window.GameState) {
+                if (!Array.isArray(window.GameState.sectTrialsBeaten)) window.GameState.sectTrialsBeaten = [];
+                if (!window.GameState.sectTrialsBeaten.includes(trial.id)) {
+                    window.GameState.sectTrialsBeaten.push(trial.id);
+                }
+                window.GameState.sectPoints = (window.GameState.sectPoints || 0) + rContrib;
+                window.GameState.sectContribution = window.GameState.sectPoints;
+                window.GameState.stones = (window.GameState.stones || 0) + rStones;
+                window.GameState.jade = (window.GameState.jade || 0) + rJade;
+                if (window.GameState.spiritStones !== undefined) window.GameState.spiritStones = window.GameState.stones;
+                if (window.GameState.immortalJade !== undefined) window.GameState.immortalJade = window.GameState.jade;
             }
-            state.sectContribution = (state.sectContribution || 0) + trial.rewardContribution;
-            state.stones = (state.stones || 0) + trial.rewardStones;
-            if (state.immortalJade !== undefined) state.immortalJade = (state.immortalJade || 0) + trial.rewardJade;
-            else if (state.jade !== undefined) state.jade = (state.jade || 0) + trial.rewardJade;
+            if (state !== window.GameState) {
+                if (!Array.isArray(state.sectTrialsBeaten)) state.sectTrialsBeaten = [];
+                if (!state.sectTrialsBeaten.includes(trial.id)) {
+                    state.sectTrialsBeaten.push(trial.id);
+                }
+                state.sectContribution = (state.sectContribution || 0) + rContrib;
+                state.sectPoints = state.sectContribution;
+                state.stones = (state.stones || 0) + rStones;
+                state.jade = (state.jade || 0) + rJade;
+            }
 
             if (typeof playSound === 'function') playSound('bell');
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast(`🎉 Đại thắng khảo hạch ${trial.name}! +${rContrib} Cống Hiến, +${rStones.toLocaleString('vi-VN')} LT, +${rJade} Tiên Ngọc!`, 'success');
+            }
+            if (typeof window.recalculatePlayerStats === 'function') {
+                window.recalculatePlayerStats();
+            }
             if (logsBox) {
                 logsBox.innerHTML += `<div class="text-emerald-400 font-bold pt-2 border-t border-stone-800">🎉 ĐẠI THẮNG KHẢO HẠCH! ${trial.name} gật đầu khen ngợi: "Căn cơ vững chắc, tương lai đệ tử tiền đồ vô lượng!"</div>`;
                 logsBox.innerHTML += `<div class="text-amber-300 font-bold font-mono">Phần Thưởng: +${trial.rewardContribution} Cống Hiến, +${trial.rewardStones.toLocaleString('vi-VN')} Linh Thạch, +${trial.rewardJade} Tiên Ngọc!</div>`;

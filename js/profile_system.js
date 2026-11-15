@@ -31,10 +31,105 @@ const LINH_CAN_LABELS = {
     tap_linh_can: { name: 'Tạp Linh Căn', buff: '+25% Khí Huyết Căn Cơ' }
 };
 
+// =========================================================================
+// KHO ĐẠO HIỆU TIÊN HIỆP & KHÍ VẬN KHỞI ĐẦU
+// =========================================================================
+const MALE_NAMES = [
+    'Tiêu Dao Tử', 'Lăng Tiêu Tử', 'Hàn Lập', 'Thanh Vân Tử', 'Bạch Tử Họa',
+    'Diệp Thần', 'Tiêu Viêm', 'Sở Hành Vân', 'Dạ Vô Ngân', 'Độc Cô Cầu Bại',
+    'Tần Vũ', 'Vân Triệt', 'Mặc Uyên', 'Trần Bình An', 'Vương Lâm',
+    'Thạch Hạo', 'Cố Trường Ca', 'Lý Trường Thọ', 'Diệp Thiên Đế', 'Mộ Dung Bạch',
+    'Lạc Vô Cực', 'Khương Tử Nha', 'Cố Thanh Phong', 'Quân Tiêu Dao', 'Tạ Phong Đài'
+];
+
+const FEMALE_NAMES = [
+    'Bạch Nguyệt Khôi', 'Tô Mộc Uyển', 'Cố Thanh Ca', 'Liễu Như Yên', 'Nhan Như Ngọc',
+    'Lạc Băng Ngưng', 'Thẩm Dao Châu', 'Triệu Linh Nhi', 'Vân Hi', 'Cơ Như Tuyết',
+    'Phong Linh Nhi', 'Nam Cung Uyển', 'Tuyết Nguyệt Thanh', 'Lục Tuyết Kỳ', 'Mục Như Tuyết',
+    'Tô Mộc Tranh', 'Khương Thánh Y', 'Nguyệt Thiền', 'Bạch Thiển', 'Đường Vũ Cách',
+    'Tô Chỉ Dao', 'Hoa Thiên Cốt', 'Lục Chỉ Cầm Ma', 'Cơ Tử Nguyệt', 'Vân Vân'
+];
+
+const DESTINY_DESCRIPTIONS = {
+    male: {
+        thien_linh_can: "Thiên phú tuyệt luân, nhất kiếm phá vạn pháp. Đạo tâm kiên định tựa bàn thạch, sinh ra đã mang mệnh tiên quân khai thiên lập địa.",
+        bien_di: "Nghịch thiên cải mệnh, cuồng lôi sát phạt. Đạo cốt dị thường, chiến lực kinh thiên động địa, vạn ma cúi đầu xưng thần.",
+        tap_linh_can: "Căn cơ vững chắc tựa thái sơn, khí huyết dồi dào cuồn cuộn. Hậu tích bạc phát, dũng cảm tiến bước, trường sinh bất tử."
+    },
+    female: {
+        thien_linh_can: "Băng cơ ngọc cốt, tiên khí phiêu dật. Tham ngộ thiên địa nguyên khí chỉ trong chớp mắt, phong thái khuynh đảo cửu thiên.",
+        bien_di: "Tử diễm ma đồng, tuyệt đại phong hoa. Xuất chiêu như lôi đình vạn biến, kiếm khí tung hoành đoạn tuyệt hồng trần.",
+        tap_linh_can: "Linh căn sinh sinh bất tức, sinh mệnh lực tràn trề dồi dào. Cửu chuyển quy nguyên, đạp phá hư không bất tử bất diệt."
+    }
+};
+
+function generateRandomDaoHieu(forcedGender) {
+    const genderEl = document.querySelector('input[name="gender-select"]:checked');
+    const gender = forcedGender || (genderEl ? genderEl.value : 'male');
+    const pool = gender === 'female' ? FEMALE_NAMES : MALE_NAMES;
+    const randomName = pool[Math.floor(Math.random() * pool.length)];
+    const input = document.getElementById('input-new-name');
+    if (input) {
+        input.value = randomName;
+        input.classList.add('name-randomized');
+        setTimeout(() => input.classList.remove('name-randomized'), 400);
+    }
+    return randomName;
+}
+window.generateRandomDaoHieu = generateRandomDaoHieu;
+
+function isOfflineFileProtocol() {
+    return typeof window !== 'undefined' && (window.location.protocol === 'file:' || window._forceOfflineMode === true);
+}
+window.isOfflineFileProtocol = isOfflineFileProtocol;
+
+function updateGoogleAuthDisplay() {
+    const isOffline = (typeof window.isOfflineFileProtocol === 'function') ? window.isOfflineFileProtocol() : isOfflineFileProtocol();
+    const googleBtn = document.querySelector('.btn-google-login');
+    const offlineBadge = document.getElementById('google-offline-badge');
+    const offlineNotice = document.getElementById('google-offline-notice');
+    const btnText = document.getElementById('google-login-btn-text');
+    const syncBox = document.getElementById('google-cloud-sync-box') || googleBtn?.closest('.mb-4');
+    const authDivider = document.querySelector('.profile-auth-divider');
+
+    if (isOffline) {
+        // Khi chạy giao thức file:, ẩn hoàn toàn khối Đăng Nhập Google (#google-cloud-sync-box) để bảng tạo nhân vật gọn gàng, cân đối
+        if (syncBox) {
+            syncBox.style.setProperty('display', 'none', 'important');
+        }
+        if (googleBtn) {
+            googleBtn.style.setProperty('display', 'none', 'important');
+        }
+        if (authDivider) {
+            authDivider.style.setProperty('display', 'none', 'important');
+        }
+        if (offlineBadge) offlineBadge.classList.add('hidden');
+        if (offlineNotice) offlineNotice.classList.add('hidden');
+    } else {
+        if (syncBox) {
+            syncBox.style.removeProperty('display');
+        }
+        if (googleBtn) {
+            googleBtn.style.removeProperty('display');
+            googleBtn.classList.remove('is-offline-btn');
+            googleBtn.removeAttribute('title');
+        }
+        if (authDivider) {
+            authDivider.style.removeProperty('display');
+        }
+        if (btnText) {
+            btnText.textContent = '🌐 LIÊN KẾT THIÊN ĐẠO (GOOGLE CLOUD)';
+        }
+        if (offlineBadge) offlineBadge.classList.add('hidden');
+        if (offlineNotice) offlineNotice.classList.add('hidden');
+    }
+}
+window.updateGoogleAuthDisplay = updateGoogleAuthDisplay;
+
 // -------------------------------------------------------------------------
-// 1. CẤU HÌNH FIREBASE SDK v11.6.1
+// 1. CẤU HÌNH FIREBASE SDK v11.6.1 (TƯƠNG THÍCH HOÀN TOÀN FILE:// VÀ LOCALHOST)
 // -------------------------------------------------------------------------
-const env = import.meta.env || {};
+const env = (typeof window !== 'undefined' && (window.__ENV__ || window.ENV || {})) || {};
 const envFirebaseConfig = env.VITE_FIREBASE_API_KEY ? {
     apiKey: env.VITE_FIREBASE_API_KEY,
     authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -95,31 +190,84 @@ function formatCultivationDuration(startTimestamp) {
 function syncProfileToHUD(profile) {
     if (!profile) return;
 
-    // 1. Cập nhật Đạo Hiệu trên thanh HUD chính
+    // 1. Cập nhật Đạo Hiệu trên thanh HUD chính & Topbar
     const pNameEl = document.getElementById('player-name');
     if (pNameEl) pNameEl.textContent = profile.name;
 
+    const uiPlayerName = document.getElementById('ui-player-name');
+    if (uiPlayerName) uiPlayerName.textContent = profile.name;
+
+    const tmPlayerName = document.getElementById('tm-player-name');
+    if (tmPlayerName) tmPlayerName.textContent = profile.name;
+
     // 2. Cập nhật Avatar trên topbar
+    const uiAvatar = document.getElementById('ui-avatar');
+    if (uiAvatar && profile.avatar) {
+        uiAvatar.src = profile.avatar;
+    }
     const hudAvatar = document.querySelector('.dao-avatar img');
     if (hudAvatar && profile.avatar) {
         hudAvatar.src = profile.avatar;
     }
 
-    // 3. Đồng bộ với window.state & window.player
-    if (window.state) {
-        if (!window.state.player) window.state.player = {};
-        window.state.player.name = profile.name;
-        window.state.player.avatar_url = profile.avatar;
-        if (profile.linhCan) {
-            window.state.linhCanType = profile.linhCan;
+    // 3. Cập nhật Center Avatar đả tọa
+    const charMainImg = document.getElementById('char-main-img');
+    if (charMainImg) {
+        if (profile.gender === 'female') {
+            charMainImg.src = './assets/images/image_11.png';
+            charMainImg.onerror = () => { charMainImg.src = './assets/images/nu_tu_trong_suot.png'; };
+        } else {
+            charMainImg.src = './assets/images/avatar_lone_cultivator.jpg';
+            charMainImg.onerror = () => { charMainImg.src = './assets/images/image_21.png'; };
         }
     }
+
+    // 4. Đồng bộ với window.GameState & window.state & window.player
+    if (window.GameState) {
+        window.GameState.name = profile.name;
+        window.GameState.characterName = profile.name;
+        if (!window.GameState.player) window.GameState.player = {};
+        window.GameState.player.name = profile.name;
+        window.GameState.player.gender = profile.gender || 'male';
+        if (profile.avatar) {
+            window.GameState.avatar = profile.avatar;
+            window.GameState.player.avatar_url = profile.avatar;
+        }
+        if (profile.linhCan) {
+            window.GameState.linhCanType = profile.linhCan;
+            window.GameState.linhCanName = profile.linhCanName || 'Thiên Linh Căn';
+            window.GameState.linhCanBonus = profile.linhCanBonus || '+30% Tốc Độ Tu Luyện';
+        }
+        window.GameState.hasCreatedProfile = true;
+    }
+
+    if (window.state) {
+        window.state.name = profile.name;
+        window.state.characterName = profile.name;
+        if (!window.state.player) window.state.player = {};
+        window.state.player.name = profile.name;
+        window.state.player.gender = profile.gender || 'male';
+        if (profile.avatar) {
+            window.state.player.avatar_url = profile.avatar;
+            window.state.avatar = profile.avatar;
+        }
+        if (profile.linhCan) {
+            window.state.linhCanType = profile.linhCan;
+            window.state.linhCanName = profile.linhCanName || 'Thiên Linh Căn';
+            window.state.linhCanBonus = profile.linhCanBonus || '+30% Tốc Độ Tu Luyện';
+        }
+        window.state.hasCreatedProfile = true;
+    }
+
     if (window.player) {
         window.player.name = profile.name;
         window.player.avatar = profile.avatar;
     }
 
-    // 4. Gọi updateHUD nếu có
+    // 5. Cập nhật UI toàn cục
+    if (typeof window.syncAllUI === 'function') {
+        window.syncAllUI();
+    }
     if (typeof window.updateHUD === 'function') {
         window.updateHUD();
     }
@@ -264,6 +412,10 @@ window.saveProfileToCloud = saveProfileToCloud;
 // 4. FIREBASE AUTHENTICATION (GOOGLE LOGIN & LOGOUT)
 // -------------------------------------------------------------------------
 async function loginWithGoogle() {
+    if (isOfflineFileProtocol()) {
+        showNotify('Đạo hữu đang du hành ở cõi Ngoại Tuyến (file://). Dữ liệu được bảo toàn an toàn trong Trí Nhớ Bản Địa (Local Storage)! Cần mở qua Localhost để kết nối Google Cloud.', 'info');
+        return;
+    }
     if (firebaseReady) await firebaseReady;
     if (!auth) {
         showNotify(firebaseConfig ? 'Không thể kết nối dịch vụ đăng nhập. Hãy kiểm tra mạng và thử lại.' : 'Đăng nhập Google chưa được cấu hình cho bản web này. Bạn vẫn có thể tạo bản thể và chơi cục bộ.', 'error');
@@ -333,6 +485,20 @@ window.logoutGoogle = logoutFromCloud;
 // -------------------------------------------------------------------------
 // 5. MODAL UI & USER ACTIONS
 // -------------------------------------------------------------------------
+function hasCreatedProfileAnywhere() {
+    if (localStorage.getItem('hasCreatedProfile') === 'true') return true;
+    if (getStoredProfile()) return true;
+    try {
+        const raw = localStorage.getItem('van_co_tu_tien_save_v2');
+        if (raw) {
+            const data = JSON.parse(raw);
+            if (data?.player?.name && data.player.name !== 'Vô Danh') return true;
+        }
+    } catch (e) {}
+    return false;
+}
+window.hasCreatedProfileAnywhere = hasCreatedProfileAnywhere;
+
 function openProfileModal(forcedMode) {
     const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
     if (!modal) {
@@ -340,8 +506,10 @@ function openProfileModal(forcedMode) {
         return;
     }
 
+    updateGoogleAuthDisplay();
+    const hasProfile = hasCreatedProfileAnywhere();
     const profile = getStoredProfile();
-    const mode = forcedMode || (currentUser || profile ? 'edit' : 'new');
+    const mode = forcedMode || (hasProfile ? 'edit' : 'new');
 
     const stateNew = document.getElementById('profile-state-new');
     const stateEdit = document.getElementById('profile-state-edit');
@@ -350,7 +518,15 @@ function openProfileModal(forcedMode) {
     if (mode === 'new') {
         if (stateNew) stateNew.classList.remove('hidden');
         if (stateEdit) stateEdit.classList.add('hidden');
-        if (closeBtn) closeBtn.classList.add('hidden');
+        if (closeBtn) {
+            closeBtn.classList.remove('hidden');
+        }
+
+        // Khởi tạo preview mặc định cho form mới
+        const currentGender = document.querySelector('input[name="gender-select"]:checked')?.value || 'male';
+        const currentLinhCan = document.querySelector('input[name="linhcan-select"]:checked')?.value || 'thien_linh_can';
+        handleGenderChange(currentGender, false);
+        handleLinhCanChange(currentLinhCan);
     } else {
         if (stateEdit) stateEdit.classList.remove('hidden');
         if (stateNew) stateNew.classList.add('hidden');
@@ -387,15 +563,18 @@ function openProfileModal(forcedMode) {
 window.openProfileModal = openProfileModal;
 
 function closeProfileModal() {
-    const profile = getStoredProfile();
-    if (!profile && !currentUser) {
-        showNotify('Đạo hữu chưa hoàn tất Bước Vào Tiên Đồ! Xin hãy đăng nhập Google hoặc tạo Đạo Hiệu khởi đầu.', 'error');
-        return;
+    const hasProfile = hasCreatedProfileAnywhere();
+    if (!hasProfile && !currentUser) {
+        try {
+            handleCreateProfile();
+        } catch (e) {
+            console.warn("Tự động khởi tạo hồ sơ khi đóng:", e);
+        }
     }
     const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
     if (modal) {
         modal.style.setProperty('display', 'none', 'important');
-        modal.classList.remove('is-open');
+        modal.classList.remove('is-open', 'active', 'is-active');
     }
 
     const urlBox = document.getElementById('avatar-url-input-container');
@@ -404,33 +583,87 @@ function closeProfileModal() {
 }
 window.closeProfileModal = closeProfileModal;
 
-function handleGenderChange(gender) {
+function handleGenderChange(gender, shouldUpdateName = true) {
     const maleRadio = document.querySelector('input[name="gender-select"][value="male"]');
     const femaleRadio = document.querySelector('input[name="gender-select"][value="female"]');
     if (gender === 'male' && maleRadio) maleRadio.checked = true;
     if (gender === 'female' && femaleRadio) femaleRadio.checked = true;
+
+    // 1. Cập nhật ảnh Chân Dung Showcase Cột Trái
+    const showcaseAvatar = document.getElementById('preview-showcase-avatar');
+    if (showcaseAvatar) {
+        showcaseAvatar.src = gender === 'female' ? DEFAULT_AVATARS.female : DEFAULT_AVATARS.male;
+    }
+
+    // 2. Cập nhật dòng mô tả khí vận
+    const curLinhCan = document.querySelector('input[name="linhcan-select"]:checked')?.value || 'thien_linh_can';
+    const descEl = document.getElementById('preview-showcase-desc');
+    if (descEl && DESTINY_DESCRIPTIONS[gender]?.[curLinhCan]) {
+        descEl.textContent = DESTINY_DESCRIPTIONS[gender][curLinhCan];
+    }
+
+    // 3. Tự động gợi ý tên phù hợp giới tính
+    if (shouldUpdateName) {
+        const nameInput = document.getElementById('input-new-name');
+        if (nameInput) {
+            const currentVal = nameInput.value.trim();
+            if (!currentVal || currentVal === 'Tiêu Dao Tử' || currentVal === 'Bạch Nguyệt Khôi' || MALE_NAMES.includes(currentVal) || FEMALE_NAMES.includes(currentVal)) {
+                generateRandomDaoHieu(gender);
+            }
+        }
+    }
 }
 window.handleGenderChange = handleGenderChange;
 
 function handleLinhCanChange(val) {
-    // Handled by CSS radio:checked
+    const auraWrapper = document.getElementById('showcase-aura-wrapper');
+    const badgeEl = document.getElementById('preview-showcase-badge');
+    const buffEl = document.getElementById('preview-showcase-buff');
+    const descEl = document.getElementById('preview-showcase-desc');
+
+    const gender = document.querySelector('input[name="gender-select"]:checked')?.value || 'male';
+
+    if (auraWrapper) {
+        auraWrapper.classList.remove('aura-thien-linh-can', 'aura-bien-di', 'aura-tap-linh-can');
+        if (val === 'thien_linh_can') auraWrapper.classList.add('aura-thien-linh-can');
+        else if (val === 'bien_di') auraWrapper.classList.add('aura-bien-di');
+        else if (val === 'tap_linh_can') auraWrapper.classList.add('aura-tap-linh-can');
+    }
+
+    const config = LINH_CAN_LABELS[val] || LINH_CAN_LABELS.thien_linh_can;
+    if (badgeEl) {
+        badgeEl.textContent = (val === 'thien_linh_can' ? '⚡ ' : val === 'bien_di' ? '🔥 ' : '🏔️ ') + config.name;
+        badgeEl.className = 'inline-block px-3 py-1 rounded-full font-bold text-xs shadow-md ' +
+            (val === 'thien_linh_can'
+                ? 'bg-amber-500/20 border border-amber-400/50 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                : val === 'bien_di'
+                ? 'bg-purple-500/20 border border-purple-400/50 text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.3)]'
+                : 'bg-teal-500/20 border border-teal-400/50 text-teal-300 shadow-[0_0_15px_rgba(45,212,191,0.3)]');
+    }
+
+    if (buffEl) {
+        buffEl.textContent = config.buff;
+        buffEl.className = 'text-[11px] font-mono font-semibold mt-1 ' +
+            (val === 'thien_linh_can' ? 'text-emerald-400' : val === 'bien_di' ? 'text-purple-300' : 'text-cyan-300');
+    }
+
+    if (descEl && DESTINY_DESCRIPTIONS[gender]?.[val]) {
+        descEl.textContent = DESTINY_DESCRIPTIONS[gender][val];
+    }
 }
 window.handleLinhCanChange = handleLinhCanChange;
 
 function handleCreateProfile(event) {
     if (event && event.preventDefault) event.preventDefault();
 
-    const nameInput = document.getElementById('input-new-name');
-    const name = nameInput ? nameInput.value.trim() : '';
-
-    if (!name) {
-        showNotify('Đạo hữu xin hãy nhập Đạo Hiệu để ghi danh vào Tiên Đạo!', 'error');
-        if (nameInput) nameInput.focus();
-        return;
-    }
-
     const genderEl = document.querySelector('input[name="gender-select"]:checked');
     const gender = genderEl ? genderEl.value : 'male';
+
+    const nameInput = document.getElementById('input-new-name');
+    let name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+        name = generateRandomDaoHieu(gender);
+    }
 
     const linhCanEl = document.querySelector('input[name="linhcan-select"]:checked');
     const linhCan = linhCanEl ? linhCanEl.value : 'thien_linh_can';
@@ -451,31 +684,99 @@ function handleCreateProfile(event) {
         createdDateStr: new Date().toLocaleDateString('vi-VN')
     };
 
+    // 1. Ghi vào localStorage
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        localStorage.setItem('hasCreatedProfile', 'true');
     } catch (e) {
         console.error('[ProfileSystem] Lỗi ghi profile:', e);
     }
 
-    syncProfileToHUD(profile);
+    // 2. Cập nhật và Buff chỉ số vào GameState & window.state
+    const s = window.GameState || window.state || {};
+    s.name = name;
+    s.characterName = name;
+    if (!s.player) s.player = {};
+    s.player.name = name;
+    s.player.gender = gender;
+    s.player.avatar_url = avatar;
+    s.avatar = avatar;
+    s.linhCanType = linhCan;
+    s.linhCanName = linhCanConfig.name;
+    s.linhCanBonus = linhCanConfig.buff;
+    s.hasCreatedProfile = true;
 
-    // Nếu đã có user Google, đồng bộ ngay lên mây
+    if (window.state && window.state !== s) {
+        window.state.name = name;
+        window.state.characterName = name;
+        if (!window.state.player) window.state.player = {};
+        window.state.player.name = name;
+        window.state.player.gender = gender;
+        window.state.player.avatar_url = avatar;
+        window.state.avatar = avatar;
+        window.state.linhCanType = linhCan;
+        window.state.linhCanName = linhCanConfig.name;
+        window.state.linhCanBonus = linhCanConfig.buff;
+        window.state.hasCreatedProfile = true;
+    }
+
+    // Áp dụng buff Linh Căn
+    if (linhCan === 'thien_linh_can') {
+        s.cultivationSpeedBuff = 1.30;
+        s.linhCanBonusRate = 1.30;
+        if (window.state) {
+            window.state.cultivationSpeedBuff = 1.30;
+            window.state.linhCanBonusRate = 1.30;
+        }
+    } else if (linhCan === 'bien_di') {
+        s.critBonus = (Number(s.critBonus) || 0) + 20;
+        if (s.baseStats) s.baseStats.crit = (Number(s.baseStats.crit) || 10) + 20;
+        if (window.state) {
+            window.state.crit = (Number(window.state.crit) || 5) + 20;
+            if (window.state.baseStats) window.state.baseStats.crit = (Number(window.state.baseStats.crit) || 10) + 20;
+        }
+    } else if (linhCan === 'tap_linh_can') {
+        s.hpBonus = (Number(s.hpBonus) || 0) + 0.25;
+        if (s.baseHp) s.baseHp = Math.round(Number(s.baseHp) * 1.25);
+        if (s.maxHp) s.maxHp = Math.round(Number(s.maxHp) * 1.25);
+        if (s.hp) s.hp = Math.round(Number(s.hp) * 1.25);
+        if (window.state) {
+            window.state.maxHp = Math.round((Number(window.state.maxHp) || 1000) * 1.25);
+            window.state.hp = window.state.maxHp;
+        }
+    }
+
+    // 3. Đồng bộ giao diện toàn game
+    syncProfileToHUD(profile);
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.updateHUD === 'function') window.updateHUD();
+
+    // 4. Lưu game ngay lập tức
+    if (typeof window.saveGame === 'function') window.saveGame();
+    if (typeof window.saveGameState === 'function') window.saveGameState();
+
+    // 5. Nếu có Google user, đồng bộ lên Cloud
     if (currentUser) {
         saveProfileToCloud(profile);
     }
 
     if (typeof window.addLog === 'function') {
-        window.addLog(`✨ <span class="text-amber-400 font-bold">[Vấn Thiên Lục]</span> Chào mừng Đạo Hữu <strong>${name}</strong> nhập đạo thành công! Càn khôn tịch diệt, vạn pháp vấn thiên. Căn cơ: <span class="text-emerald-400 font-mono">${linhCanConfig.name}</span>.`, 'text-amber-300');
+        window.addLog(`✨ <span class="text-amber-400 font-bold">[Vấn Thiên Lục]</span> Chào mừng Đạo Hữu <strong>${name}</strong> nhập đạo thành công! Càn khôn tịch diệt, vạn pháp vấn thiên. Căn cơ: <span class="text-emerald-400 font-mono">${linhCanConfig.name} (${linhCanConfig.buff})</span>.`, 'text-amber-300');
     }
 
+    showNotify(`✨ Chúc mừng Đạo Hữu ${name} đã bước vào Tiên Đồ! Căn cơ: ${linhCanConfig.name} (${linhCanConfig.buff})`, 'success');
+
+    // 6. Đóng mượt mà modal
     const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
     if (modal) {
         modal.style.setProperty('display', 'none', 'important');
         modal.classList.remove('is-open');
     }
+    if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
 
-    if (typeof window.saveGameState === 'function') {
-        window.saveGameState();
+    // 7. Kích hoạt vòng lặp tu luyện
+    if (typeof window.startMainLoop === 'function') {
+        window.startMainLoop();
     }
 }
 window.handleCreateProfile = handleCreateProfile;
@@ -533,6 +834,21 @@ async function saveProfileChanges() {
         profile.avatar = editAvatarPreview.src;
     }
 
+    // Cập nhật State toàn cục
+    if (window.GameState) {
+        window.GameState.name = newName;
+        if (profile.avatar) window.GameState.avatar = profile.avatar;
+    }
+    if (window.state) {
+        window.state.name = newName;
+        if (!window.state.player) window.state.player = {};
+        window.state.player.name = newName;
+        if (profile.avatar) window.state.player.avatar_url = profile.avatar;
+    }
+
+    const editDisplay = document.getElementById('edit-profile-display-name');
+    if (editDisplay) editDisplay.textContent = newName;
+
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
     } catch (e) {
@@ -580,7 +896,12 @@ window.closeResetConfirmation = closeResetConfirmation;
 function confirmResetGame() {
     try {
         localStorage.removeItem('van_co_tu_tien_save_v2');
+        localStorage.removeItem('van_thien_luc_save');
+        localStorage.removeItem('van_thien_luc_state');
+        localStorage.removeItem('van_thien_luc_backup_save');
+        localStorage.removeItem('van_thien_luc_backup_meta');
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('hasCreatedProfile');
     } catch (e) {
         console.error('[ProfileSystem] Lỗi xóa save:', e);
     }
@@ -593,12 +914,20 @@ window.confirmResetGame = confirmResetGame;
 // 6. KHỞI TẠO & OBSERVER THEO DÕI AUTH
 // -------------------------------------------------------------------------
 function initializeLocalProfile() {
-    const localProfile = getStoredProfile();
-    if (!localProfile) {
-        openProfileModal('new');
+    updateGoogleAuthDisplay();
+    if (hasCreatedProfileAnywhere()) {
+        const localProfile = getStoredProfile();
+        if (localProfile) {
+            syncProfileToHUD(localProfile);
+            updateCloudStatusUI(localProfile, null);
+        }
+        const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+            modal.classList.remove('is-open');
+        }
     } else {
-        syncProfileToHUD(localProfile);
-        updateCloudStatusUI(localProfile, null);
+        openProfileModal('new');
     }
 }
 
@@ -631,20 +960,19 @@ firebaseReady.then((ready) => {
         } else {
             currentUser = null;
             console.log('[Firebase Auth Observer] Không có người dùng Google.');
-            const localProfile = getStoredProfile();
-            if (!localProfile) {
-                // Người chơi mới / Khách chưa tạo bản thể -> Hiển thị Start Screen che phủ toàn màn hình
-                openProfileModal('new');
-            } else {
-                syncProfileToHUD(localProfile);
-                updateCloudStatusUI(localProfile, null);
-
-                // Đã có profile bản thể -> ẩn Start Screen
+            if (hasCreatedProfileAnywhere()) {
+                const localProfile = getStoredProfile();
+                if (localProfile) {
+                    syncProfileToHUD(localProfile);
+                    updateCloudStatusUI(localProfile, null);
+                }
                 const modal = (document.getElementById('profile-login-modal') || document.getElementById('profile-account-modal'));
                 if (modal) {
                     modal.style.setProperty('display', 'none', 'important');
                     modal.classList.remove('is-open');
                 }
+            } else {
+                openProfileModal('new');
             }
         }
     });

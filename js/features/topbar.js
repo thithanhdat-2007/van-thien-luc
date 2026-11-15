@@ -107,7 +107,7 @@
             const elTrackOrb = document.getElementById('track-orb');
             if (elTrackOrb) elTrackOrb.style.left = sunPct.toFixed(1) + '%';
 
-            // Kích hoạt Glow cho phe chiếm ưu thế
+            // Kích hoạt Glow cho phe chiếm ưu thế & Cập nhật danh hiệu Đạo Tâm
             const poleSun = document.getElementById('pole-sun');
             const poleMoon = document.getElementById('pole-moon');
 
@@ -123,6 +123,60 @@
                     poleMoon.classList.remove('dominant');
                 }
             }
+
+            // Phân nhánh Đạo Tâm & Danh Hiệu
+            let alignTitle = 'Tiêu Dao Tán Tu';
+            let alignClass = 'alignment-title-badge--neutral';
+            let alignTooltip = 'Tiêu Dao Tán Tu (Cân Bằng): +15% Tốc độ tụ khí tự nhiên';
+            let tribulationBonus = 0;
+            let sectBonus = 0;
+            let demonicAtkBonus = 0;
+            let demonicCritBonus = 0;
+            let tribulationPenalty = 0;
+            let qiRateBonus = 0.15;
+
+            if (r > 65) {
+                alignTitle = 'Chính Đạo Tiên Phong';
+                alignClass = 'alignment-title-badge--righteous';
+                alignTooltip = 'Chính Đạo Tiên Phong: +15% Tỷ lệ Độ Kiếp thành công, +20% Uy tín Tông Môn';
+                tribulationBonus = 0.15;
+                sectBonus = 0.20;
+                qiRateBonus = 0;
+            } else if (d > 65) {
+                alignTitle = 'Ma Đạo Cự Phách';
+                alignClass = 'alignment-title-badge--demonic';
+                alignTooltip = 'Ma Đạo Cự Phách: +20% Công Kích & Bạo Kích, Lôi kiếp +15% sát thương';
+                demonicAtkBonus = 0.20;
+                demonicCritBonus = 20;
+                tribulationPenalty = 0.15;
+                qiRateBonus = 0;
+            }
+
+            const gs = window.GameState || window.state;
+            if (gs) {
+                gs.alignmentTitle = alignTitle;
+                gs.alignmentBuffs = {
+                    tribulationBonus,
+                    sectBonus,
+                    demonicAtkBonus,
+                    demonicCritBonus,
+                    tribulationPenalty,
+                    qiRateBonus
+                };
+            }
+
+            const badgeEl = document.getElementById('alignment-title-badge');
+            if (badgeEl) {
+                badgeEl.style.display = 'inline-flex';
+                badgeEl.className = `alignment-title-badge ${alignClass}`;
+                badgeEl.textContent = alignTitle;
+                badgeEl.title = alignTooltip;
+            }
+
+            const daoCard = document.getElementById('top-dao-card');
+            if (daoCard) {
+                daoCard.title = `[Trục Cân Bằng Đạo Tâm] Chính Đạo: ${r} | Ma Đạo: ${d}\nDanh hiệu hiện tại: ${alignTitle}\nHiệu quả: ${alignTooltip}`;
+            }
         }
     }
 
@@ -130,20 +184,20 @@
      * 3. TỰ ĐỘNG ĐỒNG BỘ DỮ LIỆU TỪ GAME STATE SANG TOPBAR
      */
     function syncTopResourceBarFromState() {
-        const s = window.state || (typeof state !== 'undefined' ? state : null);
+        const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
         if (!s) return;
 
-        const stones = typeof s.stones !== 'undefined' ? s.stones : (window.playerState?._linhThach || 0);
+        const stones = typeof s.stones !== 'undefined' ? s.stones : (typeof s.spiritStones !== 'undefined' ? s.spiritStones : (window.playerState?._linhThach || 0));
         const jade = typeof s.immortalJade !== 'undefined' ? s.immortalJade : (s.jade || 0);
 
         const curExp = typeof s.exp !== 'undefined' ? s.exp : (s.spiritPool || 0);
         const realms = window.REALMS || (typeof REALMS !== 'undefined' ? REALMS : []);
         const rIdx = s.realmIndex || 0;
         const maxExp = (realms[rIdx] && realms[rIdx].maxExp) ? realms[rIdx].maxExp : 100;
-        const rate = s.spiritRate || (realms[rIdx] ? realms[rIdx].expRate : 5) || 5;
+        const rate = s.qiRate || s.spiritRate || (realms[rIdx] ? realms[rIdx].expRate : 5) || 5;
 
-        const righteous = s.alignment?.righteous ?? 50;
-        const demonic = s.alignment?.demonic ?? 50;
+        const righteous = Number(window.GameState?.alignment?.righteous ?? s.alignment?.righteous ?? 50);
+        const demonic = Number(window.GameState?.alignment?.demonic ?? s.alignment?.demonic ?? 50);
 
         updateTopResourceBar({
             stones,

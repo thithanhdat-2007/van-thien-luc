@@ -9,6 +9,8 @@ let clickRunes = [];
 let swordSlashes = [];
 let shockwaves = [];
 let lightningBolts = [];
+let qiBeams = [];
+let lastBeamPulse = 0;
 let nextRootArcAt = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + 2000;
 
 function resizeCanvas() {
@@ -20,6 +22,59 @@ if (typeof window !== 'undefined') {
     window.addEventListener('resize', resizeCanvas);
 }
 resizeCanvas();
+
+// Cấu hình bảng màu Hào Quang & Tụ Linh Trận theo 9 Đại Cảnh Giới
+const REALM_FORMATION_THEMES = [
+    { name: "Luyện Khí", primary: "#2dd4bf", secondary: "#0d9488", glow: "rgba(45, 212, 191, 0.75)", soft: "rgba(45, 212, 191, 0.28)", shadow: "rgba(45, 212, 191, 0.5)", aura: "rgba(45, 212, 191, 0.65)" },
+    { name: "Trúc Cơ", primary: "#38bdf8", secondary: "#0284c7", glow: "rgba(56, 189, 248, 0.8)", soft: "rgba(56, 189, 248, 0.3)", shadow: "rgba(56, 189, 248, 0.55)", aura: "rgba(56, 189, 248, 0.7)" },
+    { name: "Kim Đan", primary: "#facc15", secondary: "#d97706", glow: "rgba(250, 204, 21, 0.85)", soft: "rgba(250, 204, 21, 0.32)", shadow: "rgba(250, 204, 21, 0.6)", aura: "rgba(250, 204, 21, 0.75)" },
+    { name: "Nguyên Anh", primary: "#c084fc", secondary: "#7e22ce", glow: "rgba(192, 132, 252, 0.85)", soft: "rgba(192, 132, 252, 0.32)", shadow: "rgba(192, 132, 252, 0.6)", aura: "rgba(192, 132, 252, 0.75)" },
+    { name: "Hóa Thần", primary: "#fb7185", secondary: "#e11d48", glow: "rgba(251, 113, 133, 0.9)", soft: "rgba(251, 113, 133, 0.35)", shadow: "rgba(244, 63, 94, 0.65)", aura: "rgba(251, 113, 133, 0.8)" },
+    { name: "Luyện Hư", primary: "#a855f7", secondary: "#6b21a8", glow: "rgba(168, 85, 247, 0.9)", soft: "rgba(168, 85, 247, 0.35)", shadow: "rgba(168, 85, 247, 0.65)", aura: "rgba(168, 85, 247, 0.8)" },
+    { name: "Hợp Thể", primary: "#34d399", secondary: "#059669", glow: "rgba(52, 211, 153, 0.95)", soft: "rgba(52, 211, 153, 0.38)", shadow: "rgba(52, 211, 153, 0.7)", aura: "rgba(52, 211, 153, 0.85)" },
+    { name: "Đại Thừa", primary: "#fbbf24", secondary: "#b45309", glow: "rgba(251, 191, 36, 1.0)", soft: "rgba(251, 191, 36, 0.4)", shadow: "rgba(251, 191, 36, 0.75)", aura: "rgba(251, 191, 36, 0.9)" },
+    { name: "Độ Kiếp", primary: "#e879f9", secondary: "#9333ea", glow: "rgba(232, 121, 249, 1.0)", soft: "rgba(232, 121, 249, 0.42)", shadow: "rgba(232, 121, 249, 0.8)", aura: "rgba(232, 121, 249, 0.95)" }
+];
+
+function getRealmFormationTheme(targetState) {
+    const s = targetState || (typeof state !== 'undefined' ? state : (typeof GameState !== 'undefined' ? GameState._rawState : null));
+    const realmIndex = Number(s?.realmIndex) || 0;
+    const realms = (typeof window !== 'undefined' && window.REALMS) || [];
+    const rObj = realms[realmIndex] || {};
+    const majorIdx = rObj.majorIndex !== undefined ? rObj.majorIndex : Math.floor(realmIndex / 4);
+    return REALM_FORMATION_THEMES[Math.min(majorIdx, REALM_FORMATION_THEMES.length - 1)] || REALM_FORMATION_THEMES[0];
+}
+
+let lastAppliedMajorIdx = -1;
+function updateFormationRealmTheme(targetState, force = false) {
+    const s = targetState || (typeof state !== 'undefined' ? state : (typeof GameState !== 'undefined' ? GameState._rawState : null));
+    const realmIndex = Number(s?.realmIndex) || 0;
+    const realms = (typeof window !== 'undefined' && window.REALMS) || [];
+    const rObj = realms[realmIndex] || {};
+    const majorIdx = rObj.majorIndex !== undefined ? rObj.majorIndex : Math.floor(realmIndex / 4);
+    
+    if (!force && lastAppliedMajorIdx === majorIdx) return;
+    lastAppliedMajorIdx = majorIdx;
+
+    const theme = REALM_FORMATION_THEMES[Math.min(majorIdx, REALM_FORMATION_THEMES.length - 1)] || REALM_FORMATION_THEMES[0];
+    const root = (typeof document !== 'undefined') ? document.documentElement : null;
+    if (root) {
+        root.style.setProperty('--realm-tran-primary', theme.primary);
+        root.style.setProperty('--realm-tran-secondary', theme.secondary);
+        root.style.setProperty('--realm-tran-glow', theme.glow);
+        root.style.setProperty('--realm-tran-soft', theme.soft);
+        root.style.setProperty('--realm-tran-shadow', theme.shadow);
+        root.style.setProperty('--realm-aura-color', theme.aura);
+        root.style.setProperty('--realm-aura-soft', theme.soft);
+    }
+}
+if (typeof window !== 'undefined') {
+    window.REALM_FORMATION_THEMES = REALM_FORMATION_THEMES;
+    window.getRealmFormationTheme = getRealmFormationTheme;
+    window.updateFormationRealmTheme = updateFormationRealmTheme;
+    // Khởi tạo màu hào quang ban đầu
+    setTimeout(() => updateFormationRealmTheme(null, true), 100);
+}
 
 function getDominantElementConfig() {
     if (typeof state === 'undefined' || typeof ELEMENTAL_PILLARS === 'undefined') {
@@ -39,20 +94,60 @@ let lastDantianCheck = 0;
 
 function getDantianCoords() {
     const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
-    if (now - lastDantianCheck > 1200 || cachedDantianX === null) {
+    // Cache ngắn 40ms để bám sát chuyển động lơ lửng 60FPS của nhân vật
+    if (now - lastDantianCheck > 40 || cachedDantianX === null) {
         lastDantianCheck = now;
-        const core = document.getElementById('dantian-core');
-        if (core && canvas) {
-            const coreRect = core.getBoundingClientRect();
+        const charImg = document.getElementById('char-main-img');
+        const tranEl = document.getElementById('tu-linh-tran-3d');
+        if (tranEl && canvas) {
+            const rect = tranEl.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
-            cachedDantianX = (coreRect.left + coreRect.width / 2) - canvasRect.left;
-            cachedDantianY = (coreRect.top + coreRect.height / 2) - canvasRect.top;
+            // Tọa độ đích đặt chính giữa đĩa Tụ Linh Trận dưới chân nhân vật
+            cachedDantianX = (rect.left + rect.width * 0.5) - canvasRect.left;
+            cachedDantianY = (rect.top + rect.height * 0.55) - canvasRect.top;
+        } else if (charImg && canvas) {
+            const imgRect = charImg.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            // Đáy ảnh nhân vật / đệm ngồi dưới chân, tuyệt đối không chạm trán hay mặt
+            cachedDantianX = (imgRect.left + imgRect.width * 0.5) - canvasRect.left;
+            cachedDantianY = (imgRect.bottom - 12) - canvasRect.top;
         } else {
             cachedDantianX = canvas ? canvas.width / 2 : 400;
-            cachedDantianY = canvas ? canvas.height / 2 : 300;
+            cachedDantianY = canvas ? canvas.height * 0.65 : 450;
         }
     }
     return { x: cachedDantianX, y: cachedDantianY };
+}
+
+function getFormationDiskCoords() {
+    const tranEl = document.getElementById('tu-linh-tran-3d');
+    const charImg = document.getElementById('char-main-img');
+    const dantian = getDantianCoords();
+    if (tranEl && canvas) {
+        const rect = tranEl.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        return {
+            x: (rect.left + rect.width / 2) - canvasRect.left,
+            y: (rect.top + rect.height * 0.55) - canvasRect.top,
+            radiusX: rect.width * 0.46,
+            radiusY: rect.height * 0.2
+        };
+    } else if (charImg && canvas) {
+        const rect = charImg.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        return {
+            x: (rect.left + rect.width / 2) - canvasRect.left,
+            y: (rect.bottom - 18) - canvasRect.top,
+            radiusX: rect.width * 0.45,
+            radiusY: rect.height * 0.16
+        };
+    }
+    return {
+        x: dantian.x,
+        y: dantian.y,
+        radiusX: 180,
+        radiusY: 55
+    };
 }
 
 class QiParticle {
@@ -60,77 +155,64 @@ class QiParticle {
         this.reset();
     }
     reset() {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 140 + Math.random() * (Math.max(canvas.width, canvas.height) * 0.48);
-        this.x = canvas.width / 2 + Math.cos(angle) * dist;
-        this.y = canvas.height / 2 + Math.sin(angle) * dist;
+        // Hạt linh khí: 100% bay nhẹ tự nhiên theo gió nền toàn màn hình
+        this.isWind = true;
+        this.x = Math.random() * (canvas ? canvas.width : 800);
+        this.y = Math.random() * (canvas ? canvas.height : 600);
+        this.vx = 0.35 + Math.random() * 0.65; // Gió thổi ngang nhẹ nhàng
+        this.vy = (Math.random() - 0.5) * 0.35;
+
         this.prevX = this.x;
         this.prevY = this.y;
-        this.size = 1.2 + Math.random() * 2.4;
-        this.speed = 0.65 + Math.random() * 1.45;
-        this.alpha = 0.25 + Math.random() * 0.65;
-        this.isGold = Math.random() > 0.65;
-        this.swirlFactor = (Math.random() - 0.5) * 0.6;
+        this.size = 1.0 + Math.random() * 1.5;
+        this.speed = 0.45 + Math.random() * 0.55;
+        this.alpha = 0.2 + Math.random() * 0.35;
+        this.isGold = Math.random() > 0.5;
+        // Chuẩn hóa màu Linh Khí: Xanh ngọc (#22d3ee, #2dd4bf) và Vàng kim (#facc15, #fbbf24)
+        this.color = this.isGold 
+            ? (Math.random() > 0.4 ? '#facc15' : '#fbbf24') 
+            : (Math.random() > 0.4 ? '#22d3ee' : '#2dd4bf');
+        this.swirlFactor = 0;
         this.isBurst = false;
     }
     update() {
         this.prevX = this.x;
         this.prevY = this.y;
 
-        const target = getDantianCoords();
-        const dx = target.x - this.x;
-        const dy = target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 18) {
-            if (this.isBurst) {
-                this.alpha = 0;
-            } else {
-                if (Math.random() < 0.08 && typeof spawnRipple === 'function') {
-                    spawnRipple(target.x, target.y, this.isGold ? '#facc15' : '#22d3ee');
-                }
-                this.reset();
+        // TUYỆT ĐỐI BẢO VỆ VÙNG MẶT VÀ TRÁN NHÂN VẬT:
+        // Đẩy toàn bộ hạt chệch ra xa vùng trán và khuôn mặt
+        const charImg = document.getElementById('char-main-img');
+        if (charImg && canvas) {
+            const imgRect = charImg.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            const headCenterX = (imgRect.left + imgRect.width * 0.5) - canvasRect.left;
+            const headCenterY = (imgRect.top + imgRect.height * 0.3) - canvasRect.top;
+            const distHead = Math.hypot(this.x - headCenterX, this.y - headCenterY);
+            if (distHead < 95) {
+                // Đẩy dạt sang 2 bên và hướng xuống dưới
+                this.x += (this.x >= headCenterX ? 2.5 : -2.5);
+                this.y += 1.5;
             }
-        } else {
-            const nx = dx / distance;
-            const ny = dy / distance;
-            // Chuyển động xoáy nhẹ vào đan điền
-            this.x += (nx - ny * this.swirlFactor) * this.speed;
-            this.y += (ny + nx * this.swirlFactor) * this.speed;
+        }
+
+        // Chuyển động gió ngang êm dịu toàn màn hình
+        this.x += this.vx * this.speed;
+        this.y += this.vy * this.speed;
+
+        if (canvas && (this.x > canvas.width + 30 || this.x < -30 || this.y > canvas.height + 30 || this.y < -30)) {
+            this.reset();
         }
     }
     draw() {
-        const rootVisual = getCurrentRootVisual();
-        const domEl = getDominantElementConfig();
-        const bg = (typeof BACKGROUNDS !== 'undefined' && typeof state !== 'undefined') ? BACKGROUNDS[state.bgIndex] : null;
-
-        let primaryColor, secondaryColor;
-        if (rootVisual?.colors) {
-            primaryColor = rootVisual.colors[Math.floor(Math.random() * rootVisual.colors.length)];
-            secondaryColor = rootVisual.colors[Math.floor(Math.random() * rootVisual.colors.length)];
-        } else if (rootVisual) {
-            primaryColor = rootVisual.primaryColor;
-            secondaryColor = rootVisual.secondaryColor;
-        } else if (domEl) {
-            primaryColor = domEl.particleColor || domEl.color;
-            secondaryColor = domEl.secondaryColor || domEl.color;
-        } else if (bg) {
-            primaryColor = bg.particleColor;
-            secondaryColor = bg.secondaryColor;
-        } else {
-            primaryColor = "rgba(120, 113, 108, 0.85)";
-            secondaryColor = "#b45309";
-        }
-
-        const color = this.isGold ? secondaryColor : primaryColor;
+        if (!ctx) return;
         ctx.save();
         ctx.globalAlpha = this.alpha;
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
+        ctx.strokeStyle = this.color;
+        ctx.fillStyle = this.color;
         ctx.lineWidth = this.size;
         ctx.lineCap = 'round';
         ctx.shadowBlur = 10;
-        ctx.shadowColor = color;
+        ctx.shadowColor = this.color;
 
         ctx.beginPath();
         ctx.moveTo(this.prevX, this.prevY);
@@ -142,6 +224,198 @@ class QiParticle {
         ctx.fill();
         ctx.restore();
     }
+}
+
+// ==========================================================================
+// DẢI HẠT LINH KHÍ BEZIER HỘI TỤ TẠI ĐĨA TRẬN PHÁP DƯỚI CHÂN (FORMATION DISK)
+// Tuyệt đối không bay vào mặt/đầu nhân vật
+// ==========================================================================
+class QiBezierStream {
+    constructor() {
+        const disk = getFormationDiskCoords();
+        const target = getDantianCoords(); // Đáy đĩa chân trận pháp #tu-linh-tran-3d
+
+        // Xuất phát từ rìa ngoài đĩa tụ linh dưới chân
+        const angle = Math.random() * Math.PI * 2;
+        const radScale = 0.75 + Math.random() * 0.55;
+        const startX = disk.x + Math.cos(angle) * disk.radiusX * radScale;
+        const startY = disk.y + Math.sin(angle) * disk.radiusY * radScale;
+
+        this.p0 = { x: startX, y: startY };
+        this.p3 = { x: target.x, y: target.y };
+
+        // Điểm uốn cong nằm hoàn toàn ở đĩa năng lượng chân trận pháp
+        const midX = (startX + target.x) / 2 + (Math.random() - 0.5) * 25;
+        const midY = (startY + target.y) / 2 + (Math.random() - 0.5) * 12;
+
+        this.p1 = { x: midX, y: midY };
+        this.p2 = { x: (midX + target.x) / 2, y: (midY + target.y) / 2 };
+
+        this.t = 0;
+        this.baseSpeed = 0.01 + Math.random() * 0.009;
+        this.trailLength = 0.16 + Math.random() * 0.08;
+        this.finished = false;
+
+        // Bảng màu linh khí: Ngọc bích và Hoàng kim chuẩn Tiên Hiệp
+        const JADE_PALETTE = ['#2dd4bf', '#22d3ee', '#14b8a6', '#5eead4'];
+        const GOLD_PALETTE = ['#facc15', '#fbbf24', '#f59e0b', '#fef08a'];
+        const isJade = Math.random() < 0.55;
+        this.color = isJade 
+            ? JADE_PALETTE[Math.floor(Math.random() * JADE_PALETTE.length)]
+            : GOLD_PALETTE[Math.floor(Math.random() * GOLD_PALETTE.length)];
+        this.width = 1.5 + Math.random() * 1.3;
+    }
+
+    getBezierPoint(u) {
+        const uClamped = Math.max(0, Math.min(1, u));
+        const u1 = 1 - uClamped;
+        const u1_3 = u1 * u1 * u1;
+        const u1_2_3 = 3 * u1 * u1 * uClamped;
+        const u_2_3 = 3 * u1 * uClamped * uClamped;
+        const u_3 = uClamped * uClamped * uClamped;
+        return {
+            x: u1_3 * this.p0.x + u1_2_3 * this.p1.x + u_2_3 * this.p2.x + u_3 * this.p3.x,
+            y: u1_3 * this.p0.y + u1_2_3 * this.p1.y + u_2_3 * this.p2.y + u_3 * this.p3.y
+        };
+    }
+
+    update() {
+        const curTarget = getDantianCoords();
+        this.p3.x = curTarget.x;
+        this.p3.y = curTarget.y;
+
+        const accel = 1 + this.t * 1.1;
+        this.t += this.baseSpeed * accel;
+
+        if (this.t >= 1.0) {
+            this.finished = true;
+            if (typeof triggerTuViRipple === 'function') {
+                triggerTuViRipple(this.p3.x, this.p3.y, this.color);
+            }
+        }
+    }
+
+    draw() {
+        if (!ctx || this.finished) return;
+        const headU = Math.min(1, this.t);
+        const tailU = Math.max(0, this.t - this.trailLength);
+        if (headU <= tailU) return;
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+
+        ctx.beginPath();
+        const steps = 12;
+        const startPt = this.getBezierPoint(tailU);
+        ctx.moveTo(startPt.x, startPt.y);
+
+        for (let i = 1; i <= steps; i++) {
+            const u = tailU + (headU - tailU) * (i / steps);
+            const pt = this.getBezierPoint(u);
+            ctx.lineTo(pt.x, pt.y);
+        }
+
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.width;
+        ctx.globalAlpha = Math.min(0.9, (1 - headU * 0.15) * Math.min(1, this.t / this.trailLength));
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(0.7, this.width * 0.4);
+        ctx.strokeStyle = '#ffffff';
+        ctx.globalAlpha = 0.9;
+        ctx.stroke();
+
+        const headPt = this.getBezierPoint(headU);
+        ctx.beginPath();
+        ctx.arc(headPt.x, headPt.y, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.globalAlpha = 0.95;
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+const QiConvergenceBeam = QiBezierStream;
+
+// ==========================================================================
+// HIỆU ỨNG GỢN SÓNG ÁNH SÁNG TẠI ĐĨA TRẬN PHÁP DƯỚI CHÂN (FORMATION DISK RIPPLE)
+// Tuyệt đối không vẽ ở vùng trán/mặt nhân vật
+// ==========================================================================
+class TuViRipple {
+    constructor(x, y, color = null) {
+        const coords = getDantianCoords();
+        this.x = (typeof x === 'number' && !isNaN(x)) ? x : coords.x;
+        this.y = (typeof y === 'number' && !isNaN(y)) ? y : coords.y;
+        
+        // Luôn bảo vệ an toàn: đảm bảo tâm sóng nằm ở vùng chân trận pháp
+        const charImg = document.getElementById('char-main-img');
+        if (charImg && canvas) {
+            const imgRect = charImg.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            const safeFloorY = (imgRect.bottom - 20) - canvasRect.top;
+            if (this.y < safeFloorY) this.y = safeFloorY;
+        }
+
+        this.radius = 4;
+        this.maxRadius = 65 + Math.random() * 20;
+        this.growthRate = 1.8;
+        this.alpha = 0.55;
+        const theme = (typeof getRealmFormationTheme === 'function') ? getRealmFormationTheme() : null;
+        this.color = color || (theme ? theme.primary : '#2dd4bf');
+    }
+    update() {
+        this.radius += this.growthRate;
+        this.growthRate = Math.max(0.5, this.growthRate * 0.95);
+        const progress = Math.min(1, (this.radius - 4) / (this.maxRadius - 4));
+        this.alpha = Math.max(0, 0.55 * (1 - progress) * (1 - progress));
+    }
+    draw() {
+        if (!ctx || this.alpha <= 0.01) return;
+        ctx.save();
+        ctx.lineCap = 'round';
+        
+        // Vòng sóng chính nhẹ nhàng dưới chân trận pháp
+        ctx.globalAlpha = this.alpha;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1.4;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        if (this.radius > 14) {
+            ctx.globalAlpha = this.alpha * 0.35;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.8;
+            ctx.shadowBlur = 5;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, Math.max(1, this.radius - 8), 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+let tuViRipples = [];
+
+let lastRippleTriggerTime = 0;
+function triggerTuViRipple(x, y, color) {
+    // Vô hiệu hóa toàn bộ vòng tụ khí / đốm sáng ở nhân vật
+    return;
+}
+function spawnRipple(x, y, color) {
+    return;
+}
+if (typeof window !== 'undefined') {
+    window.triggerTuViRipple = triggerTuViRipple;
+    window.spawnRipple = spawnRipple;
+    window.QiBezierStream = QiBezierStream;
+    window.TuViRipple = TuViRipple;
 }
 
 class Shockwave {
@@ -256,6 +530,19 @@ class AmbientFirefly {
         this.alpha = Math.max(0, Math.sin(this.phase)) * this.maxAlpha;
         this.x += this.baseSpeedX + Math.sin(this.phase * 0.7) * 0.45;
         this.y += this.baseSpeedY;
+
+        // Tránh vùng trán/mặt nhân vật
+        const charImg = document.getElementById('char-main-img');
+        if (charImg && canvas) {
+            const imgRect = charImg.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            const headCenterX = (imgRect.left + imgRect.width * 0.5) - canvasRect.left;
+            const headCenterY = (imgRect.top + imgRect.height * 0.3) - canvasRect.top;
+            if (Math.hypot(this.x - headCenterX, this.y - headCenterY) < 95) {
+                this.x += (this.x >= headCenterX ? 2.5 : -2.5);
+                this.y += 1.5;
+            }
+        }
 
         if (this.y < -30 || (canvas && (this.x < -30 || this.x > canvas.width + 30))) {
             this.reset();
@@ -469,7 +756,7 @@ function animateCanvas() {
         p.draw();
     });
 
-    // Vẽ sóng xung kích
+    // Vẽ sóng xung kích (nếu có click)
     for (let i = shockwaves.length - 1; i >= 0; i--) {
         shockwaves[i].update();
         shockwaves[i].draw();
@@ -507,12 +794,13 @@ function animateCanvas() {
 
     const now = performance.now();
     if (getCurrentRootVisual()?.id === 'mutant_thunder' && now >= nextRootArcAt) {
+        // Lôi điện thiên kiếp lượn trên tầng mây bầu trời, tuyệt đối không chém qua mặt nhân vật
         const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const offset = 70 + Math.random() * 75;
-        lightningBolts.push(new CanvasLightning(centerX - offset, centerY - 25, centerX + offset, centerY + 15, '#c084fc'));
-        if (Math.random() > 0.45) lightningBolts.push(new CanvasLightning(centerX + 45, centerY - offset, centerX - 25, centerY + offset, '#38bdf8'));
-        nextRootArcAt = now + 2000 + Math.random() * 1000;
+        const skyY = canvas.height * 0.14;
+        const offset = 90 + Math.random() * 85;
+        lightningBolts.push(new CanvasLightning(centerX - offset, skyY - 15, centerX + offset, skyY + 20, '#c084fc'));
+        if (Math.random() > 0.45) lightningBolts.push(new CanvasLightning(centerX + 60, skyY - 30, centerX - 50, skyY + 25, '#38bdf8'));
+        nextRootArcAt = now + 2500 + Math.random() * 1200;
     }
     requestAnimationFrame(animateCanvas);
 }

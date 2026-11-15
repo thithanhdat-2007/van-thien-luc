@@ -447,6 +447,8 @@ function getEffectiveStats() {
         if (state.companionBuffs.atk) finalAtk += Number(state.companionBuffs.atk) || 0;
         if (state.companionBuffs.def) finalDef += Number(state.companionBuffs.def) || 0;
         if (state.companionBuffs.hp) finalMaxHp += Number(state.companionBuffs.hp) || 0;
+        if (state.companionBuffs.crit) finalCrit += Number(state.companionBuffs.crit) || 0;
+        if (state.companionBuffs.dodge) finalDodge += Number(state.companionBuffs.dodge) || 0;
     }
 
     // Gia trì từ Phù Chú Họa Phù Các (Lôi Chấn Phù & Kim Cương Phù)
@@ -534,6 +536,27 @@ function getEffectiveStats() {
     finalDef = Math.round((finalDef + achDefAdd) * (1 + (achDefPercent + divineDefPercent) / 100) * omenDefMult);
     finalMaxHp = Math.round((finalMaxHp + achHpAdd) * (1 + (achHpPercent + divineHpPercent) / 100));
 
+    // Gia trì từ Đạo Tâm (Ma Đạo Cự Phách: +20% Công Kích & +20% Bạo Kích)
+    const alignBuffs = (typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || state.alignmentBuffs || null;
+    if (alignBuffs?.atkBonus) {
+        finalAtk = Math.round(finalAtk * (1 + alignBuffs.atkBonus));
+    }
+    if (alignBuffs?.critBonus) {
+        omenCritAdd += alignBuffs.critBonus;
+    }
+
+    // Buff Linh Căn Khởi Nguyên (Tạp Linh Căn: +25% Khí Huyết)
+    if (state.linhCanType === 'tap_linh_can' || state.hpBonus) {
+        const hpMultiplier = 1 + (Number(state.hpBonus) || 0.25);
+        finalMaxHp = Math.round(finalMaxHp * hpMultiplier);
+    }
+
+    // Buff Linh Căn Khởi Nguyên (Biến Dị Linh Căn: +20% Bạo Kích)
+    let linhCanCritAdd = 0;
+    if (state.linhCanType === 'bien_di' || state.critBonus) {
+        linhCanCritAdd = Number(state.critBonus) || 20;
+    }
+
     return {
         atk: finalAtk,
         def: finalDef,
@@ -541,7 +564,7 @@ function getEffectiveStats() {
         maxMp: titleEffects.mpMaxOverride === 0 ? 0 : (statEngine?.maxMp ?? CultivationMathEngine.manaCap(rawMaxMp, currentRealm)),
         tier: realmTier,
         tierMultiplier,
-        crit: Number(((state.crit || 5) + flatCrit + (titleEffects.critRateAdd || 0) + companionCritAdd + achCritAdd + divineCritAdd + omenCritAdd).toFixed(1)),
+        crit: Number(((state.crit || 5) + flatCrit + (titleEffects.critRateAdd || 0) + companionCritAdd + achCritAdd + divineCritAdd + omenCritAdd + linhCanCritAdd).toFixed(1)),
         dodge: Number(((state.dodge || 5) + flatDodge).toFixed(1)),
         speed: Number(((state.speed || 100) + flatSpeed).toFixed(1)),
         armorPen: Number(((state.armorPen || 0) + flatArmorPen).toFixed(1)),
@@ -734,11 +757,11 @@ function loadGameState() {
             if (!state.celestialOmen || typeof state.celestialOmen !== 'object') {
                 state.celestialOmen = {
                     currentOmenId: "tu_khi_dong_lai",
-                    changeAt: Date.now() + 1200000
+                    changeAt: Date.now() + 300000
                 };
             }
             if (!state.celestialOmen.changeAt || state.celestialOmen.changeAt < Date.now()) {
-                state.celestialOmen.changeAt = Date.now() + 1200000;
+                state.celestialOmen.changeAt = Date.now() + 300000;
             }
             if (!Array.isArray(state.divineTechniquesUnlocked)) {
                 state.divineTechniquesUnlocked = [];
@@ -871,8 +894,17 @@ function loadGameState() {
             return { seconds: rawOfflineSeconds, gained: state.exp - previousExp, linhKhiGained: state.linhKhi - previousLinhKhi, yearsAged: state.ageYears - ageBefore };
         }
 function saveGameState() {
+            if (window.__IS_GAME_LOADED === false) return;
             state.lastOnlineTime = Date.now();
-            try { localStorage.setItem('van_co_tu_tien_save_v2', JSON.stringify(state)); } catch (e) {}
+            state.lastActiveTime = state.lastOnlineTime;
+            try {
+                const payload = JSON.stringify(state);
+                localStorage.setItem('VAN_THIEN_LUC_SAVE_V1', payload);
+                localStorage.setItem('van_co_tu_tien_save_v2', payload);
+                localStorage.setItem('VAN_THIEN_LUC_ACCOUNT_SAVE', payload);
+            } catch (e) {
+                console.warn('[saveGameState] Lỗi ghi localStorage:', e);
+            }
             const ind = document.getElementById('save-indicator');
             if (ind) {
                 ind.classList.add('scale-125', 'bg-jade-300');
@@ -903,9 +935,16 @@ function resetToLuyenKhi() {
     state.realmIndex = 0;
     state.realmStage = 0;
     state.exp = 0;
+    if (window.GameState) {
+        window.GameState.realmIndex = 0;
+        window.GameState.realmStage = 0;
+        window.GameState.exp = 0;
+    }
     if (typeof updateStats === 'function') updateStats();
     if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
     if (typeof saveGameState === 'function') saveGameState();
+    if (typeof saveGame === 'function') saveGame();
     if (typeof addLog === 'function') {
         addLog("🌀 <strong class='text-emerald-400'>[Trùng Tu Tiên Lộ]</strong> Bản Tôn đã nghịch chuyển càn khôn, trở về cảnh giới <strong>Luyện Khí Kỳ</strong>!", "text-emerald-400");
     }
@@ -931,10 +970,21 @@ function openTesterRealmModal() {}
 function closeTesterRealmModal() {}
 function applyTesterRealmReset() {}
 function getIdleRate() {
-    const base = REALMS[state.realmIndex].rate;
-    const arrayBonus = 1 + (state.arrayLevel - 1) * 0.25;
-    const rootMultiplier = getActiveFoundationEffects().cultivationSpeedMultiplier ?? 1;
+    const realmsList = (typeof window !== 'undefined' && Array.isArray(window.REALMS) && window.REALMS.length > 0)
+        ? window.REALMS
+        : ((typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : []);
+    const idx = (typeof state !== 'undefined' && Number.isInteger(state.realmIndex)) ? state.realmIndex : 0;
+    const currentRealm = realmsList[idx] || realmsList[0] || { rate: 5 };
+    const base = Number(currentRealm.rate) || 5;
+    const arrayBonus = 1 + ((state?.arrayLevel || 1) - 1) * 0.25;
+    const rootMultiplier = (typeof getActiveFoundationEffects === 'function' ? getActiveFoundationEffects()?.cultivationSpeedMultiplier : 1) ?? 1;
     let rate = base * rootMultiplier * arrayBonus;
+    if (state?.ascensionQiBuff) {
+        rate *= Number(state.ascensionQiBuff);
+    }
+    if (typeof isHeavenlySuppressed === 'function' && isHeavenlySuppressed(state)) {
+        rate *= 0.1;
+    }
     if (state.talismanSpeedBuffUntil && state.talismanSpeedBuffUntil > Date.now()) {
         rate *= 1.35;
     }
@@ -985,6 +1035,10 @@ function getIdleRate() {
         }
         if (gearRateBonus > 0) rate *= (1 + gearRateBonus / 100);
     }
+    // Gia trì tốc độ tu luyện từ Đạo Lữ Khuê Phòng (Liễu Như Yên / companionBuffs)
+    if (state.companionBuffs && state.companionBuffs.ratePercent) {
+        rate *= (1 + Number(state.companionBuffs.ratePercent) / 100);
+    }
     return rate * CULTIVATION_BALANCE_RULES.pacingDampener;
 }
 
@@ -1004,7 +1058,12 @@ function getLinhKhiRate(targetState = null) {
     const mocLevel = Number(s.playerLinhCan?.moc ?? s.spiritualRoot?.pillars?.wood ?? 0);
     const arrayLvl = Math.max(1, Number(s.arrayLevel) || 1);
     const baseRegen = (typeof BASE_LINH_KHI_REGEN !== 'undefined' ? BASE_LINH_KHI_REGEN : 100) + (arrayLvl - 1) * 25;
-    return Math.floor(baseRegen * Math.pow(1.2, realmIndex) * (1 + mocLevel * 0.02));
+    let finalRegen = Math.floor(baseRegen * Math.pow(1.2, realmIndex) * (1 + mocLevel * 0.02));
+    const alignBuffs = (typeof window !== 'undefined' && window.GameState?.alignmentBuffs) || s?.alignmentBuffs || null;
+    if (alignBuffs?.qiRateMultiplier) {
+        finalRegen = Math.floor(finalRegen * alignBuffs.qiRateMultiplier);
+    }
+    return finalRegen;
 }
 
 function getThoNguyenMax() {
@@ -1139,9 +1198,9 @@ function getAdjustedCultivationGain(amount) {
         : 1;
     let gained = rawAmount * suppressionMultiplier;
 
-    // Hình phạt [Trọng Thương] do Thiên Kiếp đánh bại: Giảm 50% tốc độ tu vi
-    if (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil) {
-        gained = Math.max(0, Math.floor(gained * 0.5));
+    // Hình phạt [Trọng Thương] (Độ Kiếp thất bại hoặc Thua Tháp): Giảm 70% tốc độ tu vi (chỉ còn 30%)
+    if (state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil)) {
+        gained = Math.max(1, Math.floor(gained * 0.3));
     }
 
     // Buff Hộ Sơn Đại Trận Tứ Tượng (+20% Tu Vi)
@@ -1151,6 +1210,12 @@ function getAdjustedCultivationGain(amount) {
     // Buff Đạo Tâm Thanh Tịnh - Thái Thượng Chân Tiên (+15% Tu Vi)
     if (Number(state.righteousKarma) >= 40) {
         gained = Math.round(gained * 1.15);
+    }
+
+    // Buff Linh Căn Khởi Nguyên (Thiên Linh Căn: +30% Tốc Độ Tu Luyện)
+    if (state.linhCanType === 'thien_linh_can' || state.cultivationSpeedBuff || state.linhCanBonusRate) {
+        const bonus = Number(state.cultivationSpeedBuff || state.linhCanBonusRate || 1.30);
+        gained = Math.round(gained * bonus);
     }
 
     return {
@@ -1315,6 +1380,9 @@ function closeHeavenlySuppressionInfoModal() {
 window.closeHeavenlySuppressionInfoModal = closeHeavenlySuppressionInfoModal;
 
 function performAscensionToLinhGioi() {
+    if (typeof window.createBackupSave === 'function') {
+        window.createBackupSave('before_ascension');
+    }
     if (!isHeavenlySuppressed()) {
         addLog('Đạo hữu chưa đạt ngưỡng Thiên Đạo Áp Chế để Phi Thăng.', 'text-slate-400');
         return;
@@ -1689,6 +1757,7 @@ function advanceMinorRealm() {
             if (state.level !== undefined) state.level++;
             else state.level = state.realmIndex + 1;
             if (typeof triggerLevelUpAura === 'function') triggerLevelUpAura();
+            if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
             state.exp -= currentRealm.maxExp;
             applyRealmBaseStats(nextRealm);
             if (typeof updateCharacterModel === 'function') {
@@ -1715,6 +1784,9 @@ function addExp(amount, deferHud = false) {
             const { rawAmount, gainedAmount } = getAdjustedCultivationGain(amount);
             if (gainedAmount <= 0) return { rawAmount, gainedAmount: 0 };
             state.exp = (Number(state.exp) || 0) + gainedAmount;
+            if (typeof window.progressSectQuest === 'function') {
+                try { window.progressSectQuest('cultivate', 1); } catch (_) {}
+            }
             if (!deferHud) updateHUD();
             return { rawAmount, gainedAmount };
         }
@@ -2701,7 +2773,148 @@ window.upgradeElement = upgradeLinhCan;
 globalThis.upgradeLinhCan = upgradeLinhCan;
 globalThis.upgradeElement = upgradeLinhCan;
 
+const DESTINY_TRAITS_POOL = [
+    // Thiên Phẩm (Vàng)
+    { id: 'thien_dao_sung_nhi', name: 'Thiên Đạo Sủng Nhi', tier: 'heaven', color: '#f59e0b', desc: 'Thiên Đạo che chở: Tu Vi thu hoạch +20%, tỉ lệ rơi bảo vật hiếm +15%, tăng 8% Toàn Thuộc Tính.' },
+    { id: 'khi_van_nghich_thien', name: 'Khí Vận Nghịch Thiên', tier: 'heaven', color: '#f59e0b', desc: 'Nghịch chuyển càn khôn: Né Tránh +10%, Giảm sát thương Thiên Kiếp -20%, tăng 8% Phòng Ngự.' },
+    { id: 'thai_so_hon_don_the', name: 'Thái Sơ Hỗn Độn Thể', tier: 'heaven', color: '#f59e0b', desc: 'Thể chất hỗn độn: +15% Toàn Thuộc Tính, Miễn nhiễm Thiêu Đốt và Trúng Độc.' },
+    { id: 'tien_thien_kiem_thai', name: 'Tiên Thiên Kiếm Thai', tier: 'heaven', color: '#f59e0b', desc: 'Kiếm cốt bẩm sinh: Công Kích +18%, Sát thương Bạo Kích +25%, Xuyên Giáp +10%.' },
+    // Địa Phẩm (Tím)
+    { id: 'kiem_tam_thong_minh', name: 'Kiếm Tâm Thông Minh', tier: 'earth', color: '#a855f7', desc: 'Kiếm ý thông triệt: Công Kích +10%, Bạo Kích +8%, giảm tiêu hao Chân Nguyên -20%.' },
+    { id: 'dan_dao_tong_su', name: 'Đan Đạo Tông Sư', tier: 'earth', color: '#a855f7', desc: 'Đan tâm đại thành: Tỉ lệ Luyện Đan thành công +25%, hồi 1.5% HP mỗi giây.' },
+    { id: 'kim_cang_bat_hoai', name: 'Kim Cang Bất Hoại', tier: 'earth', color: '#a855f7', desc: 'Thân như lưu ly: Phòng Ngự +15%, Kháng Bạo Kích +12%, Giảm thương -8%.' },
+    { id: 'than_co_dieu_toan', name: 'Thần Cơ Diệu Toán', tier: 'earth', color: '#a855f7', desc: 'Tâm thần nhạy bén: Tốc Độ +15%, Tầm Quét Kỳ Ngộ +15%, Tỉ lệ né tránh +6%.' },
+    // Huyền Phẩm (Lam)
+    { id: 'tat_phong_bo', name: 'Tật Phong Bộ', tier: 'human', color: '#38bdf8', desc: 'Thân pháp như gió: Tốc Độ +10%, Tỉ lệ Né Tránh +5%.' },
+    { id: 'thiet_cot_dong_bi', name: 'Thiết Cốt Đồng Bì', tier: 'human', color: '#38bdf8', desc: 'Mình đồng da sắt: Khí Huyết +8%, Phòng Ngự +6%.' },
+    { id: 'thuy_hoa_bat_xam', name: 'Thủy Hỏa Bất Xâm', tier: 'human', color: '#38bdf8', desc: 'Kháng tính tự nhiên: Kháng Nguyên Tố +8%, Khí Huyết +5%.' }
+];
+
+function ensureCanCoInitialized() {
+    if (!state.canCo) state.canCo = {};
+    if (!state.canCo.physiqueTraining) {
+        state.canCo.physiqueTraining = { stageIndex: 0, floor: 1, maxFloor: 9, trait: "Phàm Thai" };
+    }
+    if (!state.canCo.consciousness) {
+        state.canCo.consciousness = { level: 1, exp: 0, scanRadius: 10, alchemyBonus: 5, demonResist: 10 };
+    }
+    if (!state.canCo.destiny || !Array.isArray(state.canCo.destiny.slots) || state.canCo.destiny.slots.length < 3) {
+        state.canCo.destiny = {
+            slots: [
+                { id: 'thien_dao_sung_nhi', name: 'Thiên Đạo Sủng Nhi', tier: 'heaven', color: '#f59e0b', desc: 'Thiên Đạo che chở: Tu Vi thu hoạch +20%, tỉ lệ rơi bảo vật hiếm +15%, tăng 8% Toàn Thuộc Tính.' },
+                { id: 'kiem_tam_thong_minh', name: 'Kiếm Tâm Thông Minh', tier: 'earth', color: '#a855f7', desc: 'Kiếm ý thông triệt: Công Kích +10%, Bạo Kích +8%, giảm tiêu hao Chân Nguyên -20%.' },
+                { id: 'khi_van_nghich_thien', name: 'Khí Vận Nghịch Thiên', tier: 'heaven', color: '#f59e0b', desc: 'Nghịch chuyển càn khôn: Né Tránh +10%, Giảm sát thương Thiên Kiếp -20%, tăng 8% Phòng Ngự.' }
+            ],
+            rerollCount: 0
+        };
+    }
+    if (!state.activeElement) state.activeElement = 'metal';
+    if (!state.spiritualRoot) {
+        state.spiritualRoot = {
+            pillars: { metal: 1, wood: 1, water: 1, fire: 1, earth: 1 },
+            rareBranches: {
+                thunder: { level: 0, isUnlocked: false },
+                wind: { level: 0, isUnlocked: false },
+                ice: { level: 0, isUnlocked: false }
+            },
+            mutations: {}
+        };
+    }
+    if (!state.spiritualRoot.rareBranches) {
+        state.spiritualRoot.rareBranches = {
+            thunder: { level: 0, isUnlocked: false },
+            wind: { level: 0, isUnlocked: false },
+            ice: { level: 0, isUnlocked: false }
+        };
+    }
+}
+
+function triggerRootElementVFX(elKey, statText) {
+    if (typeof document === 'undefined') return;
+    const nodeEl = document.querySelector(`.node-${elKey}`);
+    const coreEl = document.getElementById('altar-center-core-btn') || document.querySelector('.altar-center-core');
+    const container = document.querySelector('.root-cross');
+    if (!nodeEl || !container) return;
+
+    nodeEl.classList.remove('animate-ping');
+    void nodeEl.offsetWidth;
+    nodeEl.classList.add('animate-ping');
+    setTimeout(() => nodeEl.classList.remove('animate-ping'), 450);
+
+    const cfg = ELEMENTAL_PILLARS[elKey] || RARE_LINH_CAN_BRANCHES[elKey] || { color: '#fbbf24' };
+
+    if (coreEl) {
+        const nodeRect = nodeEl.getBoundingClientRect();
+        const coreRect = coreEl.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+
+        const x1 = (nodeRect.left + nodeRect.width / 2) - cRect.left;
+        const y1 = (nodeRect.top + nodeRect.height / 2) - cRect.top;
+        const x2 = (coreRect.left + coreRect.width / 2) - cRect.left;
+        const y2 = (coreRect.top + coreRect.height / 2) - cRect.top;
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        const beam = document.createElement('div');
+        beam.className = 'spirit-beam-vfx';
+        beam.style.left = `${x1}px`;
+        beam.style.top = `${y1}px`;
+        beam.style.width = `${dist}px`;
+        beam.style.transform = `rotate(${angle}deg)`;
+        beam.style.setProperty('--beam-color', cfg.color);
+        container.appendChild(beam);
+        setTimeout(() => beam.remove(), 480);
+    }
+
+    if (statText) {
+        const nodeRect = nodeEl.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+        const x1 = (nodeRect.left + nodeRect.width / 2) - cRect.left;
+        const y1 = (nodeRect.top + nodeRect.height / 2) - cRect.top;
+
+        const floatEl = document.createElement('div');
+        floatEl.className = 'floating-stat-num';
+        floatEl.style.left = `${x1}px`;
+        floatEl.style.top = `${y1 - 10}px`;
+        floatEl.style.setProperty('--stat-color', cfg.color);
+        floatEl.textContent = statText;
+        container.appendChild(floatEl);
+        setTimeout(() => floatEl.remove(), 1250);
+    }
+}
+
+function selectAndActivateRoot(elKey) {
+    ensureCanCoInitialized();
+    const cfg = ELEMENTAL_PILLARS[elKey] || RARE_LINH_CAN_BRANCHES[elKey];
+    if (!cfg) return;
+    if (RARE_LINH_CAN_BRANCHES[elKey] && !state.spiritualRoot?.rareBranches?.[elKey]?.isUnlocked) {
+        unlockRareLinhCanBranch(elKey);
+        return;
+    }
+    state.activeElement = elKey;
+    triggerRootElementVFX(elKey, `Chủ Vị ${cfg.element}!`);
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`⚔️ Đã kích hoạt [Hệ ${cfg.element}] làm Bản Mệnh Chủ Đạo!`, 'success');
+    renderSpiritualRootPanel('foundation-panel');
+}
+
+function cycleActiveElementalRoot() {
+    ensureCanCoInitialized();
+    const mainKeys = ['metal', 'wood', 'water', 'fire', 'earth'];
+    const unlockedRare = ['thunder', 'wind', 'ice'].filter(k => state.spiritualRoot?.rareBranches?.[k]?.isUnlocked);
+    const allKeys = [...mainKeys, ...unlockedRare];
+    const curIdx = allKeys.indexOf(state.activeElement || 'metal');
+    const nextKey = allKeys[(curIdx + 1) % allKeys.length];
+    selectAndActivateRoot(nextKey);
+}
+
 function renderNguHanhLinhCanPanel(targetContainer = null) {
+    ensureCanCoInitialized();
     const host = targetContainer || document.getElementById('foundation-panel') || document.getElementById('root-page-content');
     if (!host) return;
     const bonus = getRootStatBonuses(state), resonance = getResonance();
@@ -2716,25 +2929,185 @@ function renderNguHanhLinhCanPanel(targetContainer = null) {
         fire: '+' + bonus.crit.toFixed(1) + '% Bạo · +' + (bonus.critDamage * 100).toFixed(1) + '% Sát Thương Bạo',
         earth: '+' + formatCultivationNumber(bonus.def) + ' Phòng Ngự · ' + bonus.critResist.toFixed(1) + '% Kháng Bạo'
     };
-    const nodes = entries.map(([key,cfg]) => '<button type="button" class="root-cross-node node-' + key + (state.activeElement === key ? ' is-selected' : '') + '" style="--root-color:' + cfg.color + '" data-root-select="' + key + '" aria-pressed="' + (state.activeElement === key) + '" aria-label="Chọn ' + cfg.element + ' làm Chủ Vị"><i class="fa-solid ' + cfg.icon + '"></i><strong>' + cfg.element + '</strong><small>Lv.' + bonus.levels[key] + '</small></button>').join('');
-    const rows = entries.map(([key,cfg]) => {
-        const level = bonus.levels[key], stage = getNguHanhTier(level), cost = getPillarUpgradeCost(level,key);
+
+    // 1. Tạo 5 Node Ngũ Hành
+    const nodes = entries.map(([key, cfg]) => {
+        const isSelected = state.activeElement === key;
+        return '<button type="button" class="root-cross-node node-' + key + (isSelected ? ' is-selected' : '') + '" style="--root-color:' + cfg.color + '" data-root-select="' + key + '" onclick="selectAndActivateRoot(&#39;' + key + '&#39;)" aria-pressed="' + isSelected + '" aria-label="Chọn ' + cfg.element + ' làm Chủ Vị">' +
+            '<div class="stone-socket"><div class="gem-orb"><i class="fa-solid ' + cfg.icon + ' gem-icon"></i></div></div>' +
+            '<strong class="gem-label font-serif">' + cfg.element + '</strong>' +
+            '<small class="gem-level font-mono">Lv.' + bonus.levels[key] + '</small>' +
+        '</button>';
+    }).join('');
+
+    // 2. Tạo 5 Phiến Đá Cổ Giản
+    const rows = entries.map(([key, cfg]) => {
+        const level = bonus.levels[key], stage = getNguHanhTier(level), cost = getPillarUpgradeCost(level, key);
         const max = level >= 100, locked = level === 99 && !canAttemptRootCap(REALMS[state.realmIndex]);
-        const afford = state.linhKhi >= cost;
-        return '<div class="root-upgrade-row" style="--root-color:' + cfg.color + '"><div class="root-row-label"><strong><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.element + ' <small>Lv.' + level + '</small></strong><span style="color:' + (stage.color === 'rainbow' ? '#facc15' : stage.color) + '">' + stage.name + ' <small>' + level + '/' + stage.max + '</small></span></div><div class="root-row-middle"><small>' + details[key] + '</small><div class="root-track"><span style="width:' + Math.min(100,(level-stage.min+1)*10) + '%"></span></div></div><div class="root-row-action"><small class="' + (afford ? 'can-afford' : 'cannot-afford') + '">' + (max ? 'Tối đa' : formatCultivationNumber(cost) + ' LK') + '</small><button type="button" data-root-upgrade="' + key + '" onclick="upgradeElementPillar(&#39;' + key + '&#39;)" aria-label="Nâng ' + cfg.element + '" title="' + (locked ? 'Cần Đại Thừa Viên Mãn' : level===99 ? 'Đột phá 1% — thất bại vẫn mất Linh Khí' : 'Bấm hoặc nhấn giữ để nâng cấp') + '" ' + (max || locked || !afford ? 'disabled' : '') + '>+</button></div></div>';
+        let cost10 = 0, lvCur = level;
+        for (let i = 0; i < 10; i++) {
+            if (lvCur >= 100) break;
+            cost10 += getPillarUpgradeCost(lvCur, key);
+            lvCur++;
+        }
+        const afford1 = state.linhKhi >= cost;
+        const afford10 = state.linhKhi >= cost10 && level < 91;
+        return '<div class="root-upgrade-row xianxia-tablet-row" style="--root-color:' + cfg.color + '">' +
+            '<div class="root-row-label">' +
+                '<strong class="font-serif flex items-center gap-1.5"><i class="fa-solid ' + cfg.icon + ' text-xs" style="color:var(--root-color);"></i><span>' + cfg.element + '</span><small class="font-mono text-amber-300 font-bold">Lv.' + level + '</small></strong>' +
+                '<span class="font-serif text-[10px]" style="color:' + (stage.color === 'rainbow' ? '#facc15' : stage.color) + '">' + stage.name + ' <small class="font-mono text-slate-400">(' + level + '/' + stage.max + ')</small></span>' +
+            '</div>' +
+            '<div class="root-row-middle">' +
+                '<small class="font-serif text-slate-300">' + details[key] + '</small>' +
+                '<div class="root-track spirit-groove"><span style="width:' + Math.min(100, (level - stage.min + 1) * 10) + '%"></span></div>' +
+            '</div>' +
+            '<div class="root-row-action">' +
+                '<small class="font-mono font-bold ' + (afford1 ? 'can-afford' : 'cannot-afford') + '">' + (max ? 'Tối đa' : formatCultivationNumber(cost) + ' LK') + '</small>' +
+                '<button type="button" class="btn-octagonal-token" data-root-upgrade="' + key + '" onclick="upgradeElementPillar(&#39;' + key + '&#39;, 1)" aria-label="Nâng +1 ' + cfg.element + '" title="Nâng +1 cấp (' + formatCultivationNumber(cost) + ' LK)" ' + (max || locked || !afford1 ? 'disabled' : '') + '><span>+1</span></button>' +
+                '<button type="button" class="btn-octagonal-plus10" data-root-upgrade-10="' + key + '" onclick="upgradeElementPillar(&#39;' + key + '&#39;, 10)" aria-label="Nâng +10 ' + cfg.element + '" title="Nâng +10 cấp (' + formatCultivationNumber(cost10) + ' LK)" ' + (max || locked || !afford10 ? 'disabled' : '') + '>+10</button>' +
+            '</div>' +
+        '</div>';
     }).join('');
-    const rare = ['thunder','wind','ice'].map(key => {
+
+    // Dị Linh Căn
+    const rare = ['thunder', 'wind', 'ice'].map(key => {
         const cfg = RARE_LINH_CAN_BRANCHES[key], branch = state.spiritualRoot.rareBranches[key];
-        return '<button type="button" onclick="' + (branch.isUnlocked ? 'upgradeElementPillar' : 'unlockRareLinhCanBranch') + '(&#39;' + key + '&#39;)" title="' + (branch.isUnlocked ? 'Nâng cấp bằng Linh Khí' : 'Thức tỉnh bằng Dị Nguyên Thạch') + '"><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.element + (branch.isUnlocked ? ' Lv.' + branch.level : '') + '</button>';
+        const isUnlocked = branch && branch.isUnlocked;
+        const lvl = branch?.level || 0;
+        const isSelected = state.activeElement === key;
+        if (!isUnlocked) {
+            return '<div class="flex items-center justify-between p-2 rounded border border-dashed border-amber-900/60 bg-slate-950/40 text-xs">' +
+                '<span class="font-serif flex items-center gap-1.5" style="color:' + cfg.color + '"><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.element + ' Linh Căn (Chưa thức tỉnh)</span>' +
+                '<button type="button" class="px-2.5 py-1 rounded bg-amber-950/80 hover:bg-amber-800 text-amber-200 border border-amber-600/50 font-bold transition flex items-center gap-1 cursor-pointer" onclick="unlockRareLinhCanBranch(&#39;' + key + '&#39;)"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Thức Tỉnh</button>' +
+            '</div>';
+        }
+        return '<div class="flex items-center justify-between p-2 rounded border ' + (isSelected ? 'border-amber-400 bg-amber-950/30' : 'border-amber-900/40 bg-slate-950/60') + ' text-xs">' +
+            '<div class="flex items-center gap-2">' +
+                '<button type="button" class="px-2 py-0.5 rounded text-[10px] font-bold ' + (isSelected ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-300 hover:text-white') + ' cursor-pointer" onclick="selectAndActivateRoot(&#39;' + key + '&#39;)">' + (isSelected ? '★ Chủ Vị' : 'Chọn') + '</button>' +
+                '<span class="font-serif font-bold flex items-center gap-1" style="color:' + cfg.color + '"><i class="fa-solid ' + cfg.icon + '"></i> ' + cfg.element + ' Linh Căn</span>' +
+                '<span class="font-mono text-amber-300 font-bold">Lv.' + lvl + '</span>' +
+            '</div>' +
+            '<button type="button" class="btn-octagonal-token !w-7 !h-7 !text-xs cursor-pointer" onclick="upgradeElementPillar(&#39;' + key + '&#39;, 1)" title="Nâng cấp Dị Linh Căn">+</button>' +
+        '</div>';
     }).join('');
+
+    // 3. Ma Phương Trận Pháp Đồ Sộ (SVG Thái Cổ Ngũ Hành Trận)
+    const arraySvg = '<svg viewBox="0 0 320 320" class="xianxia-array-svg" role="presentation">' +
+        '<circle cx="160" cy="160" r="152" class="array-outer-border"/>' +
+        '<circle cx="160" cy="160" r="144" class="array-outer-runic-ring"/>' +
+        '<circle cx="160" cy="160" r="136" class="array-mid-border"/>' +
+        '<g class="spinning-runic-array">' +
+            '<line x1="160" y1="16" x2="160" y2="24" class="runic-tick"/>' +
+            '<line x1="160" y1="296" x2="160" y2="304" class="runic-tick"/>' +
+            '<line x1="16" y1="160" x2="24" y2="160" class="runic-tick"/>' +
+            '<line x1="296" y1="160" x2="304" y2="160" class="runic-tick"/>' +
+            '<line x1="58" y1="58" x2="64" y2="64" class="runic-tick"/>' +
+            '<line x1="262" y1="262" x2="256" y2="256" class="runic-tick"/>' +
+            '<line x1="58" y1="262" x2="64" y2="256" class="runic-tick"/>' +
+            '<line x1="262" y1="58" x2="256" y2="64" class="runic-tick"/>' +
+            '<circle cx="160" cy="160" r="124" class="array-dashed-ring"/>' +
+            '<polygon points="160,45 269.4,124.5 227.6,253 92.4,253 50.6,124.5" class="array-pentagon-tuong-sinh"/>' +
+            '<path d="M 160 45 L 227.6 253 L 50.6 124.5 L 269.4 124.5 L 92.4 253 Z" class="array-pentagram-tuong-khac"/>' +
+            '<circle cx="160" cy="160" r="76" class="array-inner-circle"/>' +
+            '<circle cx="160" cy="160" r="50" class="array-core-rim"/>' +
+        '</g>' +
+        '<g class="spinning-core-array">' +
+            '<circle cx="160" cy="160" r="42" class="core-dashed-ring"/>' +
+            '<path d="M 140 160 A 20 20 0 0 1 160 140 A 20 20 0 0 0 160 180 A 20 20 0 0 1 180 160" class="core-yin-yang-flow"/>' +
+        '</g>' +
+    '</svg>';
+
+    const activeEl = state.activeElement || 'metal';
+    const activeCfg = ELEMENTAL_PILLARS[activeEl] || RARE_LINH_CAN_BRANCHES[activeEl] || ELEMENTAL_PILLARS.metal;
+    const centerCoreHtml = '<div class="altar-center-core active-core-halo cursor-pointer" id="altar-center-core-btn" style="--active-element-color:' + activeCfg.color + ';" onclick="cycleActiveElementalRoot()" title="Hệ Bản Mệnh: ' + activeCfg.element + ' (Bấm để đổi Chủ Vị)">' +
+        '<div class="center-core-medallion" style="border-color:' + activeCfg.color + '; box-shadow: 0 0 16px ' + activeCfg.color + ';"><i class="fa-solid ' + activeCfg.icon + ' center-core-icon" style="color:' + activeCfg.color + ';"></i></div>' +
+        '<span class="center-core-badge" style="color:' + activeCfg.color + ';">Hệ ' + activeCfg.element + '</span>' +
+    '</div>';
+
+    // 4. Bể Linh Khí
     const maxLk = Number(state.maxLinhKhi) || getLinhKhiMax(state) || 50000;
     const currentLk = Math.max(0, Number(state.linhKhi) || 0);
     const regenLk = Number(state.linhKhiRegen) || getLinhKhiRate(state) || 100;
     const isFull = currentLk >= maxLk;
     const poolPct = Math.min(100, Math.max(0, Math.round((currentLk / maxLk) * 100)));
-    const poolHtml = '<div class="mt-3 bg-slate-900/80 border border-cyan-700/60 rounded-lg p-3 shadow-inner spirit-pool-card"><div class="flex justify-between items-center mb-1.5"><span class="text-cyan-400 font-bold text-xs uppercase tracking-widest flex items-center gap-1.5"><span class="text-sm">💧</span> BỂ LINH KHÍ</span><span id="ui-root-pool-rate" class="text-emerald-400 font-mono text-[10px] bg-emerald-900/40 px-2 py-0.5 rounded border border-emerald-700/50 font-semibold shadow-sm">+ ' + formatCultivationNumber(regenLk) + ' LK/s</span></div><div class="flex justify-between items-center mb-1"><span id="ui-root-linhkhi-detail" class="font-mono text-cyan-100 text-[11px] font-bold tracking-wide">' + formatCultivationNumber(currentLk) + ' / ' + formatCultivationNumber(maxLk) + '</span><span id="ui-root-pool-status" class="' + (isFull ? 'text-amber-400 font-bold animate-pulse text-[9px] uppercase tracking-wider' : 'text-slate-400 text-[9px] uppercase tracking-wider') + '">' + (isFull ? '(ĐẦY - Tụ khí đình trệ)' : 'Đang tụ khí...') + '</span></div><div class="h-2.5 w-full bg-slate-950 rounded-sm border border-slate-700 overflow-hidden relative shadow-inner"><div id="ui-root-pool-bar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-sky-300 shadow-[0_0_10px_#22d3ee] transition-all duration-300 ' + (isFull ? 'animate-pulse' : '') + '" style="width: ' + poolPct + '%"></div></div><strong id="ui-root-linhkhi" style="display:none">' + formatCultivationNumber(currentLk) + ' LK</strong></div>';
 
-    host.innerHTML = '<section class="root-hybrid"><div class="root-hybrid-grid"><article class="root-cross-card"><h3>NGŨ HÀNH LUÂN XA <small>Chọn hệ làm Chủ Vị</small></h3><div class="root-cross"><svg viewBox="0 0 320 320" role="presentation"><circle cx="160" cy="160" r="112"/><path d="M160 48V272M48 160H272"/></svg>' + nodes + '</div>' + poolHtml + '<div class="root-quality"><small>TƯ CHẤT TỔNG THỂ</small><strong id="linh-can-title">' + quality.name + '</strong><span id="linh-can-quality" style="color:' + color + '">' + highest.name + '</span></div></article><article class="root-rows-card"><div class="root-rows">' + rows + '</div><div class="root-rare"><div>' + rare + '</div><small>Dùng Dị Nguyên Thạch để thức tỉnh nhánh biến dị</small></div><div class="root-resonance"><div><span>Cộng Hưởng Ngũ Hành • Cấp ' + resonance.level + ' <small>(Mức thấp nhất: Lv.' + resonance.minLevel + ')</small></span><strong>+' + resonance.bonusPercent + '% Toàn Thuộc Tính</strong></div><small>' + (resonance.level >= 10 ? 'Cộng hưởng viên mãn' : 'Tiếp theo: Lv.' + ((resonance.level+1)*10) + ' → +' + ((resonance.level+1)*5) + '%') + '</small><div class="root-track"><span style="width:' + (resonance.level>=10 ? 100 : resonance.minLevel%10*10) + '%"></span></div></div><p class="root-cap-note">Lv.99 → 100: Đại Thừa Viên Mãn · Thành công 1% · Thất bại vẫn mất Linh Khí. MP chịu giới hạn cảnh giới.</p></article></div></section>';
+    const poolHtml = '<div class="xianxia-spirit-pool-altar mt-4 p-3.5 relative overflow-hidden">' +
+        '<div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>' +
+        '<div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>' +
+        '<div class="flex justify-between items-center mb-2">' +
+            '<span class="font-serif font-bold text-xs uppercase tracking-widest flex items-center gap-1.5 text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">' +
+                '<i class="fa-solid fa-water text-cyan-400 text-xs"></i> THÁI CỔ LINH TUYỀN' +
+            '</span>' +
+            '<span id="ui-root-pool-rate" class="font-mono text-[10px] px-2 py-0.5 rounded border font-semibold spirit-rate-badge">' +
+                '+ ' + formatCultivationNumber(regenLk) + ' LK/s' +
+            '</span>' +
+        '</div>' +
+        '<div class="flex justify-between items-center mb-1.5 text-xs">' +
+            '<span id="ui-root-linhkhi-detail" class="font-mono text-cyan-100 font-bold tracking-wide">' +
+                formatCultivationNumber(currentLk) + ' / ' + formatCultivationNumber(maxLk) +
+            '</span>' +
+            '<span id="ui-root-pool-status" class="' + (isFull ? 'text-amber-400 font-bold animate-pulse text-[10px] uppercase font-serif tracking-wider' : 'text-slate-400 text-[10px] italic font-serif') + '">' +
+                (isFull ? '(ĐẦY - Tụ khí đình trệ)' : 'Đang tụ khí...') +
+            '</span>' +
+        '</div>' +
+        '<div class="root-track spirit-groove h-3 w-full bg-slate-950 rounded border border-amber-950/80 overflow-hidden relative shadow-inner">' +
+            '<div id="ui-root-pool-bar" class="absolute top-0 left-0 h-full spirit-pool-fluid transition-all duration-300 ' + (isFull ? 'animate-pulse' : '') + '" style="width: ' + poolPct + '%"></div>' +
+        '</div>' +
+        '<strong id="ui-root-linhkhi" style="display:none">' + formatCultivationNumber(currentLk) + ' LK</strong>' +
+    '</div>';
+
+    // 5. Tư Chất & Cộng Hưởng
+    const qualityHtml = '<div class="root-quality xianxia-quality-banner mt-3">' +
+        '<div class="flex items-center gap-1.5">' +
+            '<i class="fa-solid fa-award text-amber-500 text-xs"></i>' +
+            '<small class="font-serif text-[10px] text-amber-200/80 uppercase tracking-widest">Tư Chất Căn Cơ:</small>' +
+            '<strong id="linh-can-title" class="font-serif text-amber-300 font-bold text-xs drop-shadow-[0_1px_3px_black]">' + quality.name + '</strong>' +
+        '</div>' +
+        '<span id="linh-can-quality" class="font-serif text-[11px] font-bold px-2.5 py-0.5 rounded border border-current shadow-sm" style="color:' + color + '; background:rgba(0,0,0,0.5);">' + highest.name + '</span>' +
+    '</div>';
+
+    const rareHtml = '<div class="root-rare xianxia-rare-altar mt-3"><div class="flex flex-col gap-1.5">' + rare + '</div><small class="font-serif text-[10px] text-amber-200/70 italic flex items-center justify-center gap-1 mt-1.5"><i class="fa-solid fa-gem text-amber-400 text-[9px]"></i>Thức tỉnh nhánh Dị Linh Căn mở khóa thuộc tính bạo phát</small></div>';
+
+    const resonanceHtml = '<div class="root-resonance xianxia-resonance-altar mt-3 p-2.5">' +
+        '<div class="flex justify-between items-center mb-1">' +
+            '<span class="font-serif text-xs text-amber-200 flex items-center gap-1.5"><i class="fa-solid fa-circle-nodes text-emerald-400 text-xs"></i>Cộng Hưởng Ngũ Hành · Cấp ' + resonance.level + ' <small class="text-slate-400 text-[10px]">(' + resonance.minLevel + '/100)</small></span>' +
+            '<strong class="font-serif text-xs text-emerald-400 font-bold">+ ' + resonance.bonusPercent + '% Toàn Thuộc Tính</strong>' +
+        '</div>' +
+        '<small class="text-slate-400 text-[10px] font-serif block mt-1">' + (resonance.level >= 10 ? 'Cộng hưởng viên mãn cửu thiên' : 'Mốc kế tiếp: Lv.' + ((resonance.level+1)*10) + ' → +' + ((resonance.level+1)*5) + '%') + '</small>' +
+        '<div class="root-track spirit-groove h-1.5 mt-2"><span style="width:' + (resonance.level >= 10 ? 100 : (resonance.minLevel % 10) * 10) + '%"></span></div>' +
+    '</div>';
+
+    const capNoteHtml = '<p class="root-cap-note font-serif text-[10px] text-amber-200/60 italic text-center mt-2.5">⚔️ Lv.99 → 100: Đại Thừa Viên Mãn · Thành công 1% · Thất bại vẫn tiêu hao Linh Khí.</p>';
+
+    // 6. Tổng hợp Giao diện 2 Cột Cổ Phong
+    host.innerHTML = '<section class="root-hybrid">' +
+        '<div class="root-hybrid-grid">' +
+            '<article class="root-cross-card">' +
+                '<div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>' +
+                '<div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>' +
+                '<div class="altar-header flex flex-col gap-0.5">' +
+                    '<h3 class="altar-main-title"><i class="fa-solid fa-yin-yang text-amber-500 mr-1.5"></i>THÁI CỔ NGŨ HÀNH TRẬN</h3>' +
+                    '<small class="altar-subtitle whitespace-nowrap text-[10px] text-slate-400">Ngũ Hành Tương Sinh Tương Khắc</small>' +
+                '</div>' +
+                '<div class="root-cross">' + arraySvg + centerCoreHtml + nodes + '</div>' +
+                poolHtml +
+                qualityHtml +
+            '</article>' +
+            '<article class="root-rows-card">' +
+                '<div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>' +
+                '<div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>' +
+                '<div class="slab-header flex justify-between items-center mb-2.5">' +
+                    '<h3 class="slab-title"><i class="fa-solid fa-scroll text-amber-500 mr-1.5"></i>KINH MẠCH BẢN NGUYÊN</h3>' +
+                    '<small class="slab-subtitle whitespace-nowrap">5 Trụ Bản Nguyên · Chu Thiên Vận Chuyển</small>' +
+                '</div>' +
+                '<div class="root-rows">' + rows + '</div>' +
+                rareHtml +
+                resonanceHtml +
+                capNoteHtml +
+            '</article>' +
+        '</div>' +
+    '</section>';
+
     const badge = document.querySelector('[data-root-pool-badge]');
     if (badge) badge.textContent = '💧 Linh Khí: ' + formatCultivationNumber(state.linhKhi) + ' LK';
     bindRootHoldUpgrade(host);
@@ -2746,7 +3119,7 @@ function bindRootHoldUpgrade(host) {
     let delay = null, repeat = null, holding = false;
     const stop = () => { clearTimeout(delay); clearInterval(repeat); delay = repeat = null; };
     const controller = new AbortController();
-    const options = {signal:controller.signal};
+    const options = { signal: controller.signal };
     document.addEventListener('pointerdown', event => {
         const button = event.target.closest('[data-root-upgrade]');
         if (!button || button.disabled || event.button !== 0) return;
@@ -2759,23 +3132,24 @@ function bindRootHoldUpgrade(host) {
             const tick = () => {
                 if (!panelHost?.isConnected || !panelHost.querySelector('.root-hybrid') || document.hidden || (panelHost.checkVisibility && !panelHost.checkVisibility())) { stop(); return; }
                 const level = getRootStatBonuses(state).levels[key];
-                if (level >= 99 || state.linhKhi < getPillarUpgradeCost(level,key)) { stop(); return; }
-                upgradeElementPillar(key);
+                if (level >= 99 || state.linhKhi < getPillarUpgradeCost(level, key)) { stop(); return; }
+                upgradeElementPillar(key, 1);
             };
-            tick(); repeat = setInterval(tick,180);
-        },400);
-    },options);
+            tick(); repeat = setInterval(tick, 180);
+        }, 400);
+    }, options);
     document.addEventListener('click', event => {
         const selected = event.target.closest('[data-root-select]');
-        if (selected) { setActiveElement(selected.dataset.rootSelect); return; }
+        if (selected) { selectAndActivateRoot(selected.dataset.rootSelect); return; }
         if (holding && event.target.closest('[data-root-upgrade]')) { event.preventDefault(); event.stopImmediatePropagation(); holding = false; }
-    },{...options,capture:true});
-    window.addEventListener('pointerup',stop,options);
-    window.addEventListener('pointercancel',stop,options);
-    window.addEventListener('blur',stop,options);
-    document.addEventListener('visibilitychange',stop,options);
+    }, { ...options, capture: true });
+    window.addEventListener('pointerup', stop, options);
+    window.addEventListener('pointercancel', stop, options);
+    window.addEventListener('blur', stop, options);
+    document.addEventListener('visibilitychange', stop, options);
     rootHoldCleanup = () => { stop(); controller.abort(); };
 }
+
 window.renderNguHanhLinhCanPanel = renderNguHanhLinhCanPanel;
 
 function updateLeftPanelElements() {
@@ -2814,12 +3188,12 @@ function updateLeftPanelElements() {
     document.querySelectorAll('[data-root-pool-badge]').forEach(el => { el.textContent = '💧 Linh Khí: ' + formatCultivationNumber(state.linhKhi) + ' LK'; });
     document.querySelectorAll('[data-root-upgrade]').forEach(button => {
         const key = button.dataset.rootUpgrade, level = getPillarLevel(key);
-        const cost = getPillarUpgradeCost(level,key);
+        const cost = getPillarUpgradeCost(level, key);
         button.disabled = level >= 100 || (level === 99 && !canAttemptRootCap(REALMS[state.realmIndex])) || state.linhKhi < cost;
         const price = button.previousElementSibling;
         if (price) price.className = state.linhKhi >= cost ? 'can-afford' : 'cannot-afford';
     });
-    // Cập nhật Bể Linh Khí trực quan thời gian thực (Spirit Pool Live Update)
+
     const maxLk = Number(state.maxLinhKhi) || getLinhKhiMax(state) || 50000;
     const currentLk = Math.max(0, Number(state.linhKhi) || 0);
     const regenLk = Number(state.linhKhiRegen) || getLinhKhiRate(state) || 100;
@@ -2859,6 +3233,397 @@ function updateLeftPanelElements() {
 }
 window.updateLeftPanelElements = updateLeftPanelElements;
 
+function renderPhysiquePanel(panel) {
+    ensureCanCoInitialized();
+    const training = state.canCo.physiqueTraining;
+    const stageNames = ["Phàm Thai", "Ngọc Cốt", "Kim Thân", "Bất Diệt Tiên Thể"];
+    const stageColors = ["#94a3b8", "#38bdf8", "#facc15", "#f43f5e"];
+    const stageDescs = [
+        "Phàm Thai Căn Cốt: Rèn gân đổi cốt, đặt nền móng nhục thân.",
+        "Ngọc Cốt Lưu Ly: Xương cốt trong suốt như ngọc, giảm nhẹ chấn động ngoại lực.",
+        "Kim Thân Bất Hoại: Thân thể cứng như kim cương, đao thương khó tổn thương.",
+        "Bất Diệt Tiên Thể: Nhục thân thánh hóa, sinh cơ cuồn cuộn không dứt."
+    ];
+    const curStageIdx = Math.min(3, Math.max(0, Number(training.stageIndex || 0)));
+    const curFloor = Math.min(9, Math.max(1, Number(training.floor || 1)));
+    const curStageName = stageNames[curStageIdx];
+    const curColor = stageColors[curStageIdx];
+
+    const bonusHp = curStageIdx * 1200 + curFloor * 120;
+    const bonusDef = curStageIdx * 150 + curFloor * 18;
+    const bonusResist = curStageIdx * 5 + Math.floor(curFloor / 2);
+
+    const herbCount = (state.inventory || []).find(it => it.id === 'linh_thao')?.count || 0;
+    const isMaxStage = curStageIdx >= 3 && curFloor >= 9;
+    const canAdvanceStage = curFloor >= 9 && curStageIdx < 3;
+
+    panel.innerHTML = `
+    <div class="physique-layout-grid">
+        <div class="physique-stat-card flex flex-col justify-between items-center text-center p-5">
+            <div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>
+            <div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>
+            <div>
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold border mb-3" style="color: ${curColor}; border-color: ${curColor}; background: rgba(0,0,0,0.5);">
+                    <i class="fa-solid fa-shield-halved mr-1"></i> GIAI ĐOẠN ${curStageIdx + 1}/4
+                </span>
+                <h4 class="text-xl font-bold font-serif mb-1" style="color: ${curColor};">${curStageName} • Tầng ${curFloor}/9</h4>
+                <p class="text-xs text-slate-400 italic mb-4">${stageDescs[curStageIdx]}</p>
+            </div>
+            <div class="w-36 h-36 rounded-full relative flex items-center justify-center my-2 border-2 shadow-inner" style="border-color: ${curColor}; box-shadow: 0 0 25px ${curColor}40; background: radial-gradient(circle, ${curColor}15 0%, #030712 80%);">
+                <i class="fa-solid fa-person-praying text-5xl" style="color: ${curColor}; filter: drop-shadow(0 0 10px ${curColor});"></i>
+                <div class="absolute inset-0 rounded-full border border-dashed animate-spin" style="border-color: ${curColor}60; animation-duration: 30s;"></div>
+            </div>
+            <div class="w-full mt-3">
+                <div class="flex justify-between text-[11px] text-slate-300 mb-1 font-serif">
+                    <span>Tiến độ giai đoạn</span>
+                    <span class="font-mono text-amber-300">${curFloor}/9 Tầng</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full border border-amber-950 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-300" style="width: ${(curFloor / 9) * 100}%; background: linear-gradient(90deg, ${curColor}80, ${curColor});"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="physique-stat-card flex flex-col justify-between p-5">
+            <div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>
+            <div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>
+            <div>
+                <h4 class="font-serif font-bold text-sm text-amber-300 border-b border-amber-500/30 pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse text-rose-400"></i> THUỘC TÍNH NHỤC THÂN VĨNH VIỄN
+                </h4>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-slate-900/80 border border-rose-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Khí Huyết Tối Đa</span>
+                        <strong class="text-sm font-mono text-rose-300 font-bold">+${bonusHp.toLocaleString('vi-VN')}</strong>
+                    </div>
+                    <div class="bg-slate-900/80 border border-amber-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Phòng Ngự Bản Thân</span>
+                        <strong class="text-sm font-mono text-amber-300 font-bold">+${bonusDef.toLocaleString('vi-VN')}</strong>
+                    </div>
+                    <div class="bg-slate-900/80 border border-emerald-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Kháng Ngoại Thương</span>
+                        <strong class="text-sm font-mono text-emerald-300 font-bold">+${bonusResist}%</strong>
+                    </div>
+                </div>
+
+                <div class="physique-action-box">
+                    <h5 class="text-xs font-serif font-bold text-amber-200 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-mortar-pestle text-amber-400"></i> PHƯƠNG THỨC TÔI THỂ
+                    </h5>
+                    <p class="text-[11px] text-slate-300 mb-3">Dùng linh dược bồi bổ kinh mạch hoặc vận chuyển Tu Vi để chấn động tạp chất trong nhục thân.</p>
+                    
+                    ${isMaxStage ? `
+                        <div class="p-3 bg-rose-950/40 border border-rose-500/50 rounded text-center text-xs text-rose-300 font-serif font-bold">
+                            🎉 Chúc mừng Đạo Hữu đã tu thành Bất Diệt Tiên Thể Cực Đạo!
+                        </div>
+                    ` : canAdvanceStage ? `
+                        <button type="button" onclick="breakthroughPhysiqueStage()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:brightness-110 text-slate-950 font-bold font-serif text-sm rounded-lg shadow-lg border border-yellow-300 transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-bolt"></i> ĐỘT PHÁ GIAI ĐOẠN: ${stageNames[curStageIdx + 1]}
+                        </button>
+                    ` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <button type="button" onclick="cultivatePhysique('herb')" class="p-2.5 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/50 rounded-lg text-left transition cursor-pointer">
+                                <div class="font-bold text-xs text-emerald-300 flex items-center justify-between">
+                                    <span>🌿 Linh Dược Tôi Thể</span>
+                                    <span class="font-mono text-[10px] text-emerald-200 font-normal">Có: ${herbCount} Thảo</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 block mt-1">Tốn 10 Linh Thảo hoặc Đan Dược</span>
+                            </button>
+                            <button type="button" onclick="cultivatePhysique('tu_vi')" class="p-2.5 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/50 rounded-lg text-left transition cursor-pointer">
+                                <div class="font-bold text-xs text-indigo-300 flex items-center justify-between">
+                                    <span>🩸 Khí Huyết Luyện Thể</span>
+                                    <span class="font-mono text-[10px] text-indigo-200 font-normal">-5,000 Tu Vi</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 block mt-1">Vận chuyển tu vi rèn luyện thân</span>
+                            </button>
+                        </div>
+                    `}
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 italic mt-3 text-center">💡 Mẹo: Nhục thân càng cường hãn, khi Độ Kiếp chịu Lôi Phạt sát thương càng giảm sâu.</p>
+        </div>
+    </div>
+    `;
+}
+
+function cultivatePhysique(mode) {
+    ensureCanCoInitialized();
+    const training = state.canCo.physiqueTraining;
+    if (training.floor >= 9) {
+        if (typeof showGameToast === 'function') showGameToast('Đã đạt Tầng 9/9! Hãy bấm nút Đột Phá Giai Đoạn!', 'warning');
+        return;
+    }
+
+    if (mode === 'herb') {
+        const inv = state.inventory || [];
+        const herb = inv.find(it => it.id === 'linh_thao' && it.count >= 10);
+        const pill = inv.find(it => (it.id === 'the_tu_dan' || it.id === 'tay_tuy_dan') && it.count >= 1);
+        if (pill) {
+            pill.count--;
+        } else if (herb) {
+            herb.count -= 10;
+        } else if ((state.linhThach || 0) >= 2000) {
+            state.linhThach -= 2000;
+        } else {
+            if (typeof showGameToast === 'function') showGameToast('Cần 10 Linh Thảo, 1 Thể Tu Đan hoặc 2,000 Linh Thạch để Tôi Thể!', 'warning');
+            return;
+        }
+    } else {
+        const tuViCost = 5000;
+        if ((state.exp || 0) < tuViCost) {
+            if (typeof showGameToast === 'function') showGameToast(`Không đủ Tu Vi (cần ${formatCultivationNumber(tuViCost)} Tu Vi)!`, 'warning');
+            return;
+        }
+        state.exp -= tuViCost;
+    }
+
+    training.floor++;
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`🥋 Tôi luyện thành công! Thể Chất đạt Tầng ${training.floor}/9!`, 'success');
+    renderFoundationHub('the_chat');
+}
+
+function breakthroughPhysiqueStage() {
+    ensureCanCoInitialized();
+    const training = state.canCo.physiqueTraining;
+    const stageNames = ["Phàm Thai", "Ngọc Cốt", "Kim Thân", "Bất Diệt Tiên Thể"];
+    if (training.stageIndex >= 3) {
+        if (typeof showGameToast === 'function') showGameToast('Đã đạt cảnh giới Thể Chất tối cao!', 'warning');
+        return;
+    }
+    training.stageIndex++;
+    training.floor = 1;
+    training.trait = stageNames[training.stageIndex];
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`⚡ Đột phá thành công! Nhục thân thăng hoa lên [${stageNames[training.stageIndex]}]!`, 'success');
+    renderFoundationHub('the_chat');
+}
+
+function renderConsciousnessPanel(panel) {
+    ensureCanCoInitialized();
+    const soul = state.canCo.consciousness;
+    const curLevel = Math.min(100, Math.max(1, Number(soul.level || 1)));
+    const scanRadius = Math.min(50, curLevel * 2);
+    const alchemyBonus = Math.min(35, Math.floor(curLevel * 1.5));
+    const demonResist = Math.min(50, curLevel * 3);
+    const tuViCost = curLevel * 3000;
+
+    panel.innerHTML = `
+    <div class="consciousness-grid">
+        <div class="physique-stat-card flex flex-col justify-between items-center text-center p-5">
+            <div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>
+            <div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>
+            <div>
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold border border-cyan-400 text-cyan-300 bg-cyan-950/50 mb-3">
+                    <i class="fa-solid fa-eye mr-1"></i> THỨC HẢI HUYỀN DIỆU
+                </span>
+                <h4 class="text-xl font-bold font-serif text-cyan-200 mb-1">Thức Hải • Cấp ${curLevel}/100</h4>
+                <p class="text-xs text-slate-400 italic mb-4">Luyện Hồn ngưng tụ thần thức, cảm ứng vạn vật thiên địa.</p>
+            </div>
+            <div class="w-36 h-36 rounded-full relative flex items-center justify-center my-2 border-2 border-cyan-400 shadow-inner" style="box-shadow: 0 0 25px rgba(6,182,212,0.4); background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, #030712 80%);">
+                <i class="fa-solid fa-brain text-5xl text-cyan-300 animate-pulse"></i>
+                <div class="absolute inset-0 rounded-full border border-dashed border-cyan-400/50 animate-spin" style="animation-duration: 25s;"></div>
+            </div>
+            <div class="w-full mt-3">
+                <div class="flex justify-between text-[11px] text-slate-300 mb-1 font-serif">
+                    <span>Độ ngưng thực thần thức</span>
+                    <span class="font-mono text-cyan-300">${curLevel}%</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full border border-cyan-950 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-cyan-600 to-cyan-300 rounded-full transition-all duration-300" style="width: ${curLevel}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="physique-stat-card flex flex-col justify-between p-5">
+            <div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>
+            <div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>
+            <div>
+                <h4 class="font-serif font-bold text-sm text-amber-300 border-b border-amber-500/30 pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sparkles text-cyan-400"></i> HIỆU QUẢ THẦN THỨC BẢN NGUYÊN
+                </h4>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-slate-900/80 border border-cyan-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Dò Tìm Kỳ Ngộ</span>
+                        <strong class="text-sm font-mono text-cyan-300 font-bold">+${scanRadius}%</strong>
+                    </div>
+                    <div class="bg-slate-900/80 border border-amber-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Đan Đạo / Đúc Khí</span>
+                        <strong class="text-sm font-mono text-amber-300 font-bold">+${alchemyBonus}%</strong>
+                    </div>
+                    <div class="bg-slate-900/80 border border-purple-900/50 rounded-lg p-2.5 text-center">
+                        <span class="text-[10px] text-slate-400 block font-serif">Kháng Tâm Ma</span>
+                        <strong class="text-sm font-mono text-purple-300 font-bold">+${demonResist}%</strong>
+                    </div>
+                </div>
+
+                <div class="physique-action-box">
+                    <h5 class="text-xs font-serif font-bold text-amber-200 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-feather text-amber-400"></i> MINH TƯỞNG LUYỆN HỒN
+                    </h5>
+                    <p class="text-[11px] text-slate-300 mb-3">Hấp thu tinh hoa nhật nguyệt hoặc dùng dược vật dưỡng hồn để mở rộng Thức Hải.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button type="button" onclick="cultivateConsciousness('tu_vi')" class="p-2.5 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/50 rounded-lg text-left transition cursor-pointer">
+                            <div class="font-bold text-xs text-cyan-300 flex items-center justify-between">
+                                <span>🧘 Ngưng Tụ Thần Thức</span>
+                                <span class="font-mono text-[10px] text-cyan-200 font-normal">-${formatCultivationNumber(tuViCost)} Tu Vi</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">Dùng tu vi mở rộng Thức Hải</span>
+                        </button>
+                        <button type="button" onclick="cultivateConsciousness('pill')" class="p-2.5 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/50 rounded-lg text-left transition cursor-pointer">
+                            <div class="font-bold text-xs text-purple-300 flex items-center justify-between">
+                                <span>🔮 Nuốt Tụ Hồn Đan</span>
+                                <span class="font-mono text-[10px] text-purple-200 font-normal">50 Tiên Ngọc / Đan</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">Dưỡng thần định phách thăng hoa</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 italic mt-3 text-center">💡 Mẹo: Thần Thức càng cao, khi Đi Dạo và thám hiểm Bí Cảnh càng dễ bắt gặp Bảo Vật Thiên Giai.</p>
+        </div>
+    </div>
+    `;
+}
+
+function cultivateConsciousness(mode) {
+    ensureCanCoInitialized();
+    const soul = state.canCo.consciousness;
+    if (soul.level >= 100) {
+        if (typeof showGameToast === 'function') showGameToast('Thần Thức đã đạt Cực Đạo (Cấp 100)!', 'warning');
+        return;
+    }
+    const tuViCost = soul.level * 3000;
+    if (mode === 'tu_vi') {
+        if ((state.exp || 0) < tuViCost) {
+            if (typeof showGameToast === 'function') showGameToast(`Không đủ Tu Vi (cần ${formatCultivationNumber(tuViCost)} Tu Vi)!`, 'warning');
+            return;
+        }
+        state.exp -= tuViCost;
+    } else {
+        const inv = state.inventory || [];
+        const item = inv.find(it => (it.id === 'tu_hon_dan' || it.id === 'duong_hon_moc') && it.count > 0);
+        if (item) {
+            item.count--;
+        } else if ((state.tienNgoc || 0) >= 50) {
+            state.tienNgoc -= 50;
+        } else {
+            if (typeof showGameToast === 'function') showGameToast('Cần 1 Tụ Hồn Đan hoặc 50 Tiên Ngọc!', 'warning');
+            return;
+        }
+    }
+
+    soul.level++;
+    soul.scanRadius = Math.min(50, soul.level * 2);
+    soul.alchemyBonus = Math.min(35, Math.floor(soul.level * 1.5));
+    soul.demonResist = Math.min(50, soul.level * 3);
+
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`👁️ Thần Thức thăng hoa! Thức Hải đạt Cấp ${soul.level}!`, 'success');
+    renderFoundationHub('than_thuc');
+}
+
+function getRandomDestinyTrait() {
+    const roll = Math.random();
+    let tierFilter = 'human';
+    if (roll < 0.25) tierFilter = 'heaven';
+    else if (roll < 0.65) tierFilter = 'earth';
+    const pool = DESTINY_TRAITS_POOL.filter(t => t.tier === tierFilter);
+    return pool[Math.floor(Math.random() * pool.length)] || DESTINY_TRAITS_POOL[0];
+}
+
+function renderDestinyPanel(panel) {
+    ensureCanCoInitialized();
+    const destiny = state.canCo.destiny;
+    const slots = destiny.slots;
+
+    panel.innerHTML = `
+    <div>
+        <div class="flex flex-wrap items-center justify-between border-b border-amber-500/30 pb-2.5 mb-4 gap-2">
+            <div>
+                <h4 class="font-serif font-bold text-sm text-amber-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clover text-amber-400"></i> MỆNH CÁCH KHÍ VẬN • THIÊN ĐẠO ĐỊNH SỐ
+                </h4>
+                <p class="text-[11px] text-slate-400">3 Ô Mệnh Cách ban thưởng đặc tính nội tại cực hạn. Dùng Tiên Ngọc để Tẩy Mệnh.</p>
+            </div>
+            <button type="button" onclick="rerollAllDestiny()" class="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:brightness-110 text-slate-950 text-xs font-serif font-bold rounded-lg shadow border border-yellow-300 transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tinh Luyện Toàn Bộ (120 Tiên Ngọc)
+            </button>
+        </div>
+
+        <div class="destiny-slots-grid">
+            ${slots.map((slot, idx) => `
+                <div class="destiny-card-item tier-${slot.tier || 'human'}">
+                    <div class="altar-corner altar-corner-tl"></div><div class="altar-corner altar-corner-tr"></div>
+                    <div class="altar-corner altar-corner-bl"></div><div class="altar-corner altar-corner-br"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded border" style="color: ${slot.color || '#f59e0b'}; border-color: ${slot.color || '#f59e0b'}; background: rgba(0,0,0,0.4);">
+                                Ô ${idx + 1}: ${slot.tier === 'heaven' ? '★ Thiên Phẩm' : (slot.tier === 'earth' ? '◆ Địa Phẩm' : '● Huyền Phẩm')}
+                            </span>
+                            <i class="fa-solid fa-sparkles text-xs" style="color: ${slot.color || '#f59e0b'};"></i>
+                        </div>
+                        <h5 class="text-base font-serif font-bold mb-2" style="color: ${slot.color || '#f59e0b'};">${slot.name}</h5>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-4">${slot.desc}</p>
+                    </div>
+                    <button type="button" onclick="rerollDestinySlot(${idx})" class="w-full py-2 bg-slate-900 hover:bg-slate-800 border border-amber-600/50 hover:border-amber-400 text-amber-200 text-xs font-serif font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-dice text-amber-400"></i> Tẩy Mệnh Ô Này (50 Tiên Ngọc)
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+        <p class="text-[10px] text-slate-400 italic mt-4 text-center">💡 Mẹo: Mệnh Cách Thiên Phẩm sở hữu hào quang hoàng kim, đem lại năng lực nghịch chuyển cục diện chiến đấu.</p>
+    </div>
+    `;
+}
+
+function rerollDestinySlot(slotIndex) {
+    ensureCanCoInitialized();
+    const inv = state.inventory || [];
+    const item = inv.find(it => (it.id === 'bo_de_qua' || it.id === 'thien_dao_chuc_phuc') && it.count > 0);
+    if (item) {
+        item.count--;
+    } else if ((state.tienNgoc || 0) >= 50) {
+        state.tienNgoc -= 50;
+    } else {
+        if (typeof showGameToast === 'function') showGameToast('Cần 50 Tiên Ngọc hoặc Bồ Đề Quả để Tẩy Mệnh!', 'warning');
+        return;
+    }
+
+    const newTrait = getRandomDestinyTrait();
+    state.canCo.destiny.slots[slotIndex] = newTrait;
+    state.canCo.destiny.rerollCount = (state.canCo.destiny.rerollCount || 0) + 1;
+
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`🔮 Tẩy Mệnh Ô ${slotIndex + 1} thành công: [${newTrait.name}]!`, 'success');
+    renderFoundationHub('menh_cach');
+}
+
+function rerollAllDestiny() {
+    ensureCanCoInitialized();
+    if ((state.tienNgoc || 0) < 120) {
+        if (typeof showGameToast === 'function') showGameToast('Cần 120 Tiên Ngọc để Tinh Luyện Toàn Bộ Mệnh Cách!', 'warning');
+        return;
+    }
+    state.tienNgoc -= 120;
+    state.canCo.destiny.slots = [getRandomDestinyTrait(), getRandomDestinyTrait(), getRandomDestinyTrait()];
+    state.canCo.destiny.rerollCount = (state.canCo.destiny.rerollCount || 0) + 3;
+
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast('✨ Tinh Luyện toàn bộ 3 Ô Mệnh Cách thành công!', 'success');
+    renderFoundationHub('menh_cach');
+}
+
 function renderSpiritualRootPanel(hostId = 'spiritual-root-panel') {
     const host = document.getElementById(hostId) 
         || document.getElementById('foundation-panel') 
@@ -2868,38 +3633,70 @@ function renderSpiritualRootPanel(hostId = 'spiritual-root-panel') {
 }
 
 function renderFoundationHub(activeTab = 'linh_can', hostElement = null) {
-    const host = hostElement || document.getElementById('char-subtab-container') || document.getElementById('char-right-tab-content') || document.getElementById('hub-modal-content');
+    ensureCanCoInitialized();
+    const host = hostElement || document.getElementById('char-subtab-container') || document.getElementById('char-right-tab-content') || document.getElementById('hub-modal-content') || document.getElementById('root-page-content');
     if (!host) return;
-    const rank = getM1RealmRank(REALMS[state.realmIndex]?.name);
+
     const tabs = [
-        ['linh_can', 'Linh Căn'],
-        ['the_chat', 'Thể Chất'],
-        ['than_thuc', 'Thần Thức'],
-        ['menh_cach', 'Mệnh Cách']
+        ['linh_can', '🌿 Ngũ Hành Linh Căn', 'fa-yin-yang'],
+        ['the_chat', '🥋 Thể Chất (Luyện Thể)', 'fa-shield-halved'],
+        ['than_thuc', '👁️ Thần Thức (Luyện Hồn)', 'fa-brain'],
+        ['menh_cach', '🔮 Mệnh Cách (Khí Vận)', 'fa-clover']
     ];
     const selected = tabs.some(([id]) => id === activeTab) ? activeTab : tabs[0][0];
-    host.innerHTML = `<header class="root-hub-header"><strong>📜 🌿 CĂN CƠ LINH CĂN</strong><span data-root-pool-badge>💧 Linh Khí: ${formatCultivationNumber(state.linhKhi)} LK</span></header><nav class="foundation-tabs flex gap-2 border-b border-stone-800 pb-3 mb-3 overflow-x-auto">${tabs.map(([id, label]) => `<button class="hub-tab ${id === selected ? 'is-active' : ''}" onclick="renderFoundationHub('${id}', this.closest('.foundation-tabs').parentElement)">${label}</button>`).join('')}</nav><div id="foundation-panel"></div>`;
+
+    host.innerHTML = `
+    <div class="foundation-hub-card max-w-6xl mx-auto p-3 sm:p-5 bg-slate-950/95 border border-amber-500/40 rounded-xl shadow-2xl relative">
+        <div class="flex flex-wrap items-center justify-between border-b border-amber-500/30 pb-3 mb-3 gap-2">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl sm:text-2xl text-amber-400"><i class="fa-solid fa-dna"></i></span>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold font-serif text-amber-300 tracking-wide uppercase">CĂN CƠ BẢN NGUYÊN • ĐẠO THỂ THĂNG HOA</h3>
+                    <p class="text-[10px] text-slate-400 whitespace-nowrap">Ngũ Hành Tương Sinh Tương Khắc · Nhục Thân Thánh Hóa · Thần Thức Thông Thiên</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5 ml-auto">
+                <span data-root-pool-badge class="px-2.5 py-1 rounded-full border border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-mono text-xs">💧 Linh Khí: ${formatCultivationNumber(state.linhKhi)} LK</span>
+                <button type="button" onclick="navigateTo('main-screen')" class="px-3 py-1 bg-rose-950/80 hover:bg-rose-800 border border-rose-500/60 text-rose-200 text-xs rounded-lg font-bold transition flex items-center gap-1 shadow cursor-pointer" title="Đóng về Màn Hình Chính">
+                    <i class="fa-solid fa-xmark"></i> Thoát
+                </button>
+            </div>
+        </div>
+        <nav class="foundation-tab-nav mb-4">
+            ${tabs.map(([id, label, icon]) => `
+                <button class="foundation-tab-btn ${id === selected ? 'is-active' : ''}" onclick="renderFoundationHub('${id}', this.closest('.foundation-hub-card').parentElement)">
+                    <i class="fa-solid ${icon}"></i> <span>${label}</span>
+                </button>
+            `).join('')}
+        </nav>
+        <div id="foundation-panel"></div>
+    </div>
+    `;
+
     const panel = document.getElementById('foundation-panel');
-    if (rank < FOUNDATION_RULES.tabs[selected].minRank) {
-        panel.innerHTML = '<article class="hub-menu-card">Chưa đủ cảnh giới để khai mở mục này.</article>'; return;
-    }
+    if (!panel) return;
+
     if (selected === 'linh_can') {
-        renderSpiritualRootPanel('foundation-panel');
-        return;
+        renderNguHanhLinhCanPanel(panel);
+    } else if (selected === 'the_chat') {
+        renderPhysiquePanel(panel);
+    } else if (selected === 'than_thuc') {
+        renderConsciousnessPanel(panel);
+    } else if (selected === 'menh_cach') {
+        renderDestinyPanel(panel);
     }
-    if (selected === 'the_chat') {
-        const training = state.canCo.physiqueTraining;
-        panel.innerHTML = `<article class="hub-menu-card"><i class="fa-solid fa-shield-halved"></i><b>${FOUNDATION_RULES.physiqueStages[training.stageIndex]} - Tầng ${training.floor}</b><p class="mt-3 text-xs text-slate-300">Đặc tính: ${training.trait}</p><p class="mt-2 text-xs text-slate-400">Nâng cấp bằng Khí Huyết hoặc Yêu Đan. Tôi luyện căn cơ để củng cố nhục thân.</p></article>`;
-        return;
-    }
-    if (selected === 'than_thuc') {
-        const soul = state.canCo.consciousness;
-        panel.innerHTML = `<article class="hub-menu-card"><i class="fa-solid fa-brain"></i><b>Thức Hải Cấp ${soul.level}</b><p class="mt-3 text-xs text-slate-300">Tầm quét Bí Cảnh: ${soul.scanRadius}</p><p class="mt-2 text-xs text-slate-400">Dùng Dưỡng Hồn Mộc hoặc Hồn Thạch để nâng cấp.</p></article>`;
-        return;
-    }
-    const destiny = state.canCo.destiny;
-    panel.innerHTML = `<div class="hub-menu-grid"><article class="hub-menu-card"><i class="fa-solid fa-book-open"></i><b>Ngộ Tính ${destiny.insight ?? 0}/100</b><p class="mt-3 text-xs text-slate-400">Chỉ tăng bằng Bồ Đề Quả.</p></article><article class="hub-menu-card"><i class="fa-solid fa-clover"></i><b>Khí Vận ${destiny.fortune ?? 0}/100</b><p class="mt-3 text-xs text-slate-400">Chỉ tăng bằng Thiên Đạo Chúc Phúc.</p></article></div>`;
 }
+
+window.renderFoundationHub = renderFoundationHub;
+window.renderSpiritualRootPanel = renderSpiritualRootPanel;
+window.selectAndActivateRoot = selectAndActivateRoot;
+window.cycleActiveElementalRoot = cycleActiveElementalRoot;
+window.cultivatePhysique = cultivatePhysique;
+window.breakthroughPhysiqueStage = breakthroughPhysiqueStage;
+window.cultivateConsciousness = cultivateConsciousness;
+window.rerollDestinySlot = rerollDestinySlot;
+window.rerollAllDestiny = rerollAllDestiny;
+window.triggerRootElementVFX = triggerRootElementVFX;
 function hideAllGamePages(exceptId = null) {
     // 1. Ẩn toàn bộ các thẻ có class .game-page hoặc .feature-popup
     const allPages = document.querySelectorAll('.feature-popup, .feature-page, .game-page');
@@ -3276,58 +4073,88 @@ function closeAllDropupMenus() {
 // ============================================================================
 // GLOBAL STATE MANAGEMENT (GAME_STATE SINGLETON)
 // ============================================================================
-window.GameState = {
-    get TuVi() { return typeof state !== 'undefined' ? (state.exp || 0) : 0; },
-    set TuVi(v) { if (typeof state !== 'undefined') state.exp = v; },
-    get LinhThach() { return typeof state !== 'undefined' ? (state.stones || 0) : 0; },
-    set LinhThach(v) { if (typeof state !== 'undefined') state.stones = v; },
-    get TienNgoc() { return typeof state !== 'undefined' ? (state.immortalJade || 0) : 0; },
-    set TienNgoc(v) { if (typeof state !== 'undefined') state.immortalJade = v; },
-    get ChienLuc() { return typeof getCombatPower === 'function' ? getCombatPower() : (state?.atk ? state.atk * 10 : 0); },
-    get ThoNguyen() { return typeof state !== 'undefined' ? (state.lifespan || 100) : 100; },
-    deductLinhThach(amount) {
-        if ((this.LinhThach || 0) < amount) return false;
-        this.LinhThach -= amount;
-        this.updateUI();
-        if (typeof saveGameState === 'function') saveGameState();
-        return true;
+// Preserve and extend the unified GameState from js/data.js
+if (typeof window !== 'undefined' && !window.GameState) {
+    window.GameState = {};
+}
+const _targetGS = (typeof window !== 'undefined' && window.GameState) ? window.GameState : {};
+Object.defineProperties(_targetGS, {
+    TuVi: {
+        get() { return typeof state !== 'undefined' ? (state.exp || 0) : 0; },
+        set(v) { if (typeof state !== 'undefined') state.exp = v; },
+        configurable: true
     },
-    deductTienNgoc(amount) {
-        if ((this.TienNgoc || 0) < amount) return false;
-        this.TienNgoc -= amount;
-        this.updateUI();
-        if (typeof saveGameState === 'function') saveGameState();
-        return true;
+    LinhThach: {
+        get() { return typeof state !== 'undefined' ? (state.stones || 0) : 0; },
+        set(v) { if (typeof state !== 'undefined') state.stones = v; },
+        configurable: true
     },
-    addTuVi(amount) {
-        this.TuVi += amount;
-        this.updateUI();
-        if (typeof saveGameState === 'function') saveGameState();
+    TienNgoc: {
+        get() { return typeof state !== 'undefined' ? (state.immortalJade || 0) : 0; },
+        set(v) { if (typeof state !== 'undefined') state.immortalJade = v; },
+        configurable: true
     },
-    updateUI() {
-        if (typeof updateHUD === 'function') updateHUD();
-        const elStones = document.getElementById('top-spirit-stones');
-        if (elStones) elStones.textContent = Number(this.LinhThach || 0).toLocaleString('vi-VN');
-        const elJade = document.getElementById('top-immortal-jade');
-        if (elJade) elJade.textContent = Number(this.TienNgoc || 0).toLocaleString('vi-VN');
-        const elCp = document.getElementById('combat-power-text');
-        if (elCp) elCp.textContent = Number(this.ChienLuc || 0).toLocaleString('vi-VN');
-        const elExpDesktop = document.getElementById('exp-text-desktop');
-        if (elExpDesktop && typeof REALMS !== 'undefined' && typeof state !== 'undefined') {
-            const maxExp = REALMS[state.realmIndex]?.maxExp || 100;
-            elExpDesktop.textContent = `${Number(this.TuVi || 0).toLocaleString('vi-VN')} / ${Number(maxExp).toLocaleString('vi-VN')}`;
-            const pct = Math.min(100, Math.round(((this.TuVi || 0) / maxExp) * 100));
-            const bar = document.getElementById('exp-bar-desktop');
-            if (bar) bar.style.width = `${pct}%`;
-        }
+    ChienLuc: {
+        get() { return typeof getCombatPower === 'function' ? getCombatPower() : (state?.atk ? state.atk * 10 : 0); },
+        configurable: true
+    },
+    ThoNguyen: {
+        get() { return typeof state !== 'undefined' ? (state.lifespan || 100) : 100; },
+        configurable: true
+    }
+});
+_targetGS.deductLinhThach = function(amount) {
+    if ((this.LinhThach || 0) < amount) return false;
+    this.LinhThach -= amount;
+    this.updateUI();
+    if (typeof saveGameState === 'function') saveGameState();
+    return true;
+};
+_targetGS.deductTienNgoc = function(amount) {
+    if ((this.TienNgoc || 0) < amount) return false;
+    this.TienNgoc -= amount;
+    this.updateUI();
+    if (typeof saveGameState === 'function') saveGameState();
+    return true;
+};
+_targetGS.addTuVi = function(amount) {
+    this.TuVi += amount;
+    this.updateUI();
+    if (typeof saveGameState === 'function') saveGameState();
+};
+_targetGS.updateUI = function() {
+    if (typeof syncAllUI === 'function') {
+        syncAllUI();
+    } else if (typeof updateHUD === 'function') {
+        updateHUD();
+    }
+    const elStones = document.getElementById('top-spirit-stones');
+    if (elStones) elStones.textContent = Number(this.LinhThach || 0).toLocaleString('vi-VN');
+    const elJade = document.getElementById('top-immortal-jade');
+    if (elJade) elJade.textContent = Number(this.TienNgoc || 0).toLocaleString('vi-VN');
+    const elCp = document.getElementById('combat-power-text');
+    if (elCp) elCp.textContent = Number(this.ChienLuc || 0).toLocaleString('vi-VN');
+    const elExpDesktop = document.getElementById('exp-text-desktop');
+    if (elExpDesktop && typeof REALMS !== 'undefined' && typeof state !== 'undefined') {
+        const maxExp = REALMS[state.realmIndex]?.maxExp || 100;
+        elExpDesktop.textContent = `${Number(this.TuVi || 0).toLocaleString('vi-VN')} / ${Number(maxExp).toLocaleString('vi-VN')}`;
+        const pct = Math.min(100, Math.round(((this.TuVi || 0) / maxExp) * 100));
+        const bar = document.getElementById('exp-bar-desktop');
+        if (bar) bar.style.width = `${pct}%`;
     }
 };
-window.updateUI = () => window.GameState.updateUI();
+if (typeof window !== 'undefined') {
+    window.GameState = _targetGS;
+    window.updateUI = () => window.GameState.updateUI();
+}
 
 /**
  * MASTER SPA ROUTER: DOM ROUTING VIA NAVIGATE_TO & SWITCH_PAGE
  */
 function navigateTo(pageId) {
+    if (typeof window !== 'undefined' && typeof window.openGameModal === 'function') {
+        return window.openGameModal(pageId);
+    }
     return switchPage(pageId);
 }
 window.navigateTo = navigateTo;
@@ -3397,14 +4224,8 @@ const cavePopupClosers = {
     'modal-luyen-khi': 'closeLuyenKhiModal',
     'modal-khue-phong': 'closeKhuePhongModal'
 };
-document.addEventListener('pointerdown', (event) => {
-    for (const [id, closer] of Object.entries(cavePopupClosers)) {
-        const popup = document.getElementById(id);
-        if (popup && getComputedStyle(popup).display !== 'none' && !popup.contains(event.target)) {
-            window[closer]?.();
-        }
-    }
-});
+// Không đóng các phòng Động Phủ bằng pointerdown ngoài để tránh tự văng về màn hình chính
+// Các phòng Động Phủ chỉ đóng khi bấm nút [✖ ĐÓNG] hoặc điều hướng menu
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     for (const [id, closer] of Object.entries(cavePopupClosers)) {
@@ -4632,14 +5453,19 @@ function recycleSingleItem(itemId) {
 
     item.count = 0;
     if ('quantity' in item) item.quantity = 0;
+    state.inventory = state.inventory.filter(i => (i.count > 0 || i.quantity > 0));
     state.stones = (state.stones || 0) + gain;
+    if (window.GameState) {
+        window.GameState.stones = state.stones;
+        window.GameState.inventory = state.inventory;
+    }
     if (typeof saveGameState === 'function') saveGameState();
     if (typeof updateResourceUI === 'function') updateResourceUI();
     if (typeof addLog === 'function') addLog(`Đã phân giải [${item.name}] thu về ${gain.toLocaleString('vi-VN')} Linh Thạch!`, 'text-emerald-400');
-    if (typeof showGameToast === 'function') showGameToast(`Đã thu hồi ${gain.toLocaleString('vi-VN')} Linh Thạch!`);
+    if (typeof showGameToast === 'function') showGameToast(`Đã thu hồi ${gain.toLocaleString('vi-VN')} Linh Thạch!`, 'success');
 
     inspectedInventoryItemId = null;
-    renderCharacterHub('inventory');
+    renderCharacterHub('inventory', document.getElementById('inventory-page-content'));
 }
 window.recycleSingleItem = recycleSingleItem;
 
@@ -5373,7 +6199,7 @@ function renderCharacterHub(activeTab = currentCharacterTab || 'inventory', cont
             </div>
         `;
 
-        const subContainer = document.getElementById('char-subtab-container');
+        const subContainer = (host && host.querySelector ? host.querySelector('#char-subtab-container') : null) || document.getElementById('char-subtab-container');
         if (subContainer) {
             if (activeTab === 'skills') renderSkillsHub(subContainer);
             else if (activeTab === 'root') renderFoundationHub('linh_can', subContainer);
@@ -5493,19 +6319,72 @@ function renderCharacterTab(content) {
 `;
 }
 
-function renderPetHub(content) {
-    if (!content) return;
+function ensurePetInit() {
+    if (typeof GameState !== 'undefined') {
+        let petSaved = null;
+        try {
+            petSaved = JSON.parse(localStorage.getItem('van_co_pet_v2') || 'null');
+        } catch (_) {}
+        if (petSaved && typeof petSaved === 'object') {
+            if (!state.activePet && petSaved.activePet) state.activePet = petSaved.activePet;
+            if (!state.petLevel && petSaved.petLevel) state.petLevel = petSaved.petLevel;
+            if (state.petExp === undefined && petSaved.petExp !== undefined) state.petExp = petSaved.petExp;
+            if (!state.petTier && petSaved.petTier) state.petTier = petSaved.petTier;
+        }
+
+        if (GameState.activePet && !state.activePet) state.activePet = GameState.activePet;
+        if (GameState.petLevel && !state.petLevel) state.petLevel = GameState.petLevel;
+        if (GameState.petExp !== undefined && state.petExp === undefined) state.petExp = GameState.petExp;
+        if (GameState.petTier && !state.petTier) state.petTier = GameState.petTier;
+    }
     if (!state.activePet) state.activePet = 'fox';
     if (!state.petLevel) state.petLevel = 1;
-    if (!state.petExp) state.petExp = 0;
+    if (state.petExp === undefined) state.petExp = 0;
     if (!state.petTier) state.petTier = 1;
+
+    syncPetToGameState();
+}
+window.ensurePetInit = ensurePetInit;
+
+function syncPetToGameState() {
+    if (typeof GameState !== 'undefined') {
+        GameState.activePet = state.activePet || 'fox';
+        GameState.petLevel = Number(state.petLevel) || 1;
+        GameState.petExp = Number(state.petExp) || 0;
+        GameState.petTier = Number(state.petTier) || 1;
+
+        const petsData = typeof DIVINE_PETS_DATA !== 'undefined' ? DIVINE_PETS_DATA : [];
+        const curPet = petsData.find(p => p.id === state.activePet) || petsData[0];
+        if (curPet) {
+            GameState.activeGuardian = {
+                id: curPet.id,
+                name: curPet.name,
+                icon: curPet.icon === 'fa-dragon' ? '🐉' : (curPet.icon === 'fa-dove' ? '🦅' : (curPet.icon === 'fa-shield-halved' ? '🐢' : '🦊')),
+                bonusAtkRatio: 0.35 + (Number(state.petLevel || 1) * 0.02) + (Number(state.petTier || 1) * 0.05)
+            };
+        }
+        try {
+            localStorage.setItem('van_co_pet_v2', JSON.stringify({
+                activePet: state.activePet || 'fox',
+                petLevel: Number(state.petLevel) || 1,
+                petExp: Number(state.petExp) || 0,
+                petTier: Number(state.petTier) || 1
+            }));
+        } catch (_) {}
+    }
+}
+window.syncPetToGameState = syncPetToGameState;
+
+function renderPetHub(content) {
+    if (!content) return;
+    ensurePetInit();
 
     const pets = typeof DIVINE_PETS_DATA !== 'undefined' ? DIVINE_PETS_DATA : [];
     const activePet = pets.find(p => p.id === state.activePet) || pets[0] || {
         id: 'fox', name: 'Cửu Vĩ Thiên Hồ', title: 'Thần Thú Hộ Tộc', element: 'Hỏa',
         baseCp: 12500, baseHp: 5000, baseAtk: 1200, baseDef: 800,
         skillName: 'Hồ Hồn Hộ Thể', skillDesc: 'Màn chắn hấp thu 40% sát thương khi HP < 30%.',
-        colorTheme: 'from-pink-950/50 via-purple-950/40 to-slate-900', borderColor: 'border-pink-500/40', textColor: 'text-pink-300'
+        colorTheme: 'from-pink-950/70 via-purple-950/50 to-slate-900', borderColor: 'border-pink-500/50', textColor: 'text-pink-300'
     };
 
     const petLvl = Number(state.petLevel) || 1;
@@ -5521,109 +6400,133 @@ function renderPetHub(content) {
     };
     const nextBloodline = (petTier < bloodlineTiers.length) ? bloodlineTiers[petTier] : null;
 
-    const bonusCp = Math.round(((activePet.baseCp || 12000) + (petLvl - 1) * 2500) * currentBloodline.atkMult);
-    const bonusAtk = Math.round(((petLvl - 1) * 25) * currentBloodline.atkMult);
-    const bonusDef = Math.round(((petLvl - 1) * 15) * currentBloodline.defMult);
-    const bonusHp = Math.round(((petLvl - 1) * 150) * currentBloodline.hpMult);
+    const bMult = currentBloodline.atkMult || 1.0;
+    const bonusAtk = Math.round(((petLvl - 1) * 35 + 80) * bMult);
+    const bonusDef = Math.round(((petLvl - 1) * 25 + 50) * (currentBloodline.defMult || bMult));
+    const bonusHp = Math.round(((petLvl - 1) * 220 + 450) * (currentBloodline.hpMult || bMult));
+    const bonusCp = Math.round((bonusAtk * 2) + (bonusDef * 1.5) + (bonusHp * 0.1) + ((activePet.baseCp || 12000) * bMult));
 
-    const playerStones = state.stones || 0;
-    const playerJade = Number(state.immortalJade || state.jade || 0);
+    const playerStones = Number(state.stones || (typeof GameState !== 'undefined' ? GameState.stones : 0)) || 0;
+    const playerJade = Number(state.jade !== undefined ? state.jade : (state.immortalJade !== undefined ? state.immortalJade : (typeof GameState !== 'undefined' ? GameState.jade : 0))) || 0;
+
+    let pillItem = state.inventory ? state.inventory.find(i => (i.id === 'arena_pet_pill' || i.name?.includes('Hóa Linh Đan') || i.name?.includes('Thú Đan')) && i.count > 0) : null;
+    if (!pillItem && typeof GameState !== 'undefined' && Array.isArray(GameState.inventory)) {
+        pillItem = GameState.inventory.find(i => (i.id === 'arena_pet_pill' || i.name?.includes('Hóa Linh Đan') || i.name?.includes('Thú Đan')) && i.count > 0);
+    }
+    const pillCount = pillItem ? Number(pillItem.count) || 0 : 0;
 
     content.innerHTML = `
-        <div class="space-y-4">
+        <div class="space-y-4 select-none">
             <!-- HEADER TỨ ĐẠI THẦN THÚ CHỦ LỰC -->
-            <div class="p-4 rounded-2xl bg-gradient-to-r ${activePet.colorTheme} border ${activePet.borderColor} shadow-lg relative overflow-hidden">
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r ${activePet.colorTheme} border-2 ${activePet.borderColor} shadow-xl relative overflow-hidden backdrop-blur-sm">
                 <div class="flex flex-col sm:flex-row items-center gap-5 relative z-10">
-                    <div class="relative w-28 h-28 rounded-2xl overflow-hidden border-2 ${activePet.borderColor} shadow-[0_0_25px_rgba(255,255,255,0.15)] flex-shrink-0 bg-slate-950 flex items-center justify-center">
-                        <i class="fa-solid ${activePet.icon || 'fa-paw'} text-5xl ${activePet.textColor}"></i>
-                        <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold ${activePet.textColor} font-mono">Cấp ${petLvl}</span>
-                        <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-bold text-amber-400 font-mono">Hệ ${activePet.element}</span>
+                    <div class="relative w-28 h-28 rounded-2xl overflow-hidden border-2 ${activePet.borderColor} shadow-[0_0_30px_rgba(255,255,255,0.2)] flex-shrink-0 bg-slate-950 flex items-center justify-center p-1">
+                        ${activePet.id === 'fox' && activePet.image ? `
+                            <img src="${activePet.image}" alt="${activePet.name}" class="w-full h-full object-cover rounded-xl">
+                        ` : `
+                            <div class="w-full h-full rounded-xl bg-slate-900/90 flex flex-col items-center justify-center gap-1">
+                                <i class="fa-solid ${activePet.icon || 'fa-paw'} text-4xl ${activePet.textColor}"></i>
+                                <span class="text-[10px] font-mono font-bold ${activePet.textColor}">${activePet.element} Hệ</span>
+                            </div>
+                        `}
+                        <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/85 text-[10px] font-bold ${activePet.textColor} font-mono border border-slate-700">Cấp ${petLvl}</span>
+                        <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/85 text-[9px] font-bold text-amber-400 font-mono border border-slate-700">Hệ ${activePet.element}</span>
                     </div>
 
-                    <div class="flex-1 space-y-1.5 text-center sm:text-left">
+                    <div class="flex-1 space-y-2 text-center sm:text-left">
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                             <h3 class="text-lg font-bold text-slate-100 font-serif">${activePet.name}</h3>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 ${activePet.textColor} border ${activePet.borderColor}">${activePet.title}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/90 ${activePet.textColor} border ${activePet.borderColor}">${activePet.title}</span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold ${currentBloodline.colorClass}">${currentBloodline.name}</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono">Lực Chiến: +${bonusCp.toLocaleString('vi-VN')}</span>
+                            <span class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-amber-950/90 text-amber-300 border border-amber-500/50 font-mono shadow-sm">
+                                Lực Chiến: +${bonusCp.toLocaleString('vi-VN')}
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-300 leading-relaxed">${activePet.skillDesc}</p>
+                        <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">${activePet.skillDesc}</p>
                         
-                        <div class="text-[11px] grid grid-cols-3 gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 text-slate-300 font-mono">
+                        <!-- CHỈ SỐ GIA TRÌ THỰC CHIẾN -->
+                        <div class="text-[11px] grid grid-cols-3 gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-slate-300 font-mono shadow-inner">
                             <div>Công Kích: <b class="text-amber-400">+${bonusAtk.toLocaleString('vi-VN')}</b></div>
                             <div>Phòng Ngự: <b class="text-sky-400">+${bonusDef.toLocaleString('vi-VN')}</b></div>
                             <div>Khí Huyết: <b class="text-rose-400">+${bonusHp.toLocaleString('vi-VN')}</b></div>
                         </div>
 
-                        <div class="space-y-1 pt-1">
+                        <!-- THANH EXP NUÔI DƯỠNG -->
+                        <div class="space-y-1 pt-0.5">
                             <div class="flex justify-between text-[11px] font-mono ${activePet.textColor}">
-                                <span>Linh Khí Nuôi Dưỡng (EXP)</span>
-                                <span>${petExp} / ${petMaxExp} (${expPercent}%)</span>
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-sparkles text-amber-400"></i> Linh Khí Nuôi Dưỡng (EXP)</span>
+                                <span>${petExp.toLocaleString('vi-VN')} / ${petMaxExp.toLocaleString('vi-VN')} (${expPercent}%)</span>
                             </div>
-                            <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800">
-                                <div class="h-full bg-gradient-to-r from-amber-500 to-pink-500 transition-all duration-300 rounded-full" style="width: ${expPercent}%;"></div>
+                            <div class="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden border border-slate-800 shadow-inner">
+                                <div class="h-full bg-gradient-to-r from-amber-500 via-pink-500 to-purple-500 transition-all duration-300 rounded-full" style="width: ${expPercent}%;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Nút thao tác nuôi dưỡng -->
-                <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap gap-2.5 justify-end">
-                    <button type="button" onclick="feedGuardianPetPill('stones')" class="px-3.5 py-1.5 rounded-xl bg-amber-950/70 hover:bg-amber-900 text-amber-200 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+                <!-- 3 NÚT THAO TÁC NUÔI DƯỠNG -->
+                <div class="mt-4 pt-3.5 border-t border-slate-800/80 flex flex-wrap gap-2.5 justify-end">
+                    <button type="button"
+                            onclick="feedGuardianPetPill('stones')"
+                            class="px-3.5 py-2 rounded-xl ${playerStones >= 500 ? 'bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-500/50 shadow-md cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'} text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
                         <i class="fa-solid fa-cookie-bite"></i> Thức Ăn Thường (500 LT • +250 EXP)
                     </button>
-                    <button type="button" onclick="feedGuardianPetPill('pill')" class="px-3.5 py-1.5 rounded-xl bg-purple-950/70 hover:bg-purple-900 text-purple-200 border border-purple-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95">
-                        <i class="fa-solid fa-pills"></i> Vạn Thú Hóa Linh Đan (+1,500 EXP)
+                    <button type="button"
+                            onclick="feedGuardianPetPill('pill')"
+                            class="px-3.5 py-2 rounded-xl ${(pillCount > 0 || playerStones >= 2500) ? 'bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-500/50 shadow-md cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'} text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
+                        <i class="fa-solid fa-pills"></i> ${pillCount > 0 ? `Vạn Thú Hóa Linh Đan (Có x${pillCount} • +1,500 EXP)` : 'Mua Hóa Linh Đan (2,500 LT • +1,500 EXP)'}
                     </button>
-                    <button type="button" onclick="feedGuardianPetPill('jade')" class="px-3.5 py-1.5 rounded-xl bg-cyan-950/70 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+                    <button type="button"
+                            onclick="feedGuardianPetPill('jade')"
+                            class="px-3.5 py-2 rounded-xl ${playerJade >= 20 ? 'bg-cyan-950/80 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/50 shadow-md cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'} text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
                         <i class="fa-solid fa-diamond"></i> Tiên Thiên Huyết Tinh (20 TN • +10,000 EXP)
                     </button>
                 </div>
             </div>
 
             <!-- BẢNG TIẾN HÓA & THỨC TỈNH HUYẾT MẠCH BẬC CAO -->
-            <div class="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 shadow-lg space-y-3.5">
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-800 pb-2.5">
-                    <div class="flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-amber-950/80 border border-amber-500/50 flex items-center justify-center text-amber-400 text-xs">
+            <div class="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/40 shadow-xl space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-amber-950/90 border border-amber-500/60 flex items-center justify-center text-amber-400 text-sm shadow-sm">
                             <i class="fa-solid fa-dna"></i>
                         </span>
                         <div>
                             <h4 class="text-xs font-bold text-slate-100 uppercase tracking-wider">Huyết Mạch Thần Thú • Thức Tỉnh & Tiến Hóa</h4>
-                            <span class="text-[10px] text-stone-400">Gia trì vĩnh viễn thuộc tính, thần thông trợ chiến và tốc độ ngưng tụ tu vi</span>
+                            <span class="text-[10px] text-slate-400">Gia trì vĩnh viễn thuộc tính, thần thông hộ chủ và tốc độ vận hành Chu Thiên</span>
                         </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${currentBloodline.colorClass}">
+                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold ${currentBloodline.colorClass}">
                         ${currentBloodline.badge} (${currentBloodline.name})
                     </span>
                 </div>
 
                 <!-- 4 Cảnh Giới Huyết Mạch (Steps) -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    ${bloodlineTiers.map((t, idx) => {
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    ${bloodlineTiers.map(t => {
                         const isUnlocked = petTier >= t.tier;
                         const isCurrent = petTier === t.tier;
                         return `
-                            <div class="p-2.5 rounded-xl border ${isCurrent ? 'bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/40' : (isUnlocked ? 'bg-slate-900/80 border-emerald-500/40' : 'bg-slate-950/60 border-stone-800 opacity-60')} flex flex-col justify-between space-y-1">
+                            <div class="p-3 rounded-xl border ${isCurrent ? 'bg-amber-950/50 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : (isUnlocked ? 'bg-slate-900/90 border-emerald-500/50' : 'bg-slate-950/70 border-slate-800 opacity-60')} flex flex-col justify-between space-y-1.5">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-mono font-bold ${isUnlocked ? 'text-amber-400' : 'text-stone-500'}">Giai Đoạn ${t.tier}</span>
-                                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isCurrent ? 'bg-amber-500 text-black' : (isUnlocked ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-900 text-stone-500')}">
+                                    <span class="text-[10px] font-mono font-bold ${isUnlocked ? 'text-amber-400' : 'text-slate-500'}">Giai Đoạn ${t.tier}</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isCurrent ? 'bg-amber-500 text-slate-950' : (isUnlocked ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-slate-900 text-slate-500')}">
                                         ${isCurrent ? 'HIỆN TẠI' : (isUnlocked ? 'ĐÃ ĐẠT' : `CẤP ${t.reqLevel}`)}
                                     </span>
                                 </div>
-                                <h5 class="text-xs font-bold ${isUnlocked ? 'text-slate-100' : 'text-stone-400'}">${t.name}</h5>
-                                <p class="text-[10px] text-stone-400 line-clamp-2">${t.desc}</p>
+                                <h5 class="text-xs font-bold ${isUnlocked ? 'text-slate-100' : 'text-slate-400'}">${t.name}</h5>
+                                <p class="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">${t.desc}</p>
                             </div>
                         `;
                     }).join('')}
                 </div>
 
                 <!-- Tiến Hóa Thao Tác -->
-                <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-900/40 p-3 rounded-xl border border-stone-800/80">
-                    <div class="text-xs text-stone-300 space-y-0.5 text-center sm:text-left">
+                <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+                    <div class="text-xs text-slate-300 space-y-1 text-center sm:text-left">
                         ${nextBloodline ? `
                             <div class="font-bold text-amber-300">Tiến Hóa Tiếp Theo: [${nextBloodline.name}]</div>
-                            <div class="text-[11px] text-stone-400 flex flex-wrap gap-2.5 items-center justify-center sm:justify-start">
+                            <div class="text-[11px] text-slate-400 flex flex-wrap gap-2.5 items-center justify-center sm:justify-start">
                                 <span>Cấp yêu cầu: <b class="${petLvl >= nextBloodline.reqLevel ? 'text-emerald-400' : 'text-rose-400'}">Cấp ${petLvl}/${nextBloodline.reqLevel}</b></span>
                                 <span>Linh Thạch: <b class="${playerStones >= nextBloodline.costStones ? 'text-emerald-400' : 'text-rose-400'}">${nextBloodline.costStones.toLocaleString('vi-VN')} LT</b></span>
                                 <span>Tiên Ngọc: <b class="${playerJade >= nextBloodline.costJade ? 'text-emerald-400' : 'text-rose-400'}">${nextBloodline.costJade} TN</b></span>
@@ -5632,16 +6535,18 @@ function renderPetHub(content) {
                             <div class="font-bold text-amber-300 flex items-center gap-1.5">
                                 <i class="fa-solid fa-crown text-amber-400"></i> Huyết Mạch Đã Đạt Cực Cảnh Thái Cổ Thánh Thú!
                             </div>
-                            <div class="text-[11px] text-stone-400">Thần Thú đã lột xác thành hình dáng tối thượng của Hồng Hoang Viễn Cổ.</div>
+                            <div class="text-[11px] text-slate-400">Thần Thú đã lột xác thành hình dáng tối thượng của Hồng Hoang Viễn Cổ.</div>
                         `}
                     </div>
 
                     ${nextBloodline ? `
-                        <button type="button" onclick="evolveGuardianPet()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                        <button type="button"
+                                onclick="evolveGuardianPet()"
+                                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-[0_0_15px_rgba(245,158,11,0.35)] transition active:scale-95 flex items-center gap-1.5 cursor-pointer flex-shrink-0">
                             <i class="fa-solid fa-bolt"></i> Thức Tỉnh Huyết Mạch
                         </button>
                     ` : `
-                        <span class="px-3.5 py-1.5 rounded-xl bg-amber-950/80 text-amber-300 border border-amber-500/40 text-xs font-bold font-mono">
+                        <span class="px-4 py-2 rounded-xl bg-amber-950/80 text-amber-300 border border-amber-500/50 text-xs font-bold font-mono">
                             👑 ĐẠI THÀNH CỰC CẢNH
                         </span>
                     `}
@@ -5657,21 +6562,21 @@ function renderPetHub(content) {
                     ${pets.map(pet => {
                         const isActive = pet.id === state.activePet;
                         return `
-                            <div class="pet-showcase-card ${isActive ? 'is-active ring-1 ring-pink-500' : ''} flex flex-col justify-between" onclick="selectDivinePet('${pet.id}')">
+                            <div class="p-3.5 rounded-2xl bg-slate-900/95 border-2 ${isActive ? 'border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)] ring-1 ring-amber-400/50' : 'border-slate-800 hover:border-slate-700'} transition flex flex-col justify-between space-y-3 cursor-pointer" onclick="selectDivinePet('${pet.id}')">
                                 <div>
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-lg ${pet.textColor}">
+                                    <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800/80">
+                                        <div class="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-lg ${pet.textColor} border border-slate-800">
                                             <i class="fa-solid ${pet.icon || 'fa-paw'}"></i>
                                         </div>
-                                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-slate-900 text-slate-400'}">
-                                            ${isActive ? 'ĐANG XUẤT CHIẾN' : 'NGHỈ NGƠI'}
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded font-bold ${isActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50 shadow-sm' : 'bg-slate-800 text-slate-400'}">
+                                            ${isActive ? '✦ ĐANG XUẤT CHIẾN' : 'NGHỈ NGƠI'}
                                         </span>
                                     </div>
-                                    <h5 class="text-sm font-bold text-slate-100">${pet.name}</h5>
-                                    <span class="text-[10px] ${pet.textColor} block mb-1">Hệ: ${pet.element} • ${pet.title}</span>
-                                    <p class="text-[11px] text-slate-400 line-clamp-2">${pet.skillDesc}</p>
+                                    <h5 class="text-sm font-bold text-slate-100 font-serif">${pet.name}</h5>
+                                    <span class="text-[10px] ${pet.textColor} block mb-1 font-mono">Hệ: ${pet.element} • ${pet.title}</span>
+                                    <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${pet.skillDesc}</p>
                                 </div>
-                                <button type="button" class="mt-3 w-full py-1.5 rounded-lg ${isActive ? 'bg-pink-900/60 text-pink-200 border border-pink-500/50' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs font-semibold transition cursor-pointer">
+                                <button type="button" class="mt-2 w-full py-1.5 rounded-xl ${isActive ? 'bg-amber-950/80 text-amber-200 border border-amber-500/50 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs font-semibold transition cursor-pointer">
                                     ${isActive ? 'Đang Hộ Mệnh' : 'Triệu Hồi Hộ Mệnh'}
                                 </button>
                             </div>
@@ -5682,53 +6587,78 @@ function renderPetHub(content) {
         </div>
     `;
 }
+window.renderPetHub = renderPetHub;
 
 function refreshPetUI() {
+    const pagePet = document.getElementById('page-pet');
+    if (pagePet && !pagePet.classList.contains('hidden')) {
+        const subContainer = pagePet.querySelector('#char-subtab-container');
+        if (subContainer) {
+            renderPetHub(subContainer);
+            return;
+        }
+    }
     const pageContent = document.getElementById('pet-page-content');
-    if (pageContent) {
-        renderPetHub(pageContent);
+    if (pageContent && typeof window.renderCharacterHub === 'function') {
+        window.renderCharacterHub('pet', pageContent);
+        return;
     }
     const hubContent = document.getElementById('hub-modal-content');
     if (hubContent && document.getElementById('hub-modal')?.classList.contains('active')) {
         renderPetHub(hubContent);
     }
 }
+window.refreshPetUI = refreshPetUI;
 
 function evolveGuardianPet() {
+    ensurePetInit();
     if (!state.petTier) state.petTier = 1;
     if (!state.petLevel) state.petLevel = 1;
     const bloodlineTiers = typeof PET_BLOODLINE_TIERS !== 'undefined' ? PET_BLOODLINE_TIERS : [];
     if (state.petTier >= bloodlineTiers.length) {
+        if (typeof showGameToast === 'function') showGameToast('Huyết Mạch đã đạt Cực Cảnh Thái Cổ!', 'info');
         if (typeof addLog === 'function') addLog('🐾 Thần Thú Hộ Tộc đã thức tỉnh Huyết Mạch Cực Cảnh Thái Cổ!', 'text-amber-300');
         return;
     }
     const nextTier = bloodlineTiers[state.petTier];
     if (state.petLevel < nextTier.reqLevel) {
+        if (typeof showGameToast === 'function') showGameToast(`Cần Thần Thú đạt Cấp ${nextTier.reqLevel}!`, 'warning');
         if (typeof addLog === 'function') addLog(`⚠️ Thần Thú chưa đạt cấp độ yêu cầu để tiến hóa (Cần Cấp ${nextTier.reqLevel}).`, 'text-rose-400');
         return;
     }
-    if ((state.stones || 0) < nextTier.costStones) {
+
+    const playerStones = Number(state.stones || (typeof GameState !== 'undefined' ? GameState.stones : 0)) || 0;
+    const playerJade = Number(state.jade !== undefined ? state.jade : (state.immortalJade !== undefined ? state.immortalJade : (typeof GameState !== 'undefined' ? GameState.jade : 0))) || 0;
+
+    if (playerStones < nextTier.costStones) {
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${nextTier.costStones.toLocaleString('vi-VN')} Linh Thạch!`, 'warning');
         if (typeof addLog === 'function') addLog(`⚠️ Không đủ Linh Thạch để thức tỉnh huyết mạch (Cần ${nextTier.costStones.toLocaleString('vi-VN')} LT).`, 'text-rose-400');
         return;
     }
-    const jadeCount = Number(state.immortalJade || state.jade || 0);
-    if (jadeCount < nextTier.costJade) {
+    if (playerJade < nextTier.costJade) {
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${nextTier.costJade} Tiên Ngọc!`, 'warning');
         if (typeof addLog === 'function') addLog(`⚠️ Không đủ Tiên Ngọc để thức tỉnh huyết mạch (Cần ${nextTier.costJade} Tiên Ngọc).`, 'text-rose-400');
         return;
     }
 
-    state.stones -= nextTier.costStones;
-    if (state.immortalJade !== undefined) state.immortalJade -= nextTier.costJade;
-    else if (state.jade !== undefined) state.jade -= nextTier.costJade;
+    state.stones = playerStones - nextTier.costStones;
+    const updatedJade = playerJade - nextTier.costJade;
+    state.jade = updatedJade;
+    if (state.immortalJade !== undefined) state.immortalJade = updatedJade;
+
+    if (typeof GameState !== 'undefined') {
+        GameState.stones = state.stones;
+        GameState.jade = updatedJade;
+        if (GameState.immortalJade !== undefined) GameState.immortalJade = updatedJade;
+    }
+
     state.petTier += 1;
+    syncPetToGameState();
 
     const prevCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
     if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     const newCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
-    const cpGain = Math.max(2500, newCp - prevCp);
-
-    if (window.soundSystem?.play) window.soundSystem.play('victory');
-    else if (typeof playSound === 'function') playSound('bell');
+    const cpGain = Math.max(3000, newCp - prevCp);
 
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `Huyết Mạch Thức Tỉnh: ${nextTier.name}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-gold-300 font-bold');
@@ -5736,75 +6666,111 @@ function evolveGuardianPet() {
     if (typeof addLog === 'function') {
         addLog(`🌟 HUYẾT MẠCH BÙNG NỔ! Thần Thú đã lột xác thành công, thức tỉnh [${nextTier.name}]! Lực Chiến tăng vọt +${cpGain.toLocaleString('vi-VN')} CP!`, 'text-gold-300 font-bold');
     }
-    updateHUD();
-    saveGameState();
+    if (typeof showGameToast === 'function') {
+        showGameToast(`Huyết Mạch thức tỉnh: ${nextTier.name}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'success');
+    }
+
+    if (typeof renderCharacterUI === 'function') renderCharacterUI();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
     refreshPetUI();
 }
 window.evolveGuardianPet = evolveGuardianPet;
 
 function selectDivinePet(petId) {
+    ensurePetInit();
+    const pets = typeof DIVINE_PETS_DATA !== 'undefined' ? DIVINE_PETS_DATA : [];
+    const pet = pets.find(p => p.id === petId);
+    if (!pet) return;
+
     state.activePet = petId;
-    const pet = (typeof DIVINE_PETS_DATA !== 'undefined' ? DIVINE_PETS_DATA : []).find(p => p.id === petId);
-    if (typeof playSound === 'function') playSound('whoosh');
-    if (typeof addLog === 'function') {
-        addLog(`🐾 Đã triệu hồi Thần Thú [${pet ? pet.name : petId}] xuất chiến hộ mệnh!`, 'text-pink-300');
+    syncPetToGameState();
+
+    if (typeof showGameToast === 'function') {
+        showGameToast(`Đã triệu hồi [${pet.name}] xuất chiến hộ mệnh!`, 'success');
     }
+    if (typeof addLog === 'function') {
+        addLog(`🐾 Đã triệu hồi Thần Thú [${pet.name}] (${pet.title}) xuất chiến hộ mệnh!`, 'text-pink-300 font-bold');
+    }
+
     if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
-    updateHUD();
-    saveGameState();
+    if (typeof renderCharacterUI === 'function') renderCharacterUI();
+    if (typeof renderCharacterUI === 'function') renderCharacterUI();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
     refreshPetUI();
 }
 window.selectDivinePet = selectDivinePet;
 
 function feedGuardianPetPill(pillType) {
-    if (!state.petLevel) state.petLevel = 1;
-    if (!state.petExp) state.petExp = 0;
-
+    ensurePetInit();
     let expGain = 0;
+    const playerStones = Number(state.stones || (typeof GameState !== 'undefined' ? GameState.stones : 0)) || 0;
+    const playerJade = Number(state.jade !== undefined ? state.jade : (state.immortalJade !== undefined ? state.immortalJade : (typeof GameState !== 'undefined' ? GameState.jade : 0))) || 0;
+
     if (pillType === 'stones') {
-        if (state.stones < 500) {
-            addLog('Không đủ Linh Thạch để nuôi dưỡng Linh Thú (Cần 500 LT).', 'text-rose-400');
+        if (playerStones < 500) {
+            if (typeof showGameToast === 'function') showGameToast('Thiếu 500 Linh Thạch!', 'warning');
+            if (typeof addLog === 'function') addLog('⚠️ Không đủ Linh Thạch để nuôi dưỡng Linh Thú (Cần 500 LT).', 'text-rose-400');
             return;
         }
-        state.stones -= 500;
+        state.stones = playerStones - 500;
+        if (typeof GameState !== 'undefined') GameState.stones = state.stones;
         expGain = 250;
     } else if (pillType === 'pill') {
-        const pillItem = state.inventory ? state.inventory.find(i => i.id === 'arena_pet_pill' && i.count > 0) : null;
+        let pillItem = state.inventory ? state.inventory.find(i => (i.id === 'arena_pet_pill' || i.name?.includes('Hóa Linh Đan') || i.name?.includes('Thú Đan')) && i.count > 0) : null;
+        if (!pillItem && typeof GameState !== 'undefined' && Array.isArray(GameState.inventory)) {
+            pillItem = GameState.inventory.find(i => (i.id === 'arena_pet_pill' || i.name?.includes('Hóa Linh Đan') || i.name?.includes('Thú Đan')) && i.count > 0);
+        }
+
         if (pillItem) {
             pillItem.count -= 1;
             if (pillItem.count <= 0) {
-                state.inventory = state.inventory.filter(i => i.id !== 'arena_pet_pill');
+                if (state.inventory) state.inventory = state.inventory.filter(i => i !== pillItem);
+                if (typeof GameState !== 'undefined' && Array.isArray(GameState.inventory)) {
+                    GameState.inventory = GameState.inventory.filter(i => i !== pillItem);
+                }
             }
             expGain = 1500;
         } else {
-            if (state.stones < 2500) {
-                addLog('Không đủ Linh Thạch để mua Vạn Thú Hóa Linh Đan (Cần 2,500 LT).', 'text-rose-400');
+            if (playerStones < 2500) {
+                if (typeof showGameToast === 'function') showGameToast('Thiếu 2,500 Linh Thạch để mua Thú Đan!', 'warning');
+                if (typeof addLog === 'function') addLog('⚠️ Không đủ Linh Thạch để mua Vạn Thú Hóa Linh Đan (Cần 2,500 LT).', 'text-rose-400');
                 return;
             }
-            state.stones -= 2500;
+            state.stones = playerStones - 2500;
+            if (typeof GameState !== 'undefined') GameState.stones = state.stones;
             expGain = 1500;
         }
     } else if (pillType === 'jade') {
-        const jadeCount = Number(state.jade || state.immortalJade || 0);
-        if (jadeCount < 20) {
-            addLog('Không đủ Tiên Ngọc (Cần 20 Tiên Ngọc).', 'text-rose-400');
+        if (playerJade < 20) {
+            if (typeof showGameToast === 'function') showGameToast('Thiếu 20 Tiên Ngọc!', 'warning');
+            if (typeof addLog === 'function') addLog('⚠️ Không đủ Tiên Ngọc (Cần 20 Tiên Ngọc).', 'text-rose-400');
             return;
         }
-        if (state.jade !== undefined) state.jade -= 20;
-        else if (state.immortalJade !== undefined) state.immortalJade -= 20;
+        const updatedJade = playerJade - 20;
+        state.jade = updatedJade;
+        if (state.immortalJade !== undefined) state.immortalJade = updatedJade;
+        if (typeof GameState !== 'undefined') {
+            GameState.jade = updatedJade;
+            if (GameState.immortalJade !== undefined) GameState.immortalJade = updatedJade;
+        }
         expGain = 10000;
     }
 
-    state.petExp += expGain;
+    state.petExp = (Number(state.petExp) || 0) + expGain;
     let leveledUp = false;
-    let maxExp = Math.max(100, (state.petLevel || 1) * 600);
+    let oldLevel = Number(state.petLevel) || 1;
+    let maxExp = Math.max(100, (Number(state.petLevel) || 1) * 600);
     let petLoopGuard = 0;
     while (maxExp > 0 && state.petExp >= maxExp && petLoopGuard++ < 100) {
         state.petExp -= maxExp;
-        state.petLevel += 1;
+        state.petLevel = (Number(state.petLevel) || 1) + 1;
         leveledUp = true;
         maxExp = Math.max(100, state.petLevel * 600);
     }
+
+    syncPetToGameState();
 
     const prevCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
     if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
@@ -5812,20 +6778,34 @@ function feedGuardianPetPill(pillType) {
     const cpGain = Math.max(0, newCp - prevCp);
 
     if (leveledUp) {
-        if (window.soundSystem?.play) window.soundSystem.play('levelup');
-        else if (typeof playSound === 'function') playSound('bell');
-        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Linh Thú Đột Phá Cấp ${state.petLevel}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-gold-300 font-bold');
-        addLog(`✨ Thần Thú Hộ Tộc đã đột phá lên Cấp ${state.petLevel}! Thuộc tính và Lực Chiến gia tăng +${cpGain.toLocaleString('vi-VN')} CP!`, 'text-gold-300 font-bold');
+        if (typeof spawnFloatingText === 'function') {
+            spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Linh Thú Đột Phá Cấp ${state.petLevel}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-gold-300 font-bold');
+        }
+        if (typeof addLog === 'function') {
+            addLog(`✨ Thần Thú Hộ Tộc đã đột phá từ Cấp ${oldLevel} lên Cấp ${state.petLevel}! Lực Chiến gia tăng +${cpGain.toLocaleString('vi-VN')} CP!`, 'text-gold-300 font-bold');
+        }
+        if (typeof showGameToast === 'function') {
+            showGameToast(`Linh Thú đột phá Cấp ${state.petLevel}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'success');
+        }
     } else {
-        if (typeof playSound === 'function') playSound('ding');
-        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `+${expGain} EXP Linh Thú`, 'text-pink-300');
-        addLog(`🐾 Cho Thần Thú nuốt linh dược, tích lũy +${expGain} EXP!`, 'text-pink-300');
+        if (typeof spawnFloatingText === 'function') {
+            spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `+${expGain.toLocaleString('vi-VN')} EXP Linh Thú`, 'text-pink-300');
+        }
+        if (typeof addLog === 'function') {
+            addLog(`🐾 Cho Thần Thú bồi dưỡng linh dược, tích lũy +${expGain.toLocaleString('vi-VN')} EXP!`, 'text-pink-300');
+        }
+        if (typeof showGameToast === 'function') {
+            showGameToast(`Đã bồi dưỡng +${expGain.toLocaleString('vi-VN')} EXP Linh Thú!`, 'info');
+        }
     }
 
-    updateHUD();
-    saveGameState();
+    if (typeof renderCharacterUI === 'function') renderCharacterUI();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
     refreshPetUI();
 }
+window.feedGuardianPetPill = feedGuardianPetPill;
+window.feedGuardianPet = () => feedGuardianPetPill('stones');
 window.feedGuardianPetPill = feedGuardianPetPill;
 window.feedGuardianPet = () => feedGuardianPetPill('stones');
 
@@ -5883,109 +6863,398 @@ const DESTINY_ARTIFACTS_DATA = [
 ];
 
 function isArtifactUnlocked(s) {
-    if (!s) return false;
-    const currentTier = s.realmTier || (typeof resolveRealmTier === 'function' ? resolveRealmTier(s) : 1);
-    if (currentTier >= ARTIFACT_UNLOCK_TIER) return true;
-
-    const realmName = (typeof REALMS !== 'undefined' && Array.isArray(REALMS) && REALMS[s.realmIndex]?.name) || '';
-    if (realmName.includes('Đại Thừa') || realmName.includes('Độ Kiếp')) return true;
-
-    return false;
+    return true; // Mở khóa tính năng Tam Đại Bản Mệnh Pháp Bảo
 }
 window.isArtifactUnlocked = isArtifactUnlocked;
 
-function renderArtifactHub(content) {
-    if (!content) return;
-    const unlocked = isArtifactUnlocked(state);
-    const artLevel = Math.max(1, (state.realmIndex || 0) + 1);
+function getArtifactOre(oreKey) {
+    if (typeof GameState !== 'undefined' && GameState.materials && typeof GameState.materials[oreKey] === 'number') {
+        const val = GameState.materials[oreKey];
+        if (val > 0) return val;
+    }
+    if (typeof state !== 'undefined' && state.ores) {
+        if (typeof state.ores === 'object' && typeof state.ores[oreKey] === 'number') {
+            return state.ores[oreKey];
+        }
+        if (typeof state.ores === 'number') {
+            return state.ores;
+        }
+    }
+    return 0;
+}
+window.getArtifactOre = getArtifactOre;
 
-    if (!unlocked) {
-        // GIAO DIỆN KHÓA TÍNH NĂNG (LOCKED STATE THEO CỐT TRUYỆN ĐẠI THỪA KỲ)
-        const currentTier = state.realmTier || (typeof resolveRealmTier === 'function' ? resolveRealmTier(state) : 1);
-        const currentRealmName = (typeof REALMS !== 'undefined' && Array.isArray(REALMS) && REALMS[state.realmIndex]?.name) || 'Luyện Khí';
-        const progressPct = Math.min(100, Math.round((currentTier / ARTIFACT_UNLOCK_TIER) * 100));
+function deductArtifactOre(oreKey, cost) {
+    const current = getArtifactOre(oreKey);
+    const updated = Math.max(0, current - cost);
+    if (typeof GameState !== 'undefined' && GameState.materials) {
+        try { GameState.materials[oreKey] = updated; } catch (_) {}
+    }
+    if (typeof state !== 'undefined') {
+        if (typeof state.ores === 'object' && state.ores !== null) {
+            state.ores[oreKey] = updated;
+        } else {
+            state.ores = updated;
+        }
+    }
+}
+window.deductArtifactOre = deductArtifactOre;
 
-        content.innerHTML = `
-            <div class="artifact-locked-container">
-                <div class="locked-aura-circle">
-                    <div class="locked-icon-shield">
-                        <i class="fa-solid fa-lock text-rose-500"></i>
-                    </div>
-                </div>
+function ensureArtifactsInit() {
+    if (typeof GameState !== 'undefined') {
+        if (Array.isArray(GameState.artifacts) && GameState.artifacts.length > 0 && (!Array.isArray(state.artifacts) || state.artifacts.length === 0)) {
+            state.artifacts = GameState.artifacts;
+        }
+        if (GameState.materials) {
+            if (GameState.materials.huyenThiet === 0) GameState.materials.huyenThiet = 30;
+            if (GameState.materials.tuTinh === 0) GameState.materials.tuTinh = 15;
+        }
+        if (GameState.stones !== undefined && state.stones === undefined) {
+            state.stones = GameState.stones;
+        }
+    }
+    if (!Array.isArray(state.artifacts) || state.artifacts.length === 0) {
+        state.artifacts = [
+            { id: 'sword', name: 'Thanh Trúc Phi Kiếm', type: 'Bản Mệnh • Tiên Phẩm', level: 1, equipped: true, slot: 'sword', oreType: 'huyenThiet', oreName: 'Huyền Thiết', icon: 'fa-khanda', theme: 'teal', statUnit: 'Công Kích', speedBonus: '+25%', technique: 'Vạn Kiếm Quy Tông', image: './assets/images/sword_bamboo.jpg' },
+            { id: 'mirror', name: 'Bát Quái Hộ Thân Kính', type: 'Hộ Thể • Tiên Phẩm', level: 1, equipped: true, slot: 'mirror', oreType: 'huyenThiet', oreName: 'Huyền Thiết', icon: 'fa-shield-halved', theme: 'amber', statUnit: 'Phòng Ngự', speedBonus: '+18%', technique: 'Huyền Quang Hộ Thể', image: './assets/images/mirror_bagua.jpg' },
+            { id: 'bead', name: 'Định Hải Thần Châu', type: 'Trấn Hồn • Thần Phẩm', level: 1, equipped: false, slot: 'bead', oreType: 'tuTinh', oreName: 'Tử Tinh', icon: 'fa-gem', theme: 'purple', statUnit: 'Khí Huyết', speedBonus: '+35%', technique: 'Trấn Hải Phong Ma', image: null }
+        ];
+    }
+    if (!state.ores || (typeof state.ores === 'object' && Object.keys(state.ores).length === 0)) {
+        state.ores = { huyenThiet: 30, tuTinh: 15 };
+    }
+    if (typeof GameState !== 'undefined') {
+        GameState.artifacts = state.artifacts;
+        if (state.stones !== undefined) GameState.stones = state.stones;
+    }
+}
+window.ensureArtifactsInit = ensureArtifactsInit;
 
-                <div class="locked-text-block">
-                    <span class="locked-kicker font-mono">[CẤM THUẬT BẢN MỆNH]</span>
-                    <h3 class="locked-title font-serif">TÍNH NĂNG CHƯA MỞ</h3>
-                    <p class="locked-description">
-                        Đan điền của ngươi hiện tại quá yếu ớt. Cần đạt tới cảnh giới <strong class="text-amber-400 font-bold">[Đại Thừa Kỳ]</strong> để có thể thu nạp và ôn dưỡng Pháp Bảo Bản Mệnh.
-                    </p>
-                </div>
+function toggleEquipArtifact(artId) {
+    ensureArtifactsInit();
+    const art = state.artifacts.find(a => a.id === artId);
+    if (!art) return;
+    if (art.equipped) {
+        art.equipped = false;
+        if (typeof showGameToast === 'function') showGameToast(`Đã thu hồi [${art.name}] về đan điền!`, 'warning');
+        if (typeof addLog === 'function') addLog(`Đã tháo Bản Mệnh Pháp Bảo [${art.name}] khỏi Pháp Vị.`, 'text-slate-400');
+    } else {
+        const equippedCount = state.artifacts.filter(a => a.equipped).length;
+        if (equippedCount >= 3) {
+            if (typeof showGameToast === 'function') showGameToast(`Chỉ có thể ngự dụng tối đa 3 Pháp Bảo Bản Mệnh!`, 'warning');
+            return;
+        }
+        art.equipped = true;
+        if (typeof showGameToast === 'function') showGameToast(`Đã ngự dụng [${art.name}] vào Pháp Vị Bản Mệnh!`, 'success');
+        if (typeof addLog === 'function') addLog(`⚡ Đã dung hợp [${art.name}] làm Bản Mệnh Pháp Bảo xuất chiến!`, 'text-amber-300 font-bold');
+    }
+    if (typeof GameState !== 'undefined') {
+        GameState.artifacts = state.artifacts;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+    const artPage = document.getElementById('artifact-page-content');
+    if (artPage) renderArtifactHub(artPage);
+    const hubContent = document.getElementById('hub-modal-content');
+    if (hubContent && document.getElementById('hub-modal')?.classList.contains('active')) renderArtifactHub(hubContent);
+}
+window.toggleEquipArtifact = toggleEquipArtifact;
 
-                <div class="locked-progress-card">
-                    <div class="flex justify-between items-center text-xs font-mono mb-2">
-                        <span class="text-slate-400">Căn cơ hiện tại: <strong class="text-emerald-400">${currentRealmName} (Tier ${currentTier})</strong></span>
-                        <span class="text-rose-400 font-bold">Yêu cầu: Đại Thừa Kỳ (Tier ${ARTIFACT_UNLOCK_TIER})</span>
-                    </div>
-                    <div class="w-full h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-emerald-600 via-amber-500 to-rose-600 transition-all duration-500" style="width: ${progressPct}%"></div>
-                    </div>
-                    <span class="text-[10px] text-slate-500 text-center block mt-1.5">Tiến độ mở khóa: ${progressPct}%</span>
-                </div>
-
-                <div class="locked-footer-hint">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5"></i>
-                    <span>Cố ý ngưng luyện khi đan điền chưa vững sẽ dẫn đến tẩu hỏa nhập ma, nổ đan mà chết!</span>
-                </div>
-            </div>
-        `;
+function upgradeArtifact(artId) {
+    ensureArtifactsInit();
+    const art = state.artifacts.find(a => a.id === artId);
+    if (!art) return;
+    const curLvl = Number(art.level) || 1;
+    if (curLvl >= 10) {
+        if (typeof showGameToast === 'function') showGameToast(`[${art.name}] đã đạt Thập Trọng Cực Cảnh tối thượng!`, 'info');
+        if (typeof addLog === 'function') addLog(`👑 [${art.name}] đã đạt Thập Trọng Cực Cảnh, uy áp thiên địa khôn lường!`, 'text-amber-400 font-bold');
         return;
     }
 
-    // GIAO DIỆN ĐÃ MỞ KHÓA (RENDER TỪ DESTINY_ARTIFACTS_DATA)
+    const costStones = curLvl * 350;
+    const oreKey = art.oreType || (art.id === 'bead' ? 'tuTinh' : 'huyenThiet');
+    const oreName = art.oreName || (oreKey === 'tuTinh' ? 'Tử Tinh' : 'Huyền Thiết');
+    const costOre = Math.max(1, Math.floor(curLvl / 2) + 1);
+
+    const playerStones = Number(state.stones || (typeof GameState !== 'undefined' ? GameState.stones : 0)) || 0;
+    const playerOres = getArtifactOre(oreKey);
+
+    if (playerStones < costStones) {
+        if (typeof addLog === 'function') addLog(`⚠️ Không đủ Linh Thạch để tôi luyện [${art.name}]! (Cần ${costStones.toLocaleString('vi-VN')} LT, hiện có ${playerStones.toLocaleString('vi-VN')}).`, 'text-rose-400');
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${costStones.toLocaleString('vi-VN')} Linh Thạch!`, 'warning');
+        return;
+    }
+    if (playerOres < costOre) {
+        if (typeof addLog === 'function') addLog(`⚠️ Không đủ ${oreName} để tôi luyện [${art.name}]! (Cần ${costOre} ${oreName}, hiện có ${playerOres}).`, 'text-rose-400');
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${costOre} ${oreName}!`, 'warning');
+        return;
+    }
+
+    state.stones = playerStones - costStones;
+    deductArtifactOre(oreKey, costOre);
+
+    if (typeof GameState !== 'undefined') {
+        GameState.stones = state.stones;
+    }
+
+    art.level = curLvl + 1;
+    if (typeof GameState !== 'undefined') {
+        GameState.artifacts = state.artifacts;
+    }
+
+    const prevCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    const newCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
+    const cpGain = Math.max(650, newCp - prevCp);
+
+    // Visual feedback
+    if (typeof spawnFloatingText === 'function') {
+        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Pháp Bảo Bậc ${art.level}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-gold-300 font-bold');
+    }
+
+    let milestoneDesc = '';
+    if (art.level === 4) milestoneDesc = ' 🌟 [Khí Linh Thức Tỉnh - Đạt Trung Giai]';
+    else if (art.level === 7) milestoneDesc = ' ⚡ [Hoàng Kim Linh Quang - Đạt Hậu Giai]';
+    else if (art.level === 10) milestoneDesc = ' 👑 [THẬP TRỌNG CỰC CẢNH - ĐẠT CHÍ TÔN PHẨM]';
+
+    if (typeof addLog === 'function') {
+        addLog(`✨ [Tôi Luyện Thần Binh] ${art.name} thăng hoa lên Bậc ${art.level}!${milestoneDesc} Chiến Lực tăng +${cpGain.toLocaleString('vi-VN')}!`, 'text-amber-300 font-bold');
+    }
+    if (typeof showGameToast === 'function') {
+        showGameToast(`Tôi luyện thành công: ${art.name} đạt Bậc ${art.level}!`, 'success');
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGameState === 'function') saveGameState();
+
+    const artPage = document.getElementById('artifact-page-content');
+    if (artPage) renderArtifactHub(artPage);
+    const hubContent = document.getElementById('hub-modal-content');
+    if (hubContent && document.getElementById('hub-modal')?.classList.contains('active')) renderArtifactHub(hubContent);
+}
+window.upgradeArtifact = upgradeArtifact;
+
+function renderArtifactHub(content) {
+    if (!content) return;
+    ensureArtifactsInit();
+
+    const realmIndex = Number(state.realmIndex) || 0;
+    const tier = Math.max(1, Math.floor(realmIndex / 4) + 1);
+    const equippedArtifacts = state.artifacts.filter(a => a.equipped);
+    const equippedCount = equippedArtifacts.length;
+    const hasResonance = equippedCount >= 3;
+    const resonanceMultiplier = hasResonance ? 1.15 : 1.0;
+
+    // Tính tổng thuộc tính từ các pháp bảo đã trang bị (khớp hoàn toàn với js/stats.js)
+    let totalArtAtk = 0, totalArtDef = 0, totalArtHp = 0;
+    state.artifacts.forEach(art => {
+        if (!art.equipped) return;
+        const lvl = Number(art.level) || 1;
+        const extremeMultiplier = lvl >= 10 ? 1.2 : 1.0;
+        if (art.id === 'sword') totalArtAtk += Math.round(lvl * 45 * tier * resonanceMultiplier * extremeMultiplier);
+        else if (art.id === 'mirror') totalArtDef += Math.round(lvl * 35 * tier * resonanceMultiplier * extremeMultiplier);
+        else if (art.id === 'bead') totalArtHp += Math.round(lvl * 250 * tier * resonanceMultiplier * extremeMultiplier);
+    });
+
+    const huyenThietTotal = getArtifactOre('huyenThiet');
+    const tuTinhTotal = getArtifactOre('tuTinh');
+
     content.innerHTML = `
-        <div class="space-y-4">
-            <header class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-teal-950/30 to-slate-900 border border-amber-500/30 flex items-center justify-between">
+        <div class="space-y-4 select-none">
+            <!-- HEADER TAM ĐẠI BẢN MỆNH PHÁP BẢO -->
+            <header class="p-4 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-indigo-950/70 border border-amber-500/40 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
-                    <h3 class="text-base font-bold text-gold-300 font-serif flex items-center gap-2">
-                        <i class="fa-solid fa-certificate text-amber-400"></i> Tam Đại Pháp Bảo Bản Mệnh
+                    <h3 class="text-base sm:text-lg font-bold text-amber-300 font-serif flex items-center gap-2">
+                        <i class="fa-solid fa-certificate text-amber-400"></i> Tam Đại Bản Mệnh Pháp Bảo
                     </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Pháp bảo ôn dưỡng theo cảnh giới, hộ trì đan điền và gia tăng chiến lực siêu phàm.</p>
+                    <p class="text-xs text-slate-300 mt-1 font-sans">
+                        Bản mệnh tương thông, uẩn dưỡng khí linh. Tôi luyện thần binh đạt đến Thập Trọng Cực Cảnh để mở khóa toàn bộ uy lực.
+                    </p>
                 </div>
-                <span class="px-2.5 py-1 rounded-lg bg-amber-950/80 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">Ôn Dưỡng: Bậc ${artLevel}</span>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/60 text-amber-200 text-xs font-mono font-bold shadow-sm">
+                        ${equippedCount}/3 Đang Ngự Dụng
+                    </span>
+                    ${hasResonance ? `
+                        <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border border-yellow-400 text-yellow-300 text-xs font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-pulse flex items-center gap-1.5">
+                            <i class="fa-solid fa-sparkles"></i> Tam Hoa Tụ Đỉnh (+15% Uy Lực)
+                        </span>
+                    ` : `
+                        <span class="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-mono">
+                            Ngự dụng đủ 3/3 để kích hoạt Cộng Minh
+                        </span>
+                    `}
+                </div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                ${DESTINY_ARTIFACTS_DATA.map(art => {
-                    const statVal = (artLevel * art.statPerLevel).toLocaleString('vi-VN');
-                    const colorBorder = art.theme === 'teal' ? 'border-teal-500/30 hover:border-teal-400/60' : (art.theme === 'amber' ? 'border-amber-500/30 hover:border-amber-400/60' : 'border-purple-500/30 hover:border-purple-400/60');
-                    const colorText = art.theme === 'teal' ? 'text-teal-300' : (art.theme === 'amber' ? 'text-amber-300' : 'text-purple-300');
-                    const colorBtn = art.theme === 'teal' ? 'bg-teal-950/70 hover:bg-teal-900 text-teal-200 border-teal-400/40' : (art.theme === 'amber' ? 'bg-amber-950/70 hover:bg-amber-900 text-amber-200 border-amber-400/40' : 'bg-purple-950/70 hover:bg-purple-900 text-purple-200 border-purple-400/40');
-                    
+            <!-- TỔNG HỢP GIA TRÌ & KHO TÀI NGUYÊN HIỆN CÓ -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="p-3 rounded-xl bg-slate-900/95 border border-amber-500/30 flex items-center justify-between text-xs shadow-md">
+                    <span class="text-slate-300 font-bold flex items-center gap-1.5"><i class="fa-solid fa-bolt text-amber-400"></i> Gia Trì Thuộc Tính:</span>
+                    <span class="font-mono font-black text-amber-300 space-x-2">
+                        <span class="text-rose-400">+${totalArtAtk.toLocaleString('vi-VN')} Công</span>
+                        <span class="text-sky-400">+${totalArtDef.toLocaleString('vi-VN')} Thủ</span>
+                        <span class="text-emerald-400">+${totalArtHp.toLocaleString('vi-VN')} HP</span>
+                    </span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/95 border border-amber-500/30 flex items-center justify-between text-xs font-mono shadow-md">
+                    <span class="text-slate-300 font-bold flex items-center gap-1.5"><i class="fa-solid fa-gem text-cyan-400"></i> Khoáng Vật Tôi Luyện:</span>
+                    <span class="text-amber-200 font-bold space-x-2">
+                        <span>💎 ${(state.stones || 0).toLocaleString('vi-VN')} LT</span>
+                        <span>⛏️ ${huyenThietTotal} Huyền Thiết</span>
+                        <span>🔮 ${tuTinhTotal} Tử Tinh</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- DANH SÁCH 3 BẢN MỆNH PHÁP BẢO -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${state.artifacts.map(art => {
+                    const lvl = Number(art.level) || 1;
+                    const isEquipped = Boolean(art.equipped);
+                    const isMax = lvl >= 10;
+                    const costStones = lvl * 350;
+                    const oreKey = art.oreType || (art.id === 'bead' ? 'tuTinh' : 'huyenThiet');
+                    const oreName = art.oreName || (oreKey === 'tuTinh' ? 'Tử Tinh' : 'Huyền Thiết');
+                    const costOre = Math.max(1, Math.floor(lvl / 2) + 1);
+                    const currentStones = Number(state.stones || 0);
+                    const currentOre = getArtifactOre(oreKey);
+                    const canAfford = !isMax && currentStones >= costStones && currentOre >= costOre;
+
+                    // Phân loại phẩm giai theo cấp bậc (1-3: Sơ Giai, 4-6: Trung Giai, 7-9: Hậu Giai, 10: Cực Cảnh)
+                    let stageName = 'Sơ Giai (Hạ Phẩm)';
+                    let stageBadgeStyle = 'border-cyan-500/40 text-cyan-300 bg-cyan-950/80';
+                    let glowBorder = isEquipped ? 'border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'border-slate-800 hover:border-cyan-500/50';
+
+                    if (lvl >= 10) {
+                        stageName = 'Thập Trọng Cực Cảnh (Chí Tôn)';
+                        stageBadgeStyle = 'border-yellow-400 text-yellow-200 bg-gradient-to-r from-amber-900/90 to-purple-900/90 shadow-[0_0_15px_rgba(250,204,21,0.5)]';
+                        glowBorder = isEquipped ? 'border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.4)]' : 'border-amber-500/60';
+                    } else if (lvl >= 7) {
+                        stageName = 'Hậu Giai (Thượng Phẩm)';
+                        stageBadgeStyle = 'border-amber-400/60 text-amber-200 bg-amber-950/80 shadow-[0_0_12px_rgba(245,158,11,0.3)]';
+                        glowBorder = isEquipped ? 'border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.35)]' : 'border-slate-800 hover:border-amber-500/50';
+                    } else if (lvl >= 4) {
+                        stageName = 'Trung Giai (Trung Phẩm)';
+                        stageBadgeStyle = 'border-purple-400/50 text-purple-300 bg-purple-950/80 shadow-[0_0_12px_rgba(168,85,247,0.25)]';
+                        glowBorder = isEquipped ? 'border-purple-400 shadow-[0_0_18px_rgba(168,85,247,0.3)]' : 'border-slate-800 hover:border-purple-500/50';
+                    }
+
+                    const extremeMultiplier = lvl >= 10 ? 1.2 : 1.0;
+                    let statVal = 0;
+                    let statNextVal = 0;
+                    let statLabel = '';
+                    if (art.id === 'sword') {
+                        statLabel = 'Công Kích';
+                        statVal = Math.round(lvl * 45 * tier * resonanceMultiplier * extremeMultiplier);
+                        statNextVal = Math.round((lvl + 1) * 45 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                    } else if (art.id === 'mirror') {
+                        statLabel = 'Phòng Ngự';
+                        statVal = Math.round(lvl * 35 * tier * resonanceMultiplier * extremeMultiplier);
+                        statNextVal = Math.round((lvl + 1) * 35 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                    } else if (art.id === 'bead') {
+                        statLabel = 'Khí Huyết';
+                        statVal = Math.round(lvl * 250 * tier * resonanceMultiplier * extremeMultiplier);
+                        statNextVal = Math.round((lvl + 1) * 250 * tier * resonanceMultiplier * (lvl + 1 >= 10 ? 1.2 : 1.0));
+                    }
+
                     return `
-                        <article class="p-4 rounded-xl bg-slate-950/70 border ${colorBorder} transition flex flex-col justify-between space-y-3">
-                            <div class="space-y-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-xl overflow-hidden border ${art.theme === 'teal' ? 'border-teal-400/60 shadow-[0_0_12px_#2dd4bf]' : (art.theme === 'amber' ? 'border-amber-400/60 shadow-[0_0_12px_#fbbf24]' : 'border-purple-400/60 shadow-[0_0_12px_#c084fc]')} p-0.5 flex-shrink-0 bg-slate-900 flex items-center justify-center">
-                                        ${art.image ? `<img src="${art.image}" alt="${art.name}" class="w-full h-full object-cover rounded-lg">` : `<i class="${art.icon} ${colorText} text-2xl"></i>`}
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-100 text-sm">${art.name}</h4>
-                                        <span class="text-[10px] ${colorText} font-mono">${art.type}</span>
-                                    </div>
+                        <article class="p-4 rounded-2xl bg-slate-900/95 border-2 ${glowBorder} transition-all duration-300 flex flex-col justify-between space-y-3.5 shadow-xl relative backdrop-blur-sm">
+                            <!-- Badge Trạng Thái & Bậc -->
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${isEquipped ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm' : 'bg-slate-800 text-slate-400'}">
+                                    ${isEquipped ? '✦ ĐANG NGỰ DỤNG' : 'CHƯA TRANG BỊ'}
+                                </span>
+                                <span class="text-xs font-mono font-black ${stageBadgeStyle} px-2 py-0.5 rounded border">
+                                    Bậc ${lvl}/10
+                                </span>
+                            </div>
+
+                            <!-- Ảnh / Icon & Tên -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 ${isEquipped ? 'border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.3)]' : 'border-slate-700'} p-1 bg-slate-950 flex items-center justify-center shrink-0 shadow-inner">
+                                    ${art.image ? `<img src="${art.image}" alt="${art.name}" class="w-full h-full object-cover rounded-xl">` : `<i class="fa-solid ${art.icon || 'fa-certificate'} text-2xl text-purple-400"></i>`}
                                 </div>
-                                <div class="text-[11px] space-y-1 text-slate-300 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                                    <div class="flex justify-between"><span>${art.statLabel}</span><b class="${colorText} font-mono">+${statVal} ${art.statUnit}</b></div>
-                                    <div class="flex justify-between"><span>Gia Tốc Hiệu Quả:</span><b class="${colorText} font-mono">${art.speedBonus}</b></div>
-                                    <div class="flex justify-between"><span>Thần Thông:</span><b class="text-gold-300">${art.technique}</b></div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-slate-100 text-sm font-serif truncate">${art.name}</h4>
+                                    <span class="text-[10px] text-amber-400 font-mono block">${stageName}</span>
+                                    <span class="text-[11px] font-mono font-bold text-emerald-400 mt-0.5 block">+${statVal.toLocaleString('vi-VN')} ${statLabel}</span>
                                 </div>
                             </div>
-                            <button type="button" onclick="upgradeArtifact('${art.id}')" class="w-full py-2 rounded-xl ${colorBtn} border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
-                                <i class="fa-solid ${art.btnIcon}"></i> ${art.btnText}
-                            </button>
+
+                            <!-- Thanh Tiến Trình Tôi Luyện -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] font-mono text-slate-400">
+                                    <span>Tiến Độ Cực Cảnh:</span>
+                                    <span class="text-amber-300 font-bold">${Math.round((lvl / 10) * 100)}%</span>
+                                </div>
+                                <div class="w-full h-1.5 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style="width: ${(lvl / 10) * 100}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Thuộc Tính & Thần Thông -->
+                            <div class="text-[11px] space-y-1.5 text-slate-300 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Thần Thông:</span>
+                                    <b class="text-yellow-300 font-serif">${art.technique || 'Khí Linh Hộ Chủ'}</b>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Chu Thiên:</span>
+                                    <b class="text-amber-300">${art.speedBonus || '+20%'}</b>
+                                </div>
+                                ${!isMax ? `
+                                    <div class="flex justify-between pt-1 border-t border-slate-800/70 text-[10px]">
+                                        <span class="text-slate-400">Lên Bậc ${lvl + 1}:</span>
+                                        <b class="text-emerald-400">+${statNextVal.toLocaleString('vi-VN')} ${statLabel}</b>
+                                    </div>
+                                    <div class="flex justify-between text-[10px]">
+                                        <span class="text-slate-400">Cần Tài Nguyên:</span>
+                                        <span class="font-bold space-x-1">
+                                            <span class="${currentStones >= costStones ? 'text-amber-300' : 'text-rose-400'}">${costStones.toLocaleString('vi-VN')} LT</span>
+                                            <span class="text-slate-500">•</span>
+                                            <span class="${currentOre >= costOre ? 'text-cyan-300' : 'text-rose-400'}">${costOre} ${oreName}</span>
+                                        </span>
+                                    </div>
+                                ` : `
+                                    <div class="text-center pt-1 border-t border-slate-800/70 text-[10px] text-yellow-300 font-bold">
+                                        ✦ ĐÃ ĐẠT CỰC CẢNH TỐI THƯỢNG ✦
+                                    </div>
+                                `}
+                            </div>
+
+                            <!-- 2 Nút Thao Tác: Trang Bị & Tôi Luyện -->
+                            <div class="space-y-2 pt-1">
+                                <button type="button"
+                                        onclick="toggleEquipArtifact('${art.id}')"
+                                        class="w-full py-2 px-3 rounded-xl ${isEquipped ? 'bg-rose-950/90 hover:bg-rose-900 text-rose-200 border border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.2)]' : 'bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.2)]'} text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                                    <i class="fa-solid ${isEquipped ? 'fa-arrow-down-to-bracket' : 'fa-shield-halved'}"></i>
+                                    <span>${isEquipped ? 'Tháo Khỏi Bản Mệnh' : 'Ngự Dụng Bản Mệnh'}</span>
+                                </button>
+                                <button type="button"
+                                        onclick="upgradeArtifact('${art.id}')"
+                                        ${isMax || !canAfford ? 'disabled' : ''}
+                                        class="w-full py-2 px-3 rounded-xl ${isMax ? 'bg-yellow-950/40 text-yellow-500/60 border border-yellow-600/30 cursor-not-allowed' : (canAfford ? 'bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.35)]' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60')} text-xs transition flex items-center justify-center gap-1.5 active:scale-95">
+                                    <i class="fa-solid ${isMax ? 'fa-crown' : 'fa-hammer'}"></i>
+                                    <span>${isMax ? '👑 Thập Trọng Cực Cảnh (Max)' : (canAfford ? `Tôi Luyện Lên Bậc ${lvl + 1}` : 'Thiếu Tài Nguyên Tôi Luyện')}</span>
+                                </button>
+                            </div>
                         </article>
                     `;
                 }).join('')}
             </div>
+
+            <!-- CHÚ GIẢI TU TIÊN & MẸO THU THẬP TÀI NGUYÊN -->
+            <footer class="p-3.5 rounded-2xl bg-slate-950/80 border border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-amber-400 text-sm"></i>
+                    <span>Tôi luyện Pháp Bảo gia tăng vĩnh viễn thuộc tính Công/Thủ/HP và đẩy mạnh tốc độ vận chuyển Chu Thiên.</span>
+                </div>
+                <div class="text-[11px] text-amber-300 font-mono shrink-0">
+                    💡 Khai khoáng tại Rèn Khí Thất hoặc mua tại Phường Thị
+                </div>
+            </footer>
         </div>
     `;
 }
@@ -6559,9 +7828,11 @@ function renderWorldMarketHub(content) {
 function renderWorldDungeonHub(content) {
     if (!content) return;
     const list = typeof DUNGEONS !== 'undefined' ? DUNGEONS : [];
-    const clearedMap = state.dungeonsCleared || {};
+    const gs = window.GameState || {};
+    const clearedMap = gs.dungeonsCleared || state.dungeonsCleared || {};
     const totalCleared = list.filter(d => clearedMap[d.id]).length;
-    const playerRealmIdx = Number(state.realmIndex) || 0;
+    const playerRealmIdx = Number(gs.realmIndex ?? state.realmIndex ?? 0);
+    const playerJade = Number(gs.jade ?? gs.immortalJade ?? state.jade ?? state.immortalJade ?? 0);
 
     content.innerHTML = `
         <div class="space-y-4">
@@ -6582,7 +7853,7 @@ function renderWorldDungeonHub(content) {
                     </div>
                     <div class="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-amber-500/30 flex items-center gap-2 text-xs">
                         <span class="text-slate-400 font-medium">Tiên Ngọc:</span>
-                        <b class="text-amber-400 font-mono">💎 ${(state.immortalJade || 0).toLocaleString('vi-VN')}</b>
+                        <b class="text-amber-400 font-mono">💎 ${playerJade.toLocaleString('vi-VN')}</b>
                     </div>
                 </div>
             </header>
@@ -6643,7 +7914,7 @@ function renderWorldDungeonHub(content) {
                                     </button>
                                 ` : `
                                     <div class="flex items-center gap-2">
-                                        <button type="button" onclick="closeHubModal(); openCombatModal(${idx})" class="flex-1 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md">
+                                        <button type="button" onclick="challengeDungeon(${idx})" class="flex-1 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md">
                                             <i class="fa-solid fa-swords"></i> Khiêu Chiến
                                         </button>
                                         ${isCleared ? `
@@ -6670,6 +7941,68 @@ function renderWorldDungeonHub(content) {
 }
 window.renderWorldDungeonHub = renderWorldDungeonHub;
 
+function challengeDungeon(dungeonIdx) {
+    const list = typeof DUNGEONS !== 'undefined' ? DUNGEONS : [];
+    const dungeon = list[dungeonIdx];
+    if (!dungeon) return;
+
+    const gs = window.GameState || window.state || {};
+    const playerRealmIdx = Number(gs.realmIndex ?? (typeof state !== 'undefined' ? state.realmIndex : 0)) || 0;
+    if (playerRealmIdx < (dungeon.reqRealmIndex || 0)) {
+        const reqName = dungeon.reqRealmName || 'cao hơn';
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚠️ Cần đạt cảnh giới ${reqName} mới đủ tư cách tiến vào ${dungeon.name}!`, 'warning');
+        } else if (typeof addLog === 'function') {
+            addLog(`⚠️ Cần đạt cảnh giới ${reqName} mới đủ tư cách tiến vào ${dungeon.name}!`, 'text-rose-400');
+        }
+        return;
+    }
+
+    if (gs.isInjured || (gs.heavyInjuryUntil && Date.now() < gs.heavyInjuryUntil) || (gs.hp !== undefined && gs.hp <= 0)) {
+        const warnMsg = '⚠️ Đang trọng thương, kinh mạch hỗn loạn! Hãy điều tức hoặc cắn đan hồi phục trước khi khiêu chiến!';
+        if (typeof window.showGameToast === 'function') window.showGameToast(warnMsg, 'error');
+        else if (typeof addLog === 'function') addLog(warnMsg, 'text-rose-400');
+        return;
+    }
+
+    if (typeof window.startUniversalBattle === 'function') {
+        const ok = window.startUniversalBattle({
+            mode: 'dungeon',
+            enemyId: `dungeon_${dungeon.id}`,
+            name: dungeon.boss || dungeon.name,
+            titleBadge: `🌀 BÍ CẢNH • ${dungeon.name.toUpperCase()}`,
+            realm: dungeon.reqRealmName || 'Bí Cảnh Yêu Vương',
+            element: 'Hoa',
+            hp: dungeon.hp * 1000,
+            maxHp: dungeon.hp * 1000,
+            atk: Math.round(dungeon.atk * 100),
+            def: Math.round(dungeon.atk * 60),
+            crit: 16,
+            eva: 10,
+            cp: Math.round(dungeon.atk * 100 * 3 + dungeon.hp * 1000 * 0.1),
+            icon: '🐲',
+            rewards: {
+                title: dungeon.name,
+                dungeonId: dungeon.id,
+                dungeonIndex: dungeonIdx,
+                firstClearJade: dungeon.firstClearJade || 0,
+                linhThach: dungeon.stoneReward,
+                tuVi: dungeon.expReward,
+                item: dungeon.dropName,
+                dropId: dungeon.dropId,
+                badge: `Bí Cảnh ${dungeon.name}`
+            }
+        });
+        if (ok) {
+            if (typeof window.closeHubModal === 'function') window.closeHubModal();
+            if (typeof window.closeCenterModal === 'function') window.closeCenterModal();
+        }
+    } else if (typeof openCombatModal === 'function') {
+        openCombatModal(dungeonIdx);
+    }
+}
+window.challengeDungeon = challengeDungeon;
+
 function refreshDungeonUI() {
     const pageContent = document.getElementById('world-dungeon-page-content');
     if (pageContent) {
@@ -6683,61 +8016,128 @@ function refreshDungeonUI() {
 window.refreshDungeonUI = refreshDungeonUI;
 
 function sweepDungeon(dungeonIdx, times = 1) {
-    const dungeon = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : [])[dungeonIdx];
+    const list = typeof DUNGEONS !== 'undefined' ? DUNGEONS : [];
+    const dungeon = list[dungeonIdx];
     if (!dungeon) return;
-    if (!state.dungeonsCleared || !state.dungeonsCleared[dungeon.id]) {
-        addLog(`⚠️ Đạo hữu chưa từng vượt qua ${dungeon.name}, không thể càn quét! Hãy khiêu chiến thủ thắng trước.`, 'text-rose-400');
+
+    const gs = window.GameState || {};
+    const s = (typeof state !== 'undefined') ? state : {};
+    const clearedMap = gs.dungeonsCleared || s.dungeonsCleared || {};
+
+    if (!clearedMap[dungeon.id]) {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚠️ Chưa từng vượt qua ${dungeon.name}! Hãy khiêu chiến thủ thắng trước khi càn quét.`, 'warning');
+        } else if (typeof addLog === 'function') {
+            addLog(`⚠️ Đạo hữu chưa từng vượt qua ${dungeon.name}, không thể càn quét! Hãy khiêu chiến thủ thắng trước.`, 'text-rose-400');
+        }
         return;
     }
-    const count = Math.max(1, Math.min(10, times));
-    const totalStones = dungeon.stoneReward * count;
-    const totalExp = dungeon.expReward * count;
-    
-    state.stones = (state.stones || 0) + totalStones;
-    addExp(totalExp);
 
+    const count = Math.max(1, Math.min(10, times));
+    const totalStones = (dungeon.stoneReward || 100) * count;
+    const totalExp = (dungeon.expReward || 100) * count;
+
+    // Add stones to GameState and state
+    if (typeof window.addSpiritStones === 'function') {
+        window.addSpiritStones(totalStones);
+    } else {
+        const curStones = Number(gs.stones ?? s.stones) || 0;
+        if (gs) gs.stones = curStones + totalStones;
+        if (s) s.stones = curStones + totalStones;
+    }
+
+    // Add Tu Vi
+    if (typeof window.addExp === 'function') {
+        window.addExp(totalExp);
+    } else {
+        const curExp = Number(gs.exp ?? s.exp) || 0;
+        if (gs) gs.exp = curExp + totalExp;
+        if (s) s.exp = curExp + totalExp;
+    }
+
+    // Drops calculation
     let dropCount = 0;
     for (let i = 0; i < count; i++) {
         if (Math.random() < 0.75) {
             dropCount++;
         }
     }
+
     if (dropCount > 0 && dungeon.dropId) {
-        if (!Array.isArray(state.inventory)) state.inventory = [];
-        let invItem = state.inventory.find(i => i.id === dungeon.dropId);
+        const inv = (gs && Array.isArray(gs.inventory)) ? gs.inventory : (Array.isArray(s.inventory) ? s.inventory : []);
+        let invItem = inv.find(i => i && i.id === dungeon.dropId);
         if (invItem) {
-            invItem.count = (invItem.count || 0) + dropCount;
+            invItem.count = (Number(invItem.count || invItem.quantity) || 0) + dropCount;
+            invItem.quantity = invItem.count;
         } else {
-            state.inventory.push({
+            inv.push({
                 id: dungeon.dropId,
                 name: dungeon.dropName,
-                type: 'Đan Dược',
+                type: 'Đan Dược / Linh Vật',
                 count: dropCount,
+                quantity: dropCount,
                 desc: `Chiến lợi phẩm càn quét từ ${dungeon.name}.`,
-                icon: 'fa-box'
+                icon: dungeon.icon || 'fa-box',
+                rarity: 3
             });
         }
+        if (gs) gs.inventory = inv;
+        if (s) s.inventory = inv;
     }
 
     // 28% xác suất khai quật Cổ Thần Di Tích
+    let bonusJade = 0;
+    let bonusStones = 0;
+    let bonusExp = 0;
+    let foundRelic = false;
     if (Math.random() < 0.28) {
-        const bonusStones = Math.floor(dungeon.stoneReward * (0.6 + Math.random() * 0.4) * count);
-        const bonusExp = Math.floor(dungeon.expReward * (0.5 + Math.random() * 0.5) * count);
-        const bonusJade = Math.floor(1 + Math.random() * 3);
-        state.stones = (state.stones || 0) + bonusStones;
-        addExp(bonusExp);
-        state.immortalJade = (state.immortalJade || 0) + bonusJade;
-        if (typeof playSound === 'function') playSound('relic_chime');
-        addLog(`🏛️ <span class="text-amber-300 font-bold">[Cổ Thần Di Tích]</span> Khai quật bí thất thượng cổ trong <b class="text-rose-400">${dungeon.name}</b>! Nhận thêm: <span class="text-amber-300">+${bonusStones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class="text-emerald-300">+${bonusExp.toLocaleString('vi-VN')} Tu Vi</span>, <span class="text-gold-300">💎 +${bonusJade} Tiên Ngọc</span>!`, 'text-amber-300 font-bold', 'dungeon-relic');
+        foundRelic = true;
+        bonusStones = Math.floor(dungeon.stoneReward * (0.6 + Math.random() * 0.4) * count);
+        bonusExp = Math.floor(dungeon.expReward * (0.5 + Math.random() * 0.5) * count);
+        bonusJade = Math.floor(1 + Math.random() * 3);
+
+        const curStones = Number(gs.stones ?? s.stones) || 0;
+        if (gs) gs.stones = curStones + bonusStones;
+        if (s) s.stones = curStones + bonusStones;
+
+        const curJade = Number(gs.jade ?? gs.immortalJade ?? s.jade ?? s.immortalJade) || 0;
+        if (gs) {
+            gs.jade = curJade + bonusJade;
+            gs.immortalJade = gs.jade;
+        }
+        if (s) {
+            s.jade = curJade + bonusJade;
+            s.immortalJade = s.jade;
+        }
+
+        if (typeof window.addExp === 'function') window.addExp(bonusExp);
+
+        if (typeof addLog === 'function') {
+            addLog(`🏛️ <span class="text-amber-300 font-bold">[Cổ Thần Di Tích]</span> Khai quật bí thất thượng cổ trong <b class="text-rose-400">${dungeon.name}</b>! Nhận thêm: <span class="text-amber-300">+${bonusStones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class="text-emerald-300">+${bonusExp.toLocaleString('vi-VN')} Tu Vi</span>, <span class="text-gold-300">💎 +${bonusJade} Tiên Ngọc</span>!`, 'text-amber-300 font-bold', 'dungeon-relic');
+        }
     }
 
-    state.dungeonsCleared[dungeon.id].count = (state.dungeonsCleared[dungeon.id].count || 0) + count;
-    if (typeof playSound === 'function') playSound('victory');
-    spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Càn quét ${dungeon.name} x${count}!`, 'text-emerald-300');
-    addLog(`⚔️ Càn quét <b class="text-rose-400">${dungeon.name}</b> x${count} lần! Thu hoạch: <span class="text-amber-300">+${totalStones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class="text-emerald-300">+${totalExp.toLocaleString('vi-VN')} Tu Vi</span>${dropCount > 0 ? `, <span class="text-gold-300">+${dropCount} ${dungeon.dropName}</span>` : ''}.`, 'text-emerald-400 font-bold');
-    
-    updateHUD();
-    saveGameState();
+    // Update clear count
+    if (!clearedMap[dungeon.id]) {
+        clearedMap[dungeon.id] = { count: 0, timestamp: Date.now() };
+    }
+    clearedMap[dungeon.id].count = (clearedMap[dungeon.id].count || 0) + count;
+    if (gs) gs.dungeonsCleared = clearedMap;
+    if (s) s.dungeonsCleared = clearedMap;
+
+    const toastMsg = `⚡ Càn quét ${dungeon.name} x${count} thành công! +${totalStones.toLocaleString('vi-VN')} LT, +${totalExp.toLocaleString('vi-VN')} Tu Vi${dropCount > 0 ? `, +${dropCount} ${dungeon.dropName}` : ''}${foundRelic ? ` (+${bonusJade} 💎 Di Tích)` : ''}`;
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(toastMsg, 'success');
+    }
+    if (typeof addLog === 'function') {
+        addLog(`⚔️ Càn quét <b class="text-rose-400">${dungeon.name}</b> x${count} lần! Thu hoạch: <span class="text-amber-300">+${totalStones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class="text-emerald-300">+${totalExp.toLocaleString('vi-VN')} Tu Vi</span>${dropCount > 0 ? `, <span class="text-gold-300">+${dropCount} ${dungeon.dropName}</span>` : ''}.`, 'text-emerald-400 font-bold');
+    }
+
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    if (typeof window.updateHUD === 'function') window.updateHUD();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+    if (typeof window.saveGameState === 'function') window.saveGameState();
+    if (typeof window.saveGame === 'function') window.saveGame();
     refreshDungeonUI();
 }
 window.sweepDungeon = sweepDungeon;
@@ -6895,6 +8295,7 @@ function refreshArenaUI() {
 function challengeArenaOpponent(oppId) {
     if ((state.arenaTickets || 0) <= 0) {
         addLog('Đã hết vé khiêu chiến! Hãy dùng Linh Thạch mua thêm để tiếp tục tranh đoạt thứ hạng.', 'text-rose-400');
+        if (typeof showGameToast === 'function') showGameToast('Đã hết vé khiêu chiến Đấu Pháp Đài!', 'error');
         return;
     }
 
@@ -6902,11 +8303,53 @@ function challengeArenaOpponent(oppId) {
     const opp = opponents.find(o => o.id === oppId);
     if (!opp) return;
 
+    const oppElemList = ['Kim', 'Mộc', 'Thủy', 'Hỏa', 'Thổ'];
+    const oppElem = opp.element || oppElemList[Math.abs(Number(opp.rank || 1)) % 5];
+
+    if (typeof window.startUniversalBattle === 'function') {
+        const ok = window.startUniversalBattle({
+            mode: 'arena',
+            enemyId: opp.id,
+            name: opp.name,
+            titleBadge: `⚔️ ĐẤU PHÁP ĐÀI • HẠNG #${opp.rank}`,
+            realm: opp.realm || 'Trúc Cơ',
+            element: oppElem,
+            hp: Math.round((opp.cp || 5000) * 12),
+            maxHp: Math.round((opp.cp || 5000) * 12),
+            atk: Math.round((opp.cp || 5000) * 1.5),
+            def: Math.round((opp.cp || 5000) * 0.45),
+            crit: 16,
+            eva: 10,
+            cp: opp.cp || 5000,
+            icon: '⚔️',
+            rewards: {
+                title: `Hạng #${opp.rank}`,
+                linhThach: opp.rewardStones || 250000,
+                jade: 20,
+                badge: `Bại Tướng #${opp.rank}`
+            }
+        });
+        if (ok) {
+            state.arenaTickets = Math.max(0, (state.arenaTickets || 0) - 1);
+            if (typeof updateHUD === 'function') updateHUD();
+            return;
+        }
+    }
+
     state.arenaTickets -= 1;
     const playerCp = typeof getCombatPower === 'function' ? getCombatPower() : 1000;
     const oppCp = opp.cp || 5000;
 
-    const winRatio = playerCp / (playerCp + oppCp);
+    // Ngũ Hành & Kỹ năng Võ Kỹ gia tăng tỷ lệ thắng
+    const gs = window.GameState || state;
+    const pElem = gs.root?.element || gs.spiritualRoot?.element || 'Kim';
+    const elemFactor = (typeof window.getElementRelation === 'function') ? window.getElementRelation(pElem, oppElem).factor : 1.0;
+
+    // Võ Kỹ trang bị
+    const equippedSkillName = gs.equipped?.skill || 'Thái Hư Kiếm Quyết';
+    const skillBonus = 1.15; // Buff 15% khi có trang bị võ kỹ
+
+    const winRatio = (playerCp * elemFactor * skillBonus) / ((playerCp * elemFactor * skillBonus) + oppCp);
     const rng = Math.random();
     const isWin = rng < (winRatio * 1.15);
 
@@ -6914,28 +8357,34 @@ function challengeArenaOpponent(oppId) {
         window.triggerCameraTrauma(0.4, 'page-world-arena');
     }
 
+    // Hiển thị thi triển Võ Kỹ trên Đấu Pháp Đài
+    spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 110, `Võ Kỹ: ${equippedSkillName}!`, 'text-purple-400 font-extrabold text-lg');
+
     if (isWin) {
         if (window.soundSystem?.play) window.soundSystem.play('victory');
         else if (typeof playSound === 'function') playSound('victory');
         const tookRank = opp.rank < state.arenaRank;
         if (tookRank) {
             state.arenaRank = opp.rank;
+            if (gs.arenaRank !== undefined) gs.arenaRank = opp.rank;
         }
         state.arenaHonor = (state.arenaHonor || 0) + opp.rewardHonor;
         state.stones = (state.stones || 0) + (opp.rewardStones || 1000);
+        if (gs.spiritStones !== undefined) gs.spiritStones = (Number(gs.spiritStones) || 0) + (opp.rewardStones || 1000);
 
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Chiến Thắng! +${opp.rewardHonor} Vinh Dự`, 'text-gold-300 font-bold');
-        addLog(`⚔️ Đấu Pháp Đại Thắng! Ngươi đã đánh bại [${opp.name}], ${tookRank ? `đoạt lấy Hạng #${opp.rank} trên Phong Thần Bảng!` : 'củng cố uy danh thiên hạ!'} Nhận +${opp.rewardHonor} Điểm Vinh Dự, +${(opp.rewardStones || 1000).toLocaleString('vi-VN')} LT.`, 'text-gold-300 font-bold');
+        addLog(`⚔️ <b>[Đấu Pháp Đài]</b> Vận khởi Võ Kỹ <b>[${equippedSkillName}]</b> bạo kích áp đảo, đánh bại [${opp.name}], ${tookRank ? `đoạt lấy Hạng #${opp.rank} trên Phong Thần Bảng!` : 'củng cố uy danh thiên hạ!'} Nhận +${opp.rewardHonor} Điểm Vinh Dự, +${(opp.rewardStones || 1000).toLocaleString('vi-VN')} LT.`, 'text-gold-300 font-bold');
     } else {
         if (window.soundSystem?.play) window.soundSystem.play('danger');
         else if (typeof playSound === 'function') playSound('danger');
         state.arenaHonor = (state.arenaHonor || 0) + 5;
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, 'Chiến Bại! +5 Vinh Dự', 'text-rose-400 font-bold');
-        addLog(`⚔️ Thất bại trước kiếm khí áp đảo của [${opp.name}]. Thu hoạch kinh nghiệm thực chiến, nhận +5 Điểm Vinh Dự khích lệ.`, 'text-rose-400');
+        addLog(`⚔️ <b>[Đấu Pháp Đài]</b> Dốc hết linh lực tung [${equippedSkillName}] nhưng thất bại trước kiếm khí của [${opp.name}]. Nhận +5 Điểm Vinh Dự khích lệ.`, 'text-rose-400');
     }
 
     updateHUD();
     saveGameState();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
     refreshArenaUI();
 }
 window.challengeArenaOpponent = challengeArenaOpponent;
@@ -7008,13 +8457,26 @@ function renderWorldAuctionHub(content) {
         return;
     }
 
+    if (!auctionCountdownInterval) {
+        auctionCountdownInterval = setInterval(() => {
+            const page = document.getElementById('page-world-auction');
+            if (page && !page.classList.contains('hidden')) {
+                tickAuctionSystem();
+            }
+        }, 1000);
+    }
+
+    const gs = window.GameState || {};
+    const playerStones = Number(gs.stones ?? state.stones ?? 0);
+    const playerJade = Number(gs.jade ?? gs.immortalJade ?? state.jade ?? state.immortalJade ?? 0);
+
     if (!state.auctionData) {
         state.auctionData = {
             currentLotIndex: 0,
             currentBid: items[0].startingBid,
             highestBidder: 'Thanh Vân Chưởng Môn',
             isPlayerHighest: false,
-            timeLeft: 15,
+            timeLeft: 60,
             hammerCount: 0,
             wonLots: [],
             bidHistory: [
@@ -7040,8 +8502,8 @@ function renderWorldAuctionHub(content) {
     const minStep = currentLot.minStep || 2000;
     const buyoutPrice = currentLot.buyoutPrice || (currentLot.startingBid * 5);
     const hammer = Number(state.auctionData.hammerCount) || 0;
-    const timeLeft = typeof state.auctionData.timeLeft === 'number' ? state.auctionData.timeLeft : 15;
-    const timerPercent = Math.max(0, Math.min(100, (timeLeft / 15) * 100));
+    const timeLeft = typeof state.auctionData.timeLeft === 'number' ? state.auctionData.timeLeft : 60;
+    const timerPercent = Math.max(0, Math.min(100, (timeLeft / 60) * 100));
 
     let hammerText = 'Đang tiếp nhận ra giá...';
     let hammerColor = 'text-slate-400';
@@ -7083,9 +8545,13 @@ function renderWorldAuctionHub(content) {
                     </div>
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <div class="text-right">
-                        <span class="text-[10px] text-purple-400 font-mono block">Ngân Khố Bản Tôn</span>
-                        <span class="text-xs font-mono text-amber-300 font-bold">${(state.stones || 0).toLocaleString('vi-VN')} LT</span>
+                    <div class="px-3.5 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30 flex items-center gap-2 text-xs">
+                        <span class="text-slate-400 font-medium">Linh Thạch:</span>
+                        <b class="text-amber-400 font-mono">🪙 ${playerStones.toLocaleString('vi-VN')}</b>
+                    </div>
+                    <div class="px-3.5 py-1.5 rounded-xl bg-slate-950/80 border border-purple-500/30 flex items-center gap-2 text-xs">
+                        <span class="text-slate-400 font-medium">Tiên Ngọc:</span>
+                        <b class="text-purple-300 font-mono">💎 ${playerJade.toLocaleString('vi-VN')}</b>
                     </div>
                 </div>
             </header>
@@ -7112,7 +8578,7 @@ function renderWorldAuctionHub(content) {
                         <span class="text-slate-400 flex items-center gap-1">
                             <i class="fa-regular fa-clock text-purple-400"></i> Thời Gian Còn Lại
                         </span>
-                        <span class="${timeLeft <= 5 ? 'text-rose-400 font-bold animate-pulse' : 'text-amber-400 font-bold'}">${timeLeft}s</span>
+                        <span id="auction-timer-text" class="${timeLeft <= 10 ? 'text-rose-400 font-bold animate-pulse' : 'text-amber-400 font-bold'}">${timeLeft}s</span>
                     </div>
                     <div class="auction-timer-container">
                         <div id="auction-timer-fill" class="auction-timer-fill" style="width: ${timerPercent}%;"></div>
@@ -7237,33 +8703,118 @@ function renderWorldAuctionHub(content) {
         </div>
     `;
 
-    // Khởi tạo vòng đếm nhịp tự động nếu người chơi đang ở màn hình Đấu Giá
-    if (!auctionCountdownInterval) {
-        auctionCountdownInterval = setInterval(() => {
-            const auctionPage = document.getElementById('page-world-auction');
-            const isVisible = auctionPage && !auctionPage.classList.contains('hidden') && auctionPage.offsetParent !== null;
-            if (!isVisible) {
-                clearInterval(auctionCountdownInterval);
-                auctionCountdownInterval = null;
-                return;
+}
+
+function tickAuctionSystem() {
+    const items = typeof AUCTION_ITEMS !== 'undefined' ? AUCTION_ITEMS : [];
+    if (items.length === 0) return;
+
+    if (!state.auctionData) {
+        state.auctionData = {
+            currentLotIndex: 0,
+            currentBid: items[0].startingBid,
+            highestBidder: 'Thanh Vân Chưởng Môn',
+            isPlayerHighest: false,
+            timeLeft: 60,
+            hammerCount: 0,
+            wonLots: [],
+            bidHistory: [
+                { bidder: 'Thanh Vân Chưởng Môn', amount: items[0].startingBid, time: 'Vừa xong', isPlayer: false }
+            ],
+            activeSpeech: {
+                speaker: 'Đấu Giá Sư • Nhược Lan',
+                text: 'Kính chào chư vị đạo hữu! Lô bảo vật đầu tiên chính thức lên đài!',
+                avatar: 'fa-user-tie'
+            }
+        };
+    }
+
+    if (state.auctionData.hammerCount >= 3) {
+        return;
+    }
+
+    state.auctionData.timeLeft = (typeof state.auctionData.timeLeft === 'number' ? state.auctionData.timeLeft : 60) - 1;
+
+    const lotIndex = (state.auctionData.currentLotIndex || 0) % items.length;
+    const currentLot = items[lotIndex];
+    const curBid = Number(state.auctionData.currentBid) || currentLot.startingBid;
+    const minStep = currentLot.minStep || 2000;
+
+    // Cơ chế NPC cạnh tranh đặt giá theo thời gian thực (Real-time rival AI bidders)
+    const aiBidders = currentLot.aiBidders || [];
+    const eligibleBidders = aiBidders.filter(b => b.maxBid > curBid && b.name !== state.auctionData.highestBidder);
+    // Tỷ lệ ra giá: 14% nếu người chơi đang dẫn đầu, 7% nếu NPC đang dẫn đầu
+    const bidChance = state.auctionData.isPlayerHighest ? 0.14 : 0.07;
+    if (eligibleBidders.length > 0 && Math.random() < bidChance) {
+        const rival = eligibleBidders[Math.floor(Math.random() * eligibleBidders.length)];
+        const counterBid = curBid + minStep;
+        if (counterBid <= rival.maxBid) {
+            state.auctionData.currentBid = counterBid;
+            state.auctionData.highestBidder = rival.name;
+            state.auctionData.isPlayerHighest = false;
+            state.auctionData.hammerCount = 0;
+            // Nếu thời gian còn dưới 15s thì hồi phục lên 15s để tạo kịch tính
+            if (state.auctionData.timeLeft < 15) {
+                state.auctionData.timeLeft = 15;
             }
 
-            if (state.auctionData && state.auctionData.hammerCount < 3) {
-                state.auctionData.timeLeft = (state.auctionData.timeLeft || 15) - 1;
-                if (state.auctionData.timeLeft <= 0) {
-                    state.auctionData.timeLeft = 15;
-                    advanceAuctionStep();
-                } else {
-                    const timerFill = document.getElementById('auction-timer-fill');
-                    if (timerFill) {
-                        const pct = Math.max(0, Math.min(100, (state.auctionData.timeLeft / 15) * 100));
-                        timerFill.style.width = `${pct}%`;
-                    }
-                }
+            const rivalShouts = [
+                `Hừ! [${currentLot.name}] này lão phu tình thế bắt buộc, ra giá ${counterBid.toLocaleString('vi-VN')} LT!`,
+                `Đạo hữu chớ khinh người quá đáng, ta thêm một bước giá: ${counterBid.toLocaleString('vi-VN')} LT!`,
+                `Bổn tọa tích góp ngàn năm nay, há lại chịu thua sao?! ${counterBid.toLocaleString('vi-VN')} LT!`,
+                `Một món chí bảo bực này há để rơi vào tay kẻ khác?! Ra giá ${counterBid.toLocaleString('vi-VN')} LT!`
+            ];
+            state.auctionData.activeSpeech = {
+                speaker: rival.name,
+                text: rivalShouts[Math.floor(Math.random() * rivalShouts.length)],
+                avatar: 'fa-user-ninja'
+            };
+
+            if (!Array.isArray(state.auctionData.bidHistory)) state.auctionData.bidHistory = [];
+            state.auctionData.bidHistory.unshift({
+                bidder: rival.name,
+                amount: counterBid,
+                time: 'Vừa xong',
+                isPlayer: false
+            });
+            if (state.auctionData.bidHistory.length > 8) state.auctionData.bidHistory.pop();
+
+            if (typeof addLog === 'function') {
+                addLog(`⚡ [${rival.name}] hừ lạnh vung tay ra giá đè bẹp: ${counterBid.toLocaleString('vi-VN')} Linh Thạch!`, 'text-purple-300');
             }
-        }, 1000);
+            if (window.soundSystem?.play) window.soundSystem.play('auction_bid');
+            else if (typeof playSound === 'function') playSound('bell');
+        }
+    }
+
+    // Khi hết thời gian mỗi phiên / búa gõ
+    if (state.auctionData.timeLeft <= 0) {
+        state.auctionData.timeLeft = 15;
+        advanceAuctionStep();
+    }
+
+    // Cập nhật DOM trực tiếp nếu trang Đấu Giá đang hiển thị
+    const auctionPage = document.getElementById('page-world-auction');
+    const isVisible = auctionPage && !auctionPage.classList.contains('hidden') && auctionPage.offsetParent !== null;
+    if (isVisible) {
+        const timerFill = document.getElementById('auction-timer-fill');
+        if (timerFill) {
+            const pct = Math.max(0, Math.min(100, (state.auctionData.timeLeft / 60) * 100));
+            timerFill.style.width = `${pct}%`;
+        }
+        const timerText = document.getElementById('auction-timer-text');
+        if (timerText) {
+            timerText.textContent = `${state.auctionData.timeLeft}s`;
+            if (state.auctionData.timeLeft <= 10) {
+                timerText.className = 'text-rose-400 font-bold animate-pulse';
+            } else {
+                timerText.className = 'text-amber-400 font-bold';
+            }
+        }
+        refreshAuctionUI();
     }
 }
+window.tickAuctionSystem = tickAuctionSystem;
 
 function bidAuction(amount) {
     const items = typeof AUCTION_ITEMS !== 'undefined' ? AUCTION_ITEMS : [];
@@ -7272,9 +8823,15 @@ function bidAuction(amount) {
     const lotIndex = (state.auctionData.currentLotIndex || 0) % items.length;
     const currentLot = items[lotIndex];
     const newBid = (Number(state.auctionData.currentBid) || currentLot.startingBid) + amount;
+    const gs = window.GameState || {};
+    const curStones = Number(gs.stones ?? state.stones ?? 0);
 
-    if ((state.stones || 0) < newBid) {
-        if (typeof addLog === 'function') addLog(`Không đủ Linh Thạch để ra giá ${newBid.toLocaleString('vi-VN')} LT!`, 'text-rose-400');
+    if (curStones < newBid) {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚠️ Không đủ Linh Thạch để ra giá ${newBid.toLocaleString('vi-VN')} LT!`, 'warning');
+        } else if (typeof addLog === 'function') {
+            addLog(`Không đủ Linh Thạch để ra giá ${newBid.toLocaleString('vi-VN')} LT!`, 'text-rose-400');
+        }
         return;
     }
 
@@ -7282,7 +8839,7 @@ function bidAuction(amount) {
     state.auctionData.highestBidder = 'Bản Tôn';
     state.auctionData.isPlayerHighest = true;
     state.auctionData.hammerCount = 0;
-    state.auctionData.timeLeft = 15;
+    state.auctionData.timeLeft = Math.max(state.auctionData.timeLeft || 0, 15);
 
     // Ghi nhận lịch sử ra giá
     if (!Array.isArray(state.auctionData.bidHistory)) state.auctionData.bidHistory = [];
@@ -7303,6 +8860,9 @@ function bidAuction(amount) {
     if (window.soundSystem?.play) window.soundSystem.play('auction_bid');
     else if (typeof playSound === 'function') playSound('whoosh');
 
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(`🔨 Bản Tôn dõng dạc ra giá: ${newBid.toLocaleString('vi-VN')} Linh Thạch!`, 'info');
+    }
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Ra Giá: ${newBid.toLocaleString('vi-VN')} LT!`, 'text-amber-300 font-bold');
     }
@@ -7418,15 +8978,21 @@ function buyoutAuction() {
     const lotIndex = (state.auctionData.currentLotIndex || 0) % items.length;
     const currentLot = items[lotIndex];
     const buyoutPrice = currentLot.buyoutPrice || 100000;
+    const gs = window.GameState || {};
+    const curStones = Number(gs.stones ?? state.stones ?? 0);
 
-    if ((state.stones || 0) < buyoutPrice) {
-        if (typeof addLog === 'function') {
+    if (curStones < buyoutPrice) {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚠️ Không đủ Linh Thạch để một giá mua đứt (Cần ${buyoutPrice.toLocaleString('vi-VN')} LT).`, 'warning');
+        } else if (typeof addLog === 'function') {
             addLog(`Không đủ Linh Thạch để một giá mua đứt (Cần ${buyoutPrice.toLocaleString('vi-VN')} LT).`, 'text-rose-400');
         }
         return;
     }
 
-    state.stones -= buyoutPrice;
+    state.stones = Math.max(0, curStones - buyoutPrice);
+    if (window.GameState) window.GameState.stones = state.stones;
+
     state.auctionData.currentBid = buyoutPrice;
     state.auctionData.highestBidder = 'Bản Tôn';
     state.auctionData.isPlayerHighest = true;
@@ -7443,6 +9009,9 @@ function buyoutAuction() {
         window.triggerCameraTrauma(0.5, 'page-world-auction');
     }
 
+    if (typeof window.showGameToast === 'function') {
+        window.showGameToast(`👑 Mua đứt thành công [${currentLot.name}] với giá ${buyoutPrice.toLocaleString('vi-VN')} LT!`, 'success');
+    }
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, 'MUA ĐỨT THÀNH CÔNG!', 'text-gold-300 font-bold');
     }
@@ -7450,11 +9019,11 @@ function buyoutAuction() {
         addLog(`👑 Bản Tôn khí phách ngút trời, vung ${buyoutPrice.toLocaleString('vi-VN')} Linh Thạch đoạt tuyệt đối [${currentLot.name}]! Toàn hội trường kinh ngạc!`, 'text-gold-300 font-bold');
     }
 
-    claimAuctionLot();
+    claimAuctionLot(true);
 }
 window.buyoutAuction = buyoutAuction;
 
-function claimAuctionLot() {
+function claimAuctionLot(isBuyout = false) {
     const items = typeof AUCTION_ITEMS !== 'undefined' ? AUCTION_ITEMS : [];
     if (!state.auctionData || items.length === 0) return;
 
@@ -7462,33 +9031,139 @@ function claimAuctionLot() {
     const currentLot = items[lotIndex];
 
     if (state.auctionData.isPlayerHighest) {
-        if (state.auctionData.hammerCount >= 3 && state.auctionData.currentBid < (currentLot.buyoutPrice || 100000)) {
+        if (!isBuyout && state.auctionData.hammerCount >= 3 && state.auctionData.currentBid < (currentLot.buyoutPrice || 100000)) {
             state.stones = Math.max(0, (state.stones || 0) - state.auctionData.currentBid);
+            if (window.GameState) window.GameState.stones = state.stones;
         }
 
         const r = currentLot.rewardData || {};
         if (currentLot.rewardType === 'stat_and_item') {
-            if (r.hpBonus) state.maxHp = (Number(state.maxHp) || 1000) + r.hpBonus;
-            if (r.atkBonus) state.atk = (Number(state.atk) || 50) + r.atkBonus;
-            if (r.defBonus) state.def = (Number(state.def) || 20) + r.defBonus;
+            if (r.hpBonus) {
+                state.maxHp = (Number(state.maxHp) || 1000) + r.hpBonus;
+                if (window.GameState) window.GameState.maxHp = state.maxHp;
+            }
+            if (r.atkBonus) {
+                state.atk = (Number(state.atk) || 50) + r.atkBonus;
+                if (window.GameState) window.GameState.atk = state.atk;
+            }
+            if (r.defBonus) {
+                state.def = (Number(state.def) || 20) + r.defBonus;
+                if (window.GameState) window.GameState.def = state.def;
+            }
+        } else if (currentLot.rewardType === 'skill') {
+            if (r.atkBonus) {
+                state.atk = (Number(state.atk) || 50) + r.atkBonus;
+                if (window.GameState) window.GameState.atk = state.atk;
+            }
         } else if (currentLot.rewardType === 'currency') {
             if (r.jade) {
-                if (state.jade !== undefined) state.jade += r.jade;
-                else if (state.immortalJade !== undefined) state.immortalJade += r.jade;
-                else state.jade = r.jade;
+                state.jade = (Number(state.jade ?? state.immortalJade) || 0) + r.jade;
+                state.immortalJade = state.jade;
+                if (window.GameState) {
+                    window.GameState.jade = state.jade;
+                    window.GameState.immortalJade = state.jade;
+                }
             }
-            if (r.exp) state.exp = (Number(state.exp) || 0) + r.exp;
-            if (r.stones) state.stones = (Number(state.stones) || 0) + r.stones;
+            if (r.exp) {
+                if (typeof window.addExp === 'function') window.addExp(r.exp);
+                else {
+                    state.exp = (Number(state.exp) || 0) + r.exp;
+                    if (window.GameState) window.GameState.exp = state.exp;
+                }
+            }
+            if (r.stones) {
+                state.stones = (Number(state.stones) || 0) + r.stones;
+                if (window.GameState) window.GameState.stones = state.stones;
+            }
+        }
+
+        // Trao tặng Kỳ Trân Dị Bảo THẬT vào Túi Đồ (Inventory)
+        let wonItem = null;
+        if (currentLot.id === 'auc_1') {
+            wonItem = {
+                id: 'pill_cuu_chuyen_hoa_than',
+                name: 'Cửu Chuyển Hóa Thần Đan',
+                type: 'Đan Dược',
+                rarity: 6,
+                count: 2,
+                quantity: 2,
+                desc: 'Đan dược cửu chuyển thượng phẩm giúp tăng 100% tỷ lệ đột phá và vĩnh viễn tăng +25,000 HP, +5,000 ATK.',
+                icon: 'fa-pills'
+            };
+        } else if (currentLot.id === 'auc_2') {
+            wonItem = {
+                id: 'item_bat_quai_tran_do',
+                name: 'Bát Quái Hộ Thể Trận Đồ',
+                type: 'Pháp Bảo',
+                rarity: 5,
+                count: 1,
+                quantity: 1,
+                desc: 'Bản vẽ trận pháp viễn cổ hộ thể, tăng vĩnh viễn +50% tốc độ tu luyện chu thiên và +3,500 DEF.',
+                icon: 'fa-dharmachakra'
+            };
+        } else if (currentLot.id === 'auc_3') {
+            wonItem = {
+                id: 'item_hon_don_kiem_quyet',
+                name: 'Hỗn Độn Kiếm Quyết (Tàn Thiên)',
+                type: 'Công Pháp',
+                rarity: 6,
+                count: 1,
+                quantity: 1,
+                desc: 'Công pháp đệ nhất sát phạt thượng giới, tăng +15,000 ATK và +15% Tỷ Lệ Bạo Kích.',
+                icon: 'fa-scroll'
+            };
+        } else if (currentLot.id === 'auc_4') {
+            wonItem = {
+                id: 'item_huyen_vu_than_thuan',
+                name: 'Huyền Vũ Thần Thuẫn',
+                type: 'Pháp Bảo',
+                rarity: 5,
+                count: 1,
+                quantity: 1,
+                desc: 'Lá chắn rèn từ mai rùa Huyền Vũ ngàn năm, hấp thụ 30% sát thương chí mạng.',
+                icon: 'fa-shield-halved'
+            };
+        } else if (currentLot.id === 'auc_5') {
+            wonItem = {
+                id: 'item_thien_ngoai_hon_don_thach',
+                name: 'Thiên Ngoại Hỗn Độn Thạch',
+                type: 'Linh Vật',
+                rarity: 6,
+                count: 1,
+                quantity: 1,
+                desc: 'Viên đá rơi từ ngoại vực hư không, ẩn chứa 200 Tiên Ngọc và 100,000 Tu Vi thuần khiết.',
+                icon: 'fa-gem'
+            };
+            state.jade = (Number(state.jade ?? state.immortalJade) || 0) + 200;
+            state.immortalJade = state.jade;
+            if (window.GameState) {
+                window.GameState.jade = state.jade;
+                window.GameState.immortalJade = state.jade;
+            }
+        }
+
+        if (wonItem) {
+            if (!Array.isArray(state.inventory)) state.inventory = [];
+            const existing = state.inventory.find(i => i.id === wonItem.id);
+            if (existing) {
+                existing.count = (existing.count || existing.quantity || 1) + (wonItem.count || 1);
+                existing.quantity = existing.count;
+            } else {
+                state.inventory.push(wonItem);
+            }
+            if (window.GameState) {
+                window.GameState.inventory = state.inventory;
+            }
         }
 
         if (!Array.isArray(state.auctionData.wonLots)) state.auctionData.wonLots = [];
         state.auctionData.wonLots.push(currentLot.id);
 
-        if (window.soundSystem?.play) window.soundSystem.play('victory');
-        else if (typeof playSound === 'function') playSound('bell');
-
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`🎉 Đoạt bảo thành công [${currentLot.name}]! Đã đưa vào Túi Đồ và gia tăng thực lực!`, 'success');
+        }
         if (typeof addLog === 'function') {
-            addLog(`🎉 Thu hoạch thành công chí bảo [${currentLot.name}]! Thuộc tính tăng tiến vượt bậc!`, 'text-gold-300 font-bold');
+            addLog(`🎉 Thu hoạch thành công kỳ trân dị bảo [${currentLot.name}] vào Túi Đồ! Thuộc tính tăng tiến vượt bậc!`, 'text-gold-300 font-bold');
         }
     } else {
         if (typeof addLog === 'function') {
@@ -7502,7 +9177,7 @@ function claimAuctionLot() {
     state.auctionData.highestBidder = nextLot.aiBidders?.[0]?.name || 'Tán Tu Bí Ẩn';
     state.auctionData.isPlayerHighest = false;
     state.auctionData.hammerCount = 0;
-    state.auctionData.timeLeft = 15;
+    state.auctionData.timeLeft = 60;
     state.auctionData.activeSpeech = {
         speaker: 'Đấu Giá Sư • Nhược Lan',
         text: `Phiên đấu giá tiếp theo: [${nextLot.name}], khởi điểm ${nextLot.startingBid.toLocaleString('vi-VN')} Linh Thạch!`,
@@ -7512,7 +9187,13 @@ function claimAuctionLot() {
         { bidder: state.auctionData.highestBidder, amount: nextLot.startingBid, time: 'Vừa xong', isPlayer: false }
     ];
 
+    if (window.GameState) {
+        window.GameState.stones = state.stones;
+        window.GameState.inventory = state.inventory;
+    }
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
     if (typeof saveGameState === 'function') saveGameState();
     refreshAuctionUI();
 }
@@ -7541,40 +9222,13 @@ function renderWorldTribulationHub(content) {
 }
 
 
-function upgradeArtifact(type) {
-    if (!isArtifactUnlocked(state)) {
-        if (window.soundSystem?.play) window.soundSystem.play('danger');
-        else if (typeof playSound === 'function') playSound('danger');
-        addLog('⚠️ Cảnh giới chưa đạt Đại Thừa Kỳ, đan điền chưa thể dung nạp uy lực của Bản Mệnh Pháp Bảo!', 'text-rose-400');
-        return;
-    }
-    if (state.stones < 5000) {
-        addLog('Không đủ Linh Thạch để ôn dưỡng Pháp Bảo (Cần 5,000 LT).', 'text-rose-400');
-        return;
-    }
-    state.stones -= 5000;
-    
-    const prevCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
-    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
-    const newCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
-    const cpGain = Math.max(1200, newCp - prevCp);
-
-    if (window.soundSystem?.play) window.soundSystem.play('forge_success');
-    else if (typeof playSound === 'function') playSound('bell');
-
-    spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Pháp Bảo Thăng Bậc! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-gold-300 font-bold');
-    addLog(`✨ Bản Mệnh Pháp Bảo đã hấp thu linh khí ôn dưỡng, thần uy tăng vọt (+${cpGain.toLocaleString('vi-VN')} Chiến Lực)!`, 'text-gold-300');
-    updateHUD();
-    saveGameState();
-    renderHubModal('character', 'artifact');
-
-    const artPage = document.getElementById('page-artifact');
-    if (artPage) {
-        artPage.classList.add('artifact-level-flash');
-        setTimeout(() => artPage.classList.remove('artifact-level-flash'), 500);
+// Legacy forwarder - chuyển tiếp an toàn tới upgradeArtifact(artId) chuẩn đã định nghĩa ở dòng 6753
+function legacyNourishArtifact(type) {
+    if (typeof window.upgradeArtifact === 'function') {
+        return window.upgradeArtifact(type || 'sword');
     }
 }
-window.upgradeArtifact = upgradeArtifact;
+window.legacyNourishArtifact = legacyNourishArtifact;
 
 function craftTalisman() {
     if (state.stones < 500) {
@@ -7648,13 +9302,31 @@ function renderMenuHub(hub, tab, content) {
     const [label, icon, action] = item;
     content.innerHTML = `<div class="hub-menu-grid"><button class="hub-menu-card" onclick="closeHubModal();${action}"><i class="fa-solid ${icon}"></i><b>${label}</b><p class="text-xs text-slate-400 mt-3">Mở phân hệ ${label}.</p></button></div>`;
 }
-function formatCultivationNumber(value) {
-    const number = Math.max(0, Number(value) || 0);
-    if (number < 1000) return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(number);
-    const units = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-    const [divisor, suffix] = units.find(([unit]) => number >= unit);
-    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(number / divisor)}${suffix}`;
+function formatCultivationNumber(value, options = {}) {
+    if (typeof window !== 'undefined' && typeof window.formatNumber === 'function' && window.formatNumber !== formatCultivationNumber) {
+        return window.formatNumber(value, options);
+    }
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '0';
+    const val = Number(value);
+    if (!Number.isFinite(val)) return val > 0 ? '∞' : '-∞';
+    const isNegative = val < 0;
+    const abs = Math.abs(val);
+    if (abs < 10000) {
+        return (isNegative ? '-' : '') + Math.round(abs).toLocaleString('vi-VN');
+    }
+    const units = [
+        [1e24, 'Sp'], [1e21, 'Sx'], [1e18, 'Qi'], [1e15, 'Qa'],
+        [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']
+    ];
+    const match = units.find(([unit]) => abs >= unit);
+    if (!match) return (isNegative ? '-' : '') + Math.round(abs).toLocaleString('vi-VN');
+    const scaled = abs / match[0];
+    let str = scaled.toFixed(scaled >= 100 ? 1 : 2);
+    if (str.includes('.')) str = str.replace(/\.?0+$/, '');
+    return (isNegative ? '-' : '') + str + match[1];
 }
+window.formatNumber = formatCultivationNumber;
+window.formatCultivationNumber = formatCultivationNumber;
 
 function toggleHeavenlySuppressionInfo() {
     const indicator = document.getElementById('heavenly-suppression');
@@ -7711,24 +9383,30 @@ window.animateCombatPowerCountUp = animateCombatPowerCountUp;
 
 function updateHUD() {
             syncHeavenlyRejection();
-            const currentRealm = REALMS[state.realmIndex];
-            const percent = Math.min(100, Math.floor((state.exp / currentRealm.maxExp) * 100));
+            const realmsList = (typeof window !== 'undefined' && Array.isArray(window.REALMS_DATA))
+                ? window.REALMS_DATA
+                : ((typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : []);
+            const currentRealm = realmsList[state.realmIndex] || realmsList[0] || { name: 'Luyện Khí', maxExp: 100 };
+            const percent = Math.min(100, Math.floor((state.exp / (currentRealm.maxExp || 1)) * 100));
             syncRealmTheme();
 
-            document.getElementById('realm-badge').textContent = currentRealm.name;
+            const realmBadgeEl = document.getElementById('realm-badge') || document.getElementById('ui-realm-badge');
+            if (realmBadgeEl) realmBadgeEl.textContent = currentRealm.name;
 
             // Shared profile elements are rendered by the character controller.
-            // Cập nhật trạng thái [Trọng Thương] do Thiên Kiếp đánh bại nếu có
+            // Cập nhật trạng thái [Trọng Thương] do Thiên Kiếp hoặc Thua Tháp
             const heavyInjuryEl = document.getElementById('heavy-injury-status');
             const heavyInjuryTimeEl = document.getElementById('heavy-injury-time');
             if (heavyInjuryEl && heavyInjuryTimeEl) {
-                const isInjured = Boolean(state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil);
+                const isInjured = Boolean(state.isInjured || (state.heavyInjuryUntil && Date.now() < state.heavyInjuryUntil));
                 heavyInjuryEl.classList.toggle('hidden', !isInjured);
                 if (isInjured) {
-                    const remSec = Math.max(0, Math.ceil((state.heavyInjuryUntil - Date.now()) / 1000));
-                    const m = Math.floor(remSec / 60);
-                    const s = remSec % 60;
-                    heavyInjuryTimeEl.textContent = `Trọng Thương (${m}:${s < 10 ? '0' : ''}${s})`;
+                    if (state.isMeditatingRecover) {
+                        const remSec = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
+                        heavyInjuryTimeEl.textContent = `Đang Điều Tức... (${remSec}s)`;
+                    } else {
+                        heavyInjuryTimeEl.textContent = `Trọng Thương (-70% Tụ Khí) [Vận Công]`;
+                    }
                 }
             }
             const suppressionIndicator = document.getElementById('heavenly-suppression');
@@ -7744,7 +9422,8 @@ function updateHUD() {
                 const leak = document.getElementById('heavenly-suppression-leak');
                 if (leak) leak.textContent = active ? `Rò rỉ khí tức khi đột phá: ${Math.round(getHeavenlyLeakChance() * 100)}%.` : '';
             }
-            document.getElementById('realm-subtitle').textContent = `"${currentRealm.quote}"`;
+            const realmSubtitleEl = document.getElementById('realm-subtitle');
+            if (realmSubtitleEl) realmSubtitleEl.textContent = `"${currentRealm.quote}"`;
             const isAtOrAboveBottleneck = state.exp >= currentRealm.maxExp;
             const surplusExp = isAtOrAboveBottleneck ? Math.max(0, state.exp - currentRealm.maxExp) : 0;
             const expDesktopEl = document.getElementById('exp-text-desktop');
@@ -7758,10 +9437,12 @@ function updateHUD() {
                 }
             }
             const expBarDesktop = document.getElementById('exp-bar-desktop');
-            expBarDesktop.style.width = `${percent}%`;
+            if (expBarDesktop) expBarDesktop.style.width = `${percent}%`;
             const progressDesktop = document.getElementById('cultivation-progress-desktop');
-            progressDesktop.setAttribute('aria-valuenow', String(percent));
-            progressDesktop.setAttribute('aria-valuetext', `${formatCultivationNumber(state.exp)} trên ${formatCultivationNumber(currentRealm.maxExp)}`);
+            if (progressDesktop) {
+                progressDesktop.setAttribute('aria-valuenow', String(percent));
+                progressDesktop.setAttribute('aria-valuetext', `${formatCultivationNumber(state.exp)} trên ${formatCultivationNumber(currentRealm.maxExp)}`);
+            }
             const isBottleneck = percent >= 100;
             document.querySelector('.cultivation-card')?.classList.toggle('is-bottleneck', isBottleneck);
             document.querySelector('.cultivation-pill-hud')?.classList.toggle('is-bottleneck', isBottleneck);
@@ -7770,7 +9451,8 @@ function updateHUD() {
             expBarDesktop?.classList.toggle('is-bottleneck', isBottleneck);
             expBarDesktop?.classList.toggle('is-near-full', percent >= 85);
 
-            document.getElementById('spirit-stones').textContent = state.stones.toLocaleString();
+            const spiritStonesEl = document.getElementById('spirit-stones');
+            if (spiritStonesEl) spiritStonesEl.textContent = state.stones.toLocaleString();
             const spiritPool = document.getElementById('spirit-pool');
             if (spiritPool) spiritPool.textContent = `${state.linhKhi.toLocaleString('vi-VN')}/${getLinhKhiMax().toLocaleString('vi-VN')} (+${getLinhKhiRate() * state.timeScale}/s)`;
             const foundationQiAmount = document.getElementById('foundation-qi-amount');
@@ -7796,7 +9478,8 @@ function updateHUD() {
             }
 
             const currentSpeed = state.isDead ? 0 : getAdjustedCultivationGain(getIdleRate() * state.timeScale).gainedAmount;
-            document.getElementById('idle-rate-badge').textContent = `+${formatCultivationNumber(currentSpeed)} / s`;
+            const idleRateBadgeEl = document.getElementById('idle-rate-badge') || document.getElementById('tuvi-rate-badge');
+            if (idleRateBadgeEl) idleRateBadgeEl.textContent = `+${formatCultivationNumber(currentSpeed)} / s`;
             
             // Khí Huyết (HP) & Linh Lực (MP) — Bảo vệ chống số âm & định dạng chuẩn số học
             const effectiveStats = getEffectiveStats();
@@ -7948,6 +9631,7 @@ function updateHUD() {
             const uiStatDodge = document.getElementById('ui-stat-dodge');
             if (uiStatDodge) uiStatDodge.textContent = `${effectiveStats.dodge || 5}%`;
 
+            if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
             if (typeof updateLeftPanelElements === 'function') updateLeftPanelElements();
 
             const root = getRootConfig();
@@ -7972,18 +9656,23 @@ function updateHUD() {
             if (cpEl && cpEl.textContent !== cpLabel) cpEl.textContent = cpLabel;
             if (modalCpEl && modalCpEl.textContent !== cpLabel) modalCpEl.textContent = cpLabel;
             previousCombatPower = currentCP;
-            document.getElementById('stage-location-badge').textContent = `${BACKGROUNDS[state.bgIndex].name} • Tụ Linh Trận Cấp ${state.arrayLevel}`;
+            const stageLocBadge = document.getElementById('stage-location-badge');
+            if (stageLocBadge && typeof BACKGROUNDS !== 'undefined' && BACKGROUNDS[state.bgIndex]) {
+                stageLocBadge.textContent = `${BACKGROUNDS[state.bgIndex].name} • Tụ Linh Trận Cấp ${state.arrayLevel}`;
+            }
 
             // Trạng thái Đan Dược
             const buffEl = document.getElementById('buff-status-text');
-            if (state.exp >= currentRealm.maxExp) {
-                buffEl.textContent = '💥 Bình cảnh • Chờ đột phá';
-            } else if (state.pillBuffRemaining > 0) {
-                buffEl.innerHTML = `<span class="text-gold-300 font-semibold">Đan Dược Khuếch Đại (+50% tốc độ: ${state.pillBuffRemaining}s)</span>`;
-            } else if (breakthroughBonusChance > 0) {
-                buffEl.innerHTML = `<span class="text-purple-300 font-semibold">Hộ Tâm Đan (+${breakthroughBonusChance}% Độ Kiếp)</span>`;
-            } else {
-                buffEl.textContent = "Đan Điền: Bình ổn";
+            if (buffEl) {
+                if (state.exp >= currentRealm.maxExp) {
+                    buffEl.textContent = '💥 Bình cảnh • Chờ đột phá';
+                } else if (state.pillBuffRemaining > 0) {
+                    buffEl.innerHTML = `<span class="text-gold-300 font-semibold">Đan Dược Khuếch Đại (+50% tốc độ: ${state.pillBuffRemaining}s)</span>`;
+                } else if (breakthroughBonusChance > 0) {
+                    buffEl.innerHTML = `<span class="text-purple-300 font-semibold">Hộ Tâm Đan (+${breakthroughBonusChance}% Độ Kiếp)</span>`;
+                } else {
+                    buffEl.textContent = "Đan Điền: Bình ổn";
+                }
             }
 
             // Đổi màu hào quang phân cấp động theo cảnh giới & Chánh Ma
@@ -8139,16 +9828,16 @@ function updateHUD() {
                         mainActionBtn.setAttribute('title', 'Đạo hữu đã đạt cảnh giới tối cao hiện tại.');
                     } else if (currentRealm.isMajorBottleneck) {
                         mainActionBtn.removeAttribute('disabled');
-                        mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn cultivation-main-btn--major";
+                        mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn cultivation-main-btn--major is-breakthrough-ready animate-pulse";
                         mainActionIcon.className = "fa-solid fa-cloud-bolt mr-1.5 text-purple-300 animate-bounce";
-                        mainActionLabel.textContent = "Nghênh Đón Thiên Kiếp";
+                        mainActionLabel.textContent = "NGHÊNH ĐÓN THIÊN KIẾP";
                         mainActionBtn.setAttribute('title', 'Bình cảnh Đại Cảnh Giới - Bấm để nghênh đón Thiên Kiếp');
                     } else {
                         mainActionBtn.removeAttribute('disabled');
-                        mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn cultivation-main-btn--minor";
+                        mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn cultivation-main-btn--minor is-breakthrough-ready animate-pulse";
                         mainActionIcon.className = "fa-solid fa-bolt-lightning mr-1.5 text-amber-300 animate-bounce";
-                        mainActionLabel.textContent = "Xung Kích Bình Cảnh";
-                        mainActionBtn.setAttribute('title', 'Tu vi viên mãn - Bấm để xung kích bình cảnh tiểu cảnh giới');
+                        mainActionLabel.textContent = "ĐỘT PHÁ CẢNH GIỚI";
+                        mainActionBtn.setAttribute('title', 'Tu vi viên mãn - Bấm để xung kích đột phá cảnh giới');
                     }
                 }
             } else {
@@ -8157,20 +9846,83 @@ function updateHUD() {
                     btnBreak.classList.add('hidden');
                     btnBreak.className = "hidden";
                     btnBreak.setAttribute('aria-hidden', 'true');
+                    btnBreak.onclick = attemptCultivationBreakthrough;
                 }
                 if (mainActionBtn && mainActionIcon && mainActionLabel) {
                     mainActionBtn.classList.remove('hidden');
-                    mainActionBtn.setAttribute('disabled', 'disabled');
-                    mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn is-meditating";
+                    mainActionBtn.removeAttribute('disabled');
+                    mainActionBtn.className = "pill-breakthrough-btn cultivation-main-btn is-meditating cursor-pointer";
                     mainActionIcon.className = "fa-solid fa-yin-yang mr-1.5 text-emerald-400/70";
                     mainActionLabel.textContent = "Đang Tụ Khí...";
-                    mainActionBtn.setAttribute('title', 'Đang tự động hấp thu thiên địa linh khí. Khi Tu Vi đạt 100% có thể Xung Kích Bình Cảnh.');
+                    mainActionBtn.setAttribute('title', 'Đang tự động hấp thu thiên địa linh khí. Bấm để kiểm tra Tu Vi & Đột Phá.');
+                    mainActionBtn.onclick = attemptCultivationBreakthrough;
                 }
             }
 
             renderQuickEquipSlots();
             applyFeatureVisibility();
+            if (typeof window.updateMainQuestUI === 'function') {
+                window.updateMainQuestUI();
+            }
         }
+
+let vanCongTimer = null;
+function vanCongDieuTuc() {
+    if (!state.isInjured && (!state.heavyInjuryUntil || Date.now() >= state.heavyInjuryUntil)) {
+        if (typeof showXianxiaToast === 'function') {
+            showXianxiaToast('Kinh mạch hoàn hảo, không có đạo thương cần điều tức!', 'info');
+        }
+        return;
+    }
+    if (state.isMeditatingRecover) {
+        if (typeof showXianxiaToast === 'function') {
+            const rem = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
+            showXianxiaToast(`Đang vận công điều tức, còn ${rem} giây...`, 'warning');
+        }
+        return;
+    }
+
+    state.isMeditatingRecover = true;
+    state.meditateRecoverEnd = Date.now() + 15000;
+    if (typeof playSound === 'function') playSound('bell');
+    if (typeof showXianxiaToast === 'function') {
+        showXianxiaToast('🧘 Bắt đầu Vận Công Điều Tức (15 giây)... Kinh mạch đang tuần hoàn chữa lành!', 'warning');
+    }
+    if (typeof addLog === 'function') {
+        addLog('🧘 <span class="text-amber-300 font-bold">[Vận Công Điều Tức]</span> Ngồi xếp bằng đả tọa, dẫn dắt chân khí tẩy rửa kinh mạch thương tổn (15s)...', 'warning');
+    }
+    updateHUD();
+
+    if (vanCongTimer) clearInterval(vanCongTimer);
+    vanCongTimer = setInterval(() => {
+        if (!state.isMeditatingRecover) {
+            clearInterval(vanCongTimer);
+            vanCongTimer = null;
+            return;
+        }
+        const remaining = Math.max(0, Math.ceil((state.meditateRecoverEnd - Date.now()) / 1000));
+        updateHUD();
+        if (remaining <= 0) {
+            clearInterval(vanCongTimer);
+            vanCongTimer = null;
+            state.isMeditatingRecover = false;
+            state.isInjured = false;
+            state.heavyInjuryUntil = 0;
+            if (window.GameState) window.GameState.isInjured = false;
+            state.hp = state.maxHp;
+            if (typeof playSound === 'function') playSound('breakthrough');
+            if (typeof showXianxiaToast === 'function') {
+                showXianxiaToast('✨ Vận Công Điều Tức hoàn tất! Đạo thương khỏi hẳn, tốc độ tụ khí khôi phục 100%!', 'success');
+            }
+            if (typeof addLog === 'function') {
+                addLog('✨ <span class="text-emerald-400 font-bold">[Kinh Mạch Khôi Phục]</span> Trọng thương đã lành! Khí huyết dồi dào, có thể tiếp tục khiêu chiến Trấn Yêu Tháp và Độ Kiếp!', 'success');
+            }
+            updateHUD();
+            if (typeof saveGameState === 'function') saveGameState();
+        }
+    }, 1000);
+}
+window.vanCongDieuTuc = vanCongDieuTuc;
 // ============================================================================
 // BẢN THỂ NHÂN VẬT (LOTTIE MODEL) & PHÁP TƯỚNG THEO CẢNH GIỚI
 // ============================================================================
@@ -8334,6 +10086,48 @@ function manualCultivate(event) {
 window.manualCultivate = manualCultivate;
 
 /**
+ * HIỆU ỨNG CAO TRÀO ĐỘT PHÁ (IMPACT VFX)
+ * Cột sáng thiên địa chiếu thẳng xuống nhân vật + 1 vòng sóng xung kích (Shockwave) bung tỏa từ tâm nhân vật ra toàn màn hình trong 0.8s (60 FPS)
+ */
+function triggerBreakthroughImpactVFX() {
+    if (typeof document === 'undefined') return;
+    const vfx = document.getElementById('breakthrough-impact-vfx');
+    if (!vfx) return;
+
+    // Căn chỉnh tâm sóng xung kích và cột sáng chính xác tại tâm nhân vật
+    const charImg = document.getElementById('char-main-img');
+    const ring = vfx.querySelector('.breakthrough-shockwave-ring');
+    const pillar = vfx.querySelector('.celestial-light-pillar');
+    if (charImg) {
+        const rect = charImg.getBoundingClientRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+            const cx = Math.round(rect.left + rect.width / 2);
+            const cy = Math.round(rect.top + rect.height * 0.52);
+            if (ring) {
+                ring.style.left = `${cx}px`;
+                ring.style.top = `${cy}px`;
+            }
+            if (pillar) {
+                pillar.style.left = `${cx}px`;
+            }
+        }
+    }
+
+    vfx.classList.remove('is-active');
+    void vfx.offsetWidth; // Force reflow để kích hoạt lại animation CSS
+    vfx.classList.add('is-active');
+
+    if (window.soundSystem?.play) {
+        window.soundSystem.play('break');
+    }
+
+    setTimeout(() => {
+        vfx.classList.remove('is-active');
+    }, 850);
+}
+window.triggerBreakthroughImpactVFX = triggerBreakthroughImpactVFX;
+
+/**
  * BƯỚC 4: LOTTIE THĂNG CẤP (LEVEL UP AURA)
  * Bung luồng sáng vàng rực bọc lấy nhân vật khi thăng cấp / đột phá, sau đó tự động stop và hide
  */
@@ -8377,67 +10171,179 @@ function cultivate(event) {
 }
 window.cultivate = cultivate;
 
-/**
- * BƯỚC 2: HỆ THỐNG HẠT VÀ MÔI TRƯỜNG (tsParticles - Mạt Pháp Tàn Tro & Sương Mù)
- * Cấu hình Low-poly tối đa 40 hạt, màu tro xám và nâu đất, di chuyển lên trên
- */
-function initTsParticles() {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-    const container = document.getElementById('tsparticles');
+// ==========================================================================
+// HỆ THỐNG HIỆU ỨNG THỜI TIẾT & DỊ TƯỢNG THIÊN ĐỊA (TSPARTICLES & VIGNETTE)
+// Giới hạn dưới 60 hạt GPU-accelerated, mix-blend-mode: screen
+// 4 Preset chuyển đổi mượt mà theo GameState.currentOmen:
+// 1. Mặc định / Thanh Tĩnh (thanh_tinh)
+// 2. Tử Khí Đông Lai (tu_khi_dong_lai)
+// 3. Linh Mạch Bộc Phát (linh_mach_boc_phat)
+// 4. Thiên Kiếp / Huyết Nguyệt (huyet_nguyet)
+// ==========================================================================
+
+const CELESTIAL_WEATHER_PRESETS = {
+    thanh_tinh: {
+        id: "thanh_tinh",
+        name: "Thanh Tĩnh Tiên Cảnh",
+        vignette: {
+            primary: "rgba(45, 212, 191, 0.35)",
+            soft: "rgba(20, 184, 166, 0.14)"
+        },
+        tsOptions: {
+            fpsLimit: 60,
+            fullScreen: { enable: false },
+            particles: {
+                number: { value: 38, density: { enable: true, area: 900 } },
+                color: { value: ["#2dd4bf", "#34d399", "#fbcfe8", "#ffffff", "#14b8a6"] },
+                shape: { type: ["circle"] },
+                opacity: {
+                    value: { min: 0.25, max: 0.75 },
+                    animation: { enable: true, speed: 0.8, minimumValue: 0.15, sync: false }
+                },
+                size: { value: { min: 1.5, max: 3.6 } },
+                move: {
+                    enable: true,
+                    speed: 1.4,
+                    direction: "bottom-right",
+                    straight: false,
+                    outModes: { default: "out" }
+                }
+            },
+            detectRetina: false
+        }
+    },
+    tu_khi_dong_lai: {
+        id: "tu_khi_dong_lai",
+        name: "Tử Khí Đông Lai",
+        vignette: {
+            primary: "rgba(168, 85, 247, 0.42)",
+            soft: "rgba(147, 51, 234, 0.18)"
+        },
+        tsOptions: {
+            fpsLimit: 60,
+            fullScreen: { enable: false },
+            particles: {
+                number: { value: 46, density: { enable: true, area: 900 } },
+                color: { value: ["#c084fc", "#a855f7", "#e879f9", "#ffffff", "#7e22ce"] },
+                shape: { type: ["circle"] },
+                opacity: {
+                    value: { min: 0.3, max: 0.85 },
+                    animation: { enable: true, speed: 1.2, minimumValue: 0.2, sync: false }
+                },
+                size: { value: { min: 1.2, max: 3.2 } },
+                move: {
+                    enable: true,
+                    speed: 2.4,
+                    direction: "right",
+                    straight: false,
+                    outModes: { default: "out" }
+                }
+            },
+            detectRetina: false
+        }
+    },
+    linh_mach_boc_phat: {
+        id: "linh_mach_boc_phat",
+        name: "Linh Mạch Bộc Phát",
+        vignette: {
+            primary: "rgba(250, 204, 21, 0.38)",
+            soft: "rgba(16, 185, 129, 0.16)"
+        },
+        tsOptions: {
+            fpsLimit: 60,
+            fullScreen: { enable: false },
+            particles: {
+                number: { value: 50, density: { enable: true, area: 900 } },
+                color: { value: ["#facc15", "#fbbf24", "#34d399", "#10b981", "#ffffff"] },
+                shape: { type: ["circle"] },
+                opacity: {
+                    value: { min: 0.35, max: 0.9 },
+                    animation: { enable: true, speed: 1.6, minimumValue: 0.25, sync: false }
+                },
+                size: { value: { min: 1.6, max: 4.0 } },
+                move: {
+                    enable: true,
+                    speed: 3.2,
+                    direction: "top",
+                    straight: false,
+                    outModes: { default: "out" }
+                }
+            },
+            detectRetina: false
+        }
+    },
+    huyet_nguyet: {
+        id: "huyet_nguyet",
+        name: "Thiên Kiếp / Huyết Nguyệt",
+        vignette: {
+            primary: "rgba(244, 63, 94, 0.45)",
+            soft: "rgba(225, 29, 72, 0.18)"
+        },
+        tsOptions: {
+            fpsLimit: 60,
+            fullScreen: { enable: false },
+            particles: {
+                number: { value: 44, density: { enable: true, area: 900 } },
+                color: { value: ["#f43f5e", "#ef4444", "#fb7185", "#f59e0b", "#fef08a"] },
+                shape: { type: ["circle"] },
+                opacity: {
+                    value: { min: 0.2, max: 0.95 },
+                    animation: { enable: true, speed: 2.4, minimumValue: 0.1, sync: false }
+                },
+                size: { value: { min: 1.4, max: 3.5 } },
+                move: {
+                    enable: true,
+                    speed: 2.1,
+                    direction: "bottom",
+                    straight: false,
+                    outModes: { default: "out" }
+                }
+            },
+            detectRetina: false
+        }
+    }
+};
+
+let currentActiveOmenPreset = null;
+
+function resolveOmenPresetKey(omenId) {
+    if (!omenId) return "thanh_tinh";
+    const key = String(omenId).toLowerCase();
+    if (key === "tu_khi_dong_lai") return "tu_khi_dong_lai";
+    if (key === "linh_mach_boc_phat" || key === "that_tinh_tu_hoi" || key === "linh_mach") return "linh_mach_boc_phat";
+    if (key === "huyet_nguyet" || key === "huyet_nguyet_chi_da" || key === "thien_kiep" || key === "cuu_thien_cuong_loi") return "huyet_nguyet";
+    return "thanh_tinh";
+}
+
+function applyCelestialOmenWeather(rawOmenId, force = false) {
+    const presetKey = resolveOmenPresetKey(rawOmenId);
+    if (!force && currentActiveOmenPreset === presetKey) return;
+    currentActiveOmenPreset = presetKey;
+
+    const preset = CELESTIAL_WEATHER_PRESETS[presetKey] || CELESTIAL_WEATHER_PRESETS.thanh_tinh;
+
+    // 1. Cập nhật Viền Sáng Khí Quyển (Atmospheric Vignette Glow) ở 4 cạnh màn hình
+    const root = (typeof document !== 'undefined') ? document.documentElement : null;
+    if (root) {
+        root.style.setProperty('--vignette-color', preset.vignette.primary);
+        root.style.setProperty('--vignette-color-soft', preset.vignette.soft);
+    }
+
+    // 2. Cập nhật tsParticles (giới hạn dưới 60 hạt GPU-accelerated, mix-blend-mode: screen)
+    const container = (typeof document !== 'undefined') ? document.getElementById('tsparticles') : null;
     if (!container) return;
+
+    const isPerfMode = window.state?.perfMode || window.GameState?.perfMode || (typeof localStorage !== 'undefined' && localStorage.getItem('van_thien_luc_perf_mode') === 'true');
+    if (isPerfMode) {
+        container.style.display = 'none';
+        return;
+    } else {
+        container.style.display = '';
+    }
 
     if (typeof tsParticles !== 'undefined' && typeof tsParticles.load === 'function') {
         try {
-            tsParticles.load("tsparticles", {
-                fpsLimit: 60,
-                particles: {
-                    number: {
-                        value: 30,
-                        density: {
-                            enable: true,
-                            area: 800
-                        }
-                    },
-                    color: {
-                        value: ["#57534e", "#78350f", "#44403c", "#6b7280"]
-                    },
-                    shape: {
-                        type: "circle"
-                    },
-                    opacity: {
-                        value: { min: 0.1, max: 0.4 },
-                        animation: {
-                            enable: true,
-                            speed: 0.5,
-                            minimumValue: 0.1,
-                            sync: false
-                        }
-                    },
-                    size: {
-                        value: { min: 1, max: 2.5 }
-                    },
-                    move: {
-                        enable: true,
-                        speed: 0.3,
-                        direction: "top",
-                        straight: false,
-                        outModes: {
-                            default: "out"
-                        }
-                    },
-                    twinkle: {
-                        particles: {
-                            enable: true,
-                            frequency: 0.05,
-                            opacity: 1,
-                            color: {
-                                value: ["#57534e", "#78350f"]
-                            }
-                        }
-                    }
-                },
-                detectRetina: true
-            }).catch(e => {
+            tsParticles.load("tsparticles", preset.tsOptions).catch(e => {
                 console.warn('[tsParticles] Load notice:', e);
             });
         } catch (err) {
@@ -8445,7 +10351,42 @@ function initTsParticles() {
         }
     }
 }
-window.initTsParticles = initTsParticles;
+
+function initTsParticles() {
+    const curOmen = (typeof GameState !== 'undefined' && GameState.currentOmen) 
+        || window.state?.celestialOmen?.currentOmenId 
+        || 'tu_khi_dong_lai';
+    applyCelestialOmenWeather(curOmen, true);
+}
+
+// Đồng bộ hóa GameState.currentOmen
+if (typeof window !== 'undefined') {
+    if (!window.GameState) window.GameState = {};
+    if (!Object.getOwnPropertyDescriptor(window.GameState, 'currentOmen')) {
+        Object.defineProperty(window.GameState, 'currentOmen', {
+            get() {
+                const s = (typeof state !== 'undefined' && state) || (typeof GameState !== 'undefined' && GameState._rawState);
+                return s?.celestialOmen?.currentOmenId || 'default';
+            },
+            set(val) {
+                const omenId = (typeof val === 'object' && val) ? (val.id || val.currentOmenId || 'default') : String(val);
+                const s = (typeof state !== 'undefined' && state) || (typeof GameState !== 'undefined' && GameState._rawState);
+                if (s) {
+                    if (!s.celestialOmen) s.celestialOmen = {};
+                    s.celestialOmen.currentOmenId = omenId;
+                }
+                applyCelestialOmenWeather(omenId);
+            },
+            configurable: true,
+            enumerable: true
+        });
+    }
+    window.CELESTIAL_WEATHER_PRESETS = CELESTIAL_WEATHER_PRESETS;
+    window.applyCelestialOmenWeather = applyCelestialOmenWeather;
+    window.resolveOmenPresetKey = resolveOmenPresetKey;
+    window.initTsParticles = initTsParticles;
+}
+
 if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
@@ -8459,57 +10400,41 @@ if (typeof document !== 'undefined') {
 }
 
 function togglePanel(bodyId, iconId, trigger) {
-    const body = document.getElementById(bodyId);
-    const icon = document.getElementById(iconId);
-    if (!body) return;
-
-    // Tìm container cha ngoài cùng (aside.pc-sidebar hoặc .sidebar-container hoặc #hud-left / #hud-right)
-    const sidebar = (trigger && trigger.closest)
-        ? trigger.closest('.pc-sidebar, .sidebar-container, #hud-left, #hud-right, #left-sidebar, #right-sidebar, aside')
-        : body.closest('.pc-sidebar, .sidebar-container, #hud-left, #hud-right, #left-sidebar, #right-sidebar, aside');
-
-    // Xác định trạng thái hiện tại (nếu container có class collapsed hoặc body có hidden)
-    const isCurrentlyCollapsed = sidebar
-        ? sidebar.classList.contains('collapsed')
-        : body.classList.contains('hidden');
-
-    const willCollapse = !isCurrentlyCollapsed;
-
-    if (sidebar) {
-        sidebar.classList.toggle('collapsed', willCollapse);
+    // Khóa cố định sidebar trái luôn luôn hiển thị (không thu gọn)
+    const panel = document.getElementById('left-panel');
+    const aside = document.getElementById('hud-left');
+    const body = document.getElementById(bodyId || 'left-card-body');
+    if (panel) panel.classList.remove('is-collapsed', 'collapsed');
+    if (aside) aside.classList.remove('is-collapsed', 'collapsed');
+    if (body) {
+        body.classList.remove('hidden');
+        body.style.removeProperty('display');
     }
-    body.classList.toggle('hidden', willCollapse);
-
-    if (icon) {
-        icon.classList.toggle('rotate-180', willCollapse);
-    }
-
-    if (trigger) {
-        trigger.setAttribute('aria-expanded', String(!willCollapse));
-    }
+    const btn = trigger || document.querySelector('.hud-island-toggle');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
 }
+window.togglePanel = togglePanel;
+globalThis.togglePanel = togglePanel;
 
 /**
  * Bật / Tắt bảng Thiên Cơ Nhật Ký với nút Chat Icon
  */
 function toggleThienCoNhatKy() {
-    const panel = document.getElementById('thien-co-panel') || document.getElementById('hud-right');
+    // Khóa cố định sidebar phải luôn luôn hiển thị (không thu gọn)
+    const panel = document.getElementById('right-panel');
+    const aside = document.getElementById('hud-right');
     const body = document.getElementById('right-card-body');
-    const btn = document.getElementById('toggle-thien-co-btn');
-    if (!panel) return;
-
-    const isCollapsed = panel.classList.contains('collapsed');
-    const willCollapse = !isCollapsed;
-
-    panel.classList.toggle('collapsed', willCollapse);
+    if (panel) panel.classList.remove('collapsed');
+    if (aside) aside.classList.remove('collapsed');
     if (body) {
-        body.classList.toggle('hidden', willCollapse);
+        body.classList.remove('hidden');
+        body.style.removeProperty('display');
     }
-    if (btn) {
-        btn.setAttribute('aria-expanded', String(!willCollapse));
-    }
+    const btn = document.getElementById('toggle-thien-co-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
 }
 window.toggleThienCoNhatKy = toggleThienCoNhatKy;
+globalThis.toggleThienCoNhatKy = toggleThienCoNhatKy;
 
 function toggleImmersionMode() {
             immersionMode = !immersionMode;
@@ -8593,6 +10518,7 @@ function renderDrawerContent(tab) {
             const titleEl = document.getElementById('drawer-title');
             const iconEl = document.getElementById('drawer-icon');
             const contentEl = document.getElementById('drawer-content');
+            if (!contentEl || !titleEl) return;
 
             if (tab === 'inventory') {
                 titleEl.textContent = "Túi Trữ Vật Càn Khôn";
@@ -8951,6 +10877,24 @@ function useInventoryItem(itemId, isAuto = false) {
                 state.hp = Math.min(maxHp, (state.hp || 0) + healAmt);
                 addLog(`❤️ Phục dụng ${item.name}, sinh cơ bùng nổ, hồi phục +${healAmt.toLocaleString('vi-VN')} Khí Huyết!`, 'text-emerald-300');
             }
+
+            const isHealingInjuryPill = Boolean(
+                itemId.includes('hoi_huyet') || itemId.includes('ho_tam') || itemId.includes('sinh_co') || itemId.includes('ho_mach') ||
+                item.name?.includes('Hồi Huyết') || item.name?.includes('Hộ Tâm') || item.name?.includes('Sinh Cơ') || item.name?.includes('Hộ Mạch') ||
+                (item.effect && item.effect.hp)
+            );
+            if (isHealingInjuryPill && (state.isInjured || state.heavyInjuryUntil > 0)) {
+                state.isInjured = false;
+                state.heavyInjuryUntil = 0;
+                state.isMeditatingRecover = false;
+                if (window.GameState) window.GameState.isInjured = false;
+                if (typeof showXianxiaToast === 'function') {
+                    showXianxiaToast(`💊 Phục dụng ${item.name}! Đạo thương được chữa lành, kinh mạch khôi phục hoàn toàn!`, 'success');
+                }
+                if (typeof addLog === 'function') {
+                    addLog(`💊 <span class="text-emerald-400 font-bold">[Chữa Lành Trọng Thương]</span> Dược lực của <strong>${item.name}</strong> thấm sâu vào phủ tạng, kinh mạch bế tắc đã thông suốt!`, 'text-emerald-400');
+                }
+            }
             if (item.effect?.mp) {
                 const healMp = item.effect.mp;
                 const maxMp = state.maxMp || 500;
@@ -9001,12 +10945,22 @@ function useInventoryItem(itemId, isAuto = false) {
             if (cultivation.gainedAmount > 0) {
                 addLog(`${isAuto ? '[Tự động] ' : ''}Phục dụng <span class="text-emerald-400 font-semibold">${item.name}</span>, thu nạp <span class="text-jade-300">+${cultivation.gainedAmount} Tu Vi</span>${isHeavenlyRejected() && cultivation.rawAmount > 0 ? ` (Thiên Đạo chỉ cho dung nạp ${REALMS[state.realmIndex].minorStage === 'Viên Mãn' ? 0 : 10}% từ ${cultivation.rawAmount})` : ''}!`, 'reward', 'use-item-' + item.id);
             }
+            state.hasUsedPill = true;
+            if (window.GameState) window.GameState.hasUsedPill = true;
+            if (typeof window.updateMainQuestUI === 'function') window.updateMainQuestUI();
             saveGameState();
+            if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+            if (typeof window.syncAllUI === 'function') window.syncAllUI();
             updateHUD();
             if (activeDrawer === 'inventory') renderDrawerContent('inventory');
             const modalBackdrop = document.getElementById('hub-modal-backdrop');
             if (modalBackdrop && !modalBackdrop.classList.contains('hidden') && modalBackdrop.dataset.activeHub === 'character') {
                 renderRpgCharacterInventory(currentInventoryFilter);
+            }
+            const invPage = document.getElementById('page-inventory');
+            if (invPage && !invPage.classList.contains('hidden') && typeof renderCharacterHub === 'function') {
+                renderCharacterHub('inventory', document.getElementById('inventory-page-content'));
+                if (inspectedInventoryItemId) inspectInventoryItem(inspectedInventoryItemId);
             }
         }
 
@@ -9014,11 +10968,6 @@ function toggleEquipItem(itemId) {
             const item = state.inventory.find(i => i.id === itemId);
             if (!item) return;
             const slotKey = item.slot || (item.type === 'Pháp Bảo' || item.type === 'secondary_weapon' ? 'artifact' : null);
-            if (slotKey === 'artifact' && rejectLockedFeature('btn_phap_bao_ban_menh')) return;
-            if (slotKey === 'artifact' && REALMS[state.realmIndex].majorIndex < 2 && !item.equipped) {
-                addLog("Vũ Khí Phụ cần đạt đến <span class='text-gold-300 font-bold'>Kim Đan Kỳ</span> mới có thể ngự dụng!", "text-rose-400");
-                return;
-            }
 
             if (!state.equipped || typeof state.equipped !== 'object') state.equipped = {};
 
@@ -9032,6 +10981,12 @@ function toggleEquipItem(itemId) {
                     state.equipped[slotKey] = item;
                 }
                 item.equipped = true;
+                state.hasEquippedWeapon = true;
+                if (window.GameState) window.GameState.hasEquippedWeapon = true;
+                if (typeof window.updateMainQuestUI === 'function') window.updateMainQuestUI();
+                if (typeof window.showGameToast === 'function') {
+                    window.showGameToast(`Trang bị ${item.name} vào ô ${slotKey || 'Pháp Bảo'}!`, 'success');
+                }
             } else {
                 item.equipped = false;
                 if (slotKey && state.equipped[slotKey]?.id === item.id) {
@@ -9054,11 +11009,19 @@ function toggleEquipItem(itemId) {
             if (item.equipped && typeof triggerSlotFlash === 'function') {
                 triggerSlotFlash(item.slot || slotKey);
             }
+            if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+            if (typeof window.syncAllUI === 'function') window.syncAllUI();
             updateHUD();
+            if (typeof saveGameState === 'function') saveGameState();
             renderDrawerContent('inventory');
             const modalBackdrop = document.getElementById('hub-modal-backdrop');
             if (modalBackdrop && !modalBackdrop.classList.contains('hidden') && modalBackdrop.dataset.activeHub === 'character') {
                 renderRpgCharacterInventory(currentInventoryFilter);
+            }
+            const invPage = document.getElementById('page-inventory');
+            if (invPage && !invPage.classList.contains('hidden') && typeof renderCharacterHub === 'function') {
+                renderCharacterHub('inventory', document.getElementById('inventory-page-content'));
+                if (inspectedInventoryItemId) inspectInventoryItem(inspectedInventoryItemId);
             }
         }
 
@@ -9197,44 +11160,161 @@ let skillsSearchQuery = '';
 let selectedSkillId = null;
 let useBreakthroughPill = false;
 
+function isPassiveSkill(skill) {
+    if (!skill) return false;
+    if (skill.isPassive === true) return true;
+    if (skill.isPassive === false) return false;
+
+    const type = String(skill.type || '').toLowerCase();
+    const cat = String(skill.category || '').toLowerCase();
+    const id = String(skill.id || '').toLowerCase();
+
+    // Kiểm tra nhóm Chủ Động (Vũ Kỹ / Thân Pháp / Công Kích) trước
+    if (type.includes('vuky') || type.includes('vũ') || type.includes('thanphap') || type.includes('thân') || type.includes('active') || type.includes('cong_kich')) {
+        return false;
+    }
+    if (cat.includes('vu_ky') || cat.includes('cong_kich') || cat.includes('than_phap') || cat.includes('active')) {
+        return false;
+    }
+    if (id.startsWith('vk_') || id.startsWith('thp_') || id === 'skill_sword' || id === 'skill_thunder' || id === 'skill_wind') {
+        return false;
+    }
+
+    // Nhóm Bị Động (Tâm Pháp / Thể Thuật / Bí Thuật)
+    if (type.includes('tam') || type.includes('the') || type.includes('bi') || type.includes('passive')) return true;
+    if (cat.includes('tam') || cat.includes('the') || cat.includes('bi') || cat.includes('passive')) return true;
+    if (id.startsWith('tp_') || id.startsWith('tt_') || id.startsWith('bt_') || id === 'skill_breath' || id === 'skill_body') return true;
+
+    return true;
+}
+window.isPassiveSkill = isPassiveSkill;
+
 function ensureLearnedSkillsInit() {
     if (!Array.isArray(state.learnedSkills)) state.learnedSkills = [];
     if (!Array.isArray(state.equippedSkills)) state.equippedSkills = [];
+
+    const getTmpl = (id) => {
+        if (!id) return null;
+        if (typeof findSkillTemplate === 'function') return findSkillTemplate(id);
+        const list = (typeof SKILLS_DATA !== 'undefined' && Array.isArray(SKILLS_DATA)) ? SKILLS_DATA : [];
+        return list.find(s => s.id === id || s.alias === id || (s.name && s.name.toLowerCase() === String(id).toLowerCase())) || null;
+    };
+
+    // Helper kiểm tra và nạp công pháp vào learnedSkills
+    const addIfMissing = (skItem) => {
+        if (!skItem) return;
+        const id = typeof skItem === 'string' ? skItem : skItem.id;
+        if (!id) return;
+        const exists = state.learnedSkills.some(entry => (typeof entry === 'string' ? entry === id : entry?.id === id));
+        if (!exists) {
+            const tmpl = getTmpl(id);
+            state.learnedSkills.push({
+                id: id,
+                name: (typeof skItem === 'object' && skItem.name) ? skItem.name : (tmpl?.name || id),
+                level: (typeof skItem === 'object' && skItem.level) ? skItem.level : 1,
+                fragments: (typeof skItem === 'object' && skItem.fragments) ? skItem.fragments : 0,
+                pity: 0,
+                type: tmpl?.type || (typeof skItem === 'object' ? skItem.type : 'TamPhap'),
+                category: tmpl?.category || (typeof skItem === 'object' ? skItem.category : 'tam_phap'),
+                tier: tmpl?.tier || (typeof skItem === 'object' ? skItem.tier : 'pham'),
+                element: tmpl?.element || (typeof skItem === 'object' ? skItem.element : 'vo_he')
+            });
+        }
+    };
+
+    // 1. Đồng bộ từ state.skills (4-5 bản công pháp gốc chuẩn gameplay)
+    if (Array.isArray(state.skills) && state.skills.length > 0) {
+        state.skills.forEach(addIfMissing);
+    }
+
+    // 2. Đồng bộ từ state.unlockedSkills (nếu có)
+    if (Array.isArray(state.unlockedSkills) && state.unlockedSkills.length > 0) {
+        state.unlockedSkills.forEach(addIfMissing);
+    }
+
+    // 3. Đồng bộ từ túi đồ (inventory) nếu có bí tịch / công pháp
+    const inv = Array.isArray(state.inventory) ? state.inventory : (Array.isArray(window.GameState?.inventory) ? window.GameState.inventory : []);
+    inv.forEach(item => {
+        if (!item) return;
+        const typeStr = String(item.type || '').toLowerCase();
+        const idStr = String(item.id || '').toLowerCase();
+        if (typeStr.includes('bí tịch') || typeStr.includes('công pháp') || idStr.startsWith('skill_') || idStr.startsWith('tp_') || idStr.startsWith('vk_') || idStr.startsWith('tt_')) {
+            addIfMissing(item);
+        }
+    });
+
+    // 4. Đảm bảo luôn có tối thiểu 4 bản công pháp khởi đầu chuẩn Quỷ Cốc Bát Hoang
+    const defaultStarters = [
+        { id: 'skill_breath', name: 'Thái Thanh Thổ Nạp Quyết', level: 1, fragments: 0, pity: 0, type: 'TamPhap', category: 'tam_phap', tier: 'pham', element: 'vo_he' },
+        { id: 'skill_sword', name: 'Thanh Liên Kiếm Điển', level: 1, fragments: 0, pity: 0, type: 'VuKy', category: 'cong_kich', tier: 'linh', element: 'moc' },
+        { id: 'skill_body', name: 'Bất Diệt Kim Thân Quyết', level: 1, fragments: 0, pity: 0, type: 'TheThuat', category: 'the_thuat', tier: 'linh', element: 'kim' },
+        { id: 'skill_thunder', name: 'Cửu Tiêu Thần Lôi Quyết', level: 1, fragments: 0, pity: 0, type: 'VuKy', category: 'cong_kich', tier: 'huyen', element: 'loi' }
+    ];
+    defaultStarters.forEach(s => addIfMissing(s));
+
+    // Chuẩn hóa định dạng từng phần tử trong state.learnedSkills
+    state.learnedSkills.forEach((entry, idx) => {
+        if (typeof entry === 'string') {
+            const sId = entry;
+            const tmpl = getTmpl(sId);
+            state.learnedSkills[idx] = {
+                id: sId,
+                name: tmpl?.name || sId,
+                level: 1,
+                fragments: 0,
+                pity: 0,
+                type: tmpl?.type || 'TamPhap',
+                category: tmpl?.category || 'tam_phap',
+                tier: tmpl?.tier || 'pham',
+                element: tmpl?.element || 'vo_he'
+            };
+        } else {
+            if (!entry.level) entry.level = 1;
+            if (entry.fragments === undefined) entry.fragments = 0;
+            if (entry.pity === undefined) entry.pity = 0;
+            const tmpl = getTmpl(entry.id);
+            if (tmpl) {
+                if (!entry.name) entry.name = tmpl.name;
+                if (!entry.type) entry.type = tmpl.type;
+                if (!entry.category) entry.category = tmpl.category;
+                if (!entry.tier) entry.tier = tmpl.tier;
+                if (!entry.element) entry.element = tmpl.element;
+            }
+        }
+    });
+
+    // Đồng bộ ngược lại state.skills và state.unlockedSkills để tương thích mọi hàm khác
+    if (!Array.isArray(state.skills)) state.skills = [];
+    state.learnedSkills.forEach(ls => {
+        if (!state.skills.some(s => (typeof s === 'string' ? s === ls.id : s?.id === ls.id))) {
+            state.skills.push({ id: ls.id, name: ls.name, level: ls.level });
+        }
+    });
+    state.unlockedSkills = state.learnedSkills.map(s => s.id);
+
+    // Chuẩn hóa mảng trang bị
     if (!Array.isArray(state.equippedPassiveSkills)) {
         state.equippedPassiveSkills = state.equippedSkills.filter(id => {
-            const s = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(x => x.id === id);
-            return s && (s.type === 'TamPhap' || s.type === 'TheThuat' || s.type === 'BiThuat');
+            const s = getTmpl(id) || state.learnedSkills.find(x => x.id === id);
+            return s && isPassiveSkill(s);
         }).slice(0, 4);
     }
     if (!Array.isArray(state.equippedActiveSkills)) {
         state.equippedActiveSkills = state.equippedSkills.filter(id => {
-            const s = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(x => x.id === id);
-            return s && (s.type === 'VuKy' || s.type === 'ThanPhap');
+            const s = getTmpl(id) || state.learnedSkills.find(x => x.id === id);
+            return s && !isPassiveSkill(s);
         }).slice(0, 4);
     }
 
-    if (state.learnedSkills.length === 0) {
-        state.learnedSkills.push(
-            { id: 'tp_dan_khi', level: 1, fragments: 0, pity: 0 },
-            { id: 'tp_tho_nap', level: 1, fragments: 0, pity: 0 },
-            { id: 'vk_thanh_phong', level: 1, fragments: 0, pity: 0 }
-        );
-        if (state.equippedPassiveSkills.length === 0) state.equippedPassiveSkills.push('tp_dan_khi');
-        if (state.equippedActiveSkills.length === 0) state.equippedActiveSkills.push('vk_thanh_phong');
-        state.equippedSkills = [...state.equippedPassiveSkills, ...state.equippedActiveSkills];
-    } else {
-        state.learnedSkills.forEach(entry => {
-            if (typeof entry === 'string') {
-                const sId = entry;
-                const idx = state.learnedSkills.indexOf(entry);
-                state.learnedSkills[idx] = { id: sId, level: 1, fragments: 0, pity: 0 };
-            } else {
-                if (!entry.level) entry.level = 1;
-                if (entry.fragments === undefined) entry.fragments = 0;
-                if (entry.pity === undefined) entry.pity = 0;
-            }
-        });
+    if (state.equippedPassiveSkills.length === 0) {
+        const firstPassive = state.learnedSkills.find(s => isPassiveSkill(s));
+        if (firstPassive) state.equippedPassiveSkills.push(firstPassive.id);
     }
+    if (state.equippedActiveSkills.length === 0) {
+        const firstActive = state.learnedSkills.find(s => !isPassiveSkill(s));
+        if (firstActive) state.equippedActiveSkills.push(firstActive.id);
+    }
+    state.equippedSkills = [...state.equippedPassiveSkills, ...state.equippedActiveSkills];
 }
 
 function getUnlockedSlotCounts(realmIndex = state.realmIndex || 0) {
@@ -9261,6 +11341,12 @@ window.selectSkillForInspection = selectSkillForInspection;
 
 function setSkillFilterTab(tab) {
     currentSkillsFilter = tab;
+    if (tab === 'ALL' || tab === 'all') {
+        currentSkillsTierFilter = 'ALL';
+        skillsSearchQuery = '';
+        const searchInput = document.getElementById('skills-search-input');
+        if (searchInput) searchInput.value = '';
+    }
     const host = document.getElementById('skills-page-content') || document.getElementById('hub-modal-content');
     if (host) renderSkillsHub(host);
 }
@@ -9289,10 +11375,10 @@ window.toggleUseBreakthroughPill = toggleUseBreakthroughPill;
 
 function toggleEquipSkill(skillId) {
     ensureLearnedSkillsInit();
-    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId || s.alias === skillId) || state.learnedSkills.find(s => s.id === skillId);
     if (!skill) return;
 
-    const isPassive = (skill.type === 'TamPhap' || skill.type === 'TheThuat' || skill.type === 'BiThuat' || skill.category === 'tam_phap' || skill.category === 'the_thuat' || skill.category === 'bi_thuat');
+    const isPassive = isPassiveSkill(skill);
     const list = isPassive ? state.equippedPassiveSkills : state.equippedActiveSkills;
     const { passiveSlots, activeSlots } = getUnlockedSlotCounts(state.realmIndex || 0);
     const maxSlots = isPassive ? passiveSlots : activeSlots;
@@ -9302,20 +11388,24 @@ function toggleEquipSkill(skillId) {
         list.splice(curIdx, 1);
         if (typeof playSound === 'function') playSound('whoosh');
         if (typeof addLog === 'function') addLog(`Đã tháo công pháp [${skill.name}] khỏi Pháp Vị.`, 'text-slate-400');
+        if (typeof window.showGameToast === 'function') window.showGameToast(`Đã tháo [${skill.name}] khỏi Pháp Vị`, 'warning');
     } else {
         if (list.length >= maxSlots) {
             const replaced = list.shift();
             list.push(skillId);
-            const repSkill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === replaced);
+            const repSkill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === replaced || s.alias === replaced) || state.learnedSkills.find(s => s.id === replaced);
             if (typeof addLog === 'function') addLog(`Pháp Vị đã đầy. Đã thay thế [${repSkill?.name || replaced}] bằng [${skill.name}]!`, 'text-amber-300');
+            if (typeof window.showGameToast === 'function') window.showGameToast(`Pháp Vị đầy! Đã thay thế bằng [${skill.name}]`, 'warning');
         } else {
             list.push(skillId);
             if (typeof addLog === 'function') addLog(`Đã ngự dụng [${skill.name}] vào Chu Thiên Pháp Vị!`, 'text-emerald-300');
+            if (typeof window.showGameToast === 'function') window.showGameToast(`Đã ngự dụng [${skill.name}] vào Chu Thiên Pháp Vị!`, 'success');
         }
         if (typeof playSound === 'function') playSound('bell');
     }
 
     state.equippedSkills = [...state.equippedPassiveSkills, ...state.equippedActiveSkills];
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGameState === 'function') saveGameState();
 
@@ -9326,7 +11416,9 @@ window.toggleEquipSkill = toggleEquipSkill;
 
 function attemptUpgradeSkillMastery(skillId) {
     ensureLearnedSkillsInit();
-    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    const skill = (typeof findSkillTemplate === 'function' ? findSkillTemplate(skillId) : null)
+        || ((typeof SKILLS_DATA !== 'undefined' && Array.isArray(SKILLS_DATA)) ? SKILLS_DATA.find(s => s.id === skillId || s.alias === skillId) : null)
+        || (state.learnedSkills ? state.learnedSkills.find(s => s.id === skillId) : null);
     if (!skill) return;
 
     const owned = state.learnedSkills.find(s => s.id === skillId);
@@ -9374,6 +11466,7 @@ function attemptUpgradeSkillMastery(skillId) {
     }
 
     state.exp -= reqExp;
+    if (typeof GameState !== 'undefined') GameState.exp = state.exp;
     const finalRate = Math.min(100, baseRate + pity + pillBonus);
     const roll = Math.random() * 100;
 
@@ -9405,6 +11498,7 @@ function attemptUpgradeSkillMastery(skillId) {
         }
     }
 
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGameState === 'function') saveGameState();
 
@@ -9415,7 +11509,9 @@ window.attemptUpgradeSkillMastery = attemptUpgradeSkillMastery;
 
 function attemptBreakthroughSkillMastery(skillId) {
     ensureLearnedSkillsInit();
-    const skill = (typeof SKILLS_DATA !== 'undefined' ? SKILLS_DATA : []).find(s => s.id === skillId);
+    const skill = (typeof findSkillTemplate === 'function' ? findSkillTemplate(skillId) : null)
+        || ((typeof SKILLS_DATA !== 'undefined' && Array.isArray(SKILLS_DATA)) ? SKILLS_DATA.find(s => s.id === skillId || s.alias === skillId) : null)
+        || (state.learnedSkills ? state.learnedSkills.find(s => s.id === skillId) : null);
     if (!skill) return;
 
     const owned = state.learnedSkills.find(s => s.id === skillId);
@@ -9448,6 +11544,7 @@ function attemptBreakthroughSkillMastery(skillId) {
         addLog(`🌈 [PHÁ CẢNH VIÊN MÃN] Dung hợp ${reqFrags} Tàn Quyển thành công! [${skill.name}] đột phá bình cảnh, bước vào cảnh giới [${nextRank.name}] (Tầng ${owned.level})!`, 'text-yellow-300 font-bold');
     }
 
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGameState === 'function') saveGameState();
 
@@ -9533,20 +11630,28 @@ function renderSkillsHub(content) {
 
     // Chuẩn bị danh sách theo filter
     let displayList = state.learnedSkills.map(owned => {
-        const tmpl = skillsDataSource.find(s => s.id === owned.id) || {
-            id: owned.id,
-            name: owned.id,
-            type: 'TamPhap',
-            tier: 'pham',
-            element: 'vo_he',
-            desc: 'Công pháp tiên gia truyền thế.',
-            effect: '+Tăng tu vi'
-        };
-        const isPassive = (tmpl.type === 'TamPhap' || tmpl.type === 'TheThuat' || tmpl.type === 'BiThuat' || tmpl.category === 'tam_phap' || tmpl.category === 'the_thuat' || tmpl.category === 'bi_thuat');
+        const tmpl = (typeof findSkillTemplate === 'function' ? findSkillTemplate(owned.id) : null)
+            || skillsDataSource.find(s => s.id === owned.id || s.alias === owned.id)
+            || {
+                id: owned.id,
+                name: owned.name || owned.id,
+                type: owned.type || 'TamPhap',
+                category: owned.category || 'tam_phap',
+                tier: owned.tier || 'pham',
+                element: owned.element || 'vo_he',
+                desc: owned.desc || 'Công pháp tiên gia truyền thế.',
+                effect: owned.effect || '+Tăng tu vi'
+            };
+        const isPassive = isPassiveSkill(tmpl);
         const isEquipped = state.equippedPassiveSkills.includes(tmpl.id) || state.equippedActiveSkills.includes(tmpl.id) || state.equippedSkills.includes(tmpl.id);
         const rankCfg = SKILL_MASTERY_RANKS_V2[(owned.level || 1) - 1] || SKILL_MASTERY_RANKS_V2[0];
         return {
             ...tmpl,
+            name: owned.name || tmpl.name,
+            type: tmpl.type || owned.type,
+            category: tmpl.category || owned.category,
+            tier: tmpl.tier || owned.tier || 'pham',
+            element: tmpl.element || owned.element || 'vo_he',
             level: owned.level || 1,
             fragments: owned.fragments || 0,
             pity: owned.pity || 0,
@@ -9573,9 +11678,10 @@ function renderSkillsHub(content) {
     } else if (currentSkillsFilter === 'fragments') {
         displayList = displayList.filter(s => s.fragments > 0);
     }
+    // Khi currentSkillsFilter === 'ALL' ("Tất Cả"), hiển thị 100% công pháp sở hữu, không lọc loại trừ
 
     // Lọc theo phẩm chất
-    if (currentSkillsTierFilter !== 'ALL') {
+    if (currentSkillsTierFilter && currentSkillsTierFilter !== 'ALL') {
         displayList = displayList.filter(s => s.tier === currentSkillsTierFilter);
     }
 
@@ -9590,11 +11696,11 @@ function renderSkillsHub(content) {
     }
 
     const currentSelectedSkill = displayList.find(s => s.id === selectedSkillId) || state.learnedSkills.map(o => {
-        const t = skillsDataSource.find(x => x.id === o.id);
-        return t ? { ...t, level: o.level, fragments: o.fragments, pity: o.pity, rankCfg: SKILL_MASTERY_RANKS_V2[(o.level || 1) - 1] } : null;
+        const t = (typeof findSkillTemplate === 'function' ? findSkillTemplate(o.id) : null) || skillsDataSource.find(x => x.id === o.id || x.alias === o.id) || o;
+        return t ? { ...t, name: o.name || t.name, level: o.level, fragments: o.fragments, pity: o.pity, rankCfg: SKILL_MASTERY_RANKS_V2[(o.level || 1) - 1], isPassive: isPassiveSkill(t) } : null;
     }).filter(Boolean)[0] || null;
 
-    // Helper render ô Chu Thiên Pháp Vị (Sáng rõ, sắc nét, tương phản cao)
+    // Helper render ô Chu Thiên Pháp Vị (Diegetic Wood Socket & Jade Orb UI)
     const renderChuThienSlot = (slotIdx, isPassiveType) => {
         const maxSlots = isPassiveType ? passiveSlots : activeSlots;
         const list = isPassiveType ? state.equippedPassiveSkills : state.equippedActiveSkills;
@@ -9607,18 +11713,20 @@ function renderSkillsHub(content) {
             const unlockRealmNames = ['Trúc Cơ', 'Kim Đan', 'Hóa Thần', 'Luyện Hư'];
             const reqName = unlockRealmNames[slotIdx] || 'Luyện Hư';
             return `
-                <div class="chu-thien-slot flex flex-col items-center justify-center p-1.5 rounded-xl border border-dashed border-slate-600/70 bg-slate-900/70 opacity-60 cursor-not-allowed min-w-[70px] sm:min-w-[80px] h-[72px]" title="Chưa mở khóa. Cần đạt ${reqName} Kỳ!">
-                    <i class="fa-solid fa-lock text-slate-400 text-xs mb-1"></i>
-                    <span class="text-[9px] font-mono text-slate-300 font-bold text-center leading-tight">Mở ở<br><span class="text-amber-300">${reqName}</span></span>
+                <div class="chu-thien-slot-diegetic is-locked flex flex-col items-center justify-center p-1.5 min-w-[70px] sm:min-w-[80px] h-[72px]" title="Chưa mở khóa. Cần đạt ${reqName} Kỳ!">
+                    <i class="fa-solid fa-lock text-amber-600/70 text-xs mb-1"></i>
+                    <span class="text-[9px] font-mono text-stone-400 font-bold text-center leading-tight">Mở ở<br><span class="text-amber-500">${reqName}</span></span>
                 </div>
             `;
         }
 
         if (!assignedSkill) {
             return `
-                <div onclick="setSkillFilterTab('${isPassiveType ? 'passive' : 'active'}')" class="chu-thien-slot flex flex-col items-center justify-center p-1.5 rounded-xl border-2 border-dashed border-amber-400/70 bg-slate-900/90 hover:bg-slate-800 hover:border-yellow-300 cursor-pointer min-w-[70px] sm:min-w-[80px] h-[72px] transition group shadow-[inset_0_0_12px_rgba(245,158,11,0.15)]" title="Ô Trống - Chạm để chọn công pháp lắp vào">
-                    <i class="fa-solid fa-plus text-yellow-400 group-hover:scale-125 group-hover:text-yellow-200 text-sm mb-1 transition drop-shadow"></i>
-                    <span class="text-[10px] font-xianxia font-bold text-yellow-300 group-hover:text-yellow-100 tracking-wider">Trống</span>
+                <div onclick="setSkillFilterTab('${isPassiveType ? 'passive' : 'active'}')" class="chu-thien-slot-diegetic flex flex-col items-center justify-center p-1.5 cursor-pointer min-w-[70px] sm:min-w-[80px] h-[72px] transition group" title="Ô Trống - Chạm để chọn công pháp lắp vào">
+                    <div class="w-6 h-6 rounded-full border border-dashed border-amber-500/60 flex items-center justify-center mb-1 group-hover:border-yellow-400 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-plus text-amber-400 group-hover:text-yellow-200 text-xs transition"></i>
+                    </div>
+                    <span class="text-[10px] font-xianxia font-bold text-amber-400/90 group-hover:text-yellow-200 tracking-wider">Trống</span>
                 </div>
             `;
         }
@@ -9628,18 +11736,18 @@ function renderSkillsHub(content) {
         const curLvl = assignedOwned?.level || 1;
 
         return `
-            <div onclick="selectSkillForInspection('${assignedSkill.id}')" class="chu-thien-slot relative flex flex-col items-center justify-between p-1.5 rounded-xl border-2 ${tierCfg.border} ${tierCfg.bg} hover:border-yellow-300 cursor-pointer min-w-[70px] sm:min-w-[80px] h-[72px] transition shadow-[0_0_14px_rgba(0,0,0,0.85)] group" title="${assignedSkill.name} (Tầng ${curLvl}) - Bấm để xem chi tiết">
+            <div onclick="selectSkillForInspection('${assignedSkill.id}')" class="chu-thien-slot-diegetic is-equipped relative flex flex-col items-center justify-between p-2 cursor-pointer min-w-[78px] sm:min-w-[88px] h-[82px] transition group" title="${assignedSkill.name} (Tầng ${curLvl}) - Bấm để xem chi tiết">
                 <div class="flex items-center justify-between w-full px-0.5 pointer-events-none">
-                    <span class="text-[10px] ${elemCfg.color} font-bold drop-shadow"><i class="fa-solid ${elemCfg.icon}"></i></span>
-                    <span class="text-[9px] font-mono font-black text-yellow-300 px-1 rounded bg-black/60 border border-yellow-400/40">T${curLvl}</span>
+                    <span class="text-xs ${elemCfg.color} font-bold drop-shadow"><i class="fa-solid ${elemCfg.icon}"></i></span>
+                    <span class="text-[10px] font-mono font-black text-yellow-300 px-1.5 rounded bg-black/75 border border-amber-500/50">T${curLvl}</span>
                 </div>
-                <div class="text-sm ${tierCfg.color} pointer-events-none group-hover:scale-115 transition drop-shadow">
+                <div class="text-sm ${tierCfg.color} pointer-events-none group-hover:scale-110 transition drop-shadow">
                     <i class="fa-solid fa-scroll"></i>
                 </div>
-                <span class="text-[9px] font-xianxia font-black text-white truncate max-w-[68px] pointer-events-none text-center drop-shadow">
+                <span class="text-[11px] font-bold text-amber-100 leading-tight line-clamp-2 w-full pointer-events-none text-center drop-shadow">
                     ${assignedSkill.name}
                 </span>
-                <button type="button" onclick="event.stopPropagation(); toggleEquipSkill('${assignedSkill.id}')" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center border border-white shadow-md transition opacity-0 group-hover:opacity-100" title="Tháo khỏi ô">
+                <button type="button" onclick="event.stopPropagation(); toggleEquipSkill('${assignedSkill.id}')" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-700 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center border border-white/80 shadow-md transition opacity-0 group-hover:opacity-100" title="Tháo khỏi ô">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -9647,36 +11755,42 @@ function renderSkillsHub(content) {
     };
 
     content.innerHTML = `
-        <div class="skills-master-container flex flex-col w-full h-full max-h-[86vh] rounded-3xl border-2 border-amber-400/80 bg-gradient-to-b from-slate-900/98 via-blue-950/95 to-slate-950/98 shadow-[0_0_45px_rgba(0,0,0,0.9),0_0_25px_rgba(234,179,8,0.2),inset_0_0_30px_rgba(56,189,248,0.08)] overflow-hidden p-3.5 sm:p-4 select-none font-sans">
+        <div class="skills-bookshelf-frame flex flex-col w-full h-full max-h-[88vh] p-3.5 sm:p-4 select-none font-sans relative">
+            <!-- Nẹp đồng cổ 4 góc -->
+            <div class="shelf-bracket shelf-bracket-tl"></div>
+            <div class="shelf-bracket shelf-bracket-tr"></div>
+            <div class="shelf-bracket shelf-bracket-bl"></div>
+            <div class="shelf-bracket shelf-bracket-br"></div>
+
             <!-- ==========================================
-                 HEADER CHÍNH: TÀNG KINH CÁC (HIGH CONTRAST & TÍCH HỢP NÚT ĐÓNG ✕)
+                 HEADER CHÍNH: TÀNG KINH CÁC (CỔ PHONG & GỖ LŨA)
             =========================================== -->
-            <div class="flex items-center justify-between pb-3 mb-3 border-b-2 border-amber-400/40 shrink-0">
+            <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-amber-600/40 shrink-0 relative z-10">
                 <div class="flex items-center gap-3">
-                    <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 border border-yellow-200 flex items-center justify-center text-slate-950 shadow-[0_0_16px_rgba(250,204,21,0.6)]">
+                    <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-900 border border-amber-400/80 flex items-center justify-center text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.4)]">
                         <i class="fa-solid fa-scroll text-base"></i>
                     </span>
                     <div>
                         <div class="flex items-center gap-2.5">
-                            <h2 class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-300 to-amber-300 font-xianxia font-black text-base sm:text-lg uppercase tracking-widest drop-shadow-[0_2px_8px_rgba(234,179,8,0.5)]">
+                            <h2 class="font-xianxia-shelf-title text-base sm:text-lg text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-400 uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                                 TÀNG KINH CÁC • THẦN THÔNG CÔNG PHÁP
                             </h2>
-                            <span class="text-xs font-xianxia font-black text-yellow-300 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                            <span class="text-xs font-xianxia font-black text-yellow-300 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 border border-amber-500 shadow-sm">
                                 ${currentRealm.name}
                             </span>
                         </div>
-                        <p class="text-xs text-sky-200 hidden sm:block font-medium mt-0.5">Tham ngộ tuyệt học huyền công, ngự dụng Chu Thiên Pháp Vị chấn nhiếp bát hoang.</p>
+                        <p class="text-xs text-amber-200/70 hidden sm:block font-serif mt-0.5">Kệ gỗ tàng bí tịch tiên gia, ngự dụng Chu Thiên Pháp Vị chấn nhiếp bát hoang.</p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <span class="text-xs font-mono text-yellow-300 bg-amber-950/60 border border-amber-400/60 px-2.5 py-1 rounded-xl shadow hidden md:inline-block">
+                    <span class="text-xs font-mono text-amber-300 bg-black/60 border border-amber-600/50 px-2.5 py-1 rounded-xl shadow hidden md:inline-block">
                         Đã Lĩnh Ngộ: <b class="text-white font-black">${allCount}</b> Bản
                     </span>
                     <!-- Nút Đóng Modal Tích Hợp Gọn Gàng -->
                     <button type="button"
                             onclick="if(typeof closeHubModal==='function') closeHubModal(); navigateTo('main-screen');"
-                            class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-rose-950/90 border-2 border-amber-400/80 hover:border-rose-400 text-yellow-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-[0_0_12px_rgba(234,179,8,0.4)] active:scale-95 group"
+                            class="w-9 h-9 rounded-xl bg-stone-900 hover:bg-rose-950 border border-amber-600/60 hover:border-rose-400 text-amber-300 hover:text-white flex items-center justify-center transition cursor-pointer shadow active:scale-95 group"
                             title="Đóng về Màn Hình Chính">
                         <i class="fa-solid fa-xmark text-base group-hover:scale-125 transition-transform"></i>
                     </button>
@@ -9684,16 +11798,16 @@ function renderSkillsHub(content) {
             </div>
 
             <!-- ==========================================
-                 PHÂN KHU 1: CHU THIÊN PHÁP VỊ (THANH TRÊN CÙNG - TÁCH BIỆT RÕ RÀNG)
+                 PHÂN KHU 1: CHU THIÊN PHÁP VỊ (THANH TRÊN CÙNG)
             =========================================== -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 rounded-2xl bg-gradient-to-r from-slate-900/95 via-blue-950/80 to-slate-900/95 border-2 border-amber-400/60 shadow-[0_4px_20px_rgba(0,0,0,0.7),inset_0_0_15px_rgba(234,179,8,0.08)] shrink-0 mb-3">
+            <div class="chu-thien-shelf-row grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 shrink-0 mb-3 relative z-10">
                 <!-- Khối Trái (4 Ô): Tâm Pháp Bị Động -->
                 <div class="lg:col-span-5 flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-xianxia font-black text-yellow-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                        <span class="text-xs font-xianxia font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
                             <i class="fa-solid fa-yin-yang text-amber-400"></i> Tâm Pháp (Bị Động)
                         </span>
-                        <span class="text-[11px] font-mono text-sky-200 font-bold bg-slate-950/60 px-2 py-0.5 rounded border border-slate-700">Mở: ${passiveSlots}/4 ô</span>
+                        <span class="text-[11px] font-mono text-stone-300 font-bold bg-black/50 px-2 py-0.5 rounded border border-amber-700/40">Mở: ${passiveSlots}/4 ô</span>
                     </div>
                     <div class="grid grid-cols-4 gap-2">
                         ${renderChuThienSlot(0, true)}
@@ -9704,12 +11818,12 @@ function renderSkillsHub(content) {
                 </div>
 
                 <!-- Khối Giữa (4 Ô): Vũ Kỹ Xuất Chiến Chủ Động -->
-                <div class="lg:col-span-5 flex flex-col justify-between border-t lg:border-t-0 lg:border-l-2 border-amber-400/40 pt-2.5 lg:pt-0 lg:pl-3">
+                <div class="lg:col-span-5 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-amber-700/50 pt-2.5 lg:pt-0 lg:pl-3">
                     <div class="flex items-center justify-between mb-1.5">
                         <span class="text-xs font-xianxia font-black text-rose-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
                             <i class="fa-solid fa-khanda text-rose-400"></i> Vũ Kỹ Xuất Chiến (Chủ Động)
                         </span>
-                        <span class="text-[11px] font-mono text-sky-200 font-bold bg-slate-950/60 px-2 py-0.5 rounded border border-slate-700">Mở: ${activeSlots}/4 ô</span>
+                        <span class="text-[11px] font-mono text-stone-300 font-bold bg-black/50 px-2 py-0.5 rounded border border-amber-700/40">Mở: ${activeSlots}/4 ô</span>
                     </div>
                     <div class="grid grid-cols-4 gap-2">
                         ${renderChuThienSlot(0, false)}
@@ -9720,9 +11834,9 @@ function renderSkillsHub(content) {
                 </div>
 
                 <!-- Khối Phải: Vạn Pháp Quy Tông (Cộng Thẳng Vĩnh Viễn) -->
-                <div class="lg:col-span-2 flex flex-col justify-between border-t lg:border-t-0 lg:border-l-2 border-amber-400/40 pt-2.5 lg:pt-0 lg:pl-3 bg-gradient-to-br from-amber-950/40 via-yellow-950/30 to-slate-950/70 rounded-xl p-2 border border-amber-400/30">
+                <div class="van-phap-tablet lg:col-span-2 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-amber-600/50 pt-2.5 lg:pt-0 lg:pl-3 p-2.5">
                     <div class="text-[11px] font-xianxia font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
-                        <i class="fa-solid fa-infinity text-yellow-300"></i> Vạn Pháp Quy Tông
+                        <i class="fa-solid fa-infinity text-yellow-400"></i> Vạn Pháp Quy Tông
                     </div>
                     <div class="grid grid-cols-2 gap-1 text-[11px] font-mono font-bold mt-1.5">
                         <span class="text-rose-300 truncate drop-shadow">+[${totalFlatAtk.toLocaleString('vi-VN')}] Công</span>
@@ -9730,51 +11844,51 @@ function renderSkillsHub(content) {
                         <span class="text-emerald-300 truncate drop-shadow">+[${totalFlatHp.toLocaleString('vi-VN')}] HP</span>
                         <span class="text-yellow-300 truncate drop-shadow">+[${totalFlatExp}/s] Tu Vi</span>
                     </div>
-                    <span class="text-[9px] text-sky-300 italic font-semibold text-center mt-1 leading-none drop-shadow">✦ Cộng vĩnh viễn dù không lắp</span>
+                    <span class="text-[9px] text-amber-200/90 italic font-semibold text-center mt-1 leading-none drop-shadow">✦ Cộng vĩnh viễn dù không lắp</span>
                 </div>
             </div>
 
             <!-- ==========================================
-                 PHẦN THÂN: PHÂN KHU 2 (LƯỚI THẺ TRÚC) & PHÂN KHU 3 (ĐÀI THAM NGỘ)
+                 PHẦN THÂN: PHÂN KHU 2 (KỆ THẺ TRÚC) & PHÂN KHU 3 (ĐÀI THAM NGỘ)
             =========================================== -->
-            <div class="flex flex-col lg:flex-row gap-3.5 flex-1 min-h-0 overflow-hidden">
+            <div class="flex flex-col lg:flex-row gap-3.5 flex-1 min-h-0 overflow-hidden relative z-10">
                 <!-- ==========================================
-                     PHÂN KHU 2: KỆ THẺ TRÚC DỰNG ĐỨNG (~65%)
+                     PHÂN KHU 2: KỆ TÀNG KINH (DANH SÁCH THẺ TRÚC ~64%)
                 =========================================== -->
-                <div class="w-full lg:w-[65%] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/80 to-slate-950/95 border-2 border-amber-400/60 p-3 overflow-hidden shadow-[0_6px_25px_rgba(0,0,0,0.75),inset_0_0_20px_rgba(56,189,248,0.05)]">
-                    <!-- Hàng Công Cụ Lọc Tabs -->
+                <div class="w-full lg:w-[64%] flex flex-col rounded-2xl bg-gradient-to-b from-stone-950/90 via-stone-900/90 to-stone-950/95 border border-amber-700/60 p-3 overflow-hidden shadow-inner">
+                    <!-- Hàng Công Cụ Lọc Tabs Dải Lụa / Thẻ Gỗ -->
                     <div class="flex items-center justify-between gap-2 overflow-x-auto pb-2 shrink-0 custom-inventory-scrollbar">
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="setSkillFilterTab('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'ALL' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
-                                Tất Cả <span class="text-[11px] text-yellow-300 font-mono font-bold">(${allCount})</span>
+                            <button type="button" onclick="setSkillFilterTab('ALL')" class="silk-scroll-tab ${currentSkillsFilter === 'ALL' ? 'is-active' : ''}">
+                                📜 Tất Cả <span class="text-[10px] font-mono font-bold">(${allCount})</span>
                             </button>
-                            <button type="button" onclick="setSkillFilterTab('passive')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'passive' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
-                                ☯️ Tâm Pháp <span class="text-[11px] text-yellow-300 font-mono font-bold">(${passiveCount})</span>
+                            <button type="button" onclick="setSkillFilterTab('passive')" class="silk-scroll-tab ${currentSkillsFilter === 'passive' ? 'is-active' : ''}">
+                                ☯️ Tâm Pháp <span class="text-[10px] font-mono font-bold">(${passiveCount})</span>
                             </button>
-                            <button type="button" onclick="setSkillFilterTab('active')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'active' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
-                                ⚔️ Vũ Kỹ <span class="text-[11px] text-yellow-300 font-mono font-bold">(${activeCount})</span>
+                            <button type="button" onclick="setSkillFilterTab('active')" class="silk-scroll-tab ${currentSkillsFilter === 'active' ? 'is-active' : ''}">
+                                ⚔️ Vũ Kỹ <span class="text-[10px] font-mono font-bold">(${activeCount})</span>
                             </button>
-                            <button type="button" onclick="setSkillFilterTab('equipped')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'equipped' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
-                                🔥 Đang Trang Bị <span class="text-[11px] text-yellow-300 font-mono font-bold">(${equippedCount})</span>
+                            <button type="button" onclick="setSkillFilterTab('equipped')" class="silk-scroll-tab ${currentSkillsFilter === 'equipped' ? 'is-active' : ''}">
+                                🔥 Đang Trang Bị <span class="text-[10px] font-mono font-bold">(${equippedCount})</span>
                             </button>
-                            <button type="button" onclick="setSkillFilterTab('fragments')" class="px-3 py-1.5 rounded-xl text-xs font-serif font-black whitespace-nowrap transition-all ${currentSkillsFilter === 'fragments' ? 'bg-gradient-to-r from-yellow-500/40 via-amber-400/35 to-yellow-500/40 text-yellow-200 border-2 border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-slate-900/90 text-slate-200 hover:text-yellow-300 border border-slate-700 hover:border-amber-400/60'}">
-                                🧩 Tàn Quyển <span class="text-[11px] text-yellow-300 font-mono font-bold">(${fragCount})</span>
+                            <button type="button" onclick="setSkillFilterTab('fragments')" class="silk-scroll-tab ${currentSkillsFilter === 'fragments' ? 'is-active' : ''}">
+                                🧩 Tàn Quyển <span class="text-[10px] font-mono font-bold">(${fragCount})</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Hàng Search & Filter Phẩm Chất -->
-                    <div class="flex items-center gap-2.5 py-2 shrink-0">
+                    <div class="flex items-center gap-2.5 py-1.5 shrink-0">
                         <div class="relative flex-1">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-amber-300 text-xs"></i>
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-amber-500 text-xs"></i>
                             <input type="text"
                                    id="skills-search-input"
                                    value="${skillsSearchQuery}"
                                    oninput="handleSkillSearchInput(this.value)"
                                    placeholder="Tìm tên công pháp thần thông..."
-                                   class="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border-2 border-amber-400/60 focus:border-yellow-300 rounded-xl text-white outline-none transition placeholder-slate-400 shadow-inner font-medium" />
+                                   class="w-full pl-9 pr-3 py-1.5 text-xs bg-stone-950 border border-amber-700/60 focus:border-amber-400 rounded-xl text-amber-100 outline-none transition placeholder-stone-500 shadow-inner font-medium" />
                         </div>
-                        <select onchange="setSkillTierFilter(this.value)" class="text-xs bg-slate-950 border-2 border-amber-400/60 text-yellow-300 font-bold rounded-xl px-3 py-2 outline-none cursor-pointer shadow-inner">
+                        <select onchange="setSkillTierFilter(this.value)" class="text-xs bg-stone-950 border border-amber-700/60 text-amber-300 font-bold rounded-xl px-3 py-1.5 outline-none cursor-pointer shadow-inner">
                             <option value="ALL" ${currentSkillsTierFilter === 'ALL' ? 'selected' : ''}>✦ Tất Cả Phẩm</option>
                             <option value="pham" ${currentSkillsTierFilter === 'pham' ? 'selected' : ''}>Phàm Phẩm</option>
                             <option value="linh" ${currentSkillsTierFilter === 'linh' ? 'selected' : ''}>Linh Phẩm</option>
@@ -9785,66 +11899,72 @@ function renderSkillsHub(content) {
                         </select>
                     </div>
 
-                    <!-- Lưới Thẻ Trúc Dựng Đứng (Vertical Bamboo Slips Grid) -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 custom-inventory-scrollbar mt-1.5 content-start">
+                    <!-- Lưới Thẻ Ngang 2 Cột Rộng Rãi -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1 custom-inventory-scrollbar mt-1.5 content-start">
                         ${displayList.length === 0 ? `
-                            <div class="col-span-full py-14 text-center text-slate-300">
-                                <i class="fa-solid fa-book-open text-4xl mb-3 text-amber-400/50"></i>
-                                <p class="text-sm font-serif font-bold text-yellow-200">Chưa lĩnh ngộ công pháp nào phù hợp bộ lọc.</p>
+                            <div class="col-span-full py-14 text-center text-stone-400">
+                                <i class="fa-solid fa-book-open text-4xl mb-3 text-amber-600/50"></i>
+                                <p class="text-sm font-serif font-bold text-amber-200">Chưa lĩnh ngộ công pháp nào phù hợp bộ lọc.</p>
                             </div>
                         ` : displayList.map(item => {
                             const isSelected = item.id === selectedSkillId;
                             const tierCfg = tierMeta[item.tier] || tierMeta.pham;
                             const elemCfg = elemMeta[item.element] || elemMeta.vo_he;
                             const curLvl = item.level || 1;
-                            const rankName = item.rankCfg?.name || 'Sơ Khởi';
                             const reqFrags = item.rankCfg?.reqFragments || (item.rankCfg?.isBottleneck ? 2 : 1);
+
+                            const tierGlowMap = {
+                                pham: 'border-slate-400/60 bg-slate-800/80 text-slate-200 shadow-[0_0_12px_rgba(148,163,184,0.3)]',
+                                linh: 'border-emerald-400/70 bg-emerald-950/70 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.35)]',
+                                huyen: 'border-purple-400/70 bg-purple-950/70 text-purple-300 shadow-[0_0_12px_rgba(192,132,252,0.35)]',
+                                dia: 'border-amber-400/80 bg-amber-950/70 text-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.45)]',
+                                thien: 'border-amber-300 bg-amber-950/80 text-amber-200 shadow-[0_0_16px_rgba(251,191,36,0.55)]'
+                            };
+                            const iconGlowClass = tierGlowMap[item.tier] || tierGlowMap.pham;
+
+                            const mainStatSummary = item.shortEffect
+                                || (item.isPassive
+                                    ? `+${Math.round((item.qiBonus || (15 + curLvl * 5)))}% Tốc Độ Tụ Khí, +${(item.mpBonus || 50 * curLvl)} Linh Lực`
+                                    : `Vũ Kỹ ${elemCfg.name} • ${Math.round((item.damagePct || (140 + curLvl * 15)))}% Công Kích`);
+
+                            const cardClass = isSelected
+                                ? 'border-amber-400 bg-amber-950/30 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                                : 'bg-slate-900/90 border-slate-700/80 hover:border-amber-400/70';
 
                             return `
                                 <div onclick="selectSkillForInspection('${item.id}')"
-                                     class="bamboo-slip-card ${tierCfg.slipClass} ${isSelected ? 'is-selected' : ''} flex flex-col justify-between"
+                                     class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${cardClass}"
                                      title="${item.name} (${tierCfg.name})">
-                                    <!-- Đầu Thẻ: Badge Phẩm Chất & Icon Hệ -->
-                                    <div class="flex items-start justify-between w-full pointer-events-none">
-                                        <span class="text-[10px] font-xianxia font-black px-2 py-0.5 rounded ${tierCfg.bg} ${tierCfg.color} border-2 ${tierCfg.border} shadow-sm">
-                                            ${tierCfg.name}
-                                        </span>
-                                        <span class="text-xs ${elemCfg.color} font-black flex items-center gap-1 drop-shadow" title="Hệ ${elemCfg.name}">
-                                            <i class="fa-solid ${elemCfg.icon}"></i>
-                                        </span>
+                                    <!-- Bên trái: Khung icon vuông 48x48px phát sáng theo phẩm chất -->
+                                    <div class="w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${iconGlowClass}">
+                                        <i class="fa-solid ${item.isPassive ? 'fa-book-journal-whills' : 'fa-khanda'}"></i>
                                     </div>
 
-                                    ${item.isEquipped ? `
-                                        <div class="my-0.5 text-center pointer-events-none">
-                                            <span class="text-[9px] font-xianxia font-black text-slate-950 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 border-2 border-white px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(250,204,21,0.8)] inline-block">
-                                                ⚡ ĐANG VẬN CHUYỂN
+                                    <!-- Ở giữa: Tên đầy đủ, tóm tắt chỉ số, tag phân loại -->
+                                    <div class="flex-1 min-w-0 space-y-1">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <h3 class="text-sm font-bold text-amber-200 leading-snug">${item.name}</h3>
+                                            <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 border border-amber-500/40 shrink-0">Tầng ${curLvl}/10</span>
+                                        </div>
+                                        <p class="text-xs text-emerald-300 font-mono leading-snug">${mainStatSummary}</p>
+                                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-300">
+                                            <span class="px-1.5 py-0.5 rounded bg-slate-800/90 border border-slate-600/60">${item.isPassive ? '☯️ Tâm Pháp' : '⚔️ Vũ Kỹ'}</span>
+                                            <span class="px-1.5 py-0.5 rounded bg-slate-800/90 border border-slate-600/60 ${elemCfg.color}"><i class="fa-solid ${elemCfg.icon} mr-1"></i>${elemCfg.name}</span>
+                                            <span class="text-amber-300/90 font-mono">🧩 ${item.fragments}/${reqFrags}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Góc phải: Trạng thái Đang Lắp hoặc nút thao tác nhanh -->
+                                    <div class="shrink-0 flex flex-col items-end justify-center gap-1.5">
+                                        ${item.isEquipped ? `
+                                            <span class="text-[10px] font-bold text-amber-950 bg-gradient-to-r from-yellow-300 to-amber-400 border border-amber-500 px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                                ⚡ Đang Lắp
                                             </span>
-                                        </div>
-                                    ` : ''}
-
-                                    <!-- Thân Thẻ: Tên Công Pháp Cổ Phong & Icon Thần Thoại -->
-                                    <div class="flex flex-col items-center justify-center my-auto py-1 pointer-events-none">
-                                        <div class="w-11 h-11 rounded-xl bg-slate-950/80 border-2 ${tierCfg.border} flex items-center justify-center text-xl ${tierCfg.color} mb-1.5 shadow-lg">
-                                            <i class="fa-solid ${item.isPassive ? 'fa-book-journal-whills' : 'fa-khanda'}"></i>
-                                        </div>
-                                        <h3 class="font-xianxia-title text-xs sm:text-[13px] text-yellow-200 text-center leading-tight drop-shadow max-w-[110px] truncate">
-                                            ${item.name}
-                                        </h3>
-                                        <span class="text-[10px] text-sky-200 font-bold mt-1 font-sans">${item.isPassive ? '☯️ Tâm Pháp' : '⚔️ Vũ Kỹ'}</span>
-                                    </div>
-
-                                    <!-- Chân Thẻ: Cảnh Giới Tầng X/10 & Tiến Độ Tàn Quyển -->
-                                    <div class="w-full pt-2 border-t-2 border-slate-700/80 pointer-events-none">
-                                        <div class="flex items-center justify-between text-[10px] font-mono mb-1">
-                                            <span class="text-yellow-300 font-black drop-shadow">T${curLvl} • ${rankName}</span>
-                                            <span class="text-white font-bold">${curLvl}/10</span>
-                                        </div>
-                                        <div class="flex items-center justify-between text-[9px] font-mono">
-                                            <span class="text-sky-300 font-bold">🧩 ${item.fragments}/${reqFrags}</span>
-                                            <div class="w-11 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-600">
-                                                <div class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style="width: ${Math.min(100, Math.round((item.fragments / reqFrags) * 100))}%;"></div>
-                                            </div>
-                                        </div>
+                                        ` : `
+                                            <button type="button" onclick="event.stopPropagation(); toggleEquipSkill('${item.id}')" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-200 border border-amber-400/50 transition cursor-pointer whitespace-nowrap">
+                                                Lắp Ngay
+                                            </button>
+                                        `}
                                     </div>
                                 </div>
                             `;
@@ -9853,13 +11973,13 @@ function renderSkillsHub(content) {
                 </div>
 
                 <!-- ==========================================
-                     PHÂN KHU 3: ĐÀI THAM NGỘ & ĐỘT PHÁ BÍ TỊCH (~35% - TƯƠNG PHẢN CAO)
+                     PHÂN KHU 3: ĐÀI THAM NGỘ CHI TIẾT (~36% - DIEGETIC ALTAR)
                 =========================================== -->
-                <div class="w-full lg:w-[35%] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900/98 via-blue-950/95 to-slate-950/98 border-2 border-amber-400/80 p-3.5 sm:p-4 pb-8 shadow-[0_8px_30px_rgba(0,0,0,0.85),inset_0_0_25px_rgba(234,179,8,0.12)] overflow-y-auto custom-inventory-scrollbar">
+                <div class="enlightenment-altar w-full lg:w-[36%] flex flex-col p-3.5 sm:p-4 pb-8 overflow-y-auto custom-inventory-scrollbar">
                     ${!currentSelectedSkill ? `
-                        <div class="flex flex-col items-center justify-center my-auto text-slate-300 text-center py-12">
-                            <i class="fa-solid fa-scroll text-5xl mb-3 text-amber-400/50"></i>
-                            <p class="text-sm font-serif font-bold text-yellow-200">Chọn một Thẻ Trúc bên trái để tham ngộ huyền cơ.</p>
+                        <div class="flex flex-col items-center justify-center my-auto text-stone-400 text-center py-12">
+                            <i class="fa-solid fa-scroll text-5xl mb-3 text-amber-600/50"></i>
+                            <p class="text-sm font-serif font-bold text-amber-200">Chọn một Thẻ Trúc bên trái để tham ngộ huyền cơ.</p>
                         </div>
                     ` : (() => {
                         const sk = currentSelectedSkill;
@@ -9885,53 +12005,53 @@ function renderSkillsHub(content) {
 
                         return `
                             <!-- Tiêu Đề Chi Tiết & Phẩm Cấp -->
-                            <div class="flex items-start gap-3.5 pb-3 border-b-2 border-amber-400/40 shrink-0">
-                                <div class="w-14 h-14 rounded-2xl bg-slate-900 border-2 ${tierCfg.border} flex items-center justify-center text-2xl ${tierCfg.color} shadow-[0_0_18px_rgba(0,0,0,0.8)] shrink-0">
+                            <div class="flex items-start gap-3.5 pb-3 border-b border-amber-600/40 shrink-0">
+                                <div class="w-14 h-14 rounded-2xl bg-stone-950 border border-amber-500 flex items-center justify-center text-2xl text-amber-400 shadow-md shrink-0">
                                     <i class="fa-solid ${sk.isPassive ? 'fa-book-journal-whills' : 'fa-khanda'}"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="font-xianxia-title text-base sm:text-lg font-black text-yellow-300 truncate drop-shadow">
+                                    <h3 class="font-xianxia-shelf-title text-base sm:text-lg font-black text-amber-300 truncate drop-shadow">
                                         ${sk.name}
                                     </h3>
-                                    <div class="flex items-center gap-2 text-xs text-white mt-1.5 flex-wrap font-bold">
-                                        <span class="px-2 py-0.5 rounded font-mono text-[10px] ${tierCfg.bg} ${tierCfg.border} border-2 ${tierCfg.color}">${tierCfg.name}</span>
+                                    <div class="flex items-center gap-2 text-xs text-amber-100 mt-1 flex-wrap font-bold">
+                                        <span class="px-2 py-0.5 rounded font-mono text-[10px] bg-stone-900 border border-amber-500/70 text-amber-300">${tierCfg.name}</span>
                                         <span class="${elemCfg.color} font-mono text-[11px]"><i class="fa-solid ${elemCfg.icon}"></i> Hệ ${elemCfg.name}</span>
-                                        <span class="text-sky-300 text-[11px] font-sans">• ${sk.isPassive ? 'Tâm Pháp' : 'Vũ Kỹ'}</span>
+                                        <span class="text-amber-200/80 text-[11px] font-sans">• ${sk.isPassive ? 'Tâm Pháp' : 'Vũ Kỹ'}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Nút Thao Tác Hành Động Chính: Lắp Vào / Tháo Xuống (CTA) -->
-                            <div class="py-3 border-b-2 border-amber-400/30 shrink-0">
+                            <!-- Nút Thao Tác Hành Động Chính: Lắp Vào / Tháo Xuống (CTA Nổi Bật) -->
+                            <div class="py-3 border-b border-amber-600/30 shrink-0">
                                 <button type="button"
                                         onclick="toggleEquipSkill('${sk.id}')"
-                                        class="w-full py-2.5 px-3 rounded-xl ${sk.isEquipped ? 'btn-cta-danger' : 'btn-cta-gold'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 text-xs font-black shadow-lg">
+                                        class="w-full py-2.5 px-3 ${sk.isEquipped ? 'btn-cta-danger-action' : 'btn-cta-gold-action'} uppercase tracking-wider flex items-center justify-center gap-2 text-xs font-black">
                                     <i class="fa-solid ${sk.isEquipped ? 'fa-arrow-down-to-bracket' : 'fa-bolt'}"></i>
                                     <span>${sk.isEquipped ? 'Tháo Khỏi Chu Thiên Pháp Vị' : 'Lắp Vào Chu Thiên Pháp Vị'}</span>
                                 </button>
                             </div>
 
                             <!-- Thuộc Tính Vĩnh Viễn & Hiệu Ứng Xuất Chiến (High Contrast Cards) -->
-                            <div class="space-y-2.5 py-3 border-b-2 border-amber-400/30 text-xs">
-                                <div class="bg-slate-950/80 border-2 border-amber-400/40 rounded-xl p-3 space-y-1.5 shadow-md">
-                                    <div class="text-xs font-xianxia font-black text-yellow-300 flex items-center gap-1.5 drop-shadow">
+                            <div class="space-y-2.5 py-3 border-b border-amber-600/30 text-xs">
+                                <div class="altar-stat-card space-y-1.5">
+                                    <div class="text-xs font-xianxia font-black text-amber-300 flex items-center gap-1.5 drop-shadow">
                                         <i class="fa-solid fa-infinity text-yellow-400"></i> Thuộc Tính Vĩnh Viễn (Tầng ${curLvl})
                                     </div>
-                                    <p class="text-xs text-white leading-relaxed font-sans font-medium">
+                                    <p class="text-xs text-stone-200 leading-relaxed font-sans font-medium">
                                         ${sk.effect || '+Tăng tu vi và chiến lực toàn diện.'}
                                     </p>
                                 </div>
 
-                                <div class="bg-indigo-950/70 border-2 border-sky-400/40 rounded-xl p-3 space-y-1 shadow-md">
+                                <div class="altar-stat-card space-y-1">
                                     <div class="text-xs font-xianxia font-black text-sky-300 flex items-center gap-1.5 drop-shadow">
                                         <i class="fa-solid fa-wand-magic-sparkles text-sky-400"></i> Hiệu Ứng Khi Lắp Xuất Chiến
                                     </div>
-                                    <p class="text-xs text-sky-100 leading-relaxed font-sans font-medium">
+                                    <p class="text-xs text-stone-300 leading-relaxed font-sans font-medium">
                                         ${sk.isPassive ? 'Kích hoạt 100% dòng kinh mạch, hỗ trợ hấp thu linh khí và hộ thể.' : 'Kích hoạt kỹ năng chiến đấu trong trận pháp, tung đòn đánh uy lực theo hệ ngũ hành.'}
                                     </p>
                                 </div>
 
-                                <p class="text-xs text-amber-200/90 italic font-serif px-1">
+                                <p class="text-xs text-amber-200/80 italic font-serif px-1">
                                     "${sk.desc || 'Công pháp tuyệt truyền trong nhân gian, người hữu duyên mới có thể lĩnh hội.'}"
                                 </p>
                             </div>
@@ -9940,22 +12060,22 @@ function renderSkillsHub(content) {
                             <div class="pt-3 space-y-3 flex-1">
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs font-xianxia font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
-                                        <i class="fa-solid fa-fire text-yellow-400"></i> Tam Hợp Tham Ngộ
+                                        <i class="fa-solid fa-fire text-amber-400"></i> Tam Hợp Tham Ngộ
                                     </span>
-                                    <span class="text-xs font-mono font-black text-yellow-300 bg-black/60 px-2 py-0.5 rounded border border-yellow-400/50">
+                                    <span class="text-xs font-mono font-black text-yellow-300 bg-black/60 px-2 py-0.5 rounded border border-amber-600/50">
                                         Tầng ${curLvl}/10 • ${rankCfg.name}
                                     </span>
                                 </div>
 
                                 ${isMax ? `
-                                    <div class="p-4 rounded-xl bg-gradient-to-r from-amber-950 via-yellow-950 to-amber-950 border-2 border-yellow-400 text-center shadow-[0_0_25px_rgba(250,204,21,0.5)]">
-                                        <i class="fa-solid fa-crown text-3xl text-yellow-300 mb-1 animate-bounce drop-shadow"></i>
+                                    <div class="p-4 rounded-xl bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 border border-amber-500 text-center shadow-lg">
+                                        <i class="fa-solid fa-crown text-3xl text-yellow-400 mb-1 animate-bounce drop-shadow"></i>
                                         <h4 class="font-xianxia font-black text-base text-yellow-200">HÓA CẢNH VIÊN MÃN (MAX)</h4>
-                                        <p class="text-xs text-white mt-1 font-medium">Công pháp đã tu luyện tới cực hạn thiên đạo, uy lực đạt 100% tiềm năng!</p>
+                                        <p class="text-xs text-stone-300 mt-1 font-medium">Công pháp đã tu luyện tới cực hạn thiên đạo, uy lực đạt 100% tiềm năng!</p>
                                     </div>
                                 ` : isBottleneck ? `
                                     <!-- Mốc Bình Cảnh Cần Tàn Quyển (3C) -->
-                                    <div class="p-3.5 rounded-xl bg-gradient-to-b from-purple-950/80 via-slate-900/95 to-slate-950/98 border-2 border-purple-400 space-y-3 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                                    <div class="p-3.5 rounded-xl bg-gradient-to-b from-purple-950/80 via-stone-900 to-stone-950 border border-purple-500 space-y-3 shadow-md">
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="font-xianxia font-black text-purple-300 flex items-center gap-1.5 drop-shadow">
                                                 <i class="fa-solid fa-lock-open text-purple-300"></i> Bình Cảnh Đột Phá (T${curLvl} ➜ T${curLvl + 1})
@@ -9964,23 +12084,23 @@ function renderSkillsHub(content) {
                                                 🧩 ${ownedFrags}/${reqFrags} Tàn Quyển
                                             </span>
                                         </div>
-                                        <p class="text-xs text-white font-sans font-medium leading-relaxed">
+                                        <p class="text-xs text-stone-300 font-sans font-medium leading-relaxed">
                                             Cần tiêu hao <b class="text-yellow-300">${reqFrags} Tàn Quyển [${sk.name}]</b> để dung hợp chân quyết, phá vỡ bình cảnh bước vào giai đoạn kế tiếp!
                                         </p>
                                         <button type="button"
                                                 onclick="attemptBreakthroughSkillMastery('${sk.id}')"
                                                 ${ownedFrags < reqFrags ? 'disabled' : ''}
-                                                class="w-full py-3 px-3 rounded-xl ${ownedFrags >= reqFrags ? 'btn-cta-breakthrough cursor-pointer' : 'bg-slate-800 text-slate-400 border border-slate-600 cursor-not-allowed opacity-60'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-xs font-black shadow-lg">
+                                                class="w-full py-3 px-3 ${ownedFrags >= reqFrags ? 'btn-cta-breakthrough-action' : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed opacity-60 rounded-xl'} uppercase tracking-wider flex items-center justify-center gap-2 text-xs font-black">
                                             <i class="fa-solid fa-wand-magic-sparkles"></i>
                                             <span>${ownedFrags >= reqFrags ? 'Đột Phá Bình Cảnh (100% Thành Công)' : `Thiếu ${reqFrags - ownedFrags} Tàn Quyển`}</span>
                                         </button>
                                     </div>
                                 ` : `
                                     <!-- Nâng Tầng Thường Tiêu Hao Tu Vi (3A) & Tỷ Lệ (3B) -->
-                                    <div class="p-3.5 rounded-xl bg-slate-950 border-2 border-amber-400/60 space-y-2.5 shadow-md">
+                                    <div class="p-3.5 rounded-xl bg-stone-950/90 border border-amber-600/50 space-y-2.5 shadow-md">
                                         <!-- Tiêu Hao Tu Vi (3A) -->
                                         <div class="flex items-center justify-between text-xs">
-                                            <span class="text-sky-200 font-mono font-bold">Tiêu hao Tu Vi:</span>
+                                            <span class="text-amber-200/90 font-mono font-bold">Tiêu hao Tu Vi:</span>
                                             <span class="font-mono font-black text-xs ${playerExp >= reqExp ? 'text-yellow-300' : 'text-rose-400'}">
                                                 ${reqExp.toLocaleString('vi-VN')} / ${playerExp.toLocaleString('vi-VN')}
                                             </span>
@@ -9988,19 +12108,19 @@ function renderSkillsHub(content) {
 
                                         <!-- Xác Suất Thành Công & Pity (3B) -->
                                         <div class="flex items-center justify-between text-xs">
-                                            <span class="text-sky-200 font-mono font-bold">Tỷ lệ đốn ngộ:</span>
-                                            <span class="font-mono font-black text-sm text-emerald-300 flex items-center gap-1.5 drop-shadow">
+                                            <span class="text-amber-200/90 font-mono font-bold">Tỷ lệ đốn ngộ:</span>
+                                            <span class="font-mono font-black text-sm text-emerald-400 flex items-center gap-1.5 drop-shadow">
                                                 ${totalRate}%
                                                 ${pity > 0 ? `<span class="text-xs text-yellow-300 font-bold">(+${pity}% Pity)</span>` : ''}
                                             </span>
                                         </div>
 
                                         <!-- Checkbox Ngộ Đạo Đan -->
-                                        <label class="flex items-center gap-2.5 text-xs text-white font-medium cursor-pointer pt-2 border-t border-slate-700">
+                                        <label class="flex items-center gap-2.5 text-xs text-stone-300 font-medium cursor-pointer pt-2 border-t border-amber-900/40">
                                             <input type="checkbox"
                                                    ${useBreakthroughPill ? 'checked' : ''}
                                                    onchange="toggleUseBreakthroughPill()"
-                                                   class="rounded accent-yellow-400 cursor-pointer w-4 h-4" />
+                                                   class="rounded accent-amber-500 cursor-pointer w-4 h-4" />
                                             <span>Dùng Ngộ Đạo Đan (+25% Tỷ Lệ & Miễn Phản Phệ)</span>
                                         </label>
 
@@ -10009,7 +12129,7 @@ function renderSkillsHub(content) {
                                                 ⚠️ Thất bại tăng +2 Tâm Ma, giảm nhẹ HP (Thất bại nhận +15% Pity cảm ngộ).
                                             </p>
                                         ` : `
-                                            <p class="text-[11px] text-sky-200 font-mono font-bold">
+                                            <p class="text-[11px] text-amber-300 font-mono font-bold">
                                                 🛡️ Đan khí hộ thể, thất bại không tổn thương thần hồn!
                                             </p>
                                         `}
@@ -10017,7 +12137,7 @@ function renderSkillsHub(content) {
                                         <button type="button"
                                                 onclick="attemptUpgradeSkillMastery('${sk.id}')"
                                                 ${playerExp < reqExp ? 'disabled' : ''}
-                                                class="w-full mt-2 py-3 px-3 rounded-xl ${playerExp >= reqExp ? 'btn-cta-fire cursor-pointer' : 'bg-slate-800 text-slate-400 border border-slate-600 cursor-not-allowed opacity-60'} uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 text-xs font-black shadow-lg">
+                                                class="w-full mt-2 py-3 px-3 ${playerExp >= reqExp ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 border border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.5)] cursor-pointer rounded-xl transition' : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed opacity-60 rounded-xl'} uppercase tracking-wider flex items-center justify-center gap-2 text-xs font-black">
                                             <i class="fa-solid fa-fire text-sm"></i>
                                             <span>Tham Ngộ Lên Tầng ${curLvl + 1}</span>
                                         </button>
@@ -10170,6 +12290,10 @@ function prayForCelestialOmen(omenId, useJade = false) {
         changeAt: Date.now() + 1800000 // 30 phút
     };
 
+    if (typeof applyCelestialOmenWeather === 'function') {
+        applyCelestialOmenWeather(omenId);
+    }
+
     if (typeof playSound === 'function') playSound('victory');
     if (typeof spawnFloatingText === 'function') {
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Dị Tượng: ${omen.name}!`, 'text-purple-300');
@@ -10192,8 +12316,12 @@ function advanceCelestialOmen() {
 
     state.celestialOmen = {
         currentOmenId: nextOmen.id,
-        changeAt: Date.now() + 1200000 // 20 phút
+        changeAt: Date.now() + 300000 // 5 phút (300s)
     };
+
+    if (typeof applyCelestialOmenWeather === 'function') {
+        applyCelestialOmenWeather(nextOmen.id);
+    }
 
     if (typeof playSound === 'function') playSound('bell');
     addLog(`⚡ [Thiên Tượng Biến Huyễn] Càn khôn biến ảo, dị tượng <b class="text-purple-300">[${nextOmen.name}]</b> giáng lâm chư giới! ${nextOmen.buffDesc}`, 'text-purple-300 font-bold');
@@ -10221,9 +12349,7 @@ function selectBackground(index) {
     }
     const worldEnv = document.getElementById('world-environment');
     if (worldEnv) {
-        worldEnv.style.backgroundImage = `url('${targetBgImg}')`;
-        worldEnv.style.backgroundSize = 'cover';
-        worldEnv.style.backgroundPosition = 'center bottom';
+        worldEnv.style.backgroundImage = 'none';
     }
     updateHUD();
     renderDrawerContent('cave');
@@ -10357,6 +12483,7 @@ let minorBreakthroughInProgress = false;
 let selectedMinorPillId = 'none';
 
 function triggerBreakthroughRipple() {
+    if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const container = document.createElement('div');
     container.className = 'breakthrough-ripple-container';
@@ -10387,11 +12514,15 @@ function openMinorBreakthroughModal() {
     const modal = document.getElementById('minor-breakthrough-modal');
     if (!modal) return;
 
-    document.getElementById('minor-current-realm').textContent = currentRealm.name;
-    document.getElementById('minor-next-realm').textContent = nextRealm.name;
+    const setElText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    setElText('minor-current-realm', currentRealm.name);
+    setElText('minor-next-realm', nextRealm.name);
 
     const baseRate = currentRealm.baseChance || 80;
-    document.getElementById('minor-base-rate').textContent = `${baseRate}%`;
+    setElText('minor-base-rate', `${baseRate}%`);
 
     const select = document.getElementById('minor-pill-select');
     let optionsHtml = '<option value="none">-- Không dùng đan dược (+0%) --</option>';
@@ -10404,18 +12535,22 @@ function openMinorBreakthroughModal() {
             }
         });
     }
-    select.innerHTML = optionsHtml;
-    selectedMinorPillId = 'none';
-    select.value = 'none';
-    select.disabled = false;
+    if (select) {
+        select.innerHTML = optionsHtml;
+        selectedMinorPillId = 'none';
+        select.value = 'none';
+        select.disabled = false;
+    }
 
-    document.getElementById('minor-progress-container').classList.add('hidden');
+    const minorProgressContainer = document.getElementById('minor-progress-container');
+    if (minorProgressContainer) minorProgressContainer.classList.add('hidden');
     const progressBarFill = document.getElementById('minor-progress-bar-fill');
     if (progressBarFill) progressBarFill.style.width = '0%';
     const execBtn = document.getElementById('btn-execute-minor-breakthrough');
     if (execBtn) execBtn.disabled = false;
-    document.getElementById('btn-execute-minor-text').textContent = 'Bắt Đầu Xung Kích';
-    document.getElementById('minor-breakthrough-close-btn').disabled = false;
+    setElText('btn-execute-minor-text', 'Bắt Đầu Xung Kích');
+    const closeBtn = document.getElementById('minor-breakthrough-close-btn');
+    if (closeBtn) closeBtn.disabled = false;
 
     updateMinorRateDisplay();
 
@@ -10490,7 +12625,8 @@ function startMinorBreakthrough() {
     if (execBtn) execBtn.disabled = true;
     const closeBtn = document.getElementById('minor-breakthrough-close-btn');
     if (closeBtn) closeBtn.disabled = true;
-    document.getElementById('btn-execute-minor-text').textContent = 'Đang Xung Kích...';
+    const execBtnText = document.getElementById('btn-execute-minor-text');
+    if (execBtnText) execBtnText.textContent = 'Đang Xung Kích...';
 
     const progressContainer = document.getElementById('minor-progress-container');
     if (progressContainer) progressContainer.classList.remove('hidden');
@@ -10556,6 +12692,7 @@ function startMinorBreakthrough() {
                 if (state.level !== undefined) state.level++;
                 else state.level = state.realmIndex + 1;
                 if (typeof triggerLevelUpAura === 'function') triggerLevelUpAura();
+            if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
                 state.exp = Math.max(0, state.exp - prevRealm.maxExp);
                 applyRealmBaseStats(REALMS[state.realmIndex]);
                 const newlyReached = REALMS[state.realmIndex];
@@ -10886,16 +13023,117 @@ function openBreakthroughModal() {
 }
 
 function attemptCultivationBreakthrough() {
-    const currentRealm = REALMS[state.realmIndex];
-    const nextRealm = REALMS[state.realmIndex + 1];
-    if (!currentRealm || !nextRealm || state.exp < currentRealm.maxExp) return;
-    if (currentRealm.isMajorBottleneck) {
-        openBreakthroughModal();
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
+    if (!s) return;
+
+    // 1. Kiểm tra trạng thái Trọng Thương
+    if (s.isInjured || (s.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
+        const msg = '⚠️ Đạo hữu đang bị Trọng Thương, kinh mạch tắc nghẽn, không thể đột phá! Hãy dùng đan dược hoặc đả tọa chữa lành.';
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(msg, 'error');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(msg, 'danger');
+        }
+        if (typeof addLog === 'function') {
+            addLog('⚠️ <span class="text-rose-400 font-bold">[Cấm Kỵ Đột Phá]</span> Ngươi đang bị Trọng Thương, nếu cưỡng ép dẫn lôi kiếp sẽ tan thành mây khói!', 'text-rose-400');
+        }
+        return;
+    }
+
+    const realmsArr = (typeof REALMS !== 'undefined' && Array.isArray(REALMS)) ? REALMS : (window.REALMS || window.REALMS_DATA || []);
+    const rIdx = Number(s.realmIndex) || 0;
+    const currentRealm = realmsArr[rIdx] || { name: 'Luyện Khí Tầng 1', maxExp: 100 };
+    const nextRealm = realmsArr[rIdx + 1];
+
+    if (!nextRealm) {
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast('Đã đạt đỉnh cao cảnh giới của thế giới hiện tại!', 'info');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast('🌟 Đạo hữu đã đạt đến cảnh giới tối cao của giới diện này!', 'info');
+        }
+        return;
+    }
+
+    const curExp = Number(s.exp) || 0;
+    const reqExp = Number(currentRealm.maxExp) || 100;
+
+    // 2. Kiểm tra Tu Vi: nếu chưa đủ, hiển thị Toast báo rõ số Tu Vi còn thiếu
+    if (curExp < reqExp) {
+        const missing = Math.ceil(reqExp - curExp);
+        const msg = `Chưa đủ Tu Vi để đột phá! Còn thiếu ${missing.toLocaleString('vi-VN')} Tu Vi (${Math.floor(curExp).toLocaleString('vi-VN')}/${reqExp.toLocaleString('vi-VN')}).`;
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(msg, 'warning');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(msg, 'warning');
+        }
+        return;
+    }
+
+    // 3. Đã đủ Tu Vi:
+    // Kiểm tra có phải Đại Cảnh Giới / Bình Cảnh Cần Độ Kiếp không
+    const isMajor = Boolean(
+        currentRealm.isMajorBottleneck ||
+        String(currentRealm.name || '').includes('Viên Mãn') ||
+        String(currentRealm.name || '').includes('Đỉnh Phong')
+    );
+
+    if (isMajor) {
+        // Mở sàn Thiên Kiếp Độ Kiếp (#modal-do-kiep)
+        if (typeof window.openDoKiepModal === 'function') {
+            window.openDoKiepModal(nextRealm);
+        } else {
+            const modal = document.getElementById('modal-do-kiep');
+            if (modal) {
+                modal.style.setProperty('display', 'flex', 'important');
+                modal.style.setProperty('pointer-events', 'auto', 'important');
+                modal.style.setProperty('z-index', '10000', 'important');
+                modal.classList.add('active', 'flex');
+                modal.classList.remove('hidden');
+            }
+        }
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚡ Chạm đỉnh Bình Cảnh! Chuẩn bị nghênh đón Thiên Kiếp để đột phá ${nextRealm.name}!`, 'breakthrough');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(`⚡ Chạm đỉnh Bình Cảnh! Chuẩn bị nghênh đón Thiên Kiếp để đột phá ${nextRealm.name}!`, 'info');
+        }
     } else {
-        openMinorBreakthroughModal();
+        // Tiểu cảnh giới: Đột phá ngay lập tức
+        s.exp = Math.max(0, curExp - reqExp);
+        s.realmIndex = rIdx + 1;
+        if (nextRealm.name) s.realm = nextRealm.name;
+
+        if (typeof window.recalculatePlayerStats === 'function') {
+            window.recalculatePlayerStats();
+        } else if (typeof window.updatePlayerStats === 'function') {
+            window.updatePlayerStats();
+        }
+
+        // Đảm bảo hồi phục 100% Khí Huyết và Pháp Lực sau khi chỉ số đã được tái tính toán
+        if (s.maxHp) s.hp = s.maxHp;
+        if (s.maxMp) s.mp = s.maxMp;
+
+        if (typeof window.updateHUD === 'function') {
+            window.updateHUD();
+        }
+        if (typeof window.saveGameState === 'function') {
+            window.saveGameState();
+        } else if (typeof window.saveGame === 'function') {
+            window.saveGame();
+        }
+
+        const successMsg = `🎉 Đột phá thành công! Chúc mừng đạo hữu bước vào ${nextRealm.name}! Khí Huyết & Pháp Lực hồi đầy.`;
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(successMsg, 'breakthrough');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(successMsg, 'success');
+        }
+        if (typeof window.addLog === 'function') {
+            window.addLog(`🎉 <span class="text-amber-300 font-bold">[Đột Phá]</span> ${successMsg}`, 'text-amber-300');
+        }
     }
 }
 window.attemptCultivationBreakthrough = attemptCultivationBreakthrough;
+globalThis.attemptCultivationBreakthrough = attemptCultivationBreakthrough;
 
 function renderTribulationLightningIcons() {
     const row = document.getElementById('lightning-icons-row');
@@ -11610,12 +13848,15 @@ function finishTribulationCutscene(survived = true) {
             state.currentExp = Math.max(0, (state.currentExp || 0) - lostExp);
         }
         state.hp = Math.max(1, Math.floor(state.maxHp * 0.1));
+        state.isInjured = true;
+        if (window.GameState) window.GameState.isInjured = true;
         breakthroughBonusChance = 0;
         abortTribulationCutscene();
         updateHUD();
         saveGameState();
-        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, "Đột Phá Bị Chấn Lui!", "text-rose-400 font-bold");
+        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, "Đột Phá Bị Chấn Lui! Trọng Thương!", "text-rose-400 font-bold");
         addLog(`⚡ <span class="text-rose-400 font-bold">[Đột Phá Thất Bại]</span> Độ kiếp bất thành! Tu vi hao tổn 20% (-${lostExp.toLocaleString()} Tu Vi), bảo toàn cảnh giới ${curRealm.name}.`, "text-rose-400");
+        addLog(`⚡ <span class="text-rose-500 font-bold">[Trọng Thương]</span> Đạo cơ chấn động, kinh mạch bế tắc! Tốc độ tụ khí giảm 70%, cấm Độ Kiếp và cấm vào Trấn Yêu Tháp cho đến khi Vận Công Điều Tức (15s) hoặc dùng Hồi Huyết Đan!`, "text-rose-500 font-bold");
         if (typeof showBreakthroughFailureModal === 'function') {
             showBreakthroughFailureModal(curRealmName, targetRealmName, lostExp, "Tu vi hao tổn, bảo toàn cảnh giới!");
         }
@@ -11625,7 +13866,7 @@ function finishTribulationCutscene(survived = true) {
     const roll = Math.random() * 100;
     const finalChance = Math.min(100, cutsceneState.totalChance + getRootTier().breakthroughBonus);
 
-    if (roll <= finalChance) {
+    if (survived || roll <= finalChance) {
         if (typeof playBreakthroughSuccess === 'function') {
             playBreakthroughSuccess();
         } else {
@@ -11641,17 +13882,22 @@ function finishTribulationCutscene(survived = true) {
 
         const completedRealm = REALMS[state.realmIndex];
         state.realmIndex++;
+        if (window.GameState) window.GameState.realmIndex = state.realmIndex;
         state.exp = Math.max(0, state.exp - completedRealm.maxExp);
+        if (window.GameState) window.GameState.exp = state.exp;
         applyRealmBaseStats(REALMS[state.realmIndex]);
         const rewardMult = completedRealm.tribulationType ? Math.max(getRootTier().tribulationRewardMult || 1, getPhysique().tribulationRewardMult || 1) : 1;
         state.atk += 28 * rewardMult;
         state.def += 14 * rewardMult;
         if (getRootConfig().id === 'mutant_thunder') {
             state.exp += Math.floor(cutsceneState.totalDamage * 0.1);
+            if (window.GameState) window.GameState.exp = state.exp;
         }
         breakthroughBonusChance = 0;
+        if (window.GameState) window.GameState.pillBuffRemaining = 0;
 
         const newRealm = REALMS[state.realmIndex];
+        if (window.GameState && newRealm.name) window.GameState.realm = newRealm.name;
         const newStats = {
             hp: state.hp,
             maxHp: state.maxHp,
@@ -11671,12 +13917,22 @@ function finishTribulationCutscene(survived = true) {
         if (typeof updateCharacterModel === 'function') {
             updateCharacterModel(newRealm.themeKey || state.realmIndex);
         }
-        updateHUD();
-        saveGameState();
+
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.updateHUD === 'function') window.updateHUD();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 80, `ĐỘ KIẾP THÀNH CÔNG!`, "text-gold-300");
         const successTitle = completedRealm.tribulationType || "Phá Vỡ Bình Cảnh";
         addLog(`🎉 <span class="text-gold-300 font-bold">${successTitle} THÀNH CÔNG!</span> Chính thức tiến vào <span class="text-jade-300 font-extrabold text-sm">${newRealm.name}</span>!`, "text-amber-300");
+
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`⚡ ĐỘ KIẾP VIÊN MÃN! Chúc mừng Đạo Hữu thăng tiến ${newRealm.name}!`, 'breakthrough');
+        } else if (typeof window.showXianxiaToast === 'function') {
+            window.showXianxiaToast(`⚡ ĐỘ KIẾP VIÊN MÃN! Chúc mừng Đạo Hữu thăng tiến ${newRealm.name}!`, 'breakthrough');
+        }
 
         if (typeof showMajorBreakthroughSuccessModal === 'function') {
             showMajorBreakthroughSuccessModal(prevStats, newStats, newRealm);
@@ -11686,12 +13942,24 @@ function finishTribulationCutscene(survived = true) {
         state.exp = Math.floor(state.exp * M1_SYSTEM_RULES.majorFailureExpRetention);
         const lostExp = Math.max(0, prevExp - state.exp);
         state.hp = Math.max(1, Math.floor(state.hp * 0.2));
+        state.isInjured = true;
+        if (window.GameState) {
+            window.GameState.exp = state.exp;
+            window.GameState.isInjured = true;
+        }
         breakthroughBonusChance = 0;
         abortTribulationCutscene();
-        updateHUD();
-        saveGameState();
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.updateHUD === 'function') window.updateHUD();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
+
         spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, "Đột Phá Bị Chấn Lui!", "text-rose-400 font-bold");
         addLog(`💥 <span class="text-rose-400 font-bold">Đột Phá Bất Thành:</span> Nhục thân hoặc đạo tâm không chịu nổi thiên uy, kinh mạch trọng thương và tu vi sụt giảm 25% (-${lostExp.toLocaleString()}).`, "text-rose-400");
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`💀 Độ kiếp bất thành! Hộ thể chân khí vỡ nát, tu vi hao tổn 25% (-${lostExp.toLocaleString()})!`, 'error');
+        }
         if (typeof showBreakthroughFailureModal === 'function') {
             showBreakthroughFailureModal(curRealmName, targetRealmName, lostExp, "Nhục thân hoặc đạo tâm không chịu nổi thiên uy, chân nguyên nghịch chuyển, kinh mạch trọng thương!");
         }
@@ -11701,14 +13969,16 @@ function finishTribulationCutscene(survived = true) {
 // The sky tribulation screen uses the same realm, reward, failure and save rules
 // as the existing major-breakthrough cutscene.
 function resolveSkyTribulation(survived, totalDamage = 0) {
-    const currentRealm = REALMS[state.realmIndex];
-    const nextRealm = REALMS[state.realmIndex + 1];
-    if (!currentRealm?.isMajorBottleneck || !nextRealm || state.exp < currentRealm.maxExp) return false;
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
+    const rIdx = Number(s?.realmIndex) || 0;
+    const currentRealm = REALMS[rIdx];
+    const nextRealm = REALMS[rIdx + 1];
+    if (!currentRealm || !nextRealm) return false;
     cutsceneState = {
         inProgress: true,
         isStriking: false,
         config: typeof getTribulationConfig === 'function' ? getTribulationConfig(nextRealm) : {},
-        totalChance: (currentRealm.baseChance || 70) + (breakthroughBonusChance || 0),
+        totalChance: 100, // Survived the interactive heavenly lightning trial!
         totalDamage: Math.max(0, Number(totalDamage) || 0)
     };
     finishTribulationCutscene(Boolean(survived));
@@ -11985,7 +14255,6 @@ function ensureCultivationCenter() {
         container.innerHTML = `
             <div id="floating-text-container" style="position: relative; margin-bottom: 10px; text-align: center; z-index: 5;"></div>
             <div class="character-wrapper character-and-array-wrapper relative flex justify-center items-center w-[350px] h-[450px] md:w-[500px] md:h-[650px]" style="position: relative; display: flex; justify-content: center; align-items: center;">
-                <div class="cultivator-back-aura absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-cyan-600/15 rounded-full blur-3xl animate-breathe -z-10 pointer-events-none"></div>
                 <div class="cultivator-ground-shadow absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/40 blur-md rounded-full w-48 h-6 md:w-64 md:h-8 pointer-events-none z-1" style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.4); filter: blur(8px); border-radius: 9999px; z-index: 1; pointer-events: none;"></div>
                 <img id="char-main-img" src="${avatarSrc}" alt="Bản Thể Tu Sĩ Đả Tọa" class="character-sprite character-avatar w-[350px] h-[450px] md:w-[500px] md:h-[650px]" onerror="this.src='./assets/images/nu_tu_trong_suot.png'" style="position: relative; object-fit: contain; z-index: 2; margin-bottom: -30px; filter: drop-shadow(0px 25px 20px rgba(0,0,0,0.9)); pointer-events: auto;"/>
             </div>
@@ -12030,63 +14299,52 @@ function ensureCultivationCenter() {
         }
         wrapper.style.cssText = 'position: relative; display: flex; justify-content: center; align-items: center;';
 
-        // Xóa hoàn toàn Tụ Linh Trận theo lệnh Bản Tôn
-        const existingArrays = wrapper.querySelectorAll('.spirit-array, .spirit-array-base, .spirit-gathering-array, .tribulation-altar-array');
-        existingArrays.forEach(el => el.remove());
-
-        // Bóng đen mờ hình oval siêu mỏng (bg-black/40 blur-md rounded-full w-48 h-6 md:w-64 md:h-8)
+        // Bảo tồn Tụ Linh Trận 3D (#tu-linh-tran-3d)
         let shadowEl = wrapper.querySelector('.cultivator-ground-shadow');
-        if (!shadowEl) {
-            shadowEl = document.createElement('div');
-            shadowEl.className = 'cultivator-ground-shadow absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/40 blur-md rounded-full w-48 h-6 md:w-64 md:h-8 pointer-events-none z-1';
-            shadowEl.style.cssText = 'position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.4); filter: blur(8px); border-radius: 9999px; z-index: 1; pointer-events: none;';
-            wrapper.prepend(shadowEl);
-        } else {
-            shadowEl.classList.add('w-48', 'h-6', 'md:w-64', 'md:h-8');
+        if (shadowEl && wrapper.querySelector('#tu-linh-tran-3d')) {
+            shadowEl.remove();
         }
 
-        // Vầng hào quang phía sau lưng (tạo chiều sâu phóng to 80%)
+        // Xóa bỏ quầng sáng và đốm sáng đan điền trên nhân vật
         let auraEl = wrapper.querySelector('.cultivator-back-aura');
-        if (!auraEl) {
-            auraEl = document.createElement('div');
-            auraEl.className = 'cultivator-back-aura absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-cyan-600/15 rounded-full blur-3xl animate-breathe -z-10 pointer-events-none';
-            wrapper.prepend(auraEl);
-        } else {
-            auraEl.classList.add('w-[80%]', 'h-[80%]');
+        if (auraEl) auraEl.remove();
+
+        // Khung lơ lửng nhịp thở (#char-floating-rig)
+        let floatingRig = wrapper.querySelector('#char-floating-rig');
+        if (!floatingRig) {
+            floatingRig = document.createElement('div');
+            floatingRig.id = 'char-floating-rig';
+            floatingRig.className = 'char-floating-rig relative flex justify-center items-center w-full h-full pointer-events-none';
+            wrapper.appendChild(floatingRig);
         }
 
-        // Hạch Tâm Đan Điền (Linh Khí Băng Lam tụ tại đan điền)
-        let dantianEl = wrapper.querySelector('#dantian-core');
-        if (!dantianEl) {
-            dantianEl = document.createElement('div');
-            dantianEl.id = 'dantian-core';
-            dantianEl.className = 'absolute top-[60%] left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-500 shadow-[0_0_25px_#22d3ee] animate-ping z-30 pointer-events-none';
-            dantianEl.style.animationDuration = '2.5s';
-            wrapper.appendChild(dantianEl);
+        // Xóa bỏ hạch tâm đan điền
+        let dantianEl = (floatingRig || wrapper).querySelector('#dantian-core');
+        if (dantianEl) dantianEl.remove();
 
-            const dantianInner = document.createElement('div');
-            dantianInner.className = 'absolute top-[60%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_12px_#67e8f9] z-30 pointer-events-none';
-            wrapper.appendChild(dantianInner);
-        }
-
-        // Ảnh nhân vật đè lên bóng cỏ (w-[350px] h-[450px] md:w-[500px] md:h-[650px])
-        let img = wrapper.querySelector('.character-sprite') || wrapper.querySelector('.character-avatar') || container.querySelector('.character-avatar') || document.getElementById('char-main-img');
+        // Ảnh nhân vật đè lên đài trận pháp (w-[320px] md:w-[420px])
+        let img = (floatingRig || wrapper).querySelector('.character-sprite') || (floatingRig || wrapper).querySelector('.character-avatar') || document.getElementById('char-main-img');
         if (!img) {
             img = document.createElement('img');
             img.id = 'char-main-img';
-            img.className = 'character-sprite character-avatar w-[350px] h-[450px] md:w-[500px] md:h-[650px]';
+            img.className = 'character-sprite character-avatar w-[320px] h-[380px] md:w-[420px] md:h-[460px]';
             img.src = avatarSrc;
             img.alt = 'Bản Thể Tu Sĩ Đả Tọa';
             img.onerror = () => { img.src = './assets/images/nu_tu_trong_suot.png'; };
-            wrapper.appendChild(img);
+            (floatingRig || wrapper).appendChild(img);
         } else {
-            img.classList.add('character-sprite', 'character-avatar', 'w-[350px]', 'h-[450px]', 'md:w-[500px]', 'md:h-[650px]');
-            if (img.parentElement !== wrapper) {
-                wrapper.appendChild(img);
+            img.classList.add('character-sprite', 'character-avatar');
+            if (floatingRig && img.parentElement !== floatingRig) {
+                floatingRig.appendChild(img);
             }
         }
         if (!img.src || img.src.includes('undefined')) img.src = avatarSrc;
-        img.style.cssText = 'position: relative; object-fit: contain; z-index: 2; margin-bottom: -30px; filter: drop-shadow(0px 25px 20px rgba(0,0,0,0.9)); pointer-events: auto;';
+        img.style.position = 'relative';
+        img.style.objectFit = 'contain';
+        img.style.zIndex = '2';
+        img.style.marginBottom = '0px';
+        img.style.pointerEvents = 'auto';
+        img.style.filter = 'drop-shadow(0 12px 18px rgba(0, 0, 0, 0.75))';
 
         // 3. Vùng chứa hạt Linh khí hấp thụ
         let particleBox = container.querySelector('#particle-absorb-container') || document.getElementById('particle-absorb-container');
@@ -12191,23 +14449,58 @@ function triggerDaoTamBarGlitch() {
 // ==========================================
 
 function challengeTamMa() {
-    const currentTamMa = state.tamMa != null ? state.tamMa : Math.max(0, 100 - (state.daoTam ?? 100));
-    if (currentTamMa < 50) {
-        addLog('Tâm Ma chưa đủ lớn để hóa hình (Cần Tâm Ma ≥ 50)!', 'text-stone-400');
+    const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : {});
+    const currentTamMa = s.tamMa != null ? s.tamMa : Math.max(0, 100 - (s.daoTam ?? 100));
+    if (currentTamMa < 20) {
+        const msg = 'Tâm cảnh thanh tịnh, Tâm Ma chưa đủ lớn để hóa hình (Cần Tâm Ma ≥ 20 hoặc Đạo Tâm ≤ 80)!';
+        if (typeof showGameToast === 'function') showGameToast(msg, 'info');
+        else if (typeof addLog === 'function') addLog(msg, 'text-stone-400');
         if (typeof spawnFloatingText === 'function') {
-            spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, 'Tâm Ma chưa đủ lớn để hóa hình', 'text-stone-400 font-bold');
+            spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 50, 'Tâm cảnh thanh tịnh (Tâm Ma < 20)', 'text-emerald-400 font-bold');
         }
         return;
     }
 
     const effectiveStats = typeof getEffectiveStats === 'function' ? getEffectiveStats() : {
-        atk: state.atk || 28,
-        def: state.def || 14,
-        maxHp: state.maxHp || 500,
-        maxMp: state.maxMp || 200,
-        crit: state.crit || 5,
-        dodge: state.dodge || 0
+        atk: s.atk || 28,
+        def: s.def || 14,
+        maxHp: s.maxHp || 500,
+        maxMp: s.maxMp || 200,
+        crit: s.crit || 5,
+        dodge: s.dodge || 0
     };
+
+    const heroHp = Number(effectiveStats.maxHp || effectiveStats.hp || 50000);
+    const heroAtk = Number(effectiveStats.atk || 12000);
+    const heroDef = Number(effectiveStats.def || 4000);
+    const heroCp = (typeof getCombatPower === 'function') ? getCombatPower() : (heroAtk * 3 + heroHp * 0.1);
+
+    if (typeof window.startUniversalBattle === 'function') {
+        const realmName = (s.realmIndex !== undefined && window.REALMS && window.REALMS[s.realmIndex]?.name) || 'Huyễn Cảnh Chân Ngã';
+        const ok = window.startUniversalBattle({
+            mode: 'tamma',
+            enemyId: 'enemy_tam_ma_' + Date.now(),
+            name: 'Tâm Ma Huyễn Ảnh',
+            titleBadge: '💀 HUYỄN CẢNH • TRẢM TÂM MA',
+            realm: realmName,
+            element: 'Hoa',
+            hp: Math.round(heroHp * 1.15),
+            maxHp: Math.round(heroHp * 1.15),
+            atk: Math.round(heroAtk * 1.15),
+            def: Math.round(heroDef * 0.85),
+            crit: Math.min(50, (effectiveStats.crit || 15) + 10),
+            eva: Math.min(30, (effectiveStats.dodge || effectiveStats.eva || 10) + 5),
+            cp: Math.round(heroCp * 1.15),
+            icon: '💀',
+            rewards: {
+                title: 'Trảm Diệt Tâm Ma',
+                tuVi: 350000,
+                linhThach: 180000,
+                badge: 'Tâm Ma Đắc Đạo'
+            }
+        });
+        if (ok) return;
+    }
 
     const playerCombatMaxHP = effectiveStats.maxHp;
     let playerCurHP = playerCombatMaxHP;
@@ -12297,16 +14590,74 @@ function challengeTamMa() {
     }
 
     // 3. XỬ LÝ KẾT QUẢ & STATE:
+    let rewardStones = 0;
+    let rewardPillName = '';
     if (playerWon) {
-        // Set player.TamMa = 0 (Thanh tẩy hoàn toàn)
+        // Set player.TamMa = 0 & DaoTam = 100 (Thanh tẩy hoàn toàn)
         state.tamMa = 0;
         state.daoTam = 100;
         if (state.player) {
             state.player.tam_ma = 0;
             state.player.dao_tam = 100;
         }
+
+        const realmIdx = Number(state.realmIndex || (window.GameState?.realmIndex) || 0);
+        rewardStones = Math.round(1500 + realmIdx * 800);
+        state.stones = (Number(state.stones) || 0) + rewardStones;
+        if (state.spiritStones !== undefined) state.spiritStones = state.stones;
+
+        // Thưởng 1 viên Thanh Tâm Đan xua tan tạp niệm
+        rewardPillName = 'Thanh Tâm Đan';
+        if (!Array.isArray(state.inventory)) state.inventory = [];
+        const existingPill = state.inventory.find(i => i.id === 'dan_thanh_tam' || i.name === 'Thanh Tâm Đan');
+        if (existingPill) {
+            existingPill.count = (Number(existingPill.count) || 0) + 1;
+        } else {
+            state.inventory.push({
+                id: 'dan_thanh_tam',
+                name: 'Thanh Tâm Đan',
+                type: 'pill',
+                tier: 'trung',
+                rarity: 3,
+                count: 1,
+                desc: 'Đan dược thanh tâm an thần, giải trừ tạp niệm ma chướng.',
+                effect: { daoTam: 30, tamMa: -30 },
+                icon: 'fa-solid fa-capsules',
+                value: 60
+            });
+        }
+
+        // Đồng bộ đồng thời vào GameState toàn cục
+        if (window.GameState) {
+            window.GameState.tamMa = 0;
+            window.GameState.daoTam = 100;
+            window.GameState.mind = 100;
+            window.GameState.spiritStones = (Number(window.GameState.spiritStones) || 0) + rewardStones;
+            window.GameState.stones = window.GameState.spiritStones;
+            if (window.GameState.player) {
+                window.GameState.player.tam_ma = 0;
+                window.GameState.player.dao_tam = 100;
+            }
+            if (Array.isArray(window.GameState.inventory)) {
+                const gsPill = window.GameState.inventory.find(i => i.id === 'dan_thanh_tam' || i.name === 'Thanh Tâm Đan');
+                if (gsPill) gsPill.count = (Number(gsPill.count) || 0) + 1;
+                else window.GameState.inventory.push({
+                    id: 'dan_thanh_tam',
+                    name: 'Thanh Tâm Đan',
+                    type: 'pill',
+                    tier: 'trung',
+                    rarity: 3,
+                    count: 1,
+                    desc: 'Đan dược thanh tâm an thần, giải trừ tạp niệm ma chướng.',
+                    effect: { daoTam: 30, tamMa: -30 },
+                    icon: 'fa-solid fa-capsules',
+                    value: 60
+                });
+            }
+        }
+
         if (typeof playSound === 'function') playSound('break');
-        addLog("✨ <span class='text-emerald-400 font-bold'>[Trảm Tâm Ma Thắng Lợi]</span> Ngươi đã chém vỡ gông cùm trong tim, Đạo Tâm thông minh, Tâm Ma tiêu tán!", "text-emerald-400 font-bold");
+        addLog(`✨ <span class='text-emerald-400 font-bold'>[Trảm Tâm Ma Thắng Lợi]</span> Ngươi đã chém vỡ gông cùm trong tim, Đạo Tâm viên mãn (100/100), Tâm Ma tiêu tán! Nhận thưởng +${rewardStones.toLocaleString('vi-VN')} Linh Thạch & [${rewardPillName}] x1.`, "text-emerald-400 font-bold");
         if (typeof spawnFloatingText === 'function') {
             spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, "Đạo Tâm Thông Minh • Tâm Ma Tiêu Tán!", "text-emerald-400 font-extrabold text-base");
         }
@@ -12319,6 +14670,11 @@ function challengeTamMa() {
             state.player.tam_ma = state.tamMa;
             state.player.dao_tam = state.daoTam;
         }
+        if (window.GameState) {
+            window.GameState.hp = 1;
+            window.GameState.tamMa = state.tamMa;
+            window.GameState.daoTam = state.daoTam;
+        }
         if (typeof playSound === 'function') playSound('hit');
         addLog("💀 <span class='text-rose-500 font-bold animate-pulse'>[Trảm Tâm Ma Thất Bại]</span> Tà niệm lấn át! Ngươi bị chính cái bóng của mình đánh trọng thương, Tâm Ma càng thêm sâu nặng!", "text-rose-400 font-bold");
         if (typeof spawnFloatingText === 'function') {
@@ -12328,10 +14684,13 @@ function challengeTamMa() {
 
     updateHUD();
     saveGameState();
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
 
     // Hiển thị Modal Trảm Tâm Ma chi tiết
     showTamMaBattleModal({
         playerWon,
+        rewardStones,
+        rewardPillName,
         combatLogs,
         playerStats: {
             hp: playerCombatMaxHP,
@@ -12357,6 +14716,7 @@ function renderTamMaResultBanner(battleData) {
     if (!banner) return;
     banner.classList.remove('hidden');
     if (battleData.playerWon) {
+        const rewardText = battleData.rewardStones ? `+${battleData.rewardStones.toLocaleString('vi-VN')} Linh Thạch & [${battleData.rewardPillName || 'Thanh Tâm Đan'}] x1` : '+Linh Thạch & Đan Dược';
         banner.className = 'p-3 rounded-xl border border-emerald-500/60 bg-emerald-950/80 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-pulse';
         banner.innerHTML = `
             <div class="flex items-center justify-center gap-2 text-base font-serif font-bold text-emerald-300">
@@ -12369,6 +14729,7 @@ function renderTamMaResultBanner(battleData) {
             <div class="mt-2 text-[11px] font-mono flex items-center justify-center gap-4 text-emerald-400">
                 <span>Tâm Ma: <b class="text-white">0/100</b></span>
                 <span>Đạo Tâm: <b class="text-emerald-300">100/100</b></span>
+                <span class="text-amber-300 font-bold">Thưởng: ${rewardText}</span>
             </div>
         `;
         if (window.soundSystem?.play) window.soundSystem.play('victory');
@@ -12567,18 +14928,21 @@ function addItemToInventory(itemId, count = 1) {
     if (typeof itemId !== 'string' || !itemId) return;
     let item = state.inventory.find(i => i.id === itemId);
     if (item) {
-        item.count = (Number(item.count) || 0) + count;
+        item.count = (Number(item.count || item.quantity) || 0) + count;
+        item.quantity = item.count;
     } else {
         const defaultItem = suppliedItem || DEFAULT_STATE.inventory?.find(i => i.id === itemId);
         if (defaultItem) {
             item = structuredClone(defaultItem);
             item.count = count;
+            item.quantity = count;
             state.inventory.push(item);
         } else {
             state.inventory.push({
                 id: itemId,
                 name: itemId,
                 count: count,
+                quantity: count,
                 type: 'Vật Phẩm',
                 rarity: 1
             });
@@ -12588,12 +14952,16 @@ function addItemToInventory(itemId, count = 1) {
 window.addItemToInventory = addItemToInventory;
 
 function getExpeditionDuration(zone) {
-    if (!zone) return 15;
-    const combatPower = typeof getCombatPower === 'function' ? getCombatPower() : 100;
-    const ratio = Math.max(0.5, Math.min(3.5, combatPower / (zone.recommendedPower || 100)));
-    return Math.max(6, Math.round(zone.baseSeconds / ratio));
+    return 15; // Chuẩn hóa chu kỳ 15 giây cho Bí Cảnh Thám Hiểm
 }
 window.getExpeditionDuration = getExpeditionDuration;
+
+const EXPEDITION_STORY_EVENTS = [
+    { at: 3, text: '🧭 [Bí Cảnh Thám Hiểm] Đã bước qua làn sương độc chướng, men theo vách đá Cổ Tích...' },
+    { at: 7, text: '🐉 [Bí Cảnh Thám Hiểm] Tránh né đàn Huyết Bức Yêu Thú canh giữ cửa động, phát hiện lối bí mật...' },
+    { at: 11, text: '🌿 [Bí Cảnh Thám Hiểm] Thu hái được kỳ thảo ngàn năm mọc trên khe nứt ngọc thạch...' },
+    { at: 14, text: '🏺 [Bí Cảnh Thám Hiểm] Phá giải phong ấn Thượng Cổ Thần Trận, phát hiện Rương Bảo Vật Bí Cảnh!' }
+];
 
 function refreshExpeditionUI() {
     const pageContent = document.getElementById('world-encounter-page-content');
@@ -12620,6 +14988,7 @@ function startExpedition(zoneId) {
         zoneId: zone.id,
         startTime: Date.now(),
         duration: duration,
+        eventLogsFired: [],
         autoRepeat: state.expedition?.autoRepeat ?? true,
         lastReward: state.expedition?.lastReward || null
     };
@@ -12694,6 +15063,27 @@ function completeExpedition(zone, silent = false) {
         }
     }
 
+    // Trao Rương Chiến Lợi Phẩm Bí Cảnh vào GameState.inventory
+    addItemToInventory({
+        id: 'item_ruong_bi_canh',
+        name: 'Rương Chiến Lợi Phẩm Bí Cảnh',
+        type: 'Bảo Rương',
+        category: 'chest',
+        rarity: 5,
+        count: 1,
+        desc: 'Rương báu thu hoạch sau 15 giây lịch luyện hiểm nguy trong Bí Cảnh Cổ Đại, chứa đựng vô số cơ duyên!',
+        icon: 'fa-box-open'
+    }, 1);
+    rewards.push('1 Rương Chiến Lợi Phẩm Bí Cảnh');
+
+    if (window.GameState) {
+        window.GameState.stones = state.stones;
+        window.GameState.inventory = state.inventory;
+        if (state.herbs !== undefined) window.GameState.herbs = state.herbs;
+        if (state.ores !== undefined) window.GameState.ores = state.ores;
+    }
+    if (typeof window.syncAllUI === 'function') window.syncAllUI();
+
     state.expedition.lastReward = {
         time: Date.now(),
         zoneName: zone.name,
@@ -12703,16 +15093,28 @@ function completeExpedition(zone, silent = false) {
     if (!silent) {
         addLog(`[Lịch Luyện] Hoàn thành thám hiểm <b>${zone.name}</b>! Thu hoạch: <span class="text-emerald-400">${rewards.join(', ')}</span>.`, 'reward', 'lich-luyen-' + (zone.id || zone.name));
         if (typeof playSound === 'function') playSound('qi');
+        if (typeof window.showGameToast === 'function') {
+            window.showGameToast(`🎁 Hoàn thành lịch luyện ${zone.name}! Thu hoạch: ${rewards.slice(0, 3).join(', ')}`, 'success');
+        }
         updateHUD();
     }
+
+    // 35% xác suất kích hoạt Kỳ Ngộ Tiên Duyên
+    if (typeof window.queueEncounter === 'function' && Math.random() < 0.35) {
+        window.queueEncounter();
+    }
+
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
 
     if (state.expedition.autoRepeat) {
         state.expedition.startTime = Date.now();
         state.expedition.duration = getExpeditionDuration(zone);
+        state.expedition.eventLogsFired = [];
     } else {
         state.expedition.zoneId = null;
         state.expedition.startTime = 0;
         state.expedition.duration = 0;
+        state.expedition.eventLogsFired = [];
     }
     saveGameState();
 
@@ -12732,6 +15134,20 @@ function tickExpedition() {
     }
     const elapsed = (Date.now() - state.expedition.startTime) / 1000;
     const duration = state.expedition.duration || getExpeditionDuration(zone);
+
+    // Kích hoạt 3-4 dòng nhật ký thám hiểm diễn biến theo thời gian
+    if (!state.expedition.eventLogsFired) state.expedition.eventLogsFired = [];
+    EXPEDITION_STORY_EVENTS.forEach((evt, idx) => {
+        if (elapsed >= evt.at && !state.expedition.eventLogsFired.includes(idx)) {
+            state.expedition.eventLogsFired.push(idx);
+            if (typeof addLog === 'function') addLog(evt.text, 'info');
+            const logEl = document.getElementById('expedition-live-story-log');
+            if (logEl) {
+                logEl.innerHTML = `<i class="fa-solid fa-scroll text-amber-400 mr-1.5"></i><span class="text-amber-200 font-serif italic">${evt.text}</span>`;
+            }
+        }
+    });
+
     if (elapsed >= duration) {
         completeExpedition(zone, false);
     } else {
@@ -12788,6 +15204,10 @@ function renderWorldExpeditionDashboard(content) {
                 </div>
                 <div class="expedition-progress-track">
                     <div id="expedition-active-progress" class="expedition-progress-fill" style="width: ${progressPercent}%;"></div>
+                </div>
+                <div id="expedition-live-story-log" class="mt-2 text-xs text-amber-200/90 font-serif italic bg-slate-950/70 p-2 rounded border border-amber-500/30 flex items-center gap-1.5">
+                    <i class="fa-solid fa-scroll text-amber-400"></i>
+                    <span>Đang men theo vết tích cổ trận, tiến sâu vào bí cảnh (15s)...</span>
                 </div>
                 ${expState.lastReward ? `
                     <div class="mt-2 text-[11px] text-slate-300 bg-slate-900/60 px-2.5 py-1 rounded border border-slate-700/50 flex items-center justify-between">
@@ -12904,8 +15324,13 @@ function renderWorldExpeditionDashboard(content) {
         `;
     }).join('');
 
-    const rKarma = Number(state.righteousKarma) || 0;
-    const dKarma = Number(state.demonicKarma) || 0;
+    const gs = window.GameState || {};
+    const rKarma = Number(gs.righteousKarma ?? state.righteousKarma ?? 0);
+    const dKarma = Number(gs.demonicKarma ?? state.demonicKarma ?? 0);
+    const daoTam = Number(gs.daoTam ?? state.daoTam ?? 100);
+    const tamMa = Number(gs.tamMa ?? state.tamMa ?? 0);
+    const playerStones = Number(gs.stones ?? state.stones ?? 0);
+
     let karmaTitleBadge = '';
     let karmaPassiveDesc = '';
 
@@ -12921,42 +15346,43 @@ function renderWorldExpeditionDashboard(content) {
     }
 
     content.innerHTML = `
-        <div class="expedition-dashboard">
-            <div class="page-header-title">
-                <h2>🗺️ BẢN ĐỒ LỊCH LUYỆN</h2>
-            </div>
-
-            <!-- Controls & Info -->
-            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 mb-3 rounded-xl bg-slate-900/70 border border-slate-700/60">
+        <div class="expedition-dashboard space-y-4">
+            <!-- Header Controls & Info -->
+            <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-900 border border-amber-500/30 shadow-xl">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600/30 to-yellow-600/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-lg shadow-inner">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600/30 to-yellow-600/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-xl shadow-inner">
                         <i class="fa-solid fa-map-location-dot"></i>
                     </div>
                     <div>
-                        <h3 class="font-serif font-bold text-base text-amber-200">Bản Đồ Lịch Luyện — Thế Giới Tu Chân</h3>
-                        <div class="flex items-center gap-2 text-xs text-slate-300">
-                            <span>Lực Chiến: <strong class="font-mono text-amber-400">${combatPower.toLocaleString()}</strong></span>
+                        <h3 class="font-serif font-bold text-base text-amber-200">🗺️ BẢN ĐỒ LỊCH LUYỆN — THẾ GIỚI TU CHÂN</h3>
+                        <div class="flex items-center gap-2 text-xs text-slate-300 mt-0.5">
+                            <span>Lực Chiến: <strong class="font-mono text-amber-400">${combatPower.toLocaleString('vi-VN')}</strong></span>
                             <span>•</span>
                             <span>Cảnh Giới: <strong class="text-emerald-400">${currentRealm?.name || 'Phàm Nhân'}</strong></span>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <label class="inline-flex items-center cursor-pointer gap-2 bg-slate-950/70 px-3 py-1.5 rounded-lg border border-slate-700/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30 flex items-center gap-2 text-xs">
+                        <span class="text-slate-400 font-medium">Linh Thạch:</span>
+                        <b class="text-amber-400 font-mono">🪙 ${playerStones.toLocaleString('vi-VN')}</b>
+                    </div>
+
+                    <label class="inline-flex items-center cursor-pointer gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs">
                         <input type="checkbox" ${expState.autoRepeat ? 'checked' : ''} onchange="toggleExpeditionAuto(this.checked)" class="sr-only peer">
                         <div class="relative w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
-                        <span class="text-xs text-slate-200 font-medium">Tự Động Lặp Lại</span>
+                        <span class="text-slate-200 font-medium">Tự Động</span>
                     </label>
 
-                    <button onclick="openEncounterModal()" class="px-3 py-1.5 text-xs bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 border border-amber-600/40 rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-scroll"></i> Kỳ Ngộ Cổ Tịch
+                    <button type="button" onclick="openEncounterModal(true)" class="px-3 py-1.5 text-xs bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold border border-amber-400 rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95">
+                        <i class="fa-solid fa-scroll"></i> Khai Mở Kỳ Ngộ
                     </button>
                 </div>
             </div>
 
             <!-- BẢNG NHÂN QUẢ CHÁNH MA (KARMIC ALIGNMENT CARD) -->
-            <div class="karmic-path-card p-3.5 mb-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-slate-900 border border-amber-500/40 flex items-center justify-center text-amber-300 text-base shadow-md">
                         <i class="fa-solid fa-yin-yang animate-spin-slow"></i>
@@ -12970,14 +15396,14 @@ function renderWorldExpeditionDashboard(content) {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3.5 bg-slate-950/70 px-3 py-2 rounded-xl border border-slate-800">
+                <div class="flex items-center gap-3.5 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-slate-800">
                     <div class="space-y-1">
                         <div class="flex items-center justify-between gap-2 text-[10px]">
                             <span class="text-emerald-300 font-bold"><i class="fa-solid fa-feather-pointed mr-1"></i>Chánh Khí:</span>
                             <span class="font-mono text-emerald-400 font-bold">${rKarma}</span>
                         </div>
-                        <div class="w-24 h-1.5 rounded-full bg-slate-900 overflow-hidden">
-                            <div class="karmic-meter-fill-righteous h-full" style="width: ${Math.min(100, Math.round((rKarma / 50) * 100))}%"></div>
+                        <div class="w-24 h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                            <div class="karmic-meter-fill-righteous h-full bg-emerald-400" style="width: ${Math.min(100, Math.round((rKarma / 50) * 100))}%"></div>
                         </div>
                     </div>
 
@@ -12988,14 +15414,17 @@ function renderWorldExpeditionDashboard(content) {
                             <span class="text-rose-400 font-bold"><i class="fa-solid fa-skull mr-1"></i>Ma Nghiệp:</span>
                             <span class="font-mono text-rose-400 font-bold">${dKarma}</span>
                         </div>
-                        <div class="w-24 h-1.5 rounded-full bg-slate-900 overflow-hidden">
-                            <div class="karmic-meter-fill-demonic h-full" style="width: ${Math.min(100, Math.round((dKarma / 50) * 100))}%"></div>
+                        <div class="w-24 h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                            <div class="karmic-meter-fill-demonic h-full bg-rose-500" style="width: ${Math.min(100, Math.round((dKarma / 50) * 100))}%"></div>
                         </div>
                     </div>
 
-                    <button onclick="openEncounterModal()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-[11px] font-bold transition flex items-center gap-1 shadow-sm" title="Mở kỳ ngộ đang chờ khi có thông báo">
-                        <i class="fa-solid fa-feather"></i> Xem Kỳ Ngộ
-                    </button>
+                    <div class="h-6 w-px bg-slate-800"></div>
+
+                    <div class="space-y-1 text-center">
+                        <span class="text-[10px] text-amber-300 font-bold block">Đạo Tâm</span>
+                        <b class="text-xs font-mono text-amber-400">${daoTam}/100</b>
+                    </div>
                 </div>
             </div>
 
@@ -14616,12 +17045,93 @@ function playCultivationAnimation(element_type) {
 }
 window.playCultivationAnimation = playCultivationAnimation;
 
-function upgradeElementPillar(elKey) {
-    return applyLiveLinhCanAction('upgrade_branch', elKey);
+function upgradeElementPillar(elKey, count = 1) {
+    let upgraded = 0;
+    let totalSpent = 0;
+    const isRare = Boolean(RARE_LINH_CAN_BRANCHES[elKey]);
+    const cfg = ELEMENTAL_PILLARS[elKey] || RARE_LINH_CAN_BRANCHES[elKey];
+
+    for (let i = 0; i < count; i++) {
+        const curLvl = isRare ? (state.spiritualRoot?.rareBranches?.[elKey]?.level || 0) : (state.spiritualRoot?.pillars?.[elKey] || 1);
+        if (curLvl >= 100) break;
+        if (curLvl === 99 && !canAttemptRootCap(REALMS[state.realmIndex])) break;
+        const cost = getPillarUpgradeCost(curLvl, elKey, state);
+        if (state.linhKhi < cost) break;
+        state.linhKhi -= cost;
+        totalSpent += cost;
+        if (isRare) {
+            state.spiritualRoot.rareBranches[elKey].level = (state.spiritualRoot.rareBranches[elKey].level || 0) + 1;
+        } else {
+            state.spiritualRoot.pillars[elKey] = (state.spiritualRoot.pillars[elKey] || 1) + 1;
+            const leg = LEGACY_PILLAR_KEYS[elKey] || elKey;
+            if (state.playerLinhCan) state.playerLinhCan[leg] = state.spiritualRoot.pillars[elKey];
+            if (state.fiveElements) state.fiveElements[leg] = state.spiritualRoot.pillars[elKey];
+        }
+        upgraded++;
+    }
+
+    if (upgraded === 0) {
+        const curLvl = isRare ? (state.spiritualRoot?.rareBranches?.[elKey]?.level || 0) : (state.spiritualRoot?.pillars?.[elKey] || 1);
+        const cost = getPillarUpgradeCost(curLvl, elKey, state);
+        const msg = state.linhKhi < cost ? `Không đủ Linh Khí (cần ${formatCultivationNumber(cost)} LK, hiện có ${formatCultivationNumber(state.linhKhi)} LK)` : 'Đã đạt giới hạn cấp độ!';
+        if (typeof showGameToast === 'function') showGameToast(msg, 'warning');
+        else addLog(`[Căn Cơ] ${msg}`, 'text-rose-400');
+        return;
+    }
+
+    const statGains = {
+        metal: `+${upgraded * 15} Công Kích!`,
+        wood: `+${upgraded * 120} Khí Huyết!`,
+        water: `+${upgraded * 20} Chân Nguyên!`,
+        fire: `+${(upgraded * 0.25).toFixed(1)}% Bạo Kích!`,
+        earth: `+${upgraded * 10} Phòng Ngự!`,
+        thunder: `+${upgraded * 25} Lôi Sát!`,
+        wind: `+${upgraded * 15} Tốc Độ!`,
+        ice: `+${upgraded * 20} Băng Giáp!`
+    };
+    if (typeof triggerRootElementVFX === 'function') {
+        triggerRootElementVFX(elKey, statGains[elKey] || `+${upgraded} Cấp!`);
+    }
+
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    updateLinhCanTitle();
+    renderSpiritualRootPanel('foundation-panel');
+    updateLeftPanelElements();
+    updateHUD();
+    saveGameState();
+
+    const newLvl = isRare ? state.spiritualRoot.rareBranches[elKey].level : state.spiritualRoot.pillars[elKey];
+    const elemName = cfg?.element || 'Linh Căn';
+    const toastMsg = `✨ Rót ${formatCultivationNumber(totalSpent)} LK, ${elemName} Linh Căn đạt Lv.${newLvl}!`;
+    if (typeof showGameToast === 'function') showGameToast(toastMsg, 'success');
+    addLog(`[Căn Cơ] ${toastMsg}`, 'text-amber-300');
 }
 
 function unlockRareLinhCanBranch(key) {
-    return applyLiveLinhCanAction('unlock_branch', key);
+    ensureCanCoInitialized();
+    const cfg = RARE_LINH_CAN_BRANCHES[key];
+    if (!cfg) return;
+    const inv = state.inventory || [];
+    const stone = inv.find(it => it.id === 'di_nguyen_thach' && it.count > 0);
+    if (stone) {
+        stone.count--;
+    } else if ((state.tienNgoc || 0) >= 150) {
+        state.tienNgoc -= 150;
+    } else if ((state.linhThach || 0) >= 50000) {
+        state.linhThach -= 50000;
+    } else {
+        if (typeof showGameToast === 'function') showGameToast('Cần 1 Dị Nguyên Thạch, 150 Tiên Ngọc hoặc 50,000 Linh Thạch để Thức Tỉnh!', 'warning');
+        return;
+    }
+
+    state.spiritualRoot.rareBranches[key] = { level: 1, isUnlocked: true };
+    state.activeElement = key;
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
+    saveGameState();
+    if (typeof showGameToast === 'function') showGameToast(`⚡ Thức tỉnh thành công [${cfg.name}]! Uy lực bạo phát cực hạn!`, 'success');
+    renderSpiritualRootPanel('foundation-panel');
 }
 
 function mutateLinhCanBranch(key) {
@@ -14651,14 +17161,22 @@ function applyLiveLinhCanAction(action, key) {
 }
 
 function setActiveElement(elKey) {
-    if (!ELEMENTAL_PILLARS[elKey] && !state.spiritualRoot.rareBranches[elKey]?.isUnlocked) return;
+    if (!ELEMENTAL_PILLARS[elKey] && !state.spiritualRoot?.rareBranches?.[elKey]?.isUnlocked) return;
     state.activeElement = elKey;
+    const cfg = ELEMENTAL_PILLARS[elKey] || RARE_LINH_CAN_BRANCHES[elKey];
+    if (typeof triggerRootElementVFX === 'function') {
+        triggerRootElementVFX(elKey, `Chủ Vị ${cfg?.element || ''}!`);
+    }
     if (typeof playElementUpgrade === 'function') playElementUpgrade();
     document.querySelectorAll('.root-hybrid').forEach(panel => renderNguHanhLinhCanPanel(panel.parentElement));
+    recalculateAllStats();
+    if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
     updateHUD();
     if (activeDrawer === 'cave') renderDrawerContent('cave');
     saveGameState();
-    const branchName = ELEMENTAL_PILLARS[elKey]?.name || RARE_LINH_CAN_BRANCHES[elKey]?.name;
+    const branchName = cfg?.name || elKey;
+    const toastMsg = `⚔️ Đã kích hoạt [Hệ ${cfg?.element || ''}] làm Bản Mệnh Chủ Đạo!`;
+    if (typeof showGameToast === 'function') showGameToast(toastMsg, 'success');
     addLog(`Đã kích hoạt chủ vị <span class="text-gold-300 font-bold">${branchName}</span>!`);
 }
 
@@ -14763,8 +17281,40 @@ function openCombatModal(dungeonIdx = selectedDungeonIndex) {
         }
 function startLiveCombat() {
             if (rejectLockedFeature('btn_bi_canh')) return;
-            if (combatTimer) return;
             const dungeon = DUNGEONS[selectedDungeonIndex];
+            if (!dungeon) return;
+
+            if (typeof window.startUniversalBattle === 'function') {
+                const ok = window.startUniversalBattle({
+                    mode: 'dungeon',
+                    enemyId: `dungeon_${selectedDungeonIndex}`,
+                    name: dungeon.boss || dungeon.name,
+                    titleBadge: `🌀 BÍ CẢNH • ${dungeon.name.toUpperCase()}`,
+                    realm: 'Bí Cảnh Yêu Vương',
+                    element: 'Hoa',
+                    hp: dungeon.hp || 80000,
+                    maxHp: dungeon.hp || 80000,
+                    atk: Math.round((dungeon.atk || 5000) * 1.2),
+                    def: Math.round((dungeon.def || 1800) * 1.1),
+                    crit: 16,
+                    eva: 10,
+                    cp: Math.round((dungeon.atk || 5000) * 3 + (dungeon.hp || 80000) * 0.1),
+                    icon: '🐲',
+                    rewards: {
+                        title: dungeon.name,
+                        linhThach: dungeon.stoneReward || 300000,
+                        tuVi: dungeon.expReward || 500000,
+                        item: dungeon.dropName || 'Bí Cảnh Linh Vật',
+                        badge: `Bí Cảnh ${dungeon.name}`
+                    }
+                });
+                if (ok) {
+                    if (typeof closeCenterModal === 'function') closeCenterModal();
+                    return;
+                }
+            }
+
+            if (combatTimer) return;
             let bossCurrentHp = dungeon.hp;
             let playerCurrentHp = state.hp;
             let combatTurn = 0;
@@ -14899,6 +17449,9 @@ function startLiveCombat() {
                         btn.classList.remove('opacity-60');
                     }
                     addLog(`Chiến thắng Bí Cảnh <span class="text-rose-400">${dungeon.name}</span>, nhận <span class="text-gold-300">+${dungeon.stoneReward} Linh Thạch</span> và <span class="text-emerald-400">1 ${dungeon.dropName}</span>.`);
+                    if (typeof window.rollLootDrop === 'function') {
+                        window.rollLootDrop('dungeon', dungeon.tier || state.realmIndex || 1);
+                    }
                     saveGameState();
                     updateHUD();
                     if (typeof refreshDungeonUI === 'function') refreshDungeonUI();
@@ -15299,6 +17852,30 @@ function initializeKeyboardUX() {
     });
 }
 
+function isAutoAssistantUnlocked(key) {
+    if (key === 'farm' || key === 'pill') {
+        const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
+        const rIdx = Number(s?.realmIndex) || 0;
+        const realms = (typeof window !== 'undefined' && window.REALMS) || (typeof REALMS !== 'undefined' ? REALMS : []);
+        const realmObj = realms[rIdx];
+        const rName = s?.realm || realmObj?.name || realmObj?.major || '';
+        const majorIdx = Number(realmObj?.majorIndex ?? (rIdx >= 4 ? 1 : 0));
+        const tier = Number(realmObj?.tier ?? realmObj?.realmTier ?? (majorIdx + 1));
+        const isTrucCoOrHigher = tier >= 2 || majorIdx >= 1 || (!rName.includes('Luyện Khí') && rIdx >= 4);
+
+        const comps = (window.COMPANIONS_DATA && Array.isArray(window.COMPANIONS_DATA))
+            ? window.COMPANIONS_DATA
+            : ((Array.isArray(s?.companionsData)) ? s.companionsData : (Array.isArray(s?.companions) ? s.companions : []));
+        const hasCompanionBond = comps.some(c => {
+            const aff = Number(c?.affection ?? c?.affinity ?? c?.level ?? c?.affectionLevel ?? 0);
+            return aff >= 300 || (aff >= 3 && aff <= 10);
+        });
+
+        return isTrucCoOrHigher || hasCompanionBond;
+    }
+    return true;
+}
+
 function initializeAutomationControls() {
     const controls = {
         'toggle-auto-master': 'enabled',
@@ -15307,15 +17884,50 @@ function initializeAutomationControls() {
         'toggle-auto-farm': 'farm',
         'toggle-auto-alchemy': 'alchemy'
     };
+
+    if (!state.auto || typeof state.auto !== 'object') {
+        state.auto = { enabled: false, pill: false, heal: false, farm: false, alchemy: false };
+    }
+
     Object.entries(controls).forEach(([id, key]) => {
         const input = document.getElementById(id);
         if (!input) return;
-        input.checked = Boolean(state.auto[key]);
-        input.addEventListener('change', () => {
+        
+        // Tất cả checkbox mặc định tắt nếu chưa được mở khóa hợp lệ
+        if ((key === 'farm' || key === 'pill') && !isAutoAssistantUnlocked(key)) {
+            state.auto[key] = false;
+            input.checked = false;
+        } else {
+            input.checked = Boolean(state.auto[key]);
+        }
+
+        const handleToggle = (e) => {
+            if ((key === 'farm' || key === 'pill') && !isAutoAssistantUnlocked(key)) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                input.checked = false;
+                state.auto[key] = false;
+                const msg = 'Cần đạt Trúc Cơ Kỳ hoặc Hảo cảm Đạo Lữ cấp 3 để kích hoạt!';
+                if (typeof window.showGameToast === 'function') {
+                    window.showGameToast(msg, 'warning');
+                } else if (typeof showXianxiaToast === 'function') {
+                    showXianxiaToast(msg, 'warning');
+                } else if (typeof showToast === 'function') {
+                    showToast(msg);
+                }
+                if (typeof addLog === 'function') addLog(`⚠️ ${msg}`, 'text-amber-400');
+                saveGameState();
+                return false;
+            }
             state.auto[key] = input.checked;
             addLog(`[Tự động] ${input.checked ? 'Bật' : 'Tắt'} ${key === 'enabled' ? 'toàn bộ trợ lý' : input.closest('label')?.querySelector('span')?.textContent || key}.`);
             saveGameState();
-        });
+        };
+
+        input.onclick = handleToggle;
+        input.onchange = handleToggle;
     });
 }
 
@@ -15388,12 +18000,18 @@ function GameLoop() {
             state.tamMa = Math.max(0, 100 - state.daoTam);
             updateHUD();
         } else {
-            const gain = getAdjustedCultivationGain(getIdleRate() * state.timeScale).gainedAmount;
+            // Bế Quan x5 (Đốn Ngộ): nhân tốc độ tụ khí ngay trong tick gốc để chữ bay khớp đúng lượng Tu Vi thật.
+            const beQuanUntil = Number(state.beQuanX5Until || window.GameState?.beQuanX5Until || 0);
+            const beQuanMult = beQuanUntil > Date.now() ? 5 : 1;
+            // Commit the cultivation HUD with the gain itself. Optional VFX,
+            // automation or room ticks below must not leave this bar stale.
+            const gain = addExp(getIdleRate() * state.timeScale * beQuanMult).gainedAmount;
             if (gain > 0) {
-                // Commit the cultivation HUD with the gain itself. Optional VFX,
-                // automation or room ticks below must not leave this bar stale.
-                addExp(getIdleRate() * state.timeScale);
-                spawnTuViFloatingText(gain);
+                if (typeof window.spawnCultivationFloatingText === 'function') {
+                    window.spawnCultivationFloatingText(gain);
+                } else {
+                    spawnTuViFloatingText(gain);
+                }
                 spawnSpiritParticles(3);
             }
             // The outer tick updates the HUD once after all state changes.
@@ -15511,9 +18129,7 @@ window.onload = function() {
     }
     const worldEnv = document.getElementById('world-environment');
     if (worldEnv) {
-        worldEnv.style.backgroundImage = `url('${targetBgImg}')`;
-        worldEnv.style.backgroundSize = 'cover';
-        worldEnv.style.backgroundPosition = 'center bottom';
+        worldEnv.style.backgroundImage = 'none';
     }
 
     if (typeof animateCanvas === 'function') animateCanvas();
@@ -15538,22 +18154,27 @@ window.onload = function() {
     if (offline.seconds >= 30 && (offline.gained > 0 || offline.linhKhiGained > 0 || offline.yearsAged > 0)) {
         const popup = document.getElementById('offline-cultivation-popup');
         if (popup) {
-            document.getElementById('offline-duration').textContent = `${offline.seconds.toLocaleString('vi-VN')} giây`;
-            document.getElementById('offline-gain').textContent = `+${offline.gained.toLocaleString('vi-VN')} Tu Vi`;
-            document.getElementById('offline-linh-khi').textContent = `+${offline.linhKhiGained.toLocaleString('vi-VN')} Linh Khí`;
-            document.getElementById('offline-years').textContent = `+${offline.yearsAged.toFixed(2)} năm`;
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+            setText('offline-duration', `${offline.seconds.toLocaleString('vi-VN')} giây`);
+            setText('offline-gain', `+${offline.gained.toLocaleString('vi-VN')} Tu Vi`);
+            setText('offline-linh-khi', `+${offline.linhKhiGained.toLocaleString('vi-VN')} Linh Khí`);
+            setText('offline-years', `+${offline.yearsAged.toFixed(2)} năm`);
             popup.classList.remove('hidden');
             popup.classList.add('flex');
         }
     }
 
     // TRỤ CỘT 4: Vòng lặp treo máy an toàn — Chỉ sử dụng DUY NHẤT 1 setInterval (Game Tick = 1000ms)
-    if (window._mainIdleLoopIntervalId) {
-        clearInterval(window._mainIdleLoopIntervalId);
-        window._mainIdleLoopIntervalId = null;
-    }
+    function startMainIdleLoop() {
+        if (window._mainIdleLoopIntervalId) {
+            clearInterval(window._mainIdleLoopIntervalId);
+            window._mainIdleLoopIntervalId = null;
+        }
 
-    window._mainIdleLoopIntervalId = setInterval(() => {
+        window._mainIdleLoopIntervalId = setInterval(() => {
         _idleLoopTickCounter++;
         const prevSnapshot = {
             exp: Math.floor(Number(state.exp) || 0),
@@ -15654,6 +18275,7 @@ window.onload = function() {
 
         if (changed || farmUpdated) {
             updateUI();
+            if (typeof window.syncAllUI === 'function') window.syncAllUI();
         }
 
         // Tự động lưu mỗi 10 nhịp (10 giây) ngay trong cùng 1 setInterval duy nhất
@@ -15661,6 +18283,10 @@ window.onload = function() {
             saveGameState();
         }
     }, 1000);
+    }
+    window.startMainIdleLoop = startMainIdleLoop;
+    globalThis.startMainIdleLoop = startMainIdleLoop;
+    startMainIdleLoop();
 
     window.addEventListener('pagehide', saveGameState);
 
@@ -15870,6 +18496,49 @@ if (typeof window !== 'undefined') {
 if (typeof setTimeout !== 'undefined') {
     setTimeout(initializeAntigravityGraphics, 300);
 }
+
+function openCamNangModal() {
+    const modal = document.getElementById('modal-cam-nang');
+    if (!modal) return;
+    if (typeof hideAllGamePages === 'function') hideAllGamePages('modal-cam-nang');
+    modal.classList.remove('hidden');
+    modal.classList.add('is-open');
+    modal.style.setProperty('display', 'flex', 'important');
+    switchCamNangTab('nhap_mon');
+}
+window.openCamNangModal = openCamNangModal;
+
+function closeCamNangModal() {
+    const modal = document.getElementById('modal-cam-nang');
+    if (!modal) return;
+    modal.style.setProperty('display', 'none', 'important');
+    modal.classList.remove('is-open');
+    modal.classList.add('hidden');
+}
+window.closeCamNangModal = closeCamNangModal;
+
+function switchCamNangTab(tabKey) {
+    const tabs = ['nhap_mon', 'ngu_hanh', 'dan_dao', 'phi_thang'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-cn-${t}`);
+        const view = document.getElementById(`cn-view-${t}`);
+        if (btn) {
+            if (t === tabKey) {
+                btn.className = 'cn-tab-btn active px-3 py-1.5 rounded-lg text-xs font-bold font-serif bg-amber-950/80 text-amber-300 border border-amber-500/40 cursor-pointer';
+            } else {
+                btn.className = 'cn-tab-btn px-3 py-1.5 rounded-lg text-xs font-bold font-serif bg-slate-900 text-slate-400 border border-slate-700 cursor-pointer';
+            }
+        }
+        if (view) {
+            if (t === tabKey) {
+                view.classList.remove('hidden');
+            } else {
+                view.classList.add('hidden');
+            }
+        }
+    });
+}
+window.switchCamNangTab = switchCamNangTab;
 
 // Fallback an toàn cho Modal Quản Lý Bản Thể / Tài Khoản
 if (typeof window.openProfileModal !== 'function') {

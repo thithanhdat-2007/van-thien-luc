@@ -6,50 +6,130 @@
     // ========================================================================
 
     const towerPlayer = {
-        name: "Tiêu Dao Tử",
-        maxHp: 150000,
-        hp: 150000,
-        atk: 22000,
-        def: 9500,
-        critRate: 0.28,      // 28% Bạo kích
-        critMultiplier: 2.2, // x2.2 sát thương bạo kích
-        dodgeRate: 0.15,     // 15% Né tránh
-        cp: 520000,
-        _stones: 18500,
-        _tuvi: 96000,
+        get name() {
+            const s = window.GameState || window.state;
+            return s?.name || s?.characterName || "Tiêu Dao Tử";
+        },
+        set name(v) {},
+        get maxHp() {
+            const s = window.GameState || window.state;
+            return Math.max(500, Number(s?.maxHp ?? s?.baseStats?.hp ?? 500));
+        },
+        set maxHp(v) {},
+        get hp() {
+            const s = window.GameState || window.state;
+            const currentHp = Number(s?.hp ?? this.maxHp);
+            return currentHp > 0 ? currentHp : this.maxHp;
+        },
+        set hp(v) {
+            const s = window.GameState || window.state;
+            if (s) s.hp = Math.max(0, Number(v) || 0);
+        },
+        get atk() {
+            const s = window.GameState || window.state;
+            return Math.max(10, Number(s?.baseStats?.atk ?? s?.atk ?? 28));
+        },
+        set atk(v) {},
+        get def() {
+            const s = window.GameState || window.state;
+            return Math.max(5, Number(s?.baseStats?.def ?? s?.def ?? 14));
+        },
+        set def(v) {},
+        get critRate() {
+            const s = window.GameState || window.state;
+            const crit = Number(s?.baseStats?.crit ?? s?.crit ?? 10);
+            return Math.min(0.95, Math.max(0.05, crit / 100));
+        },
+        set critRate(v) {},
+        critMultiplier: 2.0,
+        get dodgeRate() {
+            const s = window.GameState || window.state;
+            const dodge = Number(s?.baseStats?.dodge ?? s?.dodge ?? 5);
+            return Math.min(0.50, Math.max(0.02, dodge / 100));
+        },
+        set dodgeRate(v) {},
+        get cp() {
+            const s = window.GameState || window.state;
+            if (s && s.cp) return Number(s.cp);
+            if (typeof window.getCombatPower === 'function') return window.getCombatPower(s);
+            return Math.round((this.atk * 2) + (this.def * 1.5) + (this.maxHp * 0.1));
+        },
+        set cp(v) {},
         get stones() {
-            if (window.state && typeof window.state.stones !== 'undefined') return window.state.stones;
-            return this._stones;
+            const s = window.GameState || window.state;
+            return Number(s?.spiritStones ?? s?.stones ?? 0);
         },
         set stones(v) {
-            this._stones = v;
-            if (window.state) {
-                window.state.stones = v;
-                if (typeof window.updateHUD === 'function') window.updateHUD();
+            const val = Math.max(0, Number(v) || 0);
+            if (window.GameState) {
+                window.GameState.spiritStones = val;
+                window.GameState.stones = val;
             }
+            if (window.state) window.state.stones = val;
         },
         get tuvi() {
-            if (window.state && typeof window.state.exp !== 'undefined') return window.state.exp;
-            return this._tuvi;
+            const s = window.GameState || window.state;
+            return Number(s?.exp ?? 0);
         },
         set tuvi(v) {
-            this._tuvi = v;
-            if (window.state) {
-                window.state.exp = v;
-                if (typeof window.updateHUD === 'function') window.updateHUD();
-            }
+            const val = Math.max(0, Number(v) || 0);
+            if (window.GameState) window.GameState.exp = val;
+            if (window.state) window.state.exp = val;
+        },
+        mp: 0,
+        maxMp: 100,
+        get element() {
+            const s = window.GameState || window.state || {};
+            const raw = String(s.root?.element || s.spiritualRoot?.element || s.element || 'Kim').toLowerCase();
+            if (raw.includes('wood') || raw.includes('mộc') || raw.includes('moc')) return 'Mộc';
+            if (raw.includes('water') || raw.includes('thủy') || raw.includes('thuy')) return 'Thủy';
+            if (raw.includes('fire') || raw.includes('hỏa') || raw.includes('hoa')) return 'Hỏa';
+            if (raw.includes('earth') || raw.includes('thổ') || raw.includes('tho')) return 'Thổ';
+            return 'Kim';
         },
         equippedSkill: {
             name: "Hỏa Cầu Thuật",
-            triggerChance: 0.25,  // 25% tỷ lệ tung chiêu
-            damageMultiplier: 2.3 // x2.3 sát thương chiêu thức
+            triggerChance: 0.25,
+            damageMultiplier: 2.3
         }
     };
 
-    let towerCurrentFloor = 20;
+    let towerCurrentFloor = 1;
     let isCombatActive = false;
-    let combatTimer = null;
+    let battleTimer = null;
     let isAutoClimbOn = false;
+
+    // QUY LUẬT NGŨ HÀNH TƯƠNG KHẮC:
+    // Kim khắc Mộc | Mộc khắc Thổ | Thổ khắc Thủy | Thủy khắc Hỏa | Hỏa khắc Kim
+    const ELEMENT_CYCLE = {
+        'kim': 'moc',
+        'moc': 'tho',
+        'tho': 'thuy',
+        'thuy': 'hoa',
+        'hoa': 'kim'
+    };
+
+    function normalizeElementKey(elem) {
+        const raw = String(elem || '').toLowerCase();
+        if (raw.includes('kim')) return 'kim';
+        if (raw.includes('mộc') || raw.includes('moc') || raw.includes('wood')) return 'moc';
+        if (raw.includes('thổ') || raw.includes('tho') || raw.includes('earth')) return 'tho';
+        if (raw.includes('thủy') || raw.includes('thuy') || raw.includes('water')) return 'thuy';
+        if (raw.includes('hỏa') || raw.includes('hoa') || raw.includes('fire')) return 'hoa';
+        return 'kim';
+    }
+
+    function getElementRelation(atkElem, defElem) {
+        const a = normalizeElementKey(atkElem);
+        const d = normalizeElementKey(defElem);
+        if (ELEMENT_CYCLE[a] === d) {
+            return { factor: 1.25, label: 'Tương Khắc (+25% Sát Thương)' };
+        }
+        if (ELEMENT_CYCLE[d] === a) {
+            return { factor: 0.85, label: 'Bị Khắc (-15% Sát Thương)' };
+        }
+        return { factor: 1.0, label: 'Bình Hòa' };
+    }
 
     const BOSS_TIER_NAMES = [
         "U Ảnh Ám Lang", "Độc Vĩ Hắc Hạt", "Xích Diễm Ma Bọ",
@@ -64,60 +144,81 @@
         50: "Vô Cực Huyết Ma Thần (Bất Hủ Ma Tổ)"
     };
 
+    const BOSS_ELEMENT_LIST = ['Kim', 'Mộc', 'Thủy', 'Hỏa', 'Thổ'];
+
     function createFloorBoss(floor) {
-        const baseHp = 30000 + (floor * 3500);
-        const baseAtk = 3000 + (floor * 300);
-        const baseDef = 1800 + (floor * 200);
+        const isOverlord = (floor % 10 === 0);
+        const isElite = (!isOverlord && floor % 5 === 0);
+        const scale = Math.pow(1.15, floor - 1);
+        const baseHp = Math.round(350 * scale * (isOverlord ? 1.8 : (isElite ? 1.4 : 1)));
+        const baseAtk = Math.round(22 * scale * (isOverlord ? 1.45 : (isElite ? 1.25 : 1)));
+        const baseDef = Math.round(11 * scale * (isOverlord ? 1.3 : (isElite ? 1.2 : 1)));
         const cp = Math.round((baseAtk * 2) + (baseDef * 1.5) + (baseHp * 0.1));
 
         let bossName = MILESTONE_BOSS_TITLES[floor];
         if (!bossName) {
-            if (floor % 10 === 0) {
+            if (isOverlord) {
                 bossName = `Thái Cổ Ma Hoàng (Tầng ${floor})`;
+            } else if (isElite) {
+                const subIndex = ((floor - 1) % BOSS_TIER_NAMES.length);
+                bossName = `[Tinh Anh] ${BOSS_TIER_NAMES[subIndex]} (Tầng ${floor})`;
             } else {
                 const subIndex = ((floor - 1) % BOSS_TIER_NAMES.length);
                 bossName = `${BOSS_TIER_NAMES[subIndex]} (Tầng ${floor})`;
             }
         }
 
+        const bossElement = BOSS_ELEMENT_LIST[(floor - 1) % BOSS_ELEMENT_LIST.length];
+
         return {
             floor: floor,
             name: bossName,
+            isOverlord: isOverlord,
+            isElite: isElite,
+            specialSkill: isOverlord ? "Cuồng Bạo Huyết Ma" : (isElite ? "Huyền Vũ Hộ Thuẫn" : null),
+            element: bossElement,
             maxHp: baseHp,
             hp: baseHp,
             atk: baseAtk,
+            baseAtk: baseAtk,
             def: baseDef,
-            critRate: 0.10,
+            critRate: isOverlord ? 0.20 : (isElite ? 0.14 : 0.08),
             critMultiplier: 1.5,
-            dodgeRate: 0.06,
+            dodgeRate: isOverlord ? 0.10 : (isElite ? 0.07 : 0.04),
+            isEnraged: false,
+            shieldTurns: 0,
+            hasShieldUsed: false,
             cp: cp,
-            rewardStones: floor * 12,
-            rewardTuvi: floor * 40
+            rewardStones: Math.max(50, floor * 35),
+            rewardTuvi: Math.max(100, floor * 80),
+            rewardJade: Math.max(2, Math.floor(floor / 2))
         };
     }
 
     let towerCurrentBoss = createFloorBoss(towerCurrentFloor);
 
     function syncTowerPlayerStats() {
-        if (window.state) {
-            if (window.state.characterName || window.state.name) {
-                towerPlayer.name = window.state.characterName || window.state.name;
+        const s = window.GameState || window.state;
+        if (s) {
+            towerCurrentFloor = Math.max(1, Number(s.towerFloor) || 1);
+            towerCurrentBoss = createFloorBoss(towerCurrentFloor);
+            if (towerPlayer.hp <= 0) {
+                towerPlayer.hp = towerPlayer.maxHp;
             }
-            if (typeof window.getActivePlayerStats === 'function' && typeof window.calculateCP === 'function') {
-                const liveStats = window.getActivePlayerStats();
-                const liveCp = window.calculateCP(liveStats);
-                const prevRatio = towerPlayer.maxHp > 0 ? (towerPlayer.hp / towerPlayer.maxHp) : 1;
-                towerPlayer.maxHp = Math.max(150000, Number(liveStats.core?.maxHp || 0) * 15);
-                towerPlayer.hp = Math.max(1, Math.round(towerPlayer.maxHp * prevRatio));
-                towerPlayer.atk = Math.max(22000, Number(liveStats.combat?.atk || 0) * 20);
-                towerPlayer.def = Math.max(9500, Number(liveStats.combat?.def || 0) * 18);
-                towerPlayer.critRate = Math.min(0.75, Math.max(0.28, (Number(liveStats.combat?.critRate || 28)) / 100));
-                towerPlayer.dodgeRate = Math.min(0.50, Math.max(0.15, (Number(liveStats.combat?.dodge || 15)) / 100));
-                towerPlayer.cp = Math.max(520000, liveCp * 120, Number(window.state.combatPower || 0));
-            } else if (window.state.combatPower) {
-                towerPlayer.cp = Math.max(towerPlayer.cp, window.state.combatPower);
-                towerPlayer.atk = Math.round(towerPlayer.cp * 0.05);
-                towerPlayer.def = Math.round(towerPlayer.cp * 0.025);
+
+            // Đồng bộ kỹ năng chiến đấu từ GameState
+            const equippedSkillName = s.equipped?.skill;
+            const learned = Array.isArray(s.learnedSkills) ? s.learnedSkills.find(sk => sk.name === equippedSkillName) : null;
+            if (learned) {
+                const lv = Math.max(1, Number(learned.level) || 1);
+                towerPlayer.equippedSkill = {
+                    name: learned.name,
+                    martialType: learned.martialType || (learned.type === 'martial' ? 'burst' : 'passive'),
+                    triggerChance: Number(learned.triggerChance) || (0.25 + lv * 0.03),
+                    damageMultiplier: Number(learned.burstMult) || (2.0 + lv * 0.3),
+                    lifestealPercent: Number(learned.lifestealPercent) || (learned.martialType === 'lifesteal' ? 0.35 : 0),
+                    stunChance: Number(learned.stunChance) || (learned.martialType === 'stun' ? 0.45 : (learned.martialType === 'divine' ? 0.60 : 0))
+                };
             }
         }
         const nameEl = document.getElementById('player-fighter-name');
@@ -127,15 +228,17 @@
     let towerV4Frame = null;
 
     function getTowerSyncPayload() {
-        const s = window.state || {};
+        const s = window.state || window.GameState?._rawState || window.GameState || {};
         const effStats = typeof window.recalculateAllStats === 'function'
             ? window.recalculateAllStats()
             : (typeof window.getEffectiveStats === 'function' ? window.getEffectiveStats() : s);
-        const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0,Number(value)) : fallback;
+        const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : fallback;
 
         const currentRealm = (typeof window.REALMS !== 'undefined' && Array.isArray(window.REALMS))
             ? (window.REALMS[s.realmIndex] || window.REALMS[0])
             : { name: "Luyện Khí Kỳ" };
+        const realmEl = typeof document !== 'undefined' ? document.getElementById('realm-badge') : null;
+        const realmDisplay = (realmEl && realmEl.textContent.trim()) || currentRealm?.name || "Luyện Khí Kỳ";
 
         const savedTower = s.demonTower || s.towerData || {};
         const currentFloor = Math.max(1, Math.floor(Number(s.towerFloor) || 1));
@@ -143,45 +246,60 @@
             0,
             Number(savedTower.highestCleared ?? (currentFloor - 1))
         );
-        const selectedFloor = Math.min(50, Math.max(1, Number(savedTower.selectedFloor || currentFloor)));
+        const selectedFloor = Math.min(50, Math.max(1, Number(savedTower.selectedFloor || Math.min(50, highestCleared + 1) || currentFloor)));
         const selectedTier = Math.min(5, Math.max(1, Math.ceil(selectedFloor / 10)));
 
         let elem = 'Kim';
-        if (s.spiritualRoot?.element) {
-            const elKey = String(s.spiritualRoot.element).toLowerCase();
-            if (elKey.includes('wood') || elKey.includes('mộc')) elem = 'Moc';
-            else if (elKey.includes('water') || elKey.includes('thủy')) elem = 'Thuy';
-            else if (elKey.includes('fire') || elKey.includes('hỏa')) elem = 'Hoa';
-            else if (elKey.includes('earth') || elKey.includes('thổ')) elem = 'Tho';
+        const rawElem = s.spiritualRoot?.element || s.activeElement || s.element;
+        if (rawElem) {
+            const elKey = String(rawElem).toLowerCase();
+            if (elKey.includes('wood') || elKey.includes('mộc') || elKey.includes('moc')) elem = 'Moc';
+            else if (elKey.includes('water') || elKey.includes('thủy') || elKey.includes('thuy')) elem = 'Thuy';
+            else if (elKey.includes('fire') || elKey.includes('hỏa') || elKey.includes('hoa')) elem = 'Hoa';
+            else if (elKey.includes('earth') || elKey.includes('thổ') || elKey.includes('tho')) elem = 'Tho';
             else elem = 'Kim';
         }
 
+        const hasForgedArtifact = Boolean(
+            (Array.isArray(s.inventory) && s.inventory.some(i => i.equipped && (i.type === 'Pháp Bảo' || i.type === 'weapon' || i.slot === 'weapon' || i.slot === 'armor' || i.forged))) ||
+            (s.equipped && Object.values(s.equipped).some(val => Boolean(val)))
+        );
+
+        const maxHp = Math.max(1, finite(effStats.maxHp ?? effStats.hp ?? s.maxHp, 500));
+        const atk = Math.max(1, finite(effStats.atk ?? s.atk, 28));
+        const def = Math.max(0, finite(effStats.def ?? s.def, 14));
+        const crit = Math.min(100, finite(effStats.crit ?? s.crit, 10));
+        const eva = Math.min(100, finite(effStats.dodge ?? s.dodge, 5));
+        const cp = finite(effStats.combatPower ?? effStats.cp ?? s.combatPower ?? window.GameState?.ChienLuc, Math.round(atk * 2 + def * 1.5 + maxHp * 0.1));
+
         return {
-            characterName: s.player?.name || s.characterName || s.name || "Tiêu Dao Tử",
-            playerName: s.player?.name || s.characterName || s.name || "Tiêu Dao Tử",
-            realmName: currentRealm?.name || "Luyện Khí Kỳ",
-            linhThach: Number(s.stones) || 0,
-            tuVi: Number(s.exp) || 0,
+            characterName: s.player?.name || s.playerName || s.characterName || s.name || "Tiêu Dao Tử",
+            playerName: s.player?.name || s.playerName || s.characterName || s.name || "Tiêu Dao Tử",
+            realmName: realmDisplay,
+            linhThach: Number(s.stones ?? window.GameState?.LinhThach ?? window.GameState?.stones ?? 0) || 0,
+            tuVi: Number(s.exp ?? window.GameState?.TuVi ?? window.GameState?.exp ?? 0) || 0,
             highestCleared: highestCleared,
             selectedFloor: selectedFloor,
             selectedTier: selectedTier,
             hero: {
-                name: s.player?.name || s.characterName || s.name || 'Tiêu Dao Tử',
-                realmIndex: Math.max(0,Math.floor(finite(s.realmIndex))),
+                name: s.player?.name || s.playerName || s.characterName || s.name || 'Tiêu Dao Tử',
+                realmIndex: Math.max(0, Math.floor(finite(s.realmIndex))),
                 tier: currentRealm.realmTier || (Number.isFinite(currentRealm.majorIndex) ? currentRealm.majorIndex + 1 : effStats.tier || 1),
-                maxHp: Math.max(1,finite(effStats.maxHp ?? s.maxHp,1)),
-                hp: Math.max(1,finite(effStats.maxHp ?? s.maxHp,1)),
+                maxHp: maxHp,
+                hp: maxHp,
                 mp: 0,
                 maxMp: 100, // Kiếm Nguyên is a combat gauge, not the player's MP pool.
-                atk: finite(effStats.atk ?? s.atk),
-                def: finite(effStats.def ?? s.def),
-                crit: Math.min(100,finite(effStats.crit ?? s.crit)),
+                atk: atk,
+                def: def,
+                crit: crit,
                 critDmg: 1.5 + finite(effStats.critDamageBonus),
-                eva: Math.min(100,finite(effStats.dodge ?? s.dodge)),
-                armorPen: finite(effStats.armorPen),
-                critResist: finite(effStats.critResist),
+                eva: eva,
+                cp: cp,
+                armorPen: finite(effStats.armorPen ?? s.armorPen),
+                critResist: finite(effStats.critResist ?? s.critResist),
                 element: elem,
-                swordCount: Math.min(36, Math.max(6, 6 + Math.floor((s.realmIndex || 0) * 1.5)))
+                hasForgedArtifact: hasForgedArtifact,
+                swordCount: Number(savedTower.swordCount) || Math.min(36, Math.max(6, 6 + Math.floor((s.realmIndex || 0) * 1.5)))
             },
             activeManualId: savedTower.activeManualId || "thanh_lien_kiem_dien",
             selectedUltId: savedTower.selectedUltId ?? 2,
@@ -192,10 +310,11 @@
     }
 
     function sendTowerSyncData() {
-        if (!towerV4Frame || !towerV4Frame.contentWindow) return;
+        const iframe = document.getElementById('tran-yeu-thap-iframe') || towerV4Frame;
+        if (!iframe || !iframe.contentWindow) return;
         const payload = getTowerSyncPayload();
         try {
-            towerV4Frame.contentWindow.postMessage({
+            iframe.contentWindow.postMessage({
                 type: 'van-thien-luc:tower-init-data',
                 data: payload
             }, '*');
@@ -205,8 +324,19 @@
     }
 
     function handleTowerSyncMessage(payload) {
-        if (!payload || !window.state) return;
-        const s = window.state;
+        if (!payload) return;
+        const s = window.state || window.GameState?._rawState || window.GameState;
+        if (!s) return;
+
+        // Trọng Thương khi thua tháp
+        if (payload.isInjured) {
+            s.isInjured = true;
+            if (window.state && window.state !== s) window.state.isInjured = true;
+            if (typeof window.updateHUD === 'function') window.updateHUD();
+            if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast('⚠️ Thua trận Trấn Yêu Tháp! Rơi vào trạng thái Trọng Thương (-70% Tụ Khí)! Hãy Vận Công Điều Tức (15s)!', 'danger');
+            }
+        }
 
         // 1. Linh Thạch
         if (payload.linhThachGained && payload.linhThachGained > 0) {
@@ -214,9 +344,11 @@
                 window.addSpiritStones(payload.linhThachGained);
             } else {
                 s.stones = (Number(s.stones) || 0) + payload.linhThachGained;
+                if (window.state && window.state !== s) window.state.stones = s.stones;
             }
         } else if (payload.linhThachCost && payload.linhThachCost > 0) {
             s.stones = Math.max(0, (Number(s.stones) || 0) - payload.linhThachCost);
+            if (window.state && window.state !== s) window.state.stones = s.stones;
         }
 
         // 2. Tu Vi
@@ -225,6 +357,7 @@
                 window.addExp(payload.tuViGained);
             } else {
                 s.exp = (Number(s.exp) || 0) + payload.tuViGained;
+                if (window.state && window.state !== s) window.state.exp = s.exp;
             }
         }
 
@@ -235,11 +368,19 @@
             if (payload.floor >= 50) {
                 s.hasClearedTower50 = true;
             }
+            if (window.state && window.state !== s) {
+                window.state.towerFloor = s.towerFloor;
+                window.state.hasClearedTower50 = s.hasClearedTower50;
+            }
         }
         if (payload.highestCleared !== undefined) {
             s.towerFloor = Math.max(Number(s.towerFloor) || 1, payload.highestCleared + 1);
             if (payload.highestCleared >= 50) {
                 s.hasClearedTower50 = true;
+            }
+            if (window.state && window.state !== s) {
+                window.state.towerFloor = s.towerFloor;
+                window.state.hasClearedTower50 = s.hasClearedTower50;
             }
         }
 
@@ -248,29 +389,47 @@
         if (payload.highestCleared !== undefined) s.demonTower.highestCleared = payload.highestCleared;
         if (payload.selectedFloor !== undefined) s.demonTower.selectedFloor = payload.selectedFloor;
         if (payload.selectedTier !== undefined) s.demonTower.selectedTier = payload.selectedTier;
+        if (payload.swordCount !== undefined) s.demonTower.swordCount = payload.swordCount;
         if (payload.capturedSouls) s.demonTower.capturedSouls = payload.capturedSouls;
         if (payload.lootBag) s.demonTower.lootBag = payload.lootBag;
         if (payload.activeManualId) s.demonTower.activeManualId = payload.activeManualId;
         if (payload.selectedUltId !== undefined) s.demonTower.selectedUltId = payload.selectedUltId;
-        if (payload.activeGuardian) s.demonTower.activeGuardian = payload.activeGuardian;
+        if (payload.activeGuardian !== undefined) s.demonTower.activeGuardian = payload.activeGuardian;
+        if (window.state && window.state !== s) window.state.demonTower = s.demonTower;
 
         // 5. Thêm vật phẩm rơi vào Túi đồ chính của nhân vật
         if (payload.droppedItem && payload.droppedItem.name) {
-            if (!Array.isArray(s.inventory)) s.inventory = [];
             const drop = payload.droppedItem;
-            const existing = s.inventory.find(i => i.id === drop.id || i.name === drop.name);
-            if (existing) {
-                existing.count = (Number(existing.count) || 1) + 1;
+            const itemObj = {
+                id: drop.id || `tower_item_${Date.now()}`,
+                name: drop.name,
+                icon: drop.icon || '🎁',
+                type: drop.type || 'Đạo Cụ Trấn Yêu',
+                quality: drop.rarity === 'Tien' ? 'legendary' : (drop.rarity === 'Thien' ? 'epic' : 'rare'),
+                desc: drop.desc || 'Chiến lợi phẩm đoạt được từ Trấn Yêu Tháp',
+                quantity: 1,
+                count: 1
+            };
+            if (typeof window.addItemToInventory === 'function') {
+                window.addItemToInventory(itemObj, 1);
             } else {
-                s.inventory.push({
-                    id: drop.id || `tower_item_${Date.now()}`,
-                    name: drop.name,
-                    icon: drop.icon || '🎁',
-                    type: drop.type || 'Đạo Cụ Trấn Yêu',
-                    quality: drop.rarity === 'Tien' ? 'legendary' : (drop.rarity === 'Thien' ? 'epic' : 'rare'),
-                    desc: drop.desc || 'Chiến lợi phẩm đoạt được từ Trấn Yêu Tháp',
-                    count: 1
-                });
+                if (!Array.isArray(s.inventory)) s.inventory = [];
+                const existing = s.inventory.find(i => i.id === drop.id || i.name === drop.name);
+                if (existing) {
+                    existing.quantity = (Number(existing.quantity || existing.count) || 1) + 1;
+                    existing.count = existing.quantity;
+                } else {
+                    s.inventory.push(itemObj);
+                }
+                if (window.state && window.state !== s && Array.isArray(window.state.inventory)) {
+                    const ex2 = window.state.inventory.find(i => i.id === drop.id || i.name === drop.name);
+                    if (ex2) {
+                        ex2.quantity = (Number(ex2.quantity || ex2.count) || 1) + 1;
+                        ex2.count = ex2.quantity;
+                    } else {
+                        window.state.inventory.push(itemObj);
+                    }
+                }
             }
         }
 
@@ -278,69 +437,112 @@
         if (payload.action === 'victory') {
             if (typeof window.addLog === 'function') {
                 const dropTxt = payload.droppedItem ? ` & nhặt được [${payload.droppedItem.name}]` : '';
-                window.addLog(`🗼 [Trấn Yêu Tháp] Trảm diệt Yêu Ma tầng ${payload.floor}! Thu hoạch +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi${dropTxt}.`, 'reward');
+                window.addLog(`🗼 <span class="text-rose-400 font-bold">[Trấn Yêu Tháp]</span> Trảm diệt Yêu Ma tầng ${payload.floor}! Thu hoạch +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi${dropTxt}.`, 'text-rose-400');
             }
         } else if (payload.action === 'sweep') {
             if (typeof window.addLog === 'function') {
-                window.addLog(`⚡ [Trấn Yêu Tháp] Càn quét tầng ${payload.floor}! Thu về +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi.`, 'reward');
+                window.addLog(`⚡ <span class="text-amber-300 font-bold">[Trấn Yêu Càn Quét]</span> Càn quét tầng ${payload.floor}! Thu về +${Number(payload.linhThachGained || 0).toLocaleString()} Linh Thạch, +${Number(payload.tuViGained || 0).toLocaleString()} Tu Vi.`, 'text-amber-300');
             }
         }
 
         // 7. Đồng bộ HUD và lưu save chính
-        if (typeof window.updateHUD === 'function') window.updateHUD();
-        if (typeof window.updateUI === 'function') window.updateUI();
-        if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (window.GameState && typeof window.GameState.syncFromState === 'function') {
+            window.GameState.syncFromState(s);
+        }
+        if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+        if (typeof window.saveGame === 'function') window.saveGame();
+        else if (typeof window.saveGameState === 'function') window.saveGameState();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
+        else {
+            if (typeof window.updateHUD === 'function') window.updateHUD();
+            if (typeof window.updateUI === 'function') window.updateUI();
+        }
 
         // 8. Nếu là lệnh đóng tháp
         if (payload.action === 'close') {
-            closeDemonTowerModal();
+            if (typeof window.closeDemonTowerModal === 'function') window.closeDemonTowerModal();
+            else closeDemonTowerModal();
         }
     }
 
     window.addEventListener('message', (event) => {
-        if (!event.data || event.source !== towerV4Frame?.contentWindow) return;
+        if (!event.data || typeof event.data !== 'object') return;
+        const iframe = document.getElementById('tran-yeu-thap-iframe');
+        if (event.source !== iframe?.contentWindow && event.source !== towerV4Frame?.contentWindow && window.parent !== window) return;
         if (event.data.type === 'van-thien-luc:tower-close') {
             closeDemonTowerModal();
         } else if (event.data.type === 'van-thien-luc:tower-ready') {
             sendTowerSyncData();
         } else if (event.data.type === 'van-thien-luc:tower-sync') {
             handleTowerSyncMessage(event.data.payload);
+        } else if (event.data.type === 'van-thien-luc:custom-battle-result') {
+            if (typeof window.handleCustomBattleOutcome === 'function') {
+                window.handleCustomBattleOutcome(event.data.result, event.data.battle);
+            }
         }
     });
 
     function openDemonTowerModal() {
-        if (towerV4Frame) return;
-        closeAllFeaturePopups();
-        if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
-        towerV4Frame = document.createElement('iframe');
-        towerV4Frame.id = 'tower-v4-frame';
-        towerV4Frame.title = 'Trấn Yêu Tháp';
-        towerV4Frame.src = './tran_yeu_thap_v4.html';
-        towerV4Frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483646;background:#020307;';
-        
-        towerV4Frame.onload = () => {
-            setTimeout(sendTowerSyncData, 120);
-        };
+        const s = window.GameState || window.state || (typeof state !== 'undefined' ? state : null);
+        if (s?.isInjured || (s?.heavyInjuryUntil && Date.now() < s.heavyInjuryUntil)) {
+            if (typeof window.showXianxiaToast === 'function') {
+                window.showXianxiaToast('⚠️ Kinh mạch đang bị Trọng Thương! Cần Vận Công Điều Tức (15s) hoặc dùng Hồi Huyết Đan/Hộ Tâm Đan trước khi vào Trấn Yêu Tháp!', 'danger');
+            } else if (typeof window.addLog === 'function') {
+                window.addLog('⚠️ <span class="text-rose-400 font-bold">[Trọng Thương Bế Tắc]</span> Ngươi đang bị Trọng Thương, không thể vào Trấn Yêu Tháp!', 'text-rose-400');
+            }
+            return;
+        }
 
-        document.body.appendChild(towerV4Frame);
-        document.body.classList.add('tower-v4-active');
+        if (typeof closeAllDropups === 'function') closeAllDropups();
+        if (typeof closeAllFeaturePopups === 'function') closeAllFeaturePopups();
+        if (typeof closeAllModals === 'function') closeAllModals();
+        if (typeof window.hideMainScreenHUD === 'function') window.hideMainScreenHUD();
+
+        const modal = document.getElementById('modal-tran-yeu-thap');
+        if (modal) {
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.style.setProperty('pointer-events', 'auto', 'important');
+            modal.style.setProperty('z-index', '9800', 'important');
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+        }
+        sendTowerSyncData();
+        const iframe = document.getElementById('tran-yeu-thap-iframe');
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.postMessage({ type: 'van-thien-luc:tower-resume' }, '*');
+            } catch (e) {}
+        }
     }
 
     function closeDemonTowerModal() {
+        if (battleTimer) {
+            clearInterval(battleTimer);
+            battleTimer = null;
+        }
+        if (window.battleTimer) {
+            clearInterval(window.battleTimer);
+            window.battleTimer = null;
+        }
+        isCombatActive = false;
+
+        const iframe = document.getElementById('tran-yeu-thap-iframe');
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.postMessage({ type: 'van-thien-luc:tower-pause' }, '*');
+            } catch (e) {}
+        }
+
         towerV4Frame?.remove();
         towerV4Frame = null;
         document.body.classList.remove('tower-v4-active');
         const el = document.getElementById('modal-tran-yeu-thap');
         if (el) {
             el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
             el.classList.add('hidden');
             el.classList.remove('active');
         }
-        if (combatTimer) {
-            clearInterval(combatTimer);
-            combatTimer = null;
-        }
-        isCombatActive = false;
         const btn = document.getElementById('btn-challenge');
         if (btn) btn.disabled = false;
         const btnLabel = document.getElementById('btn-challenge-label');
@@ -348,8 +550,12 @@
         if (typeof window.showMainScreenHUD === 'function') window.showMainScreenHUD();
     }
 
-    // Legacy buttons enter the same paced arena; never use a second combat engine.
-    function handleChallengeClick() { openDemonTowerModal(); }
+    function handleChallengeClick() {
+        if (!isCombatActive) {
+            syncTowerPlayerStats();
+            startTowerCombat(towerPlayer, towerCurrentBoss);
+        }
+    }
 
     function startTowerCombat(playerFighter, bossFighter) {
         isCombatActive = true;
@@ -359,17 +565,31 @@
         if (label) label.textContent = "ĐANG TRẢM MA...";
 
         bossFighter.hp = bossFighter.maxHp;
+        bossFighter.isEnraged = false;
+        bossFighter.shieldTurns = 0;
+        bossFighter.hasShieldUsed = false;
+        if (bossFighter.baseAtk) bossFighter.atk = bossFighter.baseAtk;
+        playerFighter.mp = 0;
         updateHPDisplays();
 
         const scrollBox = document.getElementById('combat-log-scroll');
         if (scrollBox) scrollBox.innerHTML = '';
-        appendLog(`⚔️ <b>Trận chiến Tầng ${bossFighter.floor} khai hỏa!</b>`, 'log-entry--round');
+        const elemRel = getElementRelation(playerFighter.element, bossFighter.element);
+        appendLog(`⚔️ <b>Trận chiến Tầng ${bossFighter.floor} khai hỏa!</b> <span class="text-amber-300 font-bold">[${playerFighter.element || 'Kim'} vs ${bossFighter.element || 'Mộc'}: ${elemRel.label}]</span>`, 'log-entry--round');
 
         let turn = 1;
         const maxTurns = 50;
 
-        if (combatTimer) clearInterval(combatTimer);
-        combatTimer = setInterval(() => {
+        // Triệt tiêu giật lag: Đảm bảo DUY NHẤT 1 battleTimer chạy, luôn clearInterval trước khi tạo mới
+        if (battleTimer) {
+            clearInterval(battleTimer);
+            battleTimer = null;
+        }
+        if (window.battleTimer) {
+            clearInterval(window.battleTimer);
+            window.battleTimer = null;
+        }
+        battleTimer = setInterval(() => {
             if (turn > maxTurns || playerFighter.hp <= 0 || bossFighter.hp <= 0) {
                 finishCombat(playerFighter, bossFighter);
                 return;
@@ -407,7 +627,20 @@
     }
 
     function executeStrike(attacker, defender, isPlayer) {
-        // Check Né Tránh
+        // Tự động tích lũy tiến độ Nhiệm Vụ Tông Môn (Trảm Yêu Trừ Ma)
+        if (isPlayer && typeof window.progressSectQuest === 'function') {
+            window.progressSectQuest('tower', 10);
+        }
+
+        // 1. Kiểm tra Choáng (Stun)
+        if (attacker.isStunned) {
+            attacker.isStunned = false;
+            appendLog(`⚡ [Choáng] <b>${attacker.name}</b> bị lôi chấn choáng váng, không thể ra chiêu hiệp này!`, 'log-entry--stun text-amber-400');
+            triggerFloatingDamage('CHOÁNG!', 'damage-number-pop--stun', isPlayer ? 'player' : 'boss');
+            return;
+        }
+
+        // 2. Check Né Tránh
         if (Math.random() < defender.dodgeRate) {
             appendLog(`💨 [Né Tránh] ${defender.name} nhanh như chớp né tránh công kích!`, 'log-entry--dodge');
             triggerFloatingDamage('Né Tránh!', 'damage-number-pop--dodge', isPlayer ? 'boss' : 'player');
@@ -415,32 +648,89 @@
             return;
         }
 
-        // Check Kỹ Năng / Vũ Kỹ
+        // 3. Check Linh Lực & Vũ Kỹ
         let skillMultiplier = 1.0;
-        if (isPlayer && attacker.equippedSkill) {
-            if (Math.random() < attacker.equippedSkill.triggerChance) {
-                skillMultiplier = attacker.equippedSkill.damageMultiplier;
-                appendLog(`🔥 [Vũ Kỹ] ${attacker.name} kết ấn thi triển <b>[${attacker.equippedSkill.name}]</b>!`, 'log-entry--skill');
-                triggerFloatingDamage(`Vũ Kỹ: ${attacker.equippedSkill.name}!`, 'damage-number-pop--skill', 'boss');
+        let isSkillTriggered = false;
+        let didStun = false;
+
+        if (isPlayer) {
+            // Tích lũy linh lực mỗi đòn đánh thường (+34 MP)
+            attacker.mp = Math.min(100, (Number(attacker.mp) || 0) + 34);
+            if (attacker.mp >= 100) {
+                isSkillTriggered = true;
+                attacker.mp = 0; // Đầy thanh xả toàn bộ
+                const skillName = attacker.equippedSkill?.name || 'Vạn Kiếm Quy Tông';
+                skillMultiplier = Number(attacker.equippedSkill?.damageMultiplier) || 2.8;
+                appendLog(`🔥 <b class="text-purple-400">[Võ Kỹ Khai Thiên]</b> ${attacker.name} linh lực bùng nổ, thi triển <b>[${skillName}]</b>!`, 'log-entry--skill');
+                triggerFloatingDamage(`Võ Kỹ: ${skillName}!`, 'damage-number-pop--skill', 'boss');
+
+                if (attacker.equippedSkill?.stunChance && Math.random() < attacker.equippedSkill.stunChance) {
+                    defender.isStunned = true;
+                    didStun = true;
+                }
             }
         }
 
-        // Tính sát thương
-        const baseDmg = Math.max(120, (attacker.atk - defender.def)) * skillMultiplier;
+        // 4. Tính toán Ngũ Hành Tương Khắc (+25% hoặc -15%)
+        const elemRel = getElementRelation(attacker.element, defender.element);
+        const elemMultiplier = elemRel.factor;
+
+        // 5. Boss Cơ Chế Đặc Biệt: Hộ Thuẫn (Elite) & Cuồng Bạo (Overlord)
+        let shieldMultiplier = 1.0;
+        if (defender.isElite && !defender.hasShieldUsed && defender.hp <= (defender.maxHp * 0.5)) {
+            defender.hasShieldUsed = true;
+            defender.shieldTurns = 2;
+            appendLog(`🛡️ <b class="text-sky-300 font-bold">[Huyền Vũ Hộ Thuẫn]</b> Tinh Anh yêu thú ngưng kết chân nguyên, giảm 50% sát thương nhận vào trong 2 hiệp!`, 'log-entry--skill text-sky-400 font-bold');
+            triggerFloatingDamage(`HUYỀN VŨ HỘ THUẪN!`, 'damage-number-pop--shield', 'boss');
+        }
+
+        if (defender.shieldTurns > 0) {
+            shieldMultiplier = 0.5;
+            defender.shieldTurns--;
+            appendLog(`🛡️ [Hộ Thuẫn Cương Khí] Cương khí cản phá 50% sát thương! (Còn ${defender.shieldTurns} hiệp)`, 'log-entry--dodge text-sky-300');
+            triggerFloatingDamage(`-50% Sát Thương`, 'damage-number-pop--shield', isPlayer ? 'boss' : 'player');
+        }
+
+        if (!isPlayer && attacker.isOverlord && !attacker.isEnraged && attacker.hp <= (attacker.maxHp * 0.3)) {
+            attacker.isEnraged = true;
+            attacker.atk = Math.round(attacker.atk * 1.5);
+            appendLog(`🩸 <b class="text-rose-500 font-black animate-pulse">[Cuồng Bạo Huyết Ma]</b> Ma Hoàng HP dưới 30%, bùng phát ma hỏa tăng 50% Công kích!`, 'log-entry--crit text-rose-400 font-bold');
+            triggerFloatingDamage(`CUỒNG BẠO +50% CÔNG!`, 'damage-number-pop--crit', 'boss');
+        }
+
+        // 6. Tính toán Sát Thương Cuối Cùng
+        const rawDmg = Math.max(120, (attacker.atk - defender.def));
         const isCrit = Math.random() < attacker.critRate;
-        const finalDmg = Math.round(baseDmg * (isCrit ? attacker.critMultiplier : 1.0));
+        const critMultiplier = isCrit ? attacker.critMultiplier : 1.0;
+        const finalDmg = Math.max(1, Math.round(rawDmg * skillMultiplier * elemMultiplier * shieldMultiplier * critMultiplier));
 
         // Trừ HP & Cập nhật thanh máu động
         defender.hp = Math.max(0, defender.hp - finalDmg);
+
+        // Hồi máu hút máu nếu có
+        if (isPlayer && isSkillTriggered && attacker.equippedSkill?.lifestealPercent) {
+            const lifestealHp = Math.round(finalDmg * attacker.equippedSkill.lifestealPercent);
+            attacker.hp = Math.min(attacker.maxHp, attacker.hp + lifestealHp);
+            appendLog(`🩸 [Hút Máu] Huyết quang lượn quanh, hút <b>+${lifestealHp.toLocaleString()} HP</b> hồi phục chân thân!`, 'log-entry--heal text-emerald-400');
+            triggerFloatingDamage(`+${lifestealHp.toLocaleString()} HP`, 'damage-number-pop--heal', 'player');
+        }
+
+        if (didStun) {
+            appendLog(`⚡ [Lôi Định] Kích phát thần lôi, <b>${defender.name}</b> rơi vào trạng thái CHOÁNG hiệp sau!`, 'log-entry--stun text-amber-300');
+        }
+
         updateHPDisplays();
 
         // Hiệu ứng Sprite chớp đỏ mờ, rung nhẹ & kiếm khí vệt chém
         triggerSpriteHurt(isPlayer ? 'boss' : 'player', isCrit);
 
-        // Floating Damage Number với vật lý trọng lực
+        // Floating Damage Number với màu phân biệt chuẩn thị giác
         if (isCrit) {
             triggerFloatingDamage(`⚡ BẠO KÍCH! -${finalDmg.toLocaleString()}`, 'damage-number-pop--crit', isPlayer ? 'boss' : 'player');
             appendLog(`💥 [Bạo Kích] ${attacker.name} đánh trúng tử huyệt, bạo kích <b>${finalDmg.toLocaleString()}</b> sát thương!`, 'log-entry--crit');
+        } else if (isSkillTriggered) {
+            triggerFloatingDamage(`-${finalDmg.toLocaleString()}`, 'damage-number-pop--skill', isPlayer ? 'boss' : 'player');
+            appendLog(`⚔️ ${attacker.name} tung chiêu uy lực, trảm <b>${finalDmg.toLocaleString()}</b> sát thương.`, isPlayer ? 'log-entry--player' : 'log-entry--boss');
         } else {
             triggerFloatingDamage(`-${finalDmg.toLocaleString()}`, 'damage-number-pop--normal', isPlayer ? 'boss' : 'player');
             appendLog(`⚔️ ${attacker.name} đánh ra một kích, gây <b>${finalDmg.toLocaleString()}</b> sát thương.`, isPlayer ? 'log-entry--player' : 'log-entry--boss');
@@ -448,8 +738,14 @@
     }
 
     function finishCombat(playerObj, bossObj) {
-        clearInterval(combatTimer);
-        combatTimer = null;
+        if (battleTimer) {
+            clearInterval(battleTimer);
+            battleTimer = null;
+        }
+        if (window.battleTimer) {
+            clearInterval(window.battleTimer);
+            window.battleTimer = null;
+        }
         isCombatActive = false;
         const btnChallenge = document.getElementById('btn-challenge');
         if (btnChallenge) btnChallenge.disabled = false;
@@ -458,14 +754,53 @@
 
         if (bossObj.hp <= 0) {
             // CHIẾN THẮNG
-            playerObj.stones += bossObj.rewardStones;
-            playerObj.tuvi += bossObj.rewardTuvi;
-            appendLog(`🎉 <b>CHIẾN THẮNG TẦNG ${bossObj.floor}!</b> Thu hoạch +${bossObj.rewardStones.toLocaleString()} Linh Thạch, +${bossObj.rewardTuvi.toLocaleString()} Tu Vi!`, 'log-entry--win');
+            const s = window.GameState || window.state;
+            const rewardStones = Number(bossObj.rewardStones || (bossObj.floor * 35));
+            const rewardTuvi = Number(bossObj.rewardTuvi || (bossObj.floor * 80));
+            const rewardJade = Number(bossObj.rewardJade || Math.max(2, Math.floor(bossObj.floor / 2)));
 
-            towerCurrentFloor++;
+            if (s) {
+                s.spiritStones = (Number(s.spiritStones || s.stones) || 0) + rewardStones;
+                s.stones = s.spiritStones;
+                s.immortalJade = (Number(s.immortalJade) || 0) + rewardJade;
+                if (typeof window.addExp === 'function') {
+                    window.addExp(rewardTuvi);
+                } else {
+                    s.exp = (Number(s.exp) || 0) + rewardTuvi;
+                }
+                s.towerFloor = Math.max(Number(s.towerFloor) || 1, bossObj.floor + 1);
+                towerCurrentFloor = s.towerFloor;
+            } else {
+                towerCurrentFloor++;
+            }
+
+            towerPlayer.stones = s ? (s.spiritStones || s.stones) : (towerPlayer.stones + rewardStones);
+            towerPlayer.tuvi = s ? s.exp : (towerPlayer.tuvi + rewardTuvi);
+
+            // Cập nhật ngay các badge tài nguyên
+            const stonesBadge = document.getElementById('player-stones-badge');
+            if (stonesBadge) stonesBadge.textContent = Number(towerPlayer.stones).toLocaleString();
+            const tuviBadge = document.getElementById('player-tuvi-badge');
+            if (tuviBadge) tuviBadge.textContent = Number(towerPlayer.tuvi).toLocaleString();
+
+            appendLog(`🎉 <b>CHIẾN THẮNG TẦNG ${bossObj.floor}!</b> Thu hoạch +${rewardStones.toLocaleString()} Linh Thạch, +${rewardJade} Tiên Ngọc, +${rewardTuvi.toLocaleString()} Tu Vi!`, 'log-entry--win');
+
+            if (typeof window.addLog === 'function') {
+                window.addLog(`🗼 <span class="text-rose-400 font-bold">[Trấn Yêu Tháp]</span> Trảm diệt <strong>${bossObj.name}</strong> Tầng ${bossObj.floor}! Thu hoạch +${rewardStones.toLocaleString()} Linh Thạch, +${rewardJade} Tiên Ngọc, +${rewardTuvi.toLocaleString()} Tu Vi. Đột phá Tầng ${towerCurrentFloor}!`, 'text-rose-400');
+            }
+
+            // GỌI HỆ THỐNG RƠI ĐỒ (LOOT TABLE)
+            if (typeof window.rollLootDrop === 'function') {
+                window.rollLootDrop('tower', bossObj.floor);
+            }
+
+            if (typeof window.saveGame === 'function') window.saveGame();
+            else if (typeof window.saveGameState === 'function') window.saveGameState();
+            if (typeof window.syncAllUI === 'function') window.syncAllUI();
+
             towerCurrentBoss = createFloorBoss(towerCurrentFloor);
             updateArenaUI();
-            showXianxiaToast(`🎉 CHIẾN THẮNG TẦNG ${bossObj.floor}! Trảm sát yêu ma thành công (+${bossObj.rewardStones.toLocaleString()} Linh Thạch, +${bossObj.rewardTuvi.toLocaleString()} Tu Vi). Tiến vào Tầng ${towerCurrentFloor}!`, 'success');
+            showXianxiaToast(`🎉 CHIẾN THẮNG TẦNG ${bossObj.floor}! Trảm sát yêu ma (+${rewardStones.toLocaleString()} Linh Thạch, +${rewardJade} Tiên Ngọc, +${rewardTuvi.toLocaleString()} Tu Vi). Tiến vào Tầng ${towerCurrentFloor}!`, 'success');
         } else {
             // THẤT BẠI
             appendLog(`🩸 <b>THẤT BẠI!</b> [${playerObj.name}] trọng thương, bị khí tức Trấn Yêu Tháp đẩy lùi!`, 'log-entry--lose');
@@ -494,15 +829,25 @@
         slashSvg.style.setProperty('--slash-angle', `${angle}deg`);
         const strokeColor = isCrit ? '#facc15' : '#38bdf8';
         const glowColor = isCrit ? '#ef4444' : '#0284c7';
+        const gradId = `slashGrad-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         slashSvg.innerHTML = `
-            <svg viewBox="0 0 200 200" fill="none" style="width:100%;height:100%;overflow:visible;">
-                <path d="M 20,40 Q 100,100 180,160" stroke="${glowColor}" stroke-width="12" stroke-linecap="round" opacity="0.6" filter="blur(4px)" />
-                <path d="M 20,40 Q 100,100 180,160" stroke="${strokeColor}" stroke-width="5" stroke-linecap="round" />
-                <path d="M 25,45 Q 100,100 175,155" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            <svg viewBox="0 0 240 240" fill="none" style="width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 12px ${glowColor});">
+                <defs>
+                    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="${isCrit ? '#ef4444' : '#0ea5e9'}" stop-opacity="0" />
+                        <stop offset="25%" stop-color="${strokeColor}" stop-opacity="0.9" />
+                        <stop offset="50%" stop-color="#ffffff" stop-opacity="1" />
+                        <stop offset="75%" stop-color="${strokeColor}" stop-opacity="0.9" />
+                        <stop offset="100%" stop-color="${isCrit ? '#f59e0b' : '#38bdf8'}" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+                <!-- Vệt lưỡi liềm kiếm khí cong sắc bén chém ngang qua mục tiêu -->
+                <path d="M 20,45 Q 120,130 220,185 Q 130,100 20,45 Z" fill="url(#${gradId})" />
+                <path d="M 25,48 Q 120,125 215,182" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.95" />
             </svg>
         `;
         slot.appendChild(slashSvg);
-        setTimeout(() => slashSvg.remove(), 340);
+        setTimeout(() => slashSvg.remove(), 280);
     }
 
     function triggerSpriteHurt(target, isCrit = false) {
@@ -520,6 +865,15 @@
         spawnSlashArcTrail(target, isCrit);
 
         if (isCrit) {
+            // Rung khung sàn đấu (#arena-stage-box) 0.2s khi trúng đòn bạo kích
+            const arenaStage = document.getElementById('arena-stage-box');
+            if (arenaStage) {
+                arenaStage.classList.remove('arena-crit-shake');
+                void arenaStage.offsetWidth;
+                arenaStage.classList.add('arena-crit-shake');
+                setTimeout(() => arenaStage.classList.remove('arena-crit-shake'), 200);
+            }
+
             // 60ms Hit-Stop tạo trọng lực va chạm
             const modal = document.getElementById('modal-tran-yeu-thap');
             if (modal) {
@@ -552,13 +906,25 @@
     function triggerFloatingDamage(text, cssClass, target) {
         const anchor = document.getElementById(target === 'player' ? 'player-damage-anchor' : 'boss-damage-anchor');
         if (!anchor) return;
+
+        // Giới hạn tối đa 3 số sát thương bay lên cùng lúc
+        while (anchor.children.length >= 3 && anchor.firstChild) {
+            anchor.removeChild(anchor.firstChild);
+        }
+
         const pop = document.createElement('div');
         pop.className = `damage-number-pop ${cssClass}`;
         const randomDx = (Math.random() - 0.5) * 44;
         pop.style.setProperty('--dx', `${randomDx}px`);
         pop.textContent = text;
         anchor.appendChild(pop);
-        setTimeout(() => pop.remove(), 1250);
+
+        // Tự động xóa thẻ DOM ngay sau 600ms bằng setTimeout
+        setTimeout(() => {
+            if (pop.parentNode === anchor) {
+                anchor.removeChild(pop);
+            }
+        }, 600);
     }
 
     function appendLog(html, className) {
@@ -569,11 +935,34 @@
         div.innerHTML = html;
         scroll.appendChild(div);
 
-        // Giới hạn tối đa 50 dòng DOM tránh tràn bộ nhớ
-        while (scroll.children.length > 50 && scroll.firstElementChild) {
-            scroll.firstElementChild.remove();
+        // Giới hạn danh sách #combat-log-scroll tối đa 20 dòng gần nhất (tự động xóa dòng cũ nhất bằng removeChild)
+        while (scroll.children.length > 20 && scroll.firstElementChild) {
+            scroll.removeChild(scroll.firstElementChild);
         }
         scroll.scrollTop = scroll.scrollHeight;
+    }
+
+    function skipDemonTowerCombat() {
+        if (!isCombatActive) return;
+        if (battleTimer) {
+            clearInterval(battleTimer);
+            battleTimer = null;
+        }
+        if (window.battleTimer) {
+            clearInterval(window.battleTimer);
+            window.battleTimer = null;
+        }
+        appendLog(`⏩ <b>[Bỏ Qua Giao Tranh]</b> Vận chuyển chân nguyên, kết toán tốc chiến tức thì!`, 'log-entry--round text-amber-300 font-bold');
+        let maxSimTurns = 60;
+        while (maxSimTurns > 0 && towerPlayer.hp > 0 && towerCurrentBoss.hp > 0) {
+            executeStrike(towerPlayer, towerCurrentBoss, true);
+            if (towerCurrentBoss.hp <= 0) break;
+            executeStrike(towerCurrentBoss, towerPlayer, false);
+            if (towerPlayer.hp <= 0) break;
+            maxSimTurns--;
+        }
+        updateHPDisplays();
+        finishCombat(towerPlayer, towerCurrentBoss);
     }
 
     function toggleAutoClimb(checked) {
@@ -595,6 +984,12 @@
             const pPct = Math.max(0, Math.min(100, Math.round((towerPlayer.hp / towerPlayer.maxHp) * 100)));
             pFill.style.width = `${pPct}%`;
             pNum.textContent = `${towerPlayer.hp.toLocaleString()} / ${towerPlayer.maxHp.toLocaleString()}`;
+        }
+
+        const pMpFill = document.getElementById('player-mp-fill');
+        if (pMpFill) {
+            const mpPct = Math.max(0, Math.min(100, Math.round(((towerPlayer.mp || 0) / (towerPlayer.maxMp || 100)) * 100)));
+            pMpFill.style.width = `${mpPct}%`;
         }
 
         const bFill = document.getElementById('boss-hp-fill');
@@ -621,16 +1016,33 @@
             challengeLabel.textContent = `KHIÊU CHIẾN TẦNG ${towerCurrentFloor}`;
         }
 
+        const pNameEl = document.getElementById('player-fighter-name');
+        if (pNameEl) {
+            pNameEl.innerHTML = `${towerPlayer.name} <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 border border-amber-500/50 text-amber-300 font-serif">[Hệ ${towerPlayer.element || 'Kim'}]</span>`;
+        }
+
         const bossTitle = document.getElementById('boss-title-name');
         if (bossTitle) {
-            bossTitle.innerHTML = `<i class="fa-solid fa-skull mr-1"></i>${towerCurrentBoss.name}`;
+            let rankBadge = '';
+            if (towerCurrentBoss.isOverlord) {
+                rankBadge = '<span class="px-1.5 py-0.5 mr-1 rounded text-[10px] font-extrabold bg-rose-950 border border-rose-500 text-rose-300 animate-pulse font-serif">👑 THỦ LĨNH</span>';
+            } else if (towerCurrentBoss.isElite) {
+                rankBadge = '<span class="px-1.5 py-0.5 mr-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-500 text-amber-300 font-serif">⭐ TINH ANH</span>';
+            }
+            bossTitle.innerHTML = `<i class="fa-solid fa-skull mr-1 text-rose-400"></i>${rankBadge}${towerCurrentBoss.name} <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 font-serif">[Hệ ${towerCurrentBoss.element || 'Mộc'}]</span>`;
+        }
+
+        const skipBtn = document.getElementById('btn-skip-combat');
+        if (skipBtn) {
+            skipBtn.onclick = () => skipDemonTowerCombat();
         }
 
         const ratio = (towerPlayer.cp / towerCurrentBoss.cp).toFixed(1);
         const isQualified = towerPlayer.cp >= (towerCurrentBoss.cp * 3);
         const matchupInfo = document.getElementById('matchup-cp-info');
         if (matchupInfo) {
-            matchupInfo.textContent = `Tỷ số Lực Chiến: ${ratio}x (${isQualified ? 'Đè bẹp đối thủ' : 'Cần cẩn trọng'})`;
+            const rel = getElementRelation(towerPlayer.element, towerCurrentBoss.element);
+            matchupInfo.innerHTML = `Tỷ số Lực Chiến: <b>${ratio}x</b> (${isQualified ? 'Đè bẹp đối thủ' : 'Cần cẩn trọng'}) • <span class="${rel.factor > 1 ? 'text-amber-300 font-bold' : (rel.factor < 1 ? 'text-rose-400' : 'text-slate-400')}">${rel.label}</span>`;
         }
 
         const autoDesc = document.getElementById('auto-climb-status-desc');
@@ -677,22 +1089,70 @@
         appendLog(`💚 [Vận Công] ${towerPlayer.name} hấp thu thiên địa nguyên khí, hồi phục toàn bộ Khí Huyết!`, 'log-entry--round');
     }
 
+    const demonTower = {
+        get player() { return towerPlayer; },
+        get currentBoss() { return towerCurrentBoss; },
+        get floor() { return towerCurrentFloor; },
+        set floor(v) { towerCurrentFloor = Math.max(1, Number(v) || 1); },
+        startCombat: startTowerCombat,
+        finishCombat: finishCombat,
+        updateArenaUI: updateArenaUI,
+        syncTowerPlayerStats: syncTowerPlayerStats,
+        syncStats(stats) {
+            syncTowerPlayerStats();
+            updateArenaUI();
+        }
+    };
+    window.demonTower = demonTower;
+    globalThis.demonTower = demonTower;
+
     window.openDemonTowerModal = openDemonTowerModal;
     window.closeDemonTowerModal = closeDemonTowerModal;
     window.handleChallengeClick = handleChallengeClick;
+    window.skipDemonTowerCombat = skipDemonTowerCombat;
+    window.executeStrike = executeStrike;
+    window.appendLog = appendLog;
+    window.getElementRelation = getElementRelation;
     window.toggleAutoClimb = toggleAutoClimb;
     window.fullHealPlayer = fullHealPlayer;
     window.updateArenaUI = updateArenaUI;
     window.towerPlayer = towerPlayer;
+    window.startTowerCombat = startTowerCombat;
+    window.finishCombat = finishCombat;
+    window.createFloorBoss = createFloorBoss;
+    Object.defineProperty(window, 'towerCurrentBoss', {
+        get() { return towerCurrentBoss; },
+        set(v) { towerCurrentBoss = v; },
+        configurable: true
+    });
+    Object.defineProperty(window, 'battleTimer', {
+        get() { return battleTimer; },
+        set(v) { battleTimer = v; },
+        configurable: true
+    });
+    Object.defineProperty(globalThis, 'battleTimer', {
+        get() { return battleTimer; },
+        set(v) { battleTimer = v; },
+        configurable: true
+    });
     window.getTowerSyncPayload = getTowerSyncPayload;
     window.handleTowerSyncMessage = handleTowerSyncMessage;
+    window.sendTowerSyncData = sendTowerSyncData;
+    globalThis.sendTowerSyncData = sendTowerSyncData;
     globalThis.openDemonTowerModal = openDemonTowerModal;
     globalThis.closeDemonTowerModal = closeDemonTowerModal;
     globalThis.handleChallengeClick = handleChallengeClick;
+    globalThis.skipDemonTowerCombat = skipDemonTowerCombat;
+    globalThis.executeStrike = executeStrike;
+    globalThis.appendLog = appendLog;
+    globalThis.getElementRelation = getElementRelation;
     globalThis.toggleAutoClimb = toggleAutoClimb;
     globalThis.fullHealPlayer = fullHealPlayer;
     globalThis.updateArenaUI = updateArenaUI;
     globalThis.towerPlayer = towerPlayer;
+    globalThis.startTowerCombat = startTowerCombat;
+    globalThis.finishCombat = finishCombat;
+    globalThis.createFloorBoss = createFloorBoss;
     globalThis.getTowerSyncPayload = getTowerSyncPayload;
     globalThis.handleTowerSyncMessage = handleTowerSyncMessage;
 })();

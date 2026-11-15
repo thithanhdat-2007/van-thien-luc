@@ -16,17 +16,19 @@
         button.setAttribute('aria-expanded', String(Boolean(currentEncounter)));
     }
 
-    function queueEncounter(encIdx = null) {
-        if (state.isDead || getPendingEncounter()) return false;
-        if (typeof isFeatureUnlocked === 'function' && !isFeatureUnlocked('btn_lich_luyen')) return false;
-        if (Date.now() - (Number(state.lastEncounterAt) || 0) < ENCOUNTER_RULES.cooldownMs) return false;
+    function queueEncounter(encIdx = null, force = false) {
+        if (state.isDead) return false;
+        if (getPendingEncounter() && !force) return false;
+        if (!force && typeof isFeatureUnlocked === 'function' && !isFeatureUnlocked('btn_lich_luyen')) return false;
+        if (!force && Date.now() - (Number(state.lastEncounterAt) || 0) < ENCOUNTER_RULES.cooldownMs) return false;
         const index = encIdx === null ? Math.floor(Math.random() * ENCOUNTERS.length) : encIdx;
         if (!Number.isInteger(index) || !ENCOUNTERS[index]) return false;
         state.pendingEncounterId = ENCOUNTERS[index].id;
         state.lastEncounterAt = Date.now();
+        if (window.GameState) window.GameState.pendingEncounterId = state.pendingEncounterId;
         syncEncounterNotification();
         saveGameState();
-        addLog('📜 <span class="text-amber-300">Kỳ ngộ xuất hiện!</span> Một trang cổ tịch đang chờ đạo hữu mở xem.', 'text-amber-200');
+        addLog('📜 <span class="text-amber-300 font-bold">Kỳ ngộ xuất hiện!</span> Một trang cổ tịch đang chờ đạo hữu mở xem.', 'text-amber-200');
         return true;
     }
 
@@ -71,11 +73,19 @@
             </article>`;
     }
 
-    function openEncounterModal() {
+    function openEncounterModal(autoGenerate = false) {
         if (rejectLockedFeature('btn_lich_luyen')) return;
-        const pending = getPendingEncounter();
+        let pending = getPendingEncounter();
+        if (!pending && autoGenerate) {
+            queueEncounter(null, true);
+            pending = getPendingEncounter();
+        }
         if (!pending) {
-            if (typeof showMsg === 'function') showMsg('Chưa có kỳ ngộ đang chờ. Hãy tiếp tục tu luyện hoặc lịch luyện.', 'info');
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast('Chưa có kỳ ngộ đang chờ. Hãy tiếp tục tu luyện hoặc lịch luyện.', 'info');
+            } else if (typeof showMsg === 'function') {
+                showMsg('Chưa có kỳ ngộ đang chờ. Hãy tiếp tục tu luyện hoặc lịch luyện.', 'info');
+            }
             return;
         }
         const backdrop = document.getElementById('ancient-scroll-backdrop');
@@ -175,36 +185,78 @@
             addItemToInventory(opt.giveItem.id, opt.giveItem.count);
         }
 
+        // Tự động quay thưởng theo Loot Table kỳ ngộ tiên duyên
+        if (typeof window.rollLootDrop === 'function') {
+            window.rollLootDrop('encounter', state.realmIndex || 0);
+        }
+
         if (type === 'righteous') {
             state.righteousKarma = (state.righteousKarma || 0) + Math.abs(rDelta);
             state.daoTam = Math.min(100, (state.daoTam != null ? state.daoTam : 100) + ENCOUNTER_RULES.righteousMindGain);
             state.tamMa = Math.max(0, 100 - state.daoTam);
 
+            // Đồng bộ Trục Cân Bằng Đạo Tâm (#top-dao-card)
+            state.alignment = state.alignment || { righteous: 50, demonic: 50 };
+            state.alignment.righteous = Math.min(100, (Number(state.alignment.righteous) || 50) + 8);
+            state.alignment.demonic = Math.max(0, 100 - state.alignment.righteous);
+            if (window.GameState) {
+                window.GameState.stones = state.stones;
+                window.GameState.inventory = state.inventory;
+                window.GameState.righteousKarma = state.righteousKarma;
+                window.GameState.demonicKarma = state.demonicKarma;
+                window.GameState.alignment = JSON.parse(JSON.stringify(state.alignment));
+                window.GameState.daoTam = state.daoTam;
+                window.GameState.tamMa = state.tamMa;
+            }
+
             triggerHolyFlash();
             if (typeof playSound === 'function') playSound('holy_bell');
             if (typeof spawnFloatingText === 'function') {
-                spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, "Đạo tâm kiên định, vạn tà bất xâm!", "text-amber-300 font-extrabold text-base");
+                spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, "Đạo tâm kiên định, vạn tà bất xâm! (+8 Chính Khí)", "text-amber-300 font-extrabold text-base");
             }
-            addLog(`✨ <span class='text-amber-300 font-bold'>[Chính Đạo • ${opt.title || 'Thanh Tâm'}]</span> ${opt.rewardText || 'Đạo tâm kiên định, vạn tà bất xâm!'} Nhận <span class='text-gold-300'>+${stones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class='text-emerald-400'>+${exp.toLocaleString('vi-VN')} Tu Vi</span>, <span class='text-cyan-300'>+${ENCOUNTER_RULES.righteousMindGain} Đạo Tâm</span>.`, "text-amber-300", "karma-righteous");
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast(`✨ Chính Khí Lẫm Nhiên! Đạo tâm +${ENCOUNTER_RULES.righteousMindGain}, thu hoạch +${stones.toLocaleString('vi-VN')} Linh Thạch, +${exp.toLocaleString('vi-VN')} Tu Vi!`, 'success');
+            }
+            addLog(`✨ <span class='text-amber-300 font-bold'>[Chính Đạo • ${opt.title || 'Thanh Tâm'}]</span> ${opt.rewardText || 'Đạo tâm kiên định, vạn tà bất xâm!'} Nhận <span class='text-gold-300'>+${stones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class='text-emerald-400'>+${exp.toLocaleString('vi-VN')} Tu Vi</span>, <span class='text-cyan-300'>+${ENCOUNTER_RULES.righteousMindGain} Đạo Tâm</span>, <span class='text-amber-300'>+8 Chính Khí</span>.`, "text-amber-300", "karma-righteous");
         } else {
             state.demonicKarma = (state.demonicKarma || 0) + Math.abs(dDelta);
             state.daoTam = Math.max(0, (state.daoTam != null ? state.daoTam : 100) - ENCOUNTER_RULES.demonicMindLoss);
             state.tamMa = Math.min(100, 100 - state.daoTam);
+
+            // Đồng bộ Trục Cân Bằng Đạo Tâm (#top-dao-card)
+            state.alignment = state.alignment || { righteous: 50, demonic: 50 };
+            state.alignment.demonic = Math.min(100, (Number(state.alignment.demonic) || 50) + 8);
+            state.alignment.righteous = Math.max(0, 100 - state.alignment.demonic);
+            if (window.GameState) {
+                window.GameState.stones = state.stones;
+                window.GameState.inventory = state.inventory;
+                window.GameState.righteousKarma = state.righteousKarma;
+                window.GameState.demonicKarma = state.demonicKarma;
+                window.GameState.alignment = JSON.parse(JSON.stringify(state.alignment));
+                window.GameState.daoTam = state.daoTam;
+                window.GameState.tamMa = state.tamMa;
+            }
 
             triggerScreenShake();
             triggerBloodFlash();
             if (typeof playSound === 'function') playSound('blood_thunder');
             if (typeof window.triggerCameraTrauma === 'function') window.triggerCameraTrauma(0.4, 'ancient-scroll-backdrop');
             if (typeof spawnFloatingText === 'function') {
-                spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, "Sát nghiệp quấn thân! Tâm Ma gia tăng!", "text-rose-500 font-black text-lg animate-pulse");
+                spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, "Sát nghiệp quấn thân! Tâm Ma gia tăng! (+8 Ma Đạo)", "text-rose-500 font-black text-lg animate-pulse");
+            }
+            if (typeof window.showGameToast === 'function') {
+                window.showGameToast(`🩸 Sát Nghiệp Quấn Thân! Ma Khí +8, đoạt được +${stones.toLocaleString('vi-VN')} Linh Thạch, +${exp.toLocaleString('vi-VN')} Tu Vi!`, 'error');
             }
             triggerDaoTamBarGlitch();
 
-            addLog(`🩸 <span class='text-rose-500 font-bold animate-pulse'>[Ma Đạo • ${opt.title || 'Trầm Luân'}]</span> ${opt.rewardText || 'Sát nghiệp quấn thân!'} Đoạt được <span class='text-gold-300'>+${stones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class='text-jade-300'>+${exp.toLocaleString('vi-VN')} Tu Vi</span>!`, "text-rose-400", "karma-demonic");
+            addLog(`🩸 <span class='text-rose-500 font-bold animate-pulse'>[Ma Đạo • ${opt.title || 'Trầm Luân'}]</span> ${opt.rewardText || 'Sát nghiệp quấn thân!'} Đoạt được <span class='text-gold-300'>+${stones.toLocaleString('vi-VN')} Linh Thạch</span>, <span class='text-jade-300'>+${exp.toLocaleString('vi-VN')} Tu Vi</span>, <span class='text-rose-400'>+8 Ma Khí</span>!`, "text-rose-400", "karma-demonic");
         }
 
         closeEncounterModal();
+        if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
         updateHUD();
+        if (typeof window.syncTopResourceBarFromState === 'function') window.syncTopResourceBarFromState();
+        if (typeof window.syncAllUI === 'function') window.syncAllUI();
         saveGameState();
         if (typeof refreshExpeditionUI === 'function') refreshExpeditionUI();
     }

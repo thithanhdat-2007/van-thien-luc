@@ -313,7 +313,39 @@
         .tower-artifact-popover { width: 320px; }
         .tower-artifact-popover > button { width: 100%; justify-content: space-between; margin-bottom: 8px; }
         .tower-artifact-popover p { color: #8da2bb; font-size: 11px; line-height: 1.7; margin-top: 10px; }
-        .tower-combat-log { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8196b0; font-size: 11px; line-height: 22px; padding: 0 4px; }
+        .tower-combat-log {
+            min-width: 0;
+            max-height: 68px;
+            min-height: 48px;
+            overflow-y: auto;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.45;
+            padding: 4px 8px;
+            background: rgba(3, 7, 18, 0.75);
+            border-top: 1px solid rgba(56, 189, 248, 0.15);
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 2px;
+        }
+        .tower-combat-log > div {
+            animation: fadeInLog 0.2s ease-out;
+            word-break: break-word;
+        }
+        @keyframes fadeInLog {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #hero-hp-ghost, #boss-hp-ghost {
+            transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.35s;
+            pointer-events: none;
+        }
+        #hero-hp-fill, #boss-hp-fill {
+            transition: width 0.15s ease-out;
+        }
+        .hit-stop-freeze {
+            filter: contrast(1.15) brightness(1.1);
+        }
         .tower-sidebar { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #2c3a50; border-radius: 14px; background: #0b1320; overflow: hidden; }
         .tower-sidebar > div:first-child button { font-family: inherit; font-size: 11px; min-height: 34px; }
         #sidebar-tab-manuals, #sidebar-tab-bag { min-height: 0; overflow-y: auto; }
@@ -387,6 +419,7 @@
                         <div class="tower-choice-grid">
                             <button onclick="toggleThreePureClones()" id="btn-tam-thanh" class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/70 text-cyan-200 font-bold text-xs shadow-[0_0_14px_rgba(34,211,238,0.45)] transition active:scale-95" title="Nhất Khí Hóa Tam Thanh: Triệu hồi 2 Nguyên Thần Phân Thân cùng vây công!">👥 Hóa Tam Thanh: BẬT</button>
                             <button onclick="toggleDivineWings()" id="btn-wings-toggle" class="px-2 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-400/60 text-purple-200 font-bold text-[11px] transition">🪽 Thần Dực</button>
+        <button onclick="toggleTowerAutoFarm()" id="btn-tower-autofarm" class="px-2 py-1 rounded-xl bg-slate-900/90 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 font-bold text-[11px] transition" title="Tự động đánh liên tục tầng cao nhất đã vượt qua để farm tài nguyên">🔁 Quét Tháp: Tắt</button>
                             <button onclick="togglePhapTuongMode()" id="btn-phap-tuong" class="px-2 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 text-amber-200 font-bold text-[11px] transition">🐉 Pháp Tướng</button>
                             <button onclick="toggleSoundFX()" id="btn-sfx-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-xs font-bold transition">
                                 <span>🔊</span>
@@ -483,7 +516,7 @@
                     <div id="cinematic-banner" class="hidden absolute top-28 left-1/2 -translate-x-1/2 z-50 px-8 py-2 rounded-full border-2 border-amber-300 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-amber-200 font-xianxia font-black text-xs xl:text-sm tracking-[0.2em] shadow-[0_0_50px_rgba(245,158,11,0.95)] pointer-events-none whitespace-nowrap">🗡️ VẠN KIẾM QUY TÔNG • NHẤT KIẾM TRẢM THIÊN MA 🗡️</div>
                     <div class="tower-fighter-hud">
                         <!-- Phe Ta: Kiếm Tiên -->
-                        <div class="hud-glass rounded-2xl p-2.5 border-cyan-500/45">
+                        <div id="hero-hud-card" class="hud-glass rounded-2xl p-2.5 border-cyan-500/45 transition-all duration-300">
                             <div class="flex justify-between items-center text-xs mb-1">
                                 <span class="font-xianxia font-bold text-cyan-300 text-sm flex items-center gap-1.5">
                                     <span id="hero-display-name">
@@ -501,7 +534,8 @@
                                 </div>
                             </div>
                             <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-emerald-500/50 relative">
-                                <div id="hero-hp-fill" class="h-full bg-gradient-to-r from-emerald-600 via-teal-400 to-cyan-300 rounded-full transition-all duration-200 shadow-[0_0_14px_#10b981]" style="width: 100%"></div>
+                                <div id="hero-hp-ghost" class="absolute inset-y-0 left-0 bg-yellow-200/90 rounded-full shadow-[0_0_10px_rgba(254,240,138,0.9)]" style="width: 100%;"></div>
+                                <div id="hero-hp-fill" class="relative h-full bg-gradient-to-r from-emerald-600 via-teal-400 to-cyan-300 rounded-full shadow-[0_0_14px_#10b981]" style="width: 100%"></div>
                                 <div id="hero-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">850,000 / 850,000</div>
                             </div>
                             <div class="mt-1.5 flex items-center gap-2">
@@ -513,13 +547,17 @@
                             </div>
                         </div>
                         <!-- Phe Địch: Yêu Vương -->
-                        <div class="hud-glass rounded-2xl p-2.5 border-rose-500/50">
+                        <div id="boss-hud-card" class="hud-glass rounded-2xl p-2.5 border-rose-500/50 transition-all duration-300 relative">
+                            <div id="boss-ult-warning" class="hidden absolute -top-8 left-0 right-0 py-1 px-2.5 rounded-lg bg-gradient-to-r from-red-950 via-rose-900 to-red-950 border-2 border-rose-500 text-[10px] text-rose-200 font-bold text-center animate-pulse shadow-[0_0_20px_rgba(244,63,94,0.7)] z-20">
+                                ⚠️ CẢNH BÁO: ĐANG TỤ LỰC HỦY DIỆT! (Dùng [1] Hộ Thân hoặc Chiêu Phá Cang để ngắt!)
+                            </div>
                             <div class="flex justify-between items-center text-xs mb-1">
                                 <span id="boss-hud-name" class="font-xianxia font-bold text-rose-400 text-sm truncate">👹 Huyết Dực Ma Hoàng</span>
                                 <span id="boss-stats-mini" class="text-[11px] text-amber-300 font-mono">Bạo: 22% | Né: 10%</span>
                             </div>
                             <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-rose-500/50 relative">
-                                <div id="boss-hp-fill" class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-full transition-all duration-200 shadow-[0_0_14px_#f43f5e]" style="width: 100%"></div>
+                                <div id="boss-hp-ghost" class="absolute inset-y-0 left-0 bg-yellow-300/90 rounded-full shadow-[0_0_10px_rgba(253,224,71,0.9)]" style="width: 100%;"></div>
+                                <div id="boss-hp-fill" class="relative h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-full shadow-[0_0_14px_#f43f5e]" style="width: 100%"></div>
                                 <div id="boss-hp-label" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold font-mono text-white drop-shadow">920,000 / 920,000</div>
                             </div>
                             <div class="mt-1.5 grid grid-cols-2 gap-3">
@@ -544,7 +582,10 @@
                         <div id="hero-stage-anchor">
                             <div id="hero-sprite-wrapper"></div>
                         </div>
-                        <div id="boss-stage-anchor">
+                        <div id="boss-stage-anchor" class="relative">
+                            <div id="boss-head-warning" class="hidden absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-black text-[11px] uppercase tracking-wider animate-bounce border-2 border-yellow-300 shadow-[0_0_25px_#ef4444] whitespace-nowrap z-30 flex items-center gap-1.5 pointer-events-none">
+                                <span class="animate-ping text-yellow-300">⚠️</span> ĐANG TỤ ĐẠI SÁT CHIÊU! <span class="text-yellow-300 font-mono">[BẬT KHIÊN / PHÁ CANG]</span>
+                            </div>
                             <div id="boss-sprite-wrapper"></div>
                         </div>
                     </div>
@@ -593,16 +634,19 @@
                                 </summary>
                                 <div class="tower-popover tower-artifact-popover">
                                     <h2>Pháp bảo chủ động</h2>
-                                    <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn 3 hiệp (Phím 1)">
-                                        <span>🔔 Đông Hoàng Chung</span>
+                                    <button onclick="castActiveArtifact(1)" id="art-btn-1" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Tạo Kim Chung Tráo giảm 55% sát thương & phản chấn (25 MP, CD 4 hiệp) (Phím 1)">
+                                        <span>🔔 Đông Hoàng Chung <span class="text-[9px] text-amber-300 font-mono">(25 MP)</span></span>
+                                        <span class="art-cd-badge hidden px-1 py-0.2 rounded bg-rose-950 text-rose-300 text-[9px] font-mono border border-rose-500/40"></span>
                                         <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-amber-300 border border-amber-500/40">[1]</kbd>
                                     </button>
-                                    <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Triệu hồi 4 thanh Tru Tiên Tứ Kiếm bắn tia hủy diệt liên tục (Phím 2)">
-                                        <span>🩸 Tru Tiên Kiếm</span>
+                                    <button onclick="castActiveArtifact(2)" id="art-btn-2" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/60 text-rose-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Triệu hồi Tru Tiên Kiếm Trận bắn kiếm khí liên tục (35 MP, CD 5 hiệp) (Phím 2)">
+                                        <span>🩸 Tru Tiên Kiếm <span class="text-[9px] text-rose-300 font-mono">(35 MP)</span></span>
+                                        <span class="art-cd-badge hidden px-1 py-0.2 rounded bg-rose-950 text-rose-300 text-[9px] font-mono border border-rose-500/40"></span>
                                         <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-rose-300 border border-rose-500/40">[2]</kbd>
                                     </button>
-                                    <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Phóng Thái Cực Hỗn Độn Luân nghiền nát 40% Yêu Cang & hồi đầy Kiếm Nguyên (Phím 3)">
-                                        <span>☯️ Thái Cực Luân</span>
+                                    <button onclick="castActiveArtifact(3)" id="art-btn-3" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/60 text-cyan-200 text-[11px] font-bold transition active:scale-95 flex items-center gap-1" title="Phóng Thái Cực Luân nghiền nát Yêu Cang (50 MP, CD 7 hiệp) (Phím 3)">
+                                        <span>☯️ Thái Cực Luân <span class="text-[9px] text-cyan-300 font-mono">(50 MP)</span></span>
+                                        <span class="art-cd-badge hidden px-1 py-0.2 rounded bg-rose-950 text-rose-300 text-[9px] font-mono border border-rose-500/40"></span>
                                         <kbd class="px-1 py-0.2 rounded bg-black/50 text-[9px] font-mono text-cyan-300 border border-cyan-500/40">[3]</kbd>
                                     </button>
                                     <p>Dùng nhanh bằng phím 1, 2, 3 khi giao chiến.</p>
@@ -618,6 +662,11 @@
                                 <span id="auto-climb-text" class="text-slate-300 font-semibold">Tự Leo: TẮT</span>
                                 <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[T]</kbd>
                             </label>
+                            <button id="btn-combat-mode" onclick="toggleAutoManualCombat()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-xianxia font-bold text-slate-300 transition active:scale-95 flex items-center gap-1.5" title="Đổi chế độ Tự Động / Thủ Công (Phím M)">
+                                <span id="combat-mode-icon">⚔️</span>
+                                <span id="combat-mode-text">Tự Động</span>
+                                <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-400 border border-slate-700/50">[M]</kbd>
+                            </button>
                         </div>
                         <button id="btn-fight" onclick="startOrStopCombat()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5" title="Khai chiến hoặc dừng giao đấu (Phím Space)">
                             <span>🗡️ KHIÊU CHIẾN (T.20)</span>
@@ -625,13 +674,12 @@
                         </button>
                     </div>
                 </footer>
-                <div id="combat-log-stream" class="tower-combat-log">⚡ [Space] Khai Chiến • [T] Tự Leo • [X] Tốc Độ • [Q] Đổi Tab • [C] Quét • [1-3] Pháp Bảo</div>
+                <div id="combat-log-stream" class="tower-combat-log">⚡ [Space] Khai Chiến • [T] Tự Leo • [X] Tốc Độ • [Q/W/E] Thức 1-3 • [1-3] Pháp Bảo • [M] Tự Động/Thủ Công</div>
             </section>
             <aside id="tower-sidebar" class="tower-sidebar">
                 <div class="grid grid-cols-3 p-1.5 bg-slate-950 border-b border-amber-500/25 gap-1 shrink-0">
-                    <button onclick="switchRightSidebarTab('floors')" id="tab-btn-floors" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-gradient-to-r from-amber-500/25 to-rose-500/20 text-amber-300 border border-amber-400/60 shadow transition flex items-center justify-center gap-1" title="Xem 50 tầng tháp (Bấm hoặc nhấn [Q] đổi Tab)">
+                    <button onclick="switchRightSidebarTab('floors')" id="tab-btn-floors" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-gradient-to-r from-amber-500/25 to-rose-500/20 text-amber-300 border border-amber-400/60 shadow transition flex items-center justify-center gap-1" title="Xem 50 tầng tháp">
                         <span>🗼 Tầng</span>
-                        <kbd class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-amber-300/80 border border-amber-500/30">[Q]</kbd>
                     </button>
                     <button onclick="switchRightSidebarTab('manuals')" id="tab-btn-manuals" class="py-2 rounded-xl font-xianxia font-bold text-[11px] bg-slate-900 text-slate-400 border border-slate-800 hover:text-amber-200 transition flex items-center justify-center gap-1" title="Tàng Kinh Các (Bấm hoặc nhấn [Q] đổi Tab)">
                         <span>📜 Công Pháp</span>
@@ -930,6 +978,10 @@
          * 5. TRẠNG THÁI NGƯỜI CHƠI & ĐẤU TRƯỜNG V2
          */
         let gameState = {
+            customBattle: null,
+            autoCombat: true, // true = Tự Động, false = Thủ Công
+            skillCooldowns: { 0: 0, 1: 0, 2: 0 },
+            bossChargingUlt: false,
             linhThach: 1561820,
             tuVi: 57222772,
             realmName: "Trúc Cơ Đỉnh Phong",
@@ -949,7 +1001,7 @@
             wingsEnabled: true,
             phapTuongEnabled: true,
             tamThanhEnabled: true, // Nhất Khí Hóa Tam Thanh (2 Nguyên Thần Phân Thân trợ chiến)
-            sfxEnabled: true,
+            sfxEnabled: false,
 
             hero: {
                 maxHp: 850000,
@@ -991,6 +1043,7 @@
                 { ...LOOT_DATABASE.t2[2], count: 1 }
             ]
         };
+        window.gameState = gameState;
 
         /**
          * 5.1 ĐỒNG BỘ DỮ LIỆU VỚI GAME CHÍNH (VẠN CỔ TU TIÊN)
@@ -1109,10 +1162,48 @@
             return false;
         }
 
+        let isTowerHibernated = false;
+        function isTowerActive() {
+            if (isTowerHibernated) return false;
+            if (document.hidden) return false;
+            const popup = document.getElementById('tran-yeu-thap-popup');
+            if (popup && (popup.classList.contains('hidden') || popup.style.display === 'none')) {
+                return false;
+            }
+            if (window.parent && window.parent !== window) {
+                try {
+                    const parentModal = window.parent.document.getElementById('modal-tran-yeu-thap');
+                    if (parentModal && (parentModal.classList.contains('hidden') || parentModal.style.display === 'none')) {
+                        return false;
+                    }
+                } catch (e) {}
+            }
+            return true;
+        }
+
         window.addEventListener('message', (event) => {
             if (!event.data) return;
-            if (event.data.type === 'van-thien-luc:tower-init-data') {
+            if (event.data.type === 'van-thien-luc:tower-init-data' || event.data.type === 'van-thien-luc:tower-update-hero') {
+                isTowerHibernated = false;
                 applyMainGameData(event.data.data);
+                if (typeof window.wakeTowerEffects === 'function') window.wakeTowerEffects();
+                if (typeof renderTowerHeader === 'function') renderTowerHeader();
+                if (typeof renderHeroCard === 'function') renderHeroCard();
+            } else if (event.data.type === 'van-thien-luc:tower-pause') {
+                isTowerHibernated = true;
+                if (typeof window.pauseTowerEffects === 'function') window.pauseTowerEffects();
+            } else if (event.data.type === 'van-thien-luc:tower-resume') {
+                isTowerHibernated = false;
+                if (typeof window.wakeTowerEffects === 'function') window.wakeTowerEffects();
+            } else if (event.data.type === 'van-thien-luc:start-custom-battle') {
+                isTowerHibernated = false;
+                const enemy = event.data.enemy;
+                if (enemy) {
+                    gameState.customBattle = enemy;
+                    tryDirectSyncFromParent();
+                    if (typeof window.wakeTowerEffects === 'function') window.wakeTowerEffects();
+                    if (typeof setupCustomBattleUI === 'function') setupCustomBattleUI(enemy);
+                }
             }
         });
 
@@ -1121,74 +1212,8 @@
          */
         let audioCtx = null;
         function playSound(type) {
-            if (!gameState.sfxEnabled) return;
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = audioCtx.currentTime;
-
-                if (type === 'sword') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(780, now);
-                    osc.frequency.exponentialRampToValueAtTime(2100, now + 0.07);
-                    osc.frequency.exponentialRampToValueAtTime(1150, now + 0.15);
-                    gain.gain.setValueAtTime(0.07, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.16);
-                } else if (type === 'clash') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(2600, now);
-                    osc.frequency.exponentialRampToValueAtTime(1100, now + 0.08);
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.09);
-                } else if (type === 'crit') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(1020, now);
-                    osc.frequency.exponentialRampToValueAtTime(190, now + 0.21);
-                    gain.gain.setValueAtTime(0.11, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.22);
-                } else if (type === 'thunder') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(34, now + 0.52);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.54);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.54);
-                } else if (type === 'bell') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, now);
-                    osc.frequency.exponentialRampToValueAtTime(293.66, now + 0.65);
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.66);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.66);
-                }
-            } catch (e) {}
+            // Vô hiệu hóa Web Audio procedural synthesis để triệt tiêu stutter và lag
+            return;
         }
 
         function toggleSoundFX() {
@@ -1335,6 +1360,8 @@
         let canvasIcePillars = [];
         let canvasMeteors = [];
         let canvasReincarnationWheels = [];
+        window.canvasProjectiles = canvasProjectiles;
+        window.canvasParticles = canvasParticles;
         const towerEffectTimers = new Set();
         function scheduleTowerEffect(callback, delay) {
             const timerId = window.setTimeout(() => {
@@ -1439,10 +1466,9 @@
         };
 
         function triggerCameraZoom(zoom = 1.09, duration = 450) {
-            arenaCam.targetScale = zoom;
-            scheduleTowerEffect(() => {
-                arenaCam.targetScale = 1.0;
-            }, duration);
+            // Giữ cố định tỷ lệ khung hình đấu trường (1.0) để tránh zoom in/out nhấp nháy
+            arenaCam.scale = 1.0;
+            arenaCam.targetScale = 1.0;
         }
 
         function triggerAnimeImpactFrame() {
@@ -1451,6 +1477,34 @@
             arena.classList.remove('vfx-impact-frame');
             void arena.offsetWidth;
             arena.classList.add('vfx-impact-frame');
+        }
+
+        function getCurrentEnemy() {
+            if (gameState && gameState.currentEnemy) return gameState.currentEnemy;
+            if (gameState && gameState.customBattle) {
+                const cb = gameState.customBattle;
+                return {
+                    floor: cb.floor || 1,
+                    name: cb.name || 'Đối Thủ',
+                    title: cb.titleBadge || cb.name,
+                    realmUnlock: cb.realm || 'Trúc Cơ',
+                    element: cb.element || 'Hỏa',
+                    hp: Number(cb.hp || cb.maxHp || 100000),
+                    maxHp: Number(cb.hp || cb.maxHp || 100000),
+                    atk: Number(cb.atk || 12000),
+                    def: Number(cb.def || 4000),
+                    crit: Number(cb.crit || 15),
+                    eva: Number(cb.eva || 10),
+                    cp: Number(cb.cp || (cb.atk * 3 + cb.hp * 0.1)),
+                    icon: cb.icon || '👹',
+                    drops: Array.isArray(cb.drops) ? cb.drops : [
+                        { id: 'custom_reward', name: cb.rewards || 'Chiến Lợi Phẩm', rarity: 'rare', icon: cb.icon || '🎁', desc: cb.rewards || 'Phần thưởng chiến thắng' }
+                    ]
+                };
+            }
+            return (typeof TOWER_50_FLOORS !== 'undefined' ? TOWER_50_FLOORS.find(f => f.floor === (gameState ? gameState.selectedFloor : 1)) : null) || {
+                floor: 1, name: 'Yêu Quái', element: 'Kim', hp: 100000, maxHp: 100000, atk: 10000, def: 2000, crit: 10, eva: 5, cp: 50000, drops: []
+            };
         }
 
         // THẦN THÔNG TRÌNH DIỄN 1: MƯA VẠN KIẾM TRIỀU TÔNG
@@ -1471,7 +1525,7 @@
 
             spawnCalligraphySeal('萬劍朝宗', w * 0.5, h * 0.36, elemObj.color);
 
-            for (let i = 0; i < 68; i++) {
+            for (let i = 0; i < 24; i++) {
                 scheduleTowerEffect(() => {
                     const startX = w * (0.05 + Math.random() * 0.65);
                     const startY = -60 - Math.random() * 140;
@@ -1490,7 +1544,7 @@
             }
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const rainDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 1.9);
+                const rainDmg = towerDamage(gameState.hero, getCurrentEnemy(), 1.9);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - rainDmg);
                 if (gameState.liveBossBrokenTurns <= 0) {
                     gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 35);
@@ -1531,7 +1585,7 @@
             spawnSpaceShatter(w * 0.75, h * 0.52, '#e879f9', 18);
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const splitDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 2.45);
+                const splitDmg = towerDamage(gameState.hero, getCurrentEnemy(), 2.45);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - splitDmg);
                 if (gameState.liveBossBrokenTurns <= 0) {
                     gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 55);
@@ -1579,7 +1633,7 @@
             }, 220);
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const grassDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 3.2);
+                const grassDmg = towerDamage(gameState.hero, getCurrentEnemy(), 3.2);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - grassDmg);
                 gameState.liveBossToughness = 0;
                 bossAnim.hitFlash = 12;
@@ -1637,7 +1691,7 @@
             }
 
             if (gameState.inCombat && gameState.liveBossHp > 0) {
-                const tribDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 3.1);
+                const tribDmg = towerDamage(gameState.hero, getCurrentEnemy(), 3.1);
                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - tribDmg);
                 gameState.liveBossToughness = 0;
                 bossAnim.hitFlash = 12;
@@ -1669,9 +1723,69 @@
             }
         }
 
-        // TAM ĐẠI PHÁP BẢO CHỦ ĐỘNG (PHÍM 1, 2, 3)
+        // TAM ĐẠI PHÁP BẢO CHỦ ĐỘNG (PHÍM 1, 2, 3) CÓ COOLDOWN & TIÊU HAO MP
+        const ARTIFACT_CONFIGS = {
+            1: { name: 'Đông Hoàng Chung', mp: 25, cd: 4 },
+            2: { name: 'Tru Tiên Kiếm', mp: 35, cd: 4 },
+            3: { name: 'Thái Cực Luân', mp: 50, cd: 4 }
+        };
+        const artifactCooldowns = { 1: 0, 2: 0, 3: 0 };
+
+        function updateArtifactButtonsUI() {
+            for (let slot = 1; slot <= 3; slot++) {
+                const btn = document.getElementById(`art-btn-${slot}`);
+                if (!btn) continue;
+                const cfg = ARTIFACT_CONFIGS[slot];
+                const cd = artifactCooldowns[slot] || 0;
+                const canAfford = (gameState.hero && gameState.hero.mp >= cfg.mp);
+
+                const cdBadge = btn.querySelector('.art-cd-badge');
+                if (cd > 0) {
+                    btn.classList.add('opacity-50', 'grayscale', 'pointer-events-none');
+                    if (cdBadge) {
+                        cdBadge.textContent = `⏳ ${cd} hiệp`;
+                        cdBadge.classList.remove('hidden');
+                    }
+                } else {
+                    btn.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
+                    if (cdBadge) cdBadge.classList.add('hidden');
+                }
+            }
+        }
+
         function castActiveArtifact(slot) {
-            if (gameState.inCombat && !resolvingPlayerTurn) { queuedTowerAction = () => castActiveArtifact(slot); addLog('📜 Đã chuẩn bị thần thông cho lượt kế tiếp.'); return; }
+            const cfg = ARTIFACT_CONFIGS[slot] || { name: 'Pháp Bảo', mp: 25, cd: 4 };
+            if (artifactCooldowns[slot] > 0) {
+                addLog(`⏳ <span class="text-amber-300 font-bold">[${cfg.name}]</span> đang trong thời gian hồi chiêu (còn ${artifactCooldowns[slot]} hiệp)!`);
+                spawnFloatingText('hero-stage-anchor', `HỒI CHIÊU (${artifactCooldowns[slot]}H)`, 'dodge');
+                return;
+            }
+            if (gameState.hero && gameState.hero.mp < cfg.mp) {
+                addLog(`⚠️ <span class="text-rose-400 font-bold">[Linh Lực Không Đủ]</span> ${cfg.name} cần ${cfg.mp} MP (Hiện có: ${Math.floor(gameState.hero.mp)} MP)!`);
+                spawnFloatingText('hero-stage-anchor', `THIẾU MP (${cfg.mp})`, 'dodge');
+                return;
+            }
+
+            if (gameState.inCombat && manualTurnResolver) {
+                const resolve = manualTurnResolver;
+                manualTurnResolver = null;
+                resolve({ type: 'artifact', slot });
+                return;
+            }
+
+            if (gameState.inCombat && !resolvingPlayerTurn) {
+                queuedTowerAction = () => castActiveArtifact(slot);
+                addLog(`📜 Đã chuẩn bị ${cfg.name} (tiêu hao ${cfg.mp} MP) cho hiệp kế tiếp.`);
+                return;
+            }
+
+            // Trừ MP & Kích hoạt Cooldown
+            if (gameState.hero) {
+                gameState.hero.mp = Math.max(0, gameState.hero.mp - cfg.mp);
+            }
+            artifactCooldowns[slot] = cfg.cd;
+            updateArtifactButtonsUI();
+
             const canvas = document.getElementById('combat-canvas');
             if (!canvas) return;
             const w = canvas.width;
@@ -1688,10 +1802,11 @@
                 spawnCalligraphySeal('東皇鐘', w * 0.23, h * 0.42, '#fbbf24');
                 canvasShockwaves.push({ x: w * 0.23, y: h * 0.56, r: 10, maxR: 150, alpha: 1.0, color: '#fbbf24' });
                 spawnFloatingText('hero-stage-anchor', `🔔 ĐÔNG HOÀNG CHUNG +${fmtShort(heal)} HP!`, 'heal');
-                addLog(`<span class="text-amber-300 font-bold">🔔 [Đông Hoàng Chung]</span> Tiếng chuông Thái Cổ vang vọng! Giảm 55% sát thương nhận vào trong 4 hiệp và hồi 25% Khí Huyết!`);
+                addLog(`<span class="text-amber-300 font-bold">🔔 [Đông Hoàng Chung]</span> Tiêu hao 25 MP! Giảm 55% sát thương nhận vào trong 4 hiệp và hồi 25% Khí Huyết! (Hồi chiêu: 4 hiệp)`);
             } else if (slot === 2) {
                 // Tru Tiên Tứ Kiếm Trận
                 activateSwordDomain();
+                addLog(`<span class="text-rose-400 font-bold">🩸 [Tru Tiên Kiếm Trận]</span> Tiêu hao 35 MP! Khởi động Tru Tiên Kiếm Trận oanh tạc liên tục! (Hồi chiêu: 5 hiệp)`);
             } else if (slot === 3) {
                 // Hỗn Độn Thái Cực Luân
                 playSound('thunder');
@@ -1707,14 +1822,13 @@
                     radius: 85,
                     life: 1.0
                 });
-                gameState.hero.mp = 100;
                 if (gameState.inCombat && gameState.liveBossHp > 0) {
-                    const wheelDmg = towerDamage(gameState.hero, TOWER_50_FLOORS.find(f => f.floor === gameState.selectedFloor), 1.75);
+                    const wheelDmg = towerDamage(gameState.hero, getCurrentEnemy(), 2.2);
                     gameState.liveBossHp = Math.max(0, gameState.liveBossHp - wheelDmg);
-                    gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 45);
+                    gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 60);
                     spawnFloatingText('boss-stage-anchor', `☯️ THÁI CỰC LUÂN -${fmt(wheelDmg)}!`, 'ult');
                 }
-                addLog(`<span class="text-emerald-300 font-bold">☯️ [Hỗn Độn Thái Cực Luân]</span> Nghiền nát Yêu Cang và tụ đầy 100% Kiếm Nguyên!`);
+                addLog(`<span class="text-cyan-300 font-bold">☯️ [Hỗn Độn Thái Cực Luân]</span> Tiêu hao 50 MP! Đại phá Yêu Cang và giáng đòn hủy diệt! (Hồi chiêu: 7 hiệp)`);
             }
 
             updateBarsUI(
@@ -1899,7 +2013,7 @@
                 paint.globalAlpha = dust.alpha;
                 paint.fillStyle = dust.color;
                 paint.shadowColor = dust.color;
-                paint.shadowBlur = 20;
+                paint.shadowBlur = 0;
                 paint.beginPath();
                 paint.arc(0, 0, dust.r, 0, Math.PI * 2);
                 paint.fill();
@@ -2009,17 +2123,17 @@
         const dragonPointsY = new Float64Array(26);
         function drawArticulatedSpiritDragon(ctx, centerX, centerY, t, isHero = true, mainColor = '#fde047', glowColor = '#f59e0b') {
             if (!gameState.phapTuongEnabled) return;
-            const segments = 26;
+            const segments = 14;
             const artwork = getTowerArtwork(dragonArtworkCache, `${mainColor}|${glowColor}|${isHero}`, () => {
                 const body = Array.from({ length: segments }, (_, i) => {
                     const ratio = 1 - i / segments;
                     const segRadius = 3 + Math.sin(ratio * Math.PI) * 11;
                     return createTowerArtwork(112, 112, 56, 56, paint => {
-                        // Keep the existing segment glow; only trim its empty sprite border.
+                        // Tối ưu hiệu năng: Tắt shadowBlur ở từng đốt thân rồng lặp nhiều
                         paint.globalCompositeOperation = 'source-over';
                         paint.fillStyle = i % 2 === 0 ? mainColor : '#ffffff';
                         paint.shadowColor = glowColor;
-                        paint.shadowBlur = 18;
+                        paint.shadowBlur = 0;
                         paint.beginPath();
                         paint.arc(0, 0, segRadius, 0, Math.PI * 2);
                         paint.fill();
@@ -2038,7 +2152,7 @@
                     paint.globalAlpha = 0.85;
                     paint.fillStyle = '#ffffff';
                     paint.shadowColor = glowColor;
-                    paint.shadowBlur = 48;
+                    paint.shadowBlur = 18;
                     paint.beginPath();
                     paint.moveTo(22, 0);
                     paint.lineTo(-6, -12);
@@ -2912,6 +3026,28 @@
                 ctx.restore();
             }
 
+            if (gameState.bossChargingUlt) {
+                ctx.save();
+                ctx.strokeStyle = '#ef4444';
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 30 + Math.sin(t * 8) * 15;
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                const chargeR = 75 + Math.sin(t * 7) * 8;
+                ctx.arc(0, -20, chargeR, 0, Math.PI * 2);
+                ctx.stroke();
+
+                for (let i = 0; i < 6; i++) {
+                    const ang = t * 3.5 + (i * Math.PI / 3);
+                    const dist = 110 - ((t * 80 + i * 25) % 45);
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(ang) * dist, -20 + Math.sin(ang) * dist);
+                    ctx.lineTo(Math.cos(ang) * (dist - 16), -20 + Math.sin(ang) * (dist - 16));
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
             ctx.restore();
         }
 
@@ -3000,11 +3136,28 @@
                 if (e.key === '1') castActiveArtifact(1);
                 if (e.key === '2') castActiveArtifact(2);
                 if (e.key === '3') castActiveArtifact(3);
+                if (e.key === 'q' || e.key === 'Q') {
+                    castActiveSkillSlot(0);
+                }
+                if (e.key === 'w' || e.key === 'W') {
+                    castActiveSkillSlot(1);
+                }
+                if (e.key === 'e' || e.key === 'E') {
+                    castActiveSkillSlot(2);
+                }
+                if (e.key === 'm' || e.key === 'M') {
+                    toggleAutoManualCombat();
+                }
                 if (e.code === 'Space') {
                     e.preventDefault();
-                    startOrStopCombat();
+                    if (gameState.inCombat && manualTurnResolver) {
+                        castActiveSkillSlot(0);
+                    } else {
+                        startOrStopCombat();
+                    }
                 }
-                if (e.key === 'q' || e.key === 'Q') {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
                     toggleNextRightSidebarTab();
                 }
                 if (e.key === 'c' || e.key === 'C') {
@@ -3023,7 +3176,7 @@
             });
 
             ambientDust = [];
-            for (let i = 0; i < 75; i++) {
+            for (let i = 0; i < 25; i++) {
                 ambientDust.push({
                     x: Math.random() * 1400,
                     y: Math.random() * 800,
@@ -3075,27 +3228,38 @@
             let lastRenderTimestamp = 0;
             const renderInterval = 1000 / TOWER_RULES.targetFps;
             let nextRenderTimestamp = 0;
+            const pauseEffects = () => {
+                if (renderFrameId !== null) {
+                    cancelAnimationFrame(renderFrameId);
+                    renderFrameId = null;
+                }
+                if (idleRenderTimer !== null) {
+                    clearTimeout(idleRenderTimer);
+                    idleRenderTimer = null;
+                }
+            };
+            window.pauseTowerEffects = pauseEffects;
+
             const wakeEffects = () => {
+                if (!isTowerActive()) return;
                 effectsActiveUntil = performance.now() + 2200;
                 if (idleRenderTimer !== null) {
                     clearTimeout(idleRenderTimer);
                     idleRenderTimer = null;
                 }
-                if (renderFrameId === null && !document.hidden) {
+                if (renderFrameId === null) {
                     renderFrameId = requestAnimationFrame(renderLoop);
                 }
             };
+            window.wakeTowerEffects = wakeEffects;
             window.addEventListener('pointerdown', (event) => {
                 if (event.target.closest('button, input, label, [onclick]')) wakeEffects();
             });
             window.addEventListener('keydown', wakeEffects);
             window.addEventListener('resize', wakeEffects);
             document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    if (renderFrameId !== null) cancelAnimationFrame(renderFrameId);
-                    renderFrameId = null;
-                    if (idleRenderTimer !== null) clearTimeout(idleRenderTimer);
-                    idleRenderTimer = null;
+                if (!isTowerActive()) {
+                    pauseEffects();
                 } else {
                     wakeEffects();
                 }
@@ -3103,7 +3267,7 @@
 
             function renderLoop(timestamp) {
                 renderFrameId = null;
-                if (document.hidden) return;
+                if (!isTowerActive()) return;
                 if (timestamp < nextRenderTimestamp - 0.5) {
                     renderFrameId = requestAnimationFrame(renderLoop);
                     return;
@@ -3121,14 +3285,10 @@
                 ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
                 ctx.clearRect(0, 0, w, h);
 
-                arenaCam.scale += (arenaCam.targetScale - arenaCam.scale) * 0.14;
+                arenaCam.scale = 1.0;
+                arenaCam.targetScale = 1.0;
 
                 ctx.save();
-                if (Math.abs(arenaCam.scale - 1.0) > 0.001) {
-                    ctx.translate(w * 0.5, h * 0.5);
-                    ctx.scale(arenaCam.scale, arenaCam.scale);
-                    ctx.translate(-w * 0.5, -h * 0.5);
-                }
 
                 const heroX = w * 0.23;
                 const heroY = h * 0.57;
@@ -4036,7 +4196,7 @@
                         ctx.lineWidth = p.scale * 6;
                         ctx.lineCap = 'round';
                         ctx.shadowColor = p.glowColor;
-                        ctx.shadowBlur = 20;
+                        ctx.shadowBlur = 0;
                         ctx.globalAlpha = 0.78;
                         ctx.stroke();
 
@@ -4073,17 +4233,20 @@
                             });
                         }
 
-                        for (let k = 0; k < 12; k++) {
-                            const spAngle = Math.random() * Math.PI * 2;
-                            const spSpeed = 2.5 + Math.random() * 7;
-                            const particle = towerParticlePool.pop() || {};
-                            particle.x = p.tx; particle.y = p.ty;
-                            particle.vx = Math.cos(spAngle) * spSpeed;
-                            particle.vy = Math.sin(spAngle) * spSpeed;
-                            particle.life = 1;
-                            particle.color = k % 2 === 0 ? '#ffffff' : p.glowColor;
-                            particle.size = 2 + Math.random() * 3;
-                            canvasParticles.push(particle);
+                        if (canvasParticles.length < 120) {
+                            for (let k = 0; k < 4; k++) {
+                                if (canvasParticles.length >= 120) break;
+                                const spAngle = Math.random() * Math.PI * 2;
+                                const spSpeed = 2.5 + Math.random() * 7;
+                                const particle = towerParticlePool.pop() || {};
+                                particle.x = p.tx; particle.y = p.ty;
+                                particle.vx = Math.cos(spAngle) * spSpeed;
+                                particle.vy = Math.sin(spAngle) * spSpeed;
+                                particle.life = 1;
+                                particle.color = k % 2 === 0 ? '#ffffff' : p.glowColor;
+                                particle.size = 2 + Math.random() * 3;
+                                canvasParticles.push(particle);
+                            }
                         }
                         canvasProjectiles.splice(i, 1);
                         if (towerSwordPool.length < 256) towerSwordPool.push(p);
@@ -4169,7 +4332,7 @@
                     ctx.globalAlpha = pt.life;
                     ctx.fillStyle = pt.color;
                     ctx.shadowColor = pt.color;
-                    ctx.shadowBlur = 10;
+                    ctx.shadowBlur = 0;
                     ctx.beginPath();
                     ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
                     ctx.fill();
@@ -4193,12 +4356,14 @@
                 }
                 // Luôn bám theo nhịp màn hình (144 Hz nếu máy hỗ trợ). Gameplay/VFX
                 // đã chuẩn hóa theo frameFactor nên tăng FPS không làm animation chạy nhanh hơn.
-                if (!document.hidden) renderFrameId = requestAnimationFrame(renderLoop);
+                if (isTowerActive()) renderFrameId = requestAnimationFrame(renderLoop);
             }
-            wakeEffects();
+            if (isTowerActive()) wakeEffects();
         }
 
         function spawnFlyingSwordProjectile(sx, sy, tx, ty, glowColor = '#06b6d4', bladeColor = '#67e8f9', triggerClash = true, scale = 0.96) {
+            // Giới hạn cứng mảng canvasProjectiles tối đa 45 phần tử (hết lag 100%)
+            if (canvasProjectiles.length >= 45) return;
             const midX = (sx + tx) * 0.5;
             const midY = (sy + ty) * 0.5 + (Math.random() - 0.5) * 195;
             const sword = towerSwordPool.pop() || { trail: [] };
@@ -4382,9 +4547,98 @@
             renderFloorList();
         }
 
+        function setupCustomBattleUI(enemy) {
+            if (!enemy) return;
+            gameState.customBattle = enemy;
+
+            const titleEl = document.getElementById('tower-main-title') || document.querySelector('.tower-identity h1');
+            if (titleEl) {
+                titleEl.textContent = enemy.titleBadge || `⚔️ CHIẾN ĐẤU • ${enemy.name.toUpperCase()}`;
+            }
+            const tagEl = document.getElementById('ui-cleared-badge');
+            if (tagEl) {
+                tagEl.textContent = enemy.mode === 'arena' ? '⚔️ Đấu Pháp Đài' : (enemy.mode === 'tamma' ? '💀 Huyễn Cảnh' : (enemy.mode === 'sect_trial' ? '⛩️ Thí Luyện' : '🌀 Quyết Đấu'));
+            }
+
+            renderFloorList();
+
+            const fObj = {
+                floor: enemy.floor || 1,
+                name: enemy.name || 'Đối Thủ',
+                title: enemy.titleBadge || enemy.name,
+                realmUnlock: enemy.realm || 'Trúc Cơ',
+                element: enemy.element || 'Hỏa',
+                hp: Number(enemy.hp || enemy.maxHp || 100000),
+                maxHp: Number(enemy.hp || enemy.maxHp || 100000),
+                atk: Number(enemy.atk || 12000),
+                def: Number(enemy.def || 4000),
+                crit: Number(enemy.crit || 15),
+                eva: Number(enemy.eva || 10),
+                cp: Number(enemy.cp || (enemy.atk * 3 + enemy.hp * 0.1)),
+                icon: enemy.icon || '👹',
+                drops: Array.isArray(enemy.drops) ? enemy.drops : [
+                    { id: 'custom_reward', name: enemy.rewards || 'Chiến Lợi Phẩm', rarity: 'rare', icon: enemy.icon || '🎁', desc: enemy.rewards || 'Phần thưởng chiến thắng' }
+                ]
+            };
+            updateArenaHUD(fObj);
+
+            if (gameState.inCombat) stopCombat();
+            setTimeout(() => {
+                if (!gameState.inCombat) startOrStopCombat();
+            }, 180);
+        }
+
         function renderFloorList() {
             const box = document.getElementById('floor-list-container');
             if (!box) return;
+
+            if (gameState.customBattle) {
+                const cb = gameState.customBattle;
+                const elemInfo = ELEMENTS[cb.element] || ELEMENTS.Hoa;
+                box.innerHTML = `
+                    <div class="p-3.5 rounded-xl border border-amber-500/50 bg-gradient-to-b from-amber-950/40 via-slate-900/80 to-slate-950/90 shadow-lg space-y-3">
+                        <div class="flex items-center gap-2.5 border-b border-amber-500/30 pb-2.5">
+                            <span class="text-3xl shrink-0 p-1.5 rounded-xl bg-black/60 border border-amber-500/30">${cb.icon || '⚔️'}</span>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-sm font-bold text-amber-300 font-xianxia truncate">${cb.name}</h3>
+                                <div class="text-[11px] text-slate-300 flex items-center gap-1.5 flex-wrap">
+                                    <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 font-semibold text-[10px]">${cb.realm || 'Trúc Cơ'}</span>
+                                    <span>${elemInfo.icon} Hệ ${elemInfo.name}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 text-xs font-mono bg-black/40 p-2.5 rounded-lg border border-slate-800">
+                            <div class="flex justify-between text-slate-300">
+                                <span>Khí Huyết:</span>
+                                <span class="text-rose-400 font-bold">${Number(cb.hp || cb.maxHp || 100000).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Công Kích:</span>
+                                <span class="text-amber-400 font-bold">${Number(cb.atk || 12000).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Phòng Ngự:</span>
+                                <span class="text-cyan-400 font-bold">${Number(cb.def || 4000).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Chiến Lực:</span>
+                                <span class="text-emerald-400 font-bold">${Number(cb.cp || (cb.atk * 3 + cb.hp * 0.1)).toLocaleString('vi-VN')} CP</span>
+                            </div>
+                        </div>
+                        ${cb.rewards ? `
+                        <div class="border-t border-slate-800 pt-2 text-[11px]">
+                            <div class="text-amber-300 font-semibold mb-1 flex items-center gap-1"><span>🎁</span> Thưởng Chiến Thắng:</div>
+                            <div class="text-slate-300 text-[10px] leading-relaxed bg-slate-950/70 p-2 rounded border border-slate-800/80">${cb.rewards}</div>
+                        </div>
+                        ` : ''}
+                        <div class="text-center pt-1 border-t border-slate-800/60">
+                            <span class="text-[10px] text-amber-400/90 font-medium animate-pulse">⚡ Sàn Đấu Quyết Chiến Đơn Lẻ</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             const floors = TOWER_50_FLOORS.filter(f => f.tier === gameState.selectedTier).slice().reverse();
 
             box.innerHTML = floors.map(f => {
@@ -4465,6 +4719,7 @@
 
             const fObj = TOWER_50_FLOORS.find(x => x.floor === floorNum);
             if (!fObj) return;
+            gameState.currentEnemy = fObj;
 
             gameState.selectedFloor = floorNum;
             gameState.selectedTier = Math.ceil(floorNum / 10);
@@ -4492,11 +4747,18 @@
         }
 
         function updateArenaHUD(fObj) {
-            document.getElementById('arena-floor-title').textContent = `Tầng ${fObj.floor} • ${fObj.name.replace(/\s*\(Tầng \d+\)/i, '')}`;
-            document.getElementById('arena-boss-cp').textContent = fmt(fObj.cp);
-            document.getElementById('arena-floor-tag').textContent = fObj.isMilestone
-                ? `🔥 CỘT MỐC ${fObj.realmUnlock.toUpperCase()}`
-                : `🗡️ TẦNG THÍ LUYỆN ${fObj.floor}/50`;
+            if (gameState.customBattle) {
+                const cb = gameState.customBattle;
+                document.getElementById('arena-floor-title').textContent = `${cb.titleBadge || '⚔️ ĐỐI CHIẾN'} • ${cb.name}`;
+                document.getElementById('arena-boss-cp').textContent = fmt(fObj.cp);
+                document.getElementById('arena-floor-tag').textContent = `⚔️ ${cb.realm || 'Đại Địch'}`;
+            } else {
+                document.getElementById('arena-floor-title').textContent = `Tầng ${fObj.floor} • ${fObj.name.replace(/\s*\(Tầng \d+\)/i, '')}`;
+                document.getElementById('arena-boss-cp').textContent = fmt(fObj.cp);
+                document.getElementById('arena-floor-tag').textContent = fObj.isMilestone
+                    ? `🔥 CỘT MỐC ${fObj.realmUnlock.toUpperCase()}`
+                    : `🗡️ TẦNG THÍ LUYỆN ${fObj.floor}/50`;
+            }
 
             const bossElem = ELEMENTS[fObj.element] || ELEMENTS.Moc;
             const heroElem = ELEMENTS[gameState.hero.element] || ELEMENTS.Kim;
@@ -4521,14 +4783,16 @@
             }
 
             const myCp = getHeroCP();
-            const ratio = (myCp / fObj.cp).toFixed(2);
+            const ratio = (myCp / (fObj.cp || 1)).toFixed(2);
             const ratioEl = document.getElementById('arena-cp-ratio');
-            if (ratio >= 1) {
-                ratioEl.className = "text-xs text-emerald-400 font-semibold";
-                ratioEl.textContent = `Kiếm Lực: ${fmt(myCp)} (${ratio}x)`;
-            } else {
-                ratioEl.className = "text-xs text-amber-300 font-semibold";
-                ratioEl.textContent = `Kiếm Lực: ${fmt(myCp)} (${ratio}x)`;
+            if (ratioEl) {
+                if (ratio >= 1) {
+                    ratioEl.className = "text-xs text-emerald-400 font-semibold";
+                    ratioEl.textContent = `Kiếm Lực: ${fmt(myCp)} (${ratio}x)`;
+                } else {
+                    ratioEl.className = "text-xs text-amber-300 font-semibold";
+                    ratioEl.textContent = `Kiếm Lực: ${fmt(myCp)} (${ratio}x)`;
+                }
             }
 
             updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, fObj.hp, fObj.hp, 0, 100, false);
@@ -4537,36 +4801,54 @@
 
             updateFightButtonUI(gameState.inCombat);
 
-            document.getElementById('loot-table-floor').textContent = fObj.floor;
+            const lootTableEl = document.getElementById('loot-table-floor');
+            if (lootTableEl) lootTableEl.textContent = gameState.customBattle ? (gameState.customBattle.name || 'Quyết Đấu') : fObj.floor;
             const dropBox = document.getElementById('floor-drop-preview');
-            dropBox.innerHTML = fObj.drops.map(item => `
-                <div class="p-2 rounded-xl border rarity-${item.rarity} flex items-center gap-2">
-                    <div class="text-xl shrink-0">${item.icon}</div>
-                    <div class="min-w-0">
-                        <div class="text-[11px] font-bold truncate">${item.name}</div>
-                        <div class="text-[9px] opacity-80 truncate">${item.desc}</div>
+            const drops = Array.isArray(fObj.drops) ? fObj.drops : [];
+            if (dropBox) {
+                dropBox.innerHTML = drops.length > 0 ? drops.map(item => `
+                    <div class="p-2 rounded-xl border rarity-${item.rarity || 'Dia'} flex items-center gap-2">
+                        <div class="text-xl shrink-0">${item.icon || '🎁'}</div>
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-bold truncate">${item.name}</div>
+                            <div class="text-[9px] opacity-80 truncate">${item.desc || ''}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('') : `<div class="p-2 text-xs text-slate-400 italic">Thưởng quyết chiến danh dự</div>`;
+            }
 
-            const nextMilestoneFloor = Math.ceil(fObj.floor / 10) * 10;
-            const mBoss = TOWER_50_FLOORS.find(x => x.floor === nextMilestoneFloor);
-            if (mBoss) {
-                document.getElementById('milestone-title-right').textContent = `Cột Mốc Tầng ${mBoss.floor}: ${mBoss.realmUnlock}`;
-                document.getElementById('milestone-desc-right').textContent = mBoss.milestoneDesc;
-                const mBtn = document.getElementById('btn-breakthrough-milestone');
-                if (gameState.highestCleared >= mBoss.floor) {
-                    document.getElementById('milestone-status-text').textContent = "🔓 Đã Phá Phong Ấn";
-                    document.getElementById('milestone-status-text').className = "text-xs font-bold text-emerald-400";
-                    mBtn.disabled = false;
-                    mBtn.className = "mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg cursor-pointer transition hover:brightness-110";
-                    mBtn.textContent = `🌌 ĐỘT PHÁ ${mBoss.realmUnlock.toUpperCase()} NGAY`;
-                } else {
-                    document.getElementById('milestone-status-text').textContent = `🔒 Tầng ${mBoss.floor} Chặn Cửa`;
-                    document.getElementById('milestone-status-text').className = "text-xs font-bold text-rose-400";
-                    mBtn.disabled = true;
-                    mBtn.className = "mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed";
-                    mBtn.textContent = `🔒 Hãy Vượt Tầng ${mBoss.floor} Trước`;
+            if (!gameState.customBattle) {
+                const nextMilestoneFloor = Math.ceil(fObj.floor / 10) * 10;
+                const mBoss = TOWER_50_FLOORS.find(x => x.floor === nextMilestoneFloor);
+                if (mBoss) {
+                    const mTitle = document.getElementById('milestone-title-right');
+                    if (mTitle) mTitle.textContent = `Cột Mốc Tầng ${mBoss.floor}: ${mBoss.realmUnlock}`;
+                    const mDesc = document.getElementById('milestone-desc-right');
+                    if (mDesc) mDesc.textContent = mBoss.milestoneDesc;
+                    const mBtn = document.getElementById('btn-breakthrough-milestone');
+                    if (gameState.highestCleared >= mBoss.floor) {
+                        const mStat = document.getElementById('milestone-status-text');
+                        if (mStat) {
+                            mStat.textContent = "🔓 Đã Phá Phong Ấn";
+                            mStat.className = "text-xs font-bold text-emerald-400";
+                        }
+                        if (mBtn) {
+                            mBtn.disabled = false;
+                            mBtn.className = "mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg cursor-pointer transition hover:brightness-110";
+                            mBtn.textContent = `🌌 ĐỘT PHÁ ${mBoss.realmUnlock.toUpperCase()} NGAY`;
+                        }
+                    } else {
+                        const mStat = document.getElementById('milestone-status-text');
+                        if (mStat) {
+                            mStat.textContent = "🔒 Chưa Vượt Ải";
+                            mStat.className = "text-xs font-bold text-rose-400";
+                        }
+                        if (mBtn) {
+                            mBtn.disabled = true;
+                            mBtn.className = "mt-2 w-full py-2 rounded-xl font-xianxia font-bold text-xs uppercase bg-slate-800 text-slate-500 cursor-not-allowed opacity-60";
+                            mBtn.textContent = `🔒 CẦN TRẢM BOSS TẦNG ${mBoss.floor}`;
+                        }
+                    }
                 }
             }
 
@@ -4576,16 +4858,84 @@
             document.getElementById('stat-eva').textContent = gameState.hero.eva + '%';
         }
 
+        let lastHeroHp = null;
+        let lastBossHp = null;
+
         function updateBarsUI(hHp, hMaxHp, hMp, bHp, bMaxHp, bMp, bToughness = 100, bBroken = false) {
-            document.getElementById('hero-hp-fill').style.width = `${Math.max(0, (hHp / hMaxHp) * 100)}%`;
+            const hPct = Math.max(0, Math.min(100, (hHp / (hMaxHp || 1)) * 100));
+            const heroFill = document.getElementById('hero-hp-fill');
+            const heroGhost = document.getElementById('hero-hp-ghost');
+            if (heroFill) heroFill.style.width = `${hPct}%`;
+            if (heroGhost) {
+                if (lastHeroHp !== null && hHp > lastHeroHp) {
+                    heroGhost.style.transition = 'none';
+                    heroGhost.style.width = `${hPct}%`;
+                    void heroGhost.offsetWidth;
+                    heroGhost.style.transition = 'width 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.35s';
+                } else {
+                    heroGhost.style.transition = 'width 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.35s';
+                    heroGhost.style.width = `${hPct}%`;
+                }
+            }
             document.getElementById('hero-hp-label').textContent = `${fmt(hHp)} / ${fmt(hMaxHp)}`;
+
+            // Nháy đỏ viền khi mất trên 15% máu tối đa
+            if (lastHeroHp !== null && (lastHeroHp - hHp) > hMaxHp * 0.15) {
+                const card = document.getElementById('hero-hud-card');
+                if (card) {
+                    card.classList.add('ring-2', 'ring-rose-500');
+                    setTimeout(() => card.classList.remove('ring-2', 'ring-rose-500'), 700);
+                }
+            }
+            lastHeroHp = hHp;
+
+            const bPct = Math.max(0, Math.min(100, (bHp / (bMaxHp || 1)) * 100));
+            const bossFill = document.getElementById('boss-hp-fill');
+            const bossGhost = document.getElementById('boss-hp-ghost');
+            if (bossFill) bossFill.style.width = `${bPct}%`;
+            if (bossGhost) {
+                if (lastBossHp !== null && bHp > lastBossHp) {
+                    bossGhost.style.transition = 'none';
+                    bossGhost.style.width = `${bPct}%`;
+                    void bossGhost.offsetWidth;
+                    bossGhost.style.transition = 'width 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.35s';
+                } else {
+                    bossGhost.style.transition = 'width 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.35s';
+                    bossGhost.style.width = `${bPct}%`;
+                }
+            }
+            document.getElementById('boss-hp-label').textContent = `${fmt(bHp)} / ${fmt(bMaxHp)}`;
+
+            // Nháy đỏ viền Boss khi Boss mất trên 15% máu tối đa
+            if (lastBossHp !== null && (lastBossHp - bHp) > bMaxHp * 0.15) {
+                const card = document.getElementById('boss-hud-card');
+                if (card) {
+                    card.classList.add('ring-2', 'ring-rose-500');
+                    setTimeout(() => card.classList.remove('ring-2', 'ring-rose-500'), 700);
+                }
+            }
+            lastBossHp = bHp;
+
             document.getElementById('hero-mp-fill').style.width = `${Math.min(100, hMp)}%`;
             document.getElementById('hero-mp-label').textContent = `${Math.min(100, Math.round(hMp))}/100`;
 
-            document.getElementById('boss-hp-fill').style.width = `${Math.max(0, (bHp / bMaxHp) * 100)}%`;
-            document.getElementById('boss-hp-label').textContent = `${fmt(bHp)} / ${fmt(bMaxHp)}`;
             document.getElementById('boss-mp-fill').style.width = `${Math.min(100, bMp)}%`;
             document.getElementById('boss-mp-label').textContent = `${Math.min(100, Math.round(bMp))}/100`;
+
+            // Cảnh báo Boss đang tụ lực đại sát chiêu (trên Card & trên đầu Boss)
+            const ultWarn = document.getElementById('boss-ult-warning');
+            const headWarn = document.getElementById('boss-head-warning');
+            if (gameState.bossChargingUlt) {
+                if (ultWarn) {
+                    ultWarn.classList.remove('hidden');
+                    const enemyName = gameState.currentEnemy?.name || 'Yêu Vương';
+                    ultWarn.innerHTML = `⚠️ CẢNH BÁO: [${enemyName.toUpperCase()}] ĐANG TỤ LỰC HỦY DIỆT! (Dùng [1] Hộ Thân hoặc Chiêu Phá Cang để ngắt!)`;
+                }
+                if (headWarn) headWarn.classList.remove('hidden');
+            } else {
+                if (ultWarn) ultWarn.classList.add('hidden');
+                if (headWarn) headWarn.classList.add('hidden');
+            }
 
             const tFill = document.getElementById('boss-toughness-fill');
             const tLabel = document.getElementById('boss-toughness-label');
@@ -4792,10 +5142,13 @@
             setTimeout(() => wrapper.remove(), 520);
         }
 
+        const combatLogHistory = [];
         function addLog(html) {
             const stream = document.getElementById('combat-log-stream');
             if (!stream) return;
-            stream.innerHTML = html;
+            combatLogHistory.unshift(html);
+            if (combatLogHistory.length > 40) combatLogHistory.pop();
+            stream.innerHTML = combatLogHistory.slice(0, 3).map(entry => `<div>${entry}</div>`).join('');
         }
 
         function switchRightSidebarTab(tabName) {
@@ -4889,19 +5242,161 @@
         });
         function refreshCombatPlayer() {
             try {
-                if (window.parent === window || typeof window.parent.getTowerSyncPayload !== 'function') return false;
-                const payload = window.parent.getTowerSyncPayload();
-                if (!payload?.hero) return false;
-                gameState.hero = { ...structuredClone(payload.hero), hp:payload.hero.maxHp, mp:0, maxMp:100 };
-                gameState.realmName = payload.realmName;
-                gameState.characterName = payload.characterName;
-                return true;
-            } catch (error) { console.warn('[Tower] Không đọc được chỉ số nhân vật', error); return false; }
+                if (window.parent && window.parent !== window && typeof window.parent.getTowerSyncPayload === 'function') {
+                    const payload = window.parent.getTowerSyncPayload();
+                    if (payload?.hero) {
+                        gameState.hero = { ...structuredClone(payload.hero), hp: payload.hero.maxHp, mp: 0, maxMp: 100 };
+                        if (payload.realmName) gameState.realmName = payload.realmName;
+                        if (payload.characterName) gameState.characterName = payload.characterName;
+                        return true;
+                    }
+                }
+            } catch (error) { 
+                console.warn('[Tower] Không đọc được chỉ số nhân vật từ parent, dùng fallback', error); 
+            }
+            if (!gameState.hero || typeof gameState.hero !== 'object') {
+                gameState.hero = {
+                    maxHp: 850000,
+                    hp: 850000,
+                    mp: 0,
+                    maxMp: 100,
+                    atk: 148000,
+                    def: 42000,
+                    crit: 35,
+                    critDmg: 2.15,
+                    eva: 18,
+                    element: 'Kim',
+                    swordCount: 12
+                };
+            } else {
+                gameState.hero.maxHp = Math.max(1000, Number(gameState.hero.maxHp || gameState.hero.hp) || 850000);
+                gameState.hero.hp = gameState.hero.maxHp;
+                gameState.hero.mp = 0;
+                gameState.hero.maxMp = 100;
+                gameState.hero.atk = Math.max(100, Number(gameState.hero.atk) || 148000);
+                gameState.hero.def = Math.max(50, Number(gameState.hero.def) || 42000);
+                gameState.hero.crit = Math.max(5, Number(gameState.hero.crit) || 35);
+                gameState.hero.critDmg = Math.max(1.5, Number(gameState.hero.critDmg) || 2.15);
+                gameState.hero.eva = Math.max(0, Number(gameState.hero.eva) || 18);
+                gameState.hero.element = gameState.hero.element || 'Kim';
+            }
+            return true;
         }
+        const SKILL_SLOT_CONFIGS = [
+            { slot: 0, name: 'Tiểu Thần Thông', key: 'Q', mp: 0, cd: 0, gainMp: 25, mult: 1.0, toughnessBreak: 25, isUlt: false },
+            { slot: 1, name: 'Đại Thần Thông', key: 'W', mp: 35, cd: 2, gainMp: 0, mult: 1.75, toughnessBreak: 55, isUlt: false },
+            { slot: 2, name: 'Tuyệt Thế Cấm Thuật', key: 'E', mp: 80, cd: 4, gainMp: 0, mult: 2.85, toughnessBreak: 90, isUlt: true }
+        ];
+
+        let manualTurnResolver = null;
+        function waitForPlayerManualAction() {
+            return new Promise(resolve => {
+                manualTurnResolver = resolve;
+            });
+        }
+
+        function triggerHitStop(durationMs = 135) {
+            const arena = document.getElementById('arena-viewport');
+            if (arena) arena.classList.add('hit-stop-freeze');
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    if (arena) arena.classList.remove('hit-stop-freeze');
+                    resolve();
+                }, durationMs);
+            });
+        }
+
+        function toggleAutoManualCombat() {
+            gameState.autoCombat = !gameState.autoCombat;
+            updateCombatModeUI();
+            const modeName = gameState.autoCombat ? 'TỰ ĐỘNG' : 'THỦ CÔNG';
+            addLog(`🕹️ <span class="text-amber-300 font-bold">[Chế Độ Chiến Đấu]</span> Đã chuyển sang chế độ <strong>${modeName}</strong>!`);
+            if (gameState.autoCombat && manualTurnResolver) {
+                const resolve = manualTurnResolver;
+                manualTurnResolver = null;
+                resolve({ type: 'auto' });
+            }
+        }
+
+        function updateCombatModeUI() {
+            const btn = document.getElementById('btn-combat-mode');
+            const icon = document.getElementById('combat-mode-icon');
+            const text = document.getElementById('combat-mode-text');
+            if (!btn) return;
+            if (gameState.autoCombat) {
+                if (icon) icon.textContent = '🤖';
+                if (text) text.textContent = 'Tự Động';
+                btn.className = 'px-3 py-1.5 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50 text-xs font-xianxia font-bold transition active:scale-95 flex items-center gap-1.5 shadow-sm';
+                btn.title = 'Chế độ TỰ ĐỘNG: AI tự xoay tua chiêu thức và tự kích hoạt khiên phản đòn (Phím M)';
+            } else {
+                if (icon) icon.textContent = '🕹️';
+                if (text) text.textContent = 'Thủ Công';
+                btn.className = 'px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-950/40 text-amber-300 hover:bg-amber-900/50 text-xs font-xianxia font-bold transition active:scale-95 flex items-center gap-1.5 shadow-sm';
+                btn.title = 'Chế độ THỦ CÔNG: Mỗi hiệp dừng chờ đạo hữu bấm [Q/W/E] hoặc [1/2/3] (Phím M)';
+            }
+        }
+
+        function castActiveSkillSlot(slotIdx) {
+            const cfg = SKILL_SLOT_CONFIGS[slotIdx];
+            if (!cfg) return;
+            const cd = gameState.skillCooldowns ? (gameState.skillCooldowns[slotIdx] || 0) : 0;
+            if (cd > 0) {
+                addLog(`⏳ <span class="text-amber-300 font-bold">[${cfg.name}]</span> đang hồi chiêu (còn ${cd} hiệp)!`);
+                spawnFloatingText('hero-stage-anchor', `HỒI CHIÊU (${cd}H)`, 'dodge');
+                return;
+            }
+            if (gameState.hero && gameState.hero.mp < cfg.mp) {
+                addLog(`⚠️ <span class="text-rose-400 font-bold">[Linh Lực Không Đủ]</span> ${cfg.name} cần ${cfg.mp} Kiếm Nguyên (Hiện có: ${Math.floor(gameState.hero.mp)})!`);
+                spawnFloatingText('hero-stage-anchor', `THIẾU MP (${cfg.mp})`, 'dodge');
+                return;
+            }
+
+            if (manualTurnResolver) {
+                const resolve = manualTurnResolver;
+                manualTurnResolver = null;
+                resolve({ type: 'skill', slot: slotIdx });
+            } else if (!gameState.inCombat) {
+                const manual = CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0];
+                const skill = manual.skills[slotIdx];
+                if (skill) selectUltimateSkill(skill.id, true);
+            }
+        }
+
         function towerDamage(attacker, defender, multiplier = 1, defFactor = 1, isCrit = false, critDamage = 1.5) {
-            return calculateDamage({ atk:attacker.atk, tier:attacker.tier, armorPen:attacker.armorPen || 0,
-                critChance:isCrit ? 1 : 0, critDamage, damageBuff:multiplier },
-                { def:defender.def * defFactor, tier:defender.tier, critResist:defender.critResist || 0 }).damage;
+            if (!attacker || !defender) return 100;
+
+            const atkVal = Number(attacker.atk || 1000);
+            const defVal = Number((defender.def || 500) * defFactor);
+            const defMaxHp = Number(defender.maxHp || defender.hp || 100000);
+
+            const atkCp = Number(attacker.cp || (attacker.atk * 3 + (attacker.maxHp || attacker.hp || 10000) * 0.1)) || 10000;
+            const defCp = Number(defender.cp || (defender.atk * 3 + defMaxHp * 0.1)) || 10000;
+            const cpRatio = atkCp / Math.max(1, defCp);
+
+            // Chênh lệch lực chiến áp đảo (> 5 lần): đòn đánh kết liễu nhanh hoặc chip damage tối thiểu
+            if (cpRatio >= 5.0) {
+                const rawOverkill = Math.max(atkVal * 2.2, defMaxHp * 0.65) * multiplier;
+                return Math.round(isCrit ? rawOverkill * critDamage : rawOverkill);
+            }
+            if (cpRatio <= 0.2) {
+                const chip = Math.max(10, Math.round(defMaxHp * 0.015 * multiplier));
+                return Math.round(isCrit ? chip * critDamage : chip);
+            }
+
+            // Trận đấu ngang cấp / cân bằng (CP lệch dưới 5x):
+            // Sát thương cơ bản mỗi hiệp kéo nhịp giao tranh diễn ra kịch tính trong 8 đến 15 hiệp
+            const basePacingFraction = 0.046; // Cân bằng nhịp độ giao tranh kịch tính 8-15 hiệp
+            const cpPacingFactor = Math.pow(Math.max(0.3, Math.min(3.0, cpRatio)), 0.45);
+            const statFactor = Math.max(0.4, Math.min(2.5, (atkVal + 100) / Math.max(100, defVal + 100)));
+
+            let baseDmg = defMaxHp * basePacingFraction * cpPacingFactor * Math.sqrt(statFactor) * multiplier;
+            baseDmg *= (0.93 + Math.random() * 0.14);
+
+            if (isCrit) {
+                baseDmg *= (critDamage || 1.5);
+            }
+
+            return Math.max(1, Math.round(baseDmg));
         }
         let combatTurnBusy = false;
         function playCombatTurn() {
@@ -4919,19 +5414,35 @@
         function updateCombatSkillUI(skill = null) {
             const bar = document.getElementById('active-manual-skills-bar');
             const skillId = skill ? String(skill.id) : '';
-            bar.dataset.castingSkillId = skillId;
-            bar.querySelectorAll('button[data-skill-id]').forEach(button => {
-                button.classList.toggle('is-casting', button.dataset.skillId === skillId);
-            });
-            document.getElementById('combat-skill-name').textContent = skill
-                ? `${skill.icon} ${skill.name}`
-                : `Ngẫu nhiên ${ULTIMATE_SKILLS.length} thần thông`;
-            document.getElementById('combat-skill-meta').textContent = skill
-                ? `${skill.manualName.replace(/[《》]/g, '')} · ${skill.stance}`
-                : `${CULTIVATION_MANUALS.length} công pháp · Ulti khi đầy Kiếm Nguyên`;
-            document.getElementById('combat-turn-label').textContent = gameState.inCombat
-                ? `Hiệp ${gameState.battleTurns}`
-                : 'Sẵn sàng';
+            if (bar) {
+                bar.dataset.castingSkillId = skillId;
+                bar.querySelectorAll('button[data-skill-id]').forEach(button => {
+                    button.classList.toggle('is-casting', button.dataset.skillId === skillId);
+                });
+            }
+            const nameEl = document.getElementById('combat-skill-name');
+            if (nameEl) {
+                nameEl.textContent = skill
+                    ? `${skill.icon || '⚡'} ${skill.name}`
+                    : `Ngẫu nhiên ${typeof ULTIMATE_SKILLS !== 'undefined' ? ULTIMATE_SKILLS.length : 15} thần thông`;
+            }
+            const metaEl = document.getElementById('combat-skill-meta');
+            if (metaEl) {
+                const manual = (typeof CULTIVATION_MANUALS !== 'undefined')
+                    ? (CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0])
+                    : null;
+                const mName = (skill?.manualName || manual?.name || 'Công Pháp').replace(/[《》]/g, '');
+                const stanceStr = skill?.stance || 'Liên Chiêu';
+                metaEl.textContent = skill
+                    ? `${mName} · ${stanceStr}`
+                    : `${typeof CULTIVATION_MANUALS !== 'undefined' ? CULTIVATION_MANUALS.length : 5} công pháp · [Q/W/E] Xuất Chiêu`;
+            }
+            const turnEl = document.getElementById('combat-turn-label');
+            if (turnEl) {
+                turnEl.textContent = gameState.inCombat
+                    ? `Hiệp ${gameState.battleTurns}`
+                    : 'Sẵn sàng';
+            }
         }
 
         async function startOrStopCombat() {
@@ -4940,13 +5451,68 @@
                 return;
             }
 
-            if (!refreshCombatPlayer()) { addLog('⚠️ Hãy mở Trấn Yêu Tháp từ game chính để lấy chỉ số nhân vật thật.'); return; }
-            const fObj = structuredClone(TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor));
-            if (!fObj) return;
+            refreshCombatPlayer();
+            let fObj;
+            if (gameState.customBattle) {
+                const cb = gameState.customBattle;
+                const heroHp = Number(gameState.hero?.maxHp || gameState.hero?.hp || 850000);
+                const heroAtk = Number(gameState.hero?.atk || 148000);
+                const heroDef = Number(gameState.hero?.def || 42000);
+
+                fObj = {
+                    floor: cb.floor || 1,
+                    name: cb.name || 'Đối Thủ',
+                    title: cb.titleBadge || cb.name,
+                    realmUnlock: cb.realm || 'Trúc Cơ',
+                    element: cb.element || 'Hỏa',
+                    hp: Number(cb.hp || cb.maxHp || Math.round(heroHp * 1.05)),
+                    maxHp: Number(cb.hp || cb.maxHp || Math.round(heroHp * 1.05)),
+                    atk: Number(cb.atk || Math.round(heroAtk * 0.95)),
+                    def: Number(cb.def || Math.round(heroDef * 0.95)),
+                    crit: Number(cb.crit || 15),
+                    eva: Number(cb.eva || 10),
+                    cp: Number(cb.cp || (cb.atk ? (cb.atk * 3 + (cb.hp || 100000) * 0.1) : (heroAtk * 3 + heroHp * 0.1))),
+                    icon: cb.icon || '👹',
+                    drops: Array.isArray(cb.drops) ? cb.drops : [
+                        { id: 'custom_reward', name: cb.rewards?.title || cb.rewards || 'Chiến Lợi Phẩm', rarity: 'rare', icon: cb.icon || '🎁', desc: cb.rewards?.badge || 'Phần thưởng chiến thắng' }
+                    ]
+                };
+            } else {
+                gameState.selectedFloor = Math.max(1, Number(gameState.selectedFloor) || 1);
+                if (typeof TOWER_50_FLOORS !== 'undefined' && Array.isArray(TOWER_50_FLOORS) && TOWER_50_FLOORS.length > 0) {
+                    const found = TOWER_50_FLOORS.find(x => x.floor === gameState.selectedFloor) || TOWER_50_FLOORS[0];
+                    if (found) fObj = structuredClone(found);
+                }
+            }
+            if (!fObj) {
+                fObj = {
+                    floor: gameState.selectedFloor || 1,
+                    name: 'Hắc Phong Lang',
+                    title: 'Tầng 1 - Hắc Phong Lang',
+                    realmUnlock: 'Luyện Khí',
+                    element: 'Mộc',
+                    hp: 80000,
+                    maxHp: 80000,
+                    atk: 12000,
+                    def: 3500,
+                    crit: 10,
+                    eva: 8,
+                    cp: 40000,
+                    drops: []
+                };
+            }
+            gameState.currentEnemy = fObj;
 
             combatGeneration++;
             gameState.inCombat = true;
             combatTurnBusy = false;
+            if (typeof manualTurnResolver === 'function') {
+                manualTurnResolver({ type: 'auto' });
+                manualTurnResolver = null;
+            }
+            lastHeroHp = null;
+            lastBossHp = null;
+
             gameState.battleTurns = 0;
             gameState.maxDamageDealt = 0;
             gameState.maxCombo = 0;
@@ -4960,16 +5526,25 @@
             gameState.liveBossMp = 0;
             gameState.liveBossToughness = 100;
             gameState.liveBossBrokenTurns = 0;
+            gameState.bossChargingUlt = false;
+            gameState.skillCooldowns = { 0: 0, 1: 0, 2: 0 };
+            artifactCooldowns[1] = 0;
+            artifactCooldowns[2] = 0;
+            artifactCooldowns[3] = 0;
             let bossEnraged = false;
 
             updateArenaHUD(fObj);
             updateFightButtonUI(true);
             updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, fObj.hp, fObj.hp, 0, 100, false);
+            updateArtifactButtonsUI();
+            updateActiveSkillsUI();
+            updateCombatModeUI();
 
             const heroElem = ELEMENTS[gameState.hero.element] || ELEMENTS.Kim;
             const isElementAdvantage = heroElem.counters === fObj.element;
 
-            addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến Tầng ${fObj.floor}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> (${gameState.hero.swordCount} Phi Kiếm) đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
+            const battleTitle = gameState.customBattle ? (gameState.customBattle.titleBadge || gameState.customBattle.name) : `Tầng ${fObj.floor}`;
+            addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến: ${battleTitle}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
 
             const runTick = async () => {
                 if (combatTurnBusy || !gameState.inCombat || nextCombatTurn !== runTick) return;
@@ -4978,13 +5553,32 @@
                 while (gameState.inCombat && nextCombatTurn === runTick) {
                 gameState.battleTurns++;
 
+                // 1. Giảm hồi chiêu đầu hiệp
+                for (let sKey in artifactCooldowns) {
+                    if (artifactCooldowns[sKey] > 0) artifactCooldowns[sKey]--;
+                }
+                for (let sIdx in gameState.skillCooldowns) {
+                    if (gameState.skillCooldowns[sIdx] > 0) gameState.skillCooldowns[sIdx]--;
+                }
+                updateArtifactButtonsUI();
+                updateActiveSkillsUI();
+
                 const h = gameState.hero;
-                const elemMult = (ELEMENTS[h.element]?.counters === fObj.element) ? 1.35 : 1.0;
+                const isMilestoneBoss = Boolean(fObj.isMilestone || (fObj.floor % 10 === 0));
+                const isCountering = (ELEMENTS[h.element]?.counters === fObj.element);
+                const hasForgedArtifact = Boolean(h.hasForgedArtifact);
+
+                let milestonePenalty = 1.0;
+                if (isMilestoneBoss) {
+                    if (!isCountering || !hasForgedArtifact) {
+                        milestonePenalty = 0.60;
+                        if (gameState.battleTurns === 1) {
+                            addLog(`<span class="text-rose-400 font-bold">⚠️ [ÁP CHẾ CỘT MỐC]</span> Chưa trang bị Pháp Bảo hoặc sai Hệ Ngũ Hành khắc chế Boss (${fObj.element})! Sát thương bị giảm 40%!`);
+                        }
+                    }
+                }
+                const elemMult = ((isCountering ? 1.35 : 1.0) * milestonePenalty);
                 const comboBonusMult = 1 + Math.min(1.5, gameState.comboCount * 0.02);
-                // Mỗi hiệp bốc chiêu từ toàn bộ công pháp; đầy Kiếm Nguyên bốc một cấm thuật.
-                const autoSkill = queuedCombatSkill || pickAutoCombatSkill(h.mp >= 100);
-                queuedCombatSkill = null;
-                updateCombatSkillUI(autoSkill);
 
                 const isBossBroken = gameState.liveBossBrokenTurns > 0;
                 if (isBossBroken) {
@@ -4996,7 +5590,7 @@
                     }
                 }
 
-                // TRU TIÊN KIẾM TRẬN & HỘ PHÁP YÊU LINH
+                // Tru Tiên Kiếm Trận & Hộ Pháp
                 if (gameState.domainActive && gameState.domainTicksLeft > 0) {
                     gameState.domainTicksLeft--;
                     fireCanvasSwordQi(true, '#22d3ee', 6, false);
@@ -5021,72 +5615,142 @@
                     if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - 10);
                 }
 
-                if (queuedTowerAction) {
-                    const action = queuedTowerAction; queuedTowerAction = null;
-                    resolvingPlayerTurn = true;
-                    try { action(); } finally { resolvingPlayerTurn = false; }
-                } else if (h.mp >= 100) {
-                    h.mp = 0;
-                    const ult = autoSkill;
-                    playHeavenlyLightningVFX(ult, 'boss');
-                    fireCanvasSwordQi(true, ult.color, 9, true);
-                    playSound('thunder');
-                    triggerScreenShake('ult');
-                    bossAnim.hitFlash = 6;
-                    incrementCombo();
+                // 2. LỰA CHỌN HÀNH ĐỘNG (THỦ CÔNG vs TỰ ĐỘNG)
+                let chosenAction = null;
+                const manual = CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0];
 
-                    const breakAmt = ult.toughnessBreak || 55;
-                    if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - breakAmt);
+                if (!gameState.autoCombat) {
+                    document.getElementById('combat-turn-label').textContent = `Hiệp ${gameState.battleTurns} (Chờ lệnh [Q/W/E/1/2/3])`;
+                    chosenAction = await waitForPlayerManualAction();
+                    if (!gameState.inCombat || nextCombatTurn !== runTick) return;
+                    if (chosenAction && chosenAction.type === 'auto') {
+                        chosenAction = null;
+                    }
+                }
 
-                    const isCrit = isBossBroken || (Math.random() * 100 < (h.crit + 18));
-                    const finalDmg = towerDamage(h, fObj, ult.mult * elemMult * (isBossBroken ? 1.5 : 1), isBossBroken ? 0 : .55, isCrit, h.critDmg * comboBonusMult);
+                if (!chosenAction) {
+                    // TỰ ĐỘNG XOAY TUA CHIÊU THỨC THÔNG MINH
+                    if (gameState.bossChargingUlt && artifactCooldowns[1] === 0 && h.mp >= ARTIFACT_CONFIGS[1].mp) {
+                        chosenAction = { type: 'artifact', slot: 1 };
+                    } else if (gameState.bossChargingUlt && gameState.skillCooldowns[1] === 0 && h.mp >= 35) {
+                        chosenAction = { type: 'skill', slot: 1 };
+                    } else if (h.mp >= 80 && gameState.skillCooldowns[2] === 0) {
+                        chosenAction = { type: 'skill', slot: 2 };
+                    } else if (h.mp >= 35 && gameState.skillCooldowns[1] === 0) {
+                        chosenAction = { type: 'skill', slot: 1 };
+                    } else {
+                        chosenAction = { type: 'skill', slot: 0 };
+                    }
+                }
 
-                    gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
-                    gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 15);
-                    gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
-                    gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
+                document.getElementById('combat-turn-label').textContent = `Hiệp ${gameState.battleTurns}`;
 
-                    spawnFloatingText('boss-stage-anchor', `${ult.icon} ${ult.name.toUpperCase()} -${fmt(finalDmg)}!`, 'ult');
-                    addLog(`<span class="text-cyan-300 font-bold">${ult.icon} [${ult.manualName} • Cấm Thuật]</span> Thi triển <strong>${ult.name}</strong> giáng xuống ${fObj.name} gây <span class="text-amber-300 font-bold">${fmt(finalDmg)}</span> sát thương!`);
+                // 3. THI TRIỂN HÀNH ĐỘNG CỦA NGƯỜI CHƠI
+                let playerUsedShield = false;
+                let playerPoiseBreak = 0;
 
-                    if (ult.healRatio) {
-                        const heal = Math.round(h.maxHp * ult.healRatio);
+                if (chosenAction.type === 'artifact') {
+                    const slot = chosenAction.slot;
+                    const cfg = ARTIFACT_CONFIGS[slot];
+                    h.mp = Math.max(0, h.mp - cfg.mp);
+                    artifactCooldowns[slot] = cfg.cd;
+                    updateArtifactButtonsUI();
+                    if (slot === 1) {
+                        playerUsedShield = true;
+                        gameState.shieldBellTurns = TOWER_RULES.bellShieldTurns || 4;
+                        document.getElementById('hero-shield-badge').classList.remove('hidden');
+                        const heal = Math.round(h.maxHp * 0.25);
                         h.hp = Math.min(h.maxHp, h.hp + heal);
-                        spawnFloatingText('hero-stage-anchor', `+${fmt(heal)} HP`, 'heal');
+                        playSound('bell');
+                        const canvas = document.getElementById('combat-canvas');
+                        if (canvas) {
+                            spawnCalligraphySeal('東皇鐘', canvas.width * 0.23, canvas.height * 0.42, '#fbbf24');
+                            canvasShockwaves.push({ x: canvas.width * 0.23, y: canvas.height * 0.56, r: 10, maxR: 150, alpha: 1.0, color: '#fbbf24' });
+                        }
+                        spawnFloatingText('hero-stage-anchor', `🔔 ĐÔNG HOÀNG CHUNG +${fmtShort(heal)} HP!`, 'heal');
+                        addLog(`<span class="text-amber-300 font-bold">🔔 [Đông Hoàng Chung]</span> Vận chuyển Kim Chung Tráo giảm 55% sát thương và sẵn sàng Phản Chấn sát chiêu! (Hồi ${fmtShort(heal)} HP)`);
+                    } else if (slot === 2) {
+                        activateSwordDomain();
+                        addLog(`<span class="text-rose-400 font-bold">🩸 [Tru Tiên Kiếm Trận]</span> Khởi động Tru Tiên Kiếm Trận oanh tạc liên tục!`);
+                    } else if (slot === 3) {
+                        playSound('thunder');
+                        triggerScreenShake('ult');
+                        triggerCameraZoom(1.1, 600);
+                        triggerAnimeCutIn("HỖN ĐỘN THÁI CỰC LUÂN!", "ÂM DƯƠNG NGHỊCH CHUYỂN • VẠN PHÁP QUY HƯ", "☯️");
+                        playerPoiseBreak = 60;
+                        const wheelDmg = towerDamage(h, fObj, 2.2 * elemMult);
+                        gameState.liveBossHp = Math.max(0, gameState.liveBossHp - wheelDmg);
+                        if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - playerPoiseBreak);
+                        spawnFloatingText('boss-stage-anchor', `☯️ THÁI CỰC LUÂN -${fmt(wheelDmg)}!`, 'ult');
+                        addLog(`<span class="text-cyan-300 font-bold">☯️ [Hỗn Độn Thái Cực Luân]</span> Đại phá Yêu Cang và giáng đòn hủy diệt <strong class="text-cyan-200">${fmt(wheelDmg)}</strong>!`);
                     }
                 } else {
-                    const bossDodged = !isBossBroken && ((Math.random() * 100) < fObj.eva);
-                    if (bossDodged) {
-                        bossAnim.dodgeOffset = 45;
-                        playHeavenlyLightningVFX(autoSkill, 'boss');
-                        fireCanvasSwordQi(true, autoSkill.color, 2, false);
-                        playSound('sword');
-                        spawnFloatingText('boss-stage-anchor', 'NÉ KIẾM!', 'dodge');
-                        addLog(`💨 ${fObj.name} hóa huyết ảnh <strong>NÉ TRÁNH</strong> ${autoSkill.name}!`);
-                    } else {
+                    const slotIdx = chosenAction.slot;
+                    const skill = manual.skills[slotIdx] || manual.skills[0];
+                    updateCombatSkillUI(skill);
+
+                    if (slotIdx === 0) {
+                        // Thức 1: 0 MP, 0 CD, hồi +25 MP
+                        h.mp = Math.min(100, h.mp + 25);
+                        playerPoiseBreak = skill.toughnessBreak || 25;
                         incrementCombo();
-                        const activeStanceSkill = autoSkill;
-                        const stanceMult = activeStanceSkill.mult * 0.65;
-                        const toughnessBreak = activeStanceSkill.toughnessBreak;
-
-                        if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - toughnessBreak);
-
-                        const isCrit = isBossBroken || ((Math.random() * 100) < h.crit);
-                        const defFactor = isBossBroken ? 0.2 : 0.85;
-                        const finalDmg = towerDamage(h, fObj, stanceMult * elemMult * (isBossBroken ? 1.45 : 1) * (.92 + Math.random() * .16), defFactor, isCrit, h.critDmg * comboBonusMult);
-
+                        if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - playerPoiseBreak);
+                        const isCrit = isBossBroken || (Math.random() * 100 < h.crit);
+                        const finalDmg = towerDamage(h, fObj, (skill.mult * 0.85) * elemMult, isBossBroken ? 0.3 : 0.9, isCrit, h.critDmg * comboBonusMult);
                         gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
-                        h.mp = Math.min(100, h.mp + (isCrit ? 36 : 28));
-                        gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 18);
-                        bossAnim.hitFlash = 4;
                         gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
                         gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
-
-                        playHeavenlyLightningVFX(activeStanceSkill, 'boss');
-                        fireCanvasSwordQi(true, activeStanceSkill.color, 6, isCrit);
+                        bossAnim.hitFlash = 4;
+                        playHeavenlyLightningVFX(skill, 'boss');
+                        fireCanvasSwordQi(true, skill.color, 4, isCrit);
+                        playSound(isCrit ? 'crit' : 'sword');
+                        spawnFloatingText('boss-stage-anchor', `${skill.icon} ${skill.name} -${fmt(finalDmg)}`, isCrit ? 'crit' : 'hit');
+                        spawnFloatingText('hero-stage-anchor', '+25 MP', 'heal');
+                        addLog(`${skill.icon} <span class="text-amber-200 font-bold">[Thức 1 • ${skill.name}]</span> Xuất kiếm trúng đích gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> ST! Hồi +25 Kiếm Nguyên.`);
+                    } else if (slotIdx === 1) {
+                        // Thức 2: 35 MP, 2 CD, phá Yêu Cang mạnh
+                        h.mp = Math.max(0, h.mp - 35);
+                        gameState.skillCooldowns[1] = 2;
+                        playerPoiseBreak = skill.toughnessBreak || 55;
+                        incrementCombo();
+                        if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - playerPoiseBreak);
+                        const isCrit = isBossBroken || (Math.random() * 100 < (h.crit + 15));
+                        const finalDmg = towerDamage(h, fObj, (skill.mult * 1.1) * elemMult, isBossBroken ? 0.2 : 0.8, isCrit, h.critDmg * comboBonusMult);
+                        gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
+                        gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
+                        gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
+                        bossAnim.hitFlash = 6;
+                        playHeavenlyLightningVFX(skill, 'boss');
+                        fireCanvasSwordQi(true, skill.color, 7, isCrit);
                         playSound('crit');
-                        spawnFloatingText('boss-stage-anchor', `${activeStanceSkill.icon} ${activeStanceSkill.name} -${fmt(finalDmg)}!`, 'crit');
-                        addLog(`${activeStanceSkill.icon} <span class="text-amber-300 font-bold">[${activeStanceSkill.stance}]</span> Vận chuyển <strong>${activeStanceSkill.name}</strong> gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> sát thương!`);
+                        triggerScreenShake('crit');
+                        spawnFloatingText('boss-stage-anchor', `${skill.icon} ${skill.name} -${fmt(finalDmg)}!`, 'crit');
+                        addLog(`${skill.icon} <span class="text-amber-300 font-bold">[Thức 2 • ${skill.name}]</span> Phá giáp xuất kích gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> ST và phá vỡ ${playerPoiseBreak} Điểm Yêu Cang!`);
+                    } else if (slotIdx === 2) {
+                        // Thức 3: 80 MP, 4 CD, Tuyệt Thế Cấm Thuật
+                        h.mp = Math.max(0, h.mp - 80);
+                        gameState.skillCooldowns[2] = 4;
+                        playerPoiseBreak = skill.toughnessBreak || 90;
+                        incrementCombo();
+                        if (!isBossBroken) gameState.liveBossToughness = Math.max(0, gameState.liveBossToughness - playerPoiseBreak);
+                        const isCrit = isBossBroken || (Math.random() * 100 < (h.crit + 25));
+                        const finalDmg = towerDamage(h, fObj, (skill.mult * 1.55) * elemMult, isBossBroken ? 0 : 0.6, isCrit, h.critDmg * comboBonusMult);
+                        gameState.liveBossHp = Math.max(0, gameState.liveBossHp - finalDmg);
+                        gameState.maxDamageDealt = Math.max(gameState.maxDamageDealt || 0, finalDmg);
+                        gameState.maxCombo = Math.max(gameState.maxCombo || 0, gameState.comboCount || 0);
+                        bossAnim.hitFlash = 8;
+                        playHeavenlyLightningVFX(skill, 'boss');
+                        fireCanvasSwordQi(true, skill.color, 12, true);
+                        playSound('thunder');
+                        triggerScreenShake('ult');
+                        await triggerHitStop(140);
+                        spawnFloatingText('boss-stage-anchor', `💥 ${skill.name.toUpperCase()} -${fmt(finalDmg)}!`, 'ult');
+                        addLog(`💥 <span class="text-cyan-300 font-bold">[Cấm Thuật • ${skill.name}]</span> Trảm xuất cấm thuật diệt thế gây <strong class="text-amber-300">${fmt(finalDmg)}</strong> ST!`);
+                        if (skill.healRatio) {
+                            const heal = Math.round(h.maxHp * skill.healRatio);
+                            h.hp = Math.min(h.maxHp, h.hp + heal);
+                            spawnFloatingText('hero-stage-anchor', `+${fmt(heal)} HP`, 'heal');
+                        }
                     }
                 }
 
@@ -5119,6 +5783,7 @@
                     gameState.liveBossHp, gameState.liveBossMaxHp, gameState.liveBossMp,
                     gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
                 );
+                updateActiveSkillsUI();
 
                 await sleep(getCombatTurnDelay());
                 if (!gameState.inCombat || nextCombatTurn !== runTick) return;
@@ -5127,28 +5792,77 @@
                     return;
                 }
 
-                // Enemy gets its own visible turn, one second after the player's hit.
-                    const isStunned = isBossBroken && (Math.random() < 0.65);
+                // 4. LƯỢT PHẢN CÔNG CỦA BOSS (BOSS ACTION & PARRY / ULT RESOLUTION)
+                if (gameState.bossChargingUlt) {
+                    // Boss đang gồng sát chiêu từ hiệp trước!
+                    const parried = (playerUsedShield || gameState.shieldBellTurns > 0 || gameState.liveBossBrokenTurns > 0 || gameState.liveBossToughness <= 0);
+
+                    if (parried) {
+                        // === PHẢN CHẤN / PHÁ CHIÊU HOÀN HẢO ===
+                        gameState.bossChargingUlt = false;
+                        gameState.liveBossMp = 0;
+                        gameState.liveBossBrokenTurns = Math.max(gameState.liveBossBrokenTurns, 2);
+                        gameState.bossBrokenVisual = true;
+
+                        const reflectDmg = Math.round(gameState.liveBossMaxHp * 0.20);
+                        gameState.liveBossHp = Math.max(0, gameState.liveBossHp - reflectDmg);
+
+                        playSound('bell');
+                        triggerScreenShake('ult');
+                        await triggerHitStop(150);
+
+                        const canvas = document.getElementById('combat-canvas');
+                        if (canvas) {
+                            spawnCalligraphySeal('反震', canvas.width * 0.77, canvas.height * 0.45, '#38bdf8');
+                            spawnSpaceShatter(canvas.width * 0.77, canvas.height * 0.45, '#38bdf8', 16);
+                        }
+                        spawnFloatingText('boss-stage-anchor', `💥 PHẢN CHẤN HOÀN HẢO -${fmt(reflectDmg)}!`, 'crit');
+                        addLog(`⚡ <span class="text-cyan-300 font-bold">[PHẢN CHẤN HOÀN HẢO]</span> Đạo hữu hóa giải sát chiêu diệt thế! Phản chấn gây <span class="text-amber-300 font-bold">${fmt(reflectDmg)}</span> sát thương và làm ${fObj.name} CHOÁNG 2 HIỆP!`);
+                    } else {
+                        // === BOSS GIẢI PHÓNG TUYỆT KỸ HỦY DIỆT ===
+                        gameState.bossChargingUlt = false;
+                        gameState.liveBossMp = 0;
+
+                        const heroDodged = (Math.random() * 100) < h.eva;
+                        if (heroDodged) {
+                            heroAnim.dodgeOffset = -45;
+                            spawnFloatingText('hero-stage-anchor', '✨ NÉ TRÁNH TUYỆT KỸ!', 'dodge');
+                            addLog(`✨ <span class="text-cyan-300 font-bold">[Ngự Phong Thần Pháp]</span> Đạo hữu xuất quỷ nhập thần né tránh toàn bộ Tuyệt Kỹ Hủy Diệt của ${fObj.name}!`);
+                        } else {
+                            const ultDmg = Math.round(h.maxHp * (0.45 + Math.random() * 0.15));
+                            h.hp = Math.max(0, h.hp - ultDmg);
+                            heroAnim.hitFlash = 8;
+                            playSound('thunder');
+                            triggerScreenShake('ult');
+                            await triggerHitStop(140);
+                            playHeavenlyLightningVFX({ color: '#f43f5e' }, 'hero');
+                            spawnFloatingText('hero-stage-anchor', `💀 DIỆT THẾ -${fmt(ultDmg)}!`, 'boss-hit');
+                            addLog(`💀 <span class="text-rose-500 font-bold">[TUYỆT KỸ HỦY DIỆT]</span> ${fObj.name} giáng đòn hủy diệt trời đất, đoạt đi <span class="text-rose-300 font-bold">${fmt(ultDmg)}</span> Khí Huyết!`);
+                        }
+                    }
+                } else {
+                    // Lượt đánh bình thường của Boss
+                    const isStunned = gameState.liveBossBrokenTurns > 0 && (Math.random() < 0.70);
                     if (isStunned) {
                         spawnFloatingText('boss-stage-anchor', '💫 CHOÁNG VÁNG!', 'dodge');
-                        addLog(`<span class="text-amber-300 font-bold">💫 [CHOÁNG VÁNG]</span> ${fObj.name} chịu nội thương do vỡ Cang, lảo đảo không thể xuất chiêu phản công!`);
+                        addLog(`<span class="text-amber-300 font-bold">💫 [CHOÁNG VÁNG]</span> ${fObj.name} chịu nội thương do vỡ Cang, lảo đảo không thể xuất chiêu!`);
                     } else {
                         const heroDodged = (Math.random() * 100) < h.eva;
                         if (heroDodged) {
                             heroAnim.dodgeOffset = -45;
-                            h.mp = Math.min(100, h.mp + 15);
                             spawnFloatingText('hero-stage-anchor', '✨ NGỰ PHONG NÉ!', 'dodge');
                             addLog(`<span class="text-cyan-300">✨ [Ngự Phong Thân Pháp]</span> Đạo hữu đạp phi kiếm lướt nhẹ, <strong>NÉ TRÁNH</strong> đòn của ${fObj.name}!`);
                         } else {
                             const isBossCrit = (Math.random() * 100) < fObj.crit;
-
                             let bossDmg = towerDamage(fObj, h, (bossEnraged ? 1.35 : 1) * (.9 + Math.random() * .2), .9, isBossCrit, 1.65);
+                            if (isMilestoneBoss && (!isCountering || !hasForgedArtifact)) {
+                                bossDmg = Math.round(bossDmg * 1.45);
+                            }
 
-                            // Nếu có Đông Hoàng Chung Hộ Thể, giảm 55% sát thương và phản chấn!
                             if (gameState.shieldBellTurns > 0) {
                                 gameState.shieldBellTurns--;
                                 bossDmg = Math.round(bossDmg * 0.45);
-                                const reflectDmg = towerDamage(h, fObj, .45);
+                                const reflectDmg = towerDamage(h, fObj, .35);
                                 gameState.liveBossHp = Math.max(0, gameState.liveBossHp - reflectDmg);
                                 spawnFloatingText('boss-stage-anchor', `🔔 PHẢN CHẤN -${fmt(reflectDmg)}`, 'crit');
                                 if (gameState.shieldBellTurns <= 0) {
@@ -5157,31 +5871,41 @@
                             }
 
                             h.hp = Math.max(0, h.hp - bossDmg);
-                            h.mp = Math.min(100, h.mp + 20);
-                            gameState.liveBossMp = 0;
                             heroAnim.hitFlash = 4;
                             spawnFloatingText('hero-stage-anchor', `-${fmt(bossDmg)}`, 'boss-hit');
+                            addLog(`<span class="text-rose-300">${fObj.name} đánh trả gây <strong class="text-rose-400">${fmt(bossDmg)}</strong> sát thương. Khí Huyết còn ${fmt(h.hp)} / ${fmt(h.maxHp)}.</span>`);
                         }
 
-                        addLog(`<span class="text-rose-300">${fObj.name} kết thúc lượt phản công. Khí Huyết còn ${fmt(h.hp)} / ${fmt(h.maxHp)}.</span>`);
-                    }
+                        // Tích lũy Nộ Khí cho Boss (+20 MP mỗi lượt bình thường)
+                        gameState.liveBossMp = Math.min(100, gameState.liveBossMp + 20);
 
-                    updateBarsUI(
-                        h.hp, h.maxHp, h.mp,
-                        gameState.liveBossHp, gameState.liveBossMaxHp, gameState.liveBossMp,
-                        gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
-                    );
+                        // Kiểm tra đạt ngưỡng gồng đại chiêu (>= 80% MP)
+                        if (gameState.liveBossMp >= 80 && gameState.liveBossHp > 0) {
+                            gameState.bossChargingUlt = true;
+                            playSound('thunder');
+                            triggerScreenShake('crit');
+                            addLog(`⚠️ <span class="text-rose-400 font-bold">[CẢNH BÁO SÁT CHIÊU]</span> ${fObj.name} đang tụ lực hủy diệt! (Dùng [1] Đông Hoàng Chung hoặc chiêu Phá Cang để ngắt!)`);
+                        }
+                    }
+                }
 
-                    await sleep(getCombatTurnDelay());
-                    if (!gameState.inCombat || nextCombatTurn !== runTick) return;
-                    if (gameState.liveBossHp <= 0) {
-                        triggerFatalFinisher(fObj, () => handleVictory(fObj));
-                        return;
-                    }
-                    if (h.hp <= 0) {
-                        handleDefeat(fObj);
-                        return;
-                    }
+                updateBarsUI(
+                    h.hp, h.maxHp, h.mp,
+                    gameState.liveBossHp, gameState.liveBossMaxHp, gameState.liveBossMp,
+                    gameState.liveBossToughness, gameState.liveBossBrokenTurns > 0
+                );
+                updateActiveSkillsUI();
+
+                await sleep(getCombatTurnDelay());
+                if (!gameState.inCombat || nextCombatTurn !== runTick) return;
+                if (gameState.liveBossHp <= 0) {
+                    triggerFatalFinisher(fObj, () => handleVictory(fObj));
+                    return;
+                }
+                if (h.hp <= 0) {
+                    handleDefeat(fObj);
+                    return;
+                }
 
                 }
                 } catch (error) { if (nextCombatTurn === runTick) stopCombat("Trận đấu tạm dừng do lỗi xử lý."); console.error(error); }
@@ -5195,6 +5919,11 @@
             combatGeneration++;
             nextCombatTurn = null;
             queuedTowerAction = queuedCombatSkill = null;
+            if (manualTurnResolver) {
+                const resolve = manualTurnResolver;
+                manualTurnResolver = null;
+                resolve(null);
+            }
             if (wakeCombatSleep) { const resolve = wakeCombatSleep; wakeCombatSleep = null; resolve(); }
             clearTimeout(gameState.combatTimer);
             gameState.combatTimer = null;
@@ -5204,8 +5933,17 @@
             gameState.domainActive = false;
             gameState.bossEnragedVisual = false;
             gameState.bossBrokenVisual = false;
+            gameState.bossChargingUlt = false;
+            const ultWarn = document.getElementById('boss-ult-warning');
+            if (ultWarn) ultWarn.classList.add('hidden');
             document.getElementById('arena-viewport').classList.remove('domain-active-bg');
             updateFightButtonUI(false);
+            artifactCooldowns[1] = 0;
+            artifactCooldowns[2] = 0;
+            artifactCooldowns[3] = 0;
+            gameState.skillCooldowns = { 0: 0, 1: 0, 2: 0 };
+            updateArtifactButtonsUI();
+            updateActiveSkillsUI();
             if (reason) addLog(`<span class="text-slate-400">⏹️ ${reason}</span>`);
         }
 
@@ -5251,6 +5989,25 @@
             // Sau chiến thắng: Khí Huyết hồi phục toàn bộ nhờ hấp thu linh khí thiên địa
             gameState.hero.hp = gameState.hero.maxHp;
             gameState.hero.mp = 0;
+
+            if (gameState.customBattle) {
+                const cb = gameState.customBattle;
+                showCinematicBanner(`🏆 ĐẠI THẮNG ĐỐI QUYẾT! TRẢM BẠI ${cb.name}! 🏆`, 2500);
+                addLog(`<span class="text-emerald-300 font-bold">🏆 [ĐẠI THẮNG QUYẾT CHIẾN]</span> Đạo hữu kiếm khí tung hoành, đại thắng đối quyết <strong>${cb.name}</strong>!`);
+
+                updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, 0, fObj.hp, 0, 100, false);
+
+                try {
+                    window.parent.postMessage({
+                        type: 'van-thien-luc:custom-battle-result',
+                        result: 'victory',
+                        battle: cb
+                    }, '*');
+                } catch (e) {}
+
+                showCustomVictoryModal(cb);
+                return;
+            }
 
             const ltGain = fObj.floor * 16000;
             const tvGain = fObj.floor * 48000;
@@ -5471,11 +6228,115 @@
             }
             playSound('thunder');
             triggerScreenShake('ult');
-            addLog(`<span class="text-rose-400 font-bold">⚠️ [TRỌNG THƯƠNG LÙI BƯỚC]</span> Không địch lại ${fObj.name}!`);
+
+            if (gameState.customBattle) {
+                const cb = gameState.customBattle;
+                addLog(`<span class="text-rose-400 font-bold">⚠️ [TRỌNG THƯƠNG LÙI BƯỚC]</span> Không địch lại ${cb.name}! Kinh mạch chấn thương!`);
+                try {
+                    window.parent.postMessage({
+                        type: 'van-thien-luc:custom-battle-result',
+                        result: 'defeat',
+                        battle: cb
+                    }, '*');
+                } catch (e) {}
+                syncWithParent({ isInjured: true });
+                showCustomDefeatModal(cb);
+                return;
+            }
+
+            addLog(`<span class="text-rose-400 font-bold">⚠️ [TRỌNG THƯƠNG LÙI BƯỚC]</span> Không địch lại ${fObj.name}! Kinh mạch chấn thương, cần điều tức 15s hoặc dùng Hồi Huyết Đan!`);
+            syncWithParent({ isInjured: true });
             showDefeatModal(fObj);
         }
 
+        function showCustomVictoryModal(cb) {
+            const modal = document.getElementById('tower-victory-modal');
+            if (!modal) return;
+
+            const fTitle = document.getElementById('victory-floor-title');
+            if (fTitle) fTitle.textContent = `ĐẠI THẮNG: ${cb.name ? cb.name.toUpperCase() : 'QUYẾT ĐẤU'}`;
+            const bDesc = document.getElementById('victory-boss-desc');
+            if (bDesc) bDesc.textContent = `Đã kích bại [${cb.name}], uy danh vang dội, thu hoạch vô lượng cơ duyên!`;
+
+            const ltGain = (cb.rewards && (cb.rewards.linhThach || cb.rewards.stones)) || 150000;
+            const tvGain = (cb.rewards && (cb.rewards.tuVi || cb.rewards.exp)) || 300000;
+            const ltEl = document.getElementById('victory-reward-lt');
+            if (ltEl) ltEl.textContent = `+${fmt(ltGain)}`;
+            const tvEl = document.getElementById('victory-reward-tv');
+            if (tvEl) tvEl.textContent = `+${fmt(tvGain)}`;
+
+            const turnsEl = document.getElementById('victory-stat-turns');
+            if (turnsEl) turnsEl.textContent = `${gameState.battleTurns || 1} Hiệp`;
+            const maxDmgEl = document.getElementById('victory-stat-max-dmg');
+            if (maxDmgEl) maxDmgEl.textContent = fmt(gameState.maxDamageDealt || Math.round(gameState.hero.atk * 1.5));
+            const maxComboEl = document.getElementById('victory-stat-max-combo');
+            if (maxComboEl) maxComboEl.textContent = `${Math.max(1, gameState.maxCombo || 1)} Hits`;
+
+            const lootName = document.getElementById('victory-loot-name');
+            const lootIcon = document.getElementById('victory-loot-icon');
+            const lootRarity = document.getElementById('victory-loot-rarity');
+            const useItemBtn = document.getElementById('btn-victory-use-item');
+            if (useItemBtn) useItemBtn.classList.add('hidden');
+            if (lootName) lootName.textContent = (cb.rewards && (cb.rewards.title || cb.rewards.badge)) || 'Chiến Tích Quyết Đấu';
+            if (lootIcon) lootIcon.textContent = cb.icon || '🏆';
+            if (lootRarity) lootRarity.textContent = cb.realm || 'Tuyệt Phẩm';
+
+            const soulRow = document.getElementById('victory-soul-row');
+            if (soulRow) soulRow.classList.add('hidden');
+
+            const milestoneBanner = document.getElementById('victory-milestone-banner');
+            if (milestoneBanner) milestoneBanner.classList.add('hidden');
+
+            const nextBtn = document.getElementById('btn-victory-next-floor');
+            if (nextBtn) {
+                nextBtn.innerHTML = `🏆 Hoàn Tất & Trở Về <span class="text-[10px] text-amber-200 block font-normal">(Space / Enter)</span>`;
+                nextBtn.onclick = function() {
+                    closeVictoryModal();
+                };
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function showCustomDefeatModal(cb) {
+            const modal = document.getElementById('tower-defeat-modal');
+            if (!modal) return;
+            const fTitle = document.getElementById('defeat-floor-title');
+            if (fTitle) fTitle.textContent = `CHIẾN BẠI TRƯỚC ${cb.name ? cb.name.toUpperCase() : 'ĐỐI THỦ'}!`;
+            const bDesc = document.getElementById('defeat-boss-desc');
+            if (bDesc) bDesc.textContent = `[${cb.name}] công lực thâm hậu cái thế, khó lòng kháng cự. Cần tĩnh dưỡng điều tức!`;
+            modal.classList.remove('hidden');
+        }
+
+        function toggleTowerAutoFarm() {
+            window._towerAutoFarm = !window._towerAutoFarm;
+            const btn = document.getElementById('btn-tower-autofarm');
+            if (btn) {
+                btn.textContent = window._towerAutoFarm ? '🔁 Quét Tháp: BẬT' : '🔁 Quét Tháp: Tắt';
+                btn.className = window._towerAutoFarm
+                    ? 'px-2 py-1 rounded-xl bg-amber-500/90 text-slate-950 border border-amber-300 font-bold text-[11px] shadow-[0_0_12px_rgba(245,158,11,0.5)] transition animate-pulse'
+                    : 'px-2 py-1 rounded-xl bg-slate-900/90 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 font-bold text-[11px] transition';
+            }
+        }
+
         function showVictoryModal(fObj, droppedItem, newSoul, ltGain, tvGain) {
+            try {
+                window.parent.postMessage({
+                    type: 'van-thien-luc:tower-victory-reward',
+                    floor: Number(fObj?.floor) || 1,
+                    isBoss: (Number(fObj?.floor) || 1) % 5 === 0
+                }, '*');
+            } catch (e) {}
+
+            if (window._towerAutoFarm) {
+                setTimeout(() => {
+                    if (window._towerAutoFarm && typeof startFloor === 'function') {
+                        const targetFloor = Math.max(1, Number(gameState?.maxClearedFloor || fObj?.floor || 1));
+                        startFloor(targetFloor);
+                    }
+                }, 900);
+            }
+
             const modal = document.getElementById('tower-victory-modal');
             if (!modal) return;
 
@@ -5581,6 +6442,12 @@
         function closeVictoryModal() {
             const modal = document.getElementById('tower-victory-modal');
             if (modal) modal.classList.add('hidden');
+            if (gameState.customBattle) {
+                gameState.customBattle = null;
+                try {
+                    window.parent.postMessage({ type: 'van-thien-luc:tower-close' }, '*');
+                } catch (e) {}
+            }
         }
 
         function sweepFromVictoryModal() {
@@ -5643,13 +6510,25 @@
         function closeDefeatModal() {
             const modal = document.getElementById('tower-defeat-modal');
             if (modal) modal.classList.add('hidden');
+            if (gameState.customBattle) {
+                gameState.customBattle = null;
+                try {
+                    window.parent.postMessage({ type: 'van-thien-luc:tower-close' }, '*');
+                } catch (e) {}
+            }
         }
 
         function retryFloorFromDefeatModal() {
+            const isCustom = !!gameState.customBattle;
+            const currentCustom = gameState.customBattle;
             closeDefeatModal();
             healHeroFull();
             setTimeout(() => {
-                if (!gameState.inCombat) startOrStopCombat();
+                if (isCustom && currentCustom) {
+                    setupCustomBattleUI(currentCustom);
+                } else {
+                    if (!gameState.inCombat) startOrStopCombat();
+                }
             }, 300);
         }
 
@@ -5768,6 +6647,8 @@
             renderManualSelectorBar();
             renderActiveManualSkillsBar();
             renderManualsCompendium();
+            updateCombatModeUI();
+            updateArtifactButtonsUI();
 
             if (castImmediately && gameState.inCombat) {
                 queuedCombatSkill = u;
@@ -5812,6 +6693,8 @@
             renderManualSelectorBar();
             renderActiveManualSkillsBar();
             renderManualsCompendium();
+            updateCombatModeUI();
+            updateArtifactButtonsUI();
 
             triggerAnimeCutIn(manual.name, `${manual.tier.toUpperCase()} • ${manual.passiveDesc.toUpperCase()}`, manual.icon);
             addLog(`<span class="text-amber-300 font-bold">📜 [Chuyển Đổi Chủ Tu Công Pháp]</span> Đạo hữu vận chuyển <strong>${manual.name}</strong> (${manual.passiveDesc})! Đã mở khóa Tam Thức Liên Chiêu mới!`);
@@ -5839,22 +6722,39 @@
             const bar = document.getElementById('active-manual-skills-bar');
             if (!bar) return;
             const manual = CULTIVATION_MANUALS.find(m => m.id === gameState.activeManualId) || CULTIVATION_MANUALS[0];
-            document.getElementById('active-manual-label').textContent = manual.shortName;
+            const lbl = document.getElementById('active-manual-label');
+            if (lbl) lbl.textContent = manual.shortName;
 
-            bar.innerHTML = `
-                ${manual.skills.map((s, idx) => {
-                    const isSelected = s.id === gameState.selectedUltId;
-                    const isCasting = String(s.id) === bar.dataset.castingSkillId;
-                    const badgeLabel = idx === 0 ? 'Thức 1' : (idx === 1 ? 'Thức 2' : 'Cấm Thuật');
-                    return `
-                        <button onclick="selectUltimateSkill(${s.id}, true)" data-skill-id="${s.id}" aria-pressed="${isSelected}" class="tower-skill-card${isCasting ? ' is-casting' : ''}" title="${s.stance}: ${s.desc} (Bấm để thi triển ngay!)">
-                            <span>${s.icon}</span>
-                            <span>${badgeLabel}</span>
-                            <span>${s.name}</span>
-                        </button>
-                    `;
-                }).join('')}
-            `;
+            const heroMp = (gameState.hero && gameState.hero.mp != null) ? gameState.hero.mp : 0;
+
+            bar.innerHTML = manual.skills.map((s, idx) => {
+                const cfg = SKILL_SLOT_CONFIGS[idx] || { key: idx === 0 ? 'Q' : (idx === 1 ? 'W' : 'E'), mp: 0 };
+                const cd = (gameState.skillCooldowns && gameState.skillCooldowns[idx]) ? gameState.skillCooldowns[idx] : 0;
+                const canAfford = heroMp >= cfg.mp;
+                const badgeLabel = idx === 0 ? 'Thức 1' : (idx === 1 ? 'Thức 2' : 'Cấm Thuật');
+                const isCasting = String(s.id) === bar.dataset.castingSkillId;
+
+                let statusText = `${cfg.mp > 0 ? cfg.mp + ' MP' : '+25 MP'}`;
+                let disabledClass = '';
+                if (cd > 0) {
+                    statusText = `⏳ ${cd} hiệp`;
+                    disabledClass = 'opacity-50 grayscale pointer-events-none';
+                } else if (!canAfford) {
+                    disabledClass = 'opacity-65';
+                }
+
+                return `
+                    <button onclick="castActiveSkillSlot(${idx})" data-skill-id="${s.id}" class="tower-skill-card ${isCasting ? 'is-casting ' : ''}${disabledClass}" title="${s.stance}: ${s.desc} [Phím ${cfg.key}] (Bấm để xuất chiêu)">
+                        <span>${s.icon}</span>
+                        <span>${badgeLabel} [${cfg.key}] · ${statusText}</span>
+                        <span>${s.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function updateActiveSkillsUI() {
+            renderActiveManualSkillsBar();
         }
 
         function renderManualsCompendium() {
@@ -5920,7 +6820,8 @@
                 btn.innerHTML = `<span>⏹️ DỪNG CHIẾN</span> <kbd class="px-1.5 py-0.5 rounded bg-black/50 text-[10px] font-mono text-rose-300 border border-rose-500/40">Space</kbd>`;
             } else {
                 btn.className = "px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-700 hover:brightness-110 text-white font-xianxia font-bold text-xs xl:text-sm tracking-wider shadow-[0_0_25px_rgba(225,29,72,0.7)] transition active:scale-95 flex items-center justify-center gap-1.5";
-                btn.innerHTML = `<span>🗡️ KHIÊU CHIẾN (T.${gameState.selectedFloor})</span> <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>`;
+                const label = gameState.customBattle ? (gameState.customBattle.name || 'QUYẾT ĐẤU') : `T.${gameState.selectedFloor}`;
+                btn.innerHTML = `<span>🗡️ KHIÊU CHIẾN (${label})</span> <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-200 border border-amber-400/40">Space</kbd>`;
             }
         }
 
@@ -5995,8 +6896,10 @@
         }
 
         function closeTowerPopup() {
+            isTowerHibernated = true;
             if (gameState.inCombat) stopCombat();
             cancelTowerEffects();
+            if (typeof window.pauseTowerEffects === 'function') window.pauseTowerEffects();
             closeVictoryModal();
             closeDefeatModal();
             syncWithParent({
@@ -6018,7 +6921,9 @@
         }
 
         function openTowerPopup() {
+            isTowerHibernated = false;
             document.getElementById('tran-yeu-thap-popup').classList.remove('hidden');
+            if (typeof window.wakeTowerEffects === 'function') window.wakeTowerEffects();
         }
 
         function initTowerMenus() {
@@ -6066,6 +6971,8 @@
             renderManualSelectorBar();
             renderActiveManualSkillsBar();
             renderManualsCompendium();
+            updateCombatModeUI();
+            updateArtifactButtonsUI();
 
             const synced = tryDirectSyncFromParent();
             if (!synced) {

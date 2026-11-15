@@ -707,9 +707,8 @@ html, body, #scene-background {
     overflow: hidden;
     position: relative;
     user-select: none;
-    background-image: url('../assets/images/bg_hagioi_co.png');
-    background-size: cover !important;
-    background-position: center bottom !important;
+    background-image: none !important;
+    background-color: #020617 !important;
 }
 
 /* Tụ Linh Trận & Nhân Vật đã được thống nhất hoàn toàn bên trong .cultivation-cluster */
@@ -6994,4 +6993,21 @@ body.heavenly-rejection-impact::after{animation-duration:.01ms}
     margin: 0 !important;
     padding: 1rem !important;
     box-sizing: border-box !important;
+}
+
+/* === CLEANUP: .center-panel-col (chuyển từ inline style #center-avatar) === */
+#center-avatar.center-panel-col {
+    position: fixed !important;
+    top: 44% !important;
+    left: 50% !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: 380px !important;
+    height: 400px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 25 !important;
+    pointer-events: none !important;
 }
