@@ -400,34 +400,36 @@ const HOA_THAN_ATK = [1200000, 1800000, 2600000, 3800000];
 const HOA_THAN_DEF = [450000, 680000, 980000, 1400000];
 const HOA_THAN_MP = [2000000, 3000000, 4200000, 5800000];
 const HOA_THAN_MAX_EXP = [800000, 1500000, 3000000, 6000000];
-["Sơ Kỳ", "Trung Kỳ", "Hậu Kỳ", "Viên Mãn"].forEach((minorStage, minorIndex) => REALMS.push({
-    id: 17 + minorIndex,
-    name: `Hóa Thần - ${minorStage}`,
-    majorRealm: "Hóa Thần",
-    minorStage,
-    majorIndex: 4,
-    minorIndex,
-    tier: 5,
-    realmTier: 5,
-    tierMultiplier: 10000,
-    major_multiplier: 10000,
-    stage: "Linh Giới",
-    maxExp: HOA_THAN_MAX_EXP[minorIndex],
-    rate: 3800 + minorIndex * 1200,
-    lifespan: 2000,
-    baseHp: HOA_THAN_HP[minorIndex],
-    baseAtk: HOA_THAN_ATK[minorIndex],
-    baseDef: HOA_THAN_DEF[minorIndex],
-    baseMp: HOA_THAN_MP[minorIndex],
-    attackMultiplier: 10000,
-    baseChance: 0,
-    isMajorBottleneck: minorIndex === 3,
-    breakthroughPillId: null,
-    tribulationType: null,
-    lightningCount: 0,
-    auraColor: "rgba(56, 189, 248, 0.62)",
-    quote: "Thiên Đạo Hạ Giới áp chế, mau tìm đường phi thăng!"
-}));
+if (!REALMS.some(r => r && r.majorRealm === 'Hóa Thần')) {
+    ["Sơ Kỳ", "Trung Kỳ", "Hậu Kỳ", "Viên Mãn"].forEach((minorStage, minorIndex) => REALMS.push({
+        id: 17 + minorIndex,
+        name: `Hóa Thần - ${minorStage}`,
+        majorRealm: "Hóa Thần",
+        minorStage,
+        majorIndex: 4,
+        minorIndex,
+        tier: 5,
+        realmTier: 5,
+        tierMultiplier: 10000,
+        major_multiplier: 10000,
+        stage: "Linh Giới",
+        maxExp: HOA_THAN_MAX_EXP[minorIndex],
+        rate: 3800 + minorIndex * 1200,
+        lifespan: 2000,
+        baseHp: HOA_THAN_HP[minorIndex],
+        baseAtk: HOA_THAN_ATK[minorIndex],
+        baseDef: HOA_THAN_DEF[minorIndex],
+        baseMp: HOA_THAN_MP[minorIndex],
+        attackMultiplier: 10000,
+        baseChance: 0,
+        isMajorBottleneck: minorIndex === 3,
+        breakthroughPillId: null,
+        tribulationType: null,
+        lightningCount: 0,
+        auraColor: "rgba(56, 189, 248, 0.62)",
+        quote: "Thiên Đạo Hạ Giới áp chế, mau tìm đường phi thăng!"
+    }));
+}
 
 if (typeof window !== "undefined") window.REALMS = REALMS;
 if (typeof globalThis !== "undefined") globalThis.REALMS = REALMS;
@@ -3808,6 +3810,7 @@ const DEFAULT_STATE = {
     daoTam: 100,
     tamMa: 0,
     beQuanTuQua: { active: false, startTime: 0 },
+    swordFormation: { level: 0 },
     currentWorld: "HaGioi",
     statusEffect: null,
     forcedAscensionTriggered: false,

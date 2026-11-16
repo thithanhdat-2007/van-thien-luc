@@ -71,6 +71,9 @@ function setupUnifiedStateReference(targetState) {
             configurable: true
         });
     }
+    if (typeof attachUnifiedGameStateHelpers === 'function') {
+        attachUnifiedGameStateHelpers(targetState);
+    }
     if (typeof window !== 'undefined') {
         window.state = targetState;
         window.GameState = targetState;
@@ -82,6 +85,88 @@ function setupUnifiedStateReference(targetState) {
         globalThis.player = targetState;
     }
     return targetState;
+}
+
+function attachUnifiedGameStateHelpers(target) {
+    if (!target || typeof target !== 'object') return target;
+    if (!Object.prototype.hasOwnProperty.call(target, 'TuVi')) {
+        Object.defineProperties(target, {
+            TuVi: {
+                get() { return typeof state !== 'undefined' ? (state.exp || 0) : (this.exp || 0); },
+                set(v) { if (typeof state !== 'undefined') state.exp = v; else this.exp = v; },
+                configurable: true
+            },
+            LinhThach: {
+                get() { return typeof state !== 'undefined' ? (state.stones || 0) : (this.stones || 0); },
+                set(v) { if (typeof state !== 'undefined') state.stones = v; else this.stones = v; },
+                configurable: true
+            },
+            TienNgoc: {
+                get() { return typeof state !== 'undefined' ? (state.immortalJade || 0) : (this.immortalJade || 0); },
+                set(v) { if (typeof state !== 'undefined') state.immortalJade = v; else this.immortalJade = v; },
+                configurable: true
+            },
+            ChienLuc: {
+                get() { return typeof getCombatPower === 'function' ? getCombatPower() : ((typeof state !== 'undefined' ? state?.atk : this.atk) * 10 || 0); },
+                configurable: true
+            },
+            ThoNguyen: {
+                get() { return typeof state !== 'undefined' ? (state.lifespan || 100) : (this.lifespan || 100); },
+                configurable: true
+            }
+        });
+    }
+    if (typeof target.deductLinhThach !== 'function') {
+        target.deductLinhThach = function(amount) {
+            if ((this.LinhThach || 0) < amount) return false;
+            this.LinhThach -= amount;
+            if (typeof this.updateUI === 'function') this.updateUI();
+            if (typeof saveGameState === 'function') saveGameState();
+            return true;
+        };
+    }
+    if (typeof target.deductTienNgoc !== 'function') {
+        target.deductTienNgoc = function(amount) {
+            if ((this.TienNgoc || 0) < amount) return false;
+            this.TienNgoc -= amount;
+            if (typeof this.updateUI === 'function') this.updateUI();
+            if (typeof saveGameState === 'function') saveGameState();
+            return true;
+        };
+    }
+    if (typeof target.addTuVi !== 'function') {
+        target.addTuVi = function(amount) {
+            this.TuVi += amount;
+            if (typeof this.updateUI === 'function') this.updateUI();
+            if (typeof saveGameState === 'function') saveGameState();
+        };
+    }
+    if (typeof target.updateUI !== 'function') {
+        target.updateUI = function() {
+            if (typeof syncAllUI === 'function') {
+                syncAllUI();
+            } else if (typeof updateHUD === 'function') {
+                updateHUD();
+            }
+            const elStones = document.getElementById('top-spirit-stones');
+            if (elStones) elStones.textContent = Number(this.LinhThach || 0).toLocaleString('vi-VN');
+            const elJade = document.getElementById('top-immortal-jade');
+            if (elJade) elJade.textContent = Number(this.TienNgoc || 0).toLocaleString('vi-VN');
+            const elCp = document.getElementById('combat-power-text');
+            if (elCp) elCp.textContent = Number(this.ChienLuc || 0).toLocaleString('vi-VN');
+            const elExpDesktop = document.getElementById('exp-text-desktop');
+            const rList = (typeof window !== 'undefined' && Array.isArray(window.REALMS_DATA)) ? window.REALMS_DATA : (typeof REALMS !== 'undefined' ? REALMS : []);
+            if (elExpDesktop && Array.isArray(rList) && typeof state !== 'undefined') {
+                const maxExp = rList[state.realmIndex]?.maxExp || 100;
+                const curTuVi = Math.floor(Number(this.TuVi || 0));
+                elExpDesktop.textContent = `${curTuVi.toLocaleString('vi-VN')} / ${Number(maxExp).toLocaleString('vi-VN')}`;
+                const pct = Math.min(100, Math.round((curTuVi / maxExp) * 100));
+                const bar = document.getElementById('exp-bar-desktop');
+                if (bar) bar.style.width = `${pct}%`;
+            }
+        };
+    }
+    return target;
 }
 
 setupUnifiedStateReference(state);
@@ -1346,6 +1431,92 @@ function updateCultivationRatePopover() {
 }
 window.updateCultivationRatePopover = updateCultivationRatePopover;
 
+function updateCombatPowerPopover() {
+    const pop = document.getElementById('cp-breakdown-popover');
+    if (!pop) return;
+    if (typeof window.recalculatePlayerStats === 'function' && (!window.GameState?.totalStats || !window.GameState.totalStats.swordFormation)) {
+        try { window.recalculatePlayerStats(window.GameState || state); } catch (_) {}
+    } else if (typeof window.calculateTotalStats === 'function' && (!window.GameState?.totalStats || !window.GameState.totalStats.total)) {
+        try { window.calculateTotalStats(window.GameState || state); } catch (_) {}
+    }
+    const st = window.GameState?.totalStats || (typeof window.recalculatePlayerStats === 'function' ? window.recalculatePlayerStats(state) : (typeof window.calculateTotalStats === 'function' ? window.calculateTotalStats(state) : null));
+    if (!st) return;
+
+    const totalEl = document.getElementById('cp-pop-total');
+    if (totalEl) totalEl.textContent = `${Number(st.cp || 0).toLocaleString('vi-VN')} CP`;
+
+    const fmt = (v) => (typeof window.formatCompactNumber === 'function' ? window.formatCompactNumber(Number(v) || 0) : Math.round(Number(v) || 0).toLocaleString('vi-VN'));
+    const sw = st.swordFormation || { level: 0, atk: 0, critPct: 0, towerOpeningDmgPercent: 0 };
+    const compAtk = (st.companion?.atk || 0) + (st.pet?.atk || 0) + (st.souls?.atk || 0);
+    const compDef = (st.companion?.def || 0) + (st.pet?.def || 0) + (st.souls?.def || 0);
+    const artGearAtk = (st.gear?.atk || 0) + (st.artifacts?.atk || 0);
+    const artGearDef = (st.gear?.def || 0) + (st.artifacts?.def || 0);
+    const rows = [
+        ['🧘 Cảnh Giới Gốc', `Công ${fmt(st.base?.atk)} • Thủ ${fmt(st.base?.def)} • HP ${fmt(st.base?.hp)}`],
+        ['⚔️ Kiếm Trận (Lv.' + (sw.level || 0) + '/20)', `Công +${fmt(sw.atk)} • Bạo +${sw.critPct || 0}%`],
+        ['🛡️ Trang Bị & Pháp Bảo', `Công +${fmt(artGearAtk)} • Thủ +${fmt(artGearDef)}`],
+        ['🌿 Ngũ Hành Linh Căn', `Công +${fmt(st.roots?.atk)} • Thủ +${fmt(st.roots?.def)} • HP +${fmt(st.roots?.hp)}`],
+        ['🦊 Đạo Lữ • Thú • Hồn', `Công +${fmt(compAtk)} • Thủ +${fmt(compDef)}`],
+        ['📜 Công Pháp & Hệ Số', `x${(st.multipliers?.totalAtkMult || 1).toFixed(2)} Công • x${(st.multipliers?.totalDefMult || 1).toFixed(2)} Thủ`],
+        ['☯️ Đạo Tâm & Thành Tựu', `${st.alignment?.title || 'Thái Cực'} • Bạo ${st.total?.crit || 0}% • Hút HP ${st.total?.lifesteal || 0}%`]
+    ];
+    const rowsEl = document.getElementById('cp-pop-rows');
+    if (rowsEl) {
+        rowsEl.innerHTML = rows.map(([label, val]) => `
+            <div class="flex items-center justify-between gap-2 py-0.5 border-b border-slate-800/70">
+                <span class="text-slate-400">${label}</span>
+                <span class="text-emerald-300 font-bold text-right">${val}</span>
+            </div>
+        `).join('');
+    }
+    const footerEl = document.getElementById('cp-pop-footer');
+    if (footerEl) {
+        footerEl.innerHTML = `<span>Tổng Công: <b class="text-rose-300">${fmt(st.total?.atk)}</b></span><span>Thủ: <b class="text-sky-300">${fmt(st.total?.def)}</b></span><span>Khí Huyết: <b class="text-emerald-300">${fmt(st.total?.hp)}</b></span>`;
+    }
+}
+window.updateCombatPowerPopover = updateCombatPowerPopover;
+
+function toggleCombatPowerPopover(e) {
+    if (e) e.stopPropagation();
+    const pop = document.getElementById('cp-breakdown-popover');
+    if (!pop) return;
+    const isHidden = pop.classList.contains('hidden');
+    const ratePop = document.getElementById('cultivation-rate-popover');
+    if (ratePop) ratePop.classList.add('hidden');
+    if (isHidden) {
+        updateCombatPowerPopover();
+        const trigger = document.getElementById('btn-cp-breakdown');
+        if (trigger) {
+            const rect = trigger.getBoundingClientRect();
+            const popW = Math.min(320, window.innerWidth - 24);
+            const left = Math.min(Math.max(12, rect.left), window.innerWidth - popW - 12);
+            const top = Math.min(window.innerHeight - 280, rect.bottom + 8);
+            pop.style.left = `${Math.round(left)}px`;
+            pop.style.top = `${Math.max(66, Math.round(top))}px`;
+        }
+        pop.classList.remove('hidden');
+    } else {
+        pop.classList.add('hidden');
+    }
+}
+window.toggleCombatPowerPopover = toggleCombatPowerPopover;
+
+if (typeof document !== 'undefined' && !window.__vtlPopoverOutsideClickBound) {
+    window.__vtlPopoverOutsideClickBound = true;
+    document.addEventListener('click', (evt) => {
+        const ratePop = document.getElementById('cultivation-rate-popover');
+        const rateBtn = document.getElementById('btn-cultivate');
+        if (ratePop && !ratePop.classList.contains('hidden') && !ratePop.contains(evt.target) && (!rateBtn || !rateBtn.contains(evt.target))) {
+            ratePop.classList.add('hidden');
+        }
+        const cpPop = document.getElementById('cp-breakdown-popover');
+        const cpBtn = document.getElementById('btn-cp-breakdown');
+        if (cpPop && !cpPop.classList.contains('hidden') && !cpPop.contains(evt.target) && (!cpBtn || !cpBtn.contains(evt.target))) {
+            cpPop.classList.add('hidden');
+        }
+    });
+}
+
 // =========================================================================
 // PHÚC LỢI THIÊN ĐẠO HÀNG NGÀY & ĐẠO LỘ THÀNH TỰU
 // =========================================================================
@@ -1364,7 +1535,9 @@ function openDailyBlessingModal() {
     if (!modal) return;
     renderDailyBlessingUI();
     modal.classList.remove('hidden');
-    modal.style.display = 'flex';
+    modal.classList.add('flex', 'active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
     if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
 }
 window.openDailyBlessingModal = openDailyBlessingModal;
@@ -1373,7 +1546,9 @@ function closeDailyBlessingModal() {
     const modal = document.getElementById('modal-daily-blessing');
     if (!modal) return;
     modal.classList.add('hidden');
-    modal.style.display = 'none';
+    modal.classList.remove('flex', 'active');
+    modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
     if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(false);
 }
 window.closeDailyBlessingModal = closeDailyBlessingModal;
@@ -4497,74 +4672,16 @@ if (typeof window !== 'undefined' && !window.GameState) {
     window.GameState = {};
 }
 const _targetGS = (typeof window !== 'undefined' && window.GameState) ? window.GameState : {};
-Object.defineProperties(_targetGS, {
-    TuVi: {
-        get() { return typeof state !== 'undefined' ? (state.exp || 0) : 0; },
-        set(v) { if (typeof state !== 'undefined') state.exp = v; },
-        configurable: true
-    },
-    LinhThach: {
-        get() { return typeof state !== 'undefined' ? (state.stones || 0) : 0; },
-        set(v) { if (typeof state !== 'undefined') state.stones = v; },
-        configurable: true
-    },
-    TienNgoc: {
-        get() { return typeof state !== 'undefined' ? (state.immortalJade || 0) : 0; },
-        set(v) { if (typeof state !== 'undefined') state.immortalJade = v; },
-        configurable: true
-    },
-    ChienLuc: {
-        get() { return typeof getCombatPower === 'function' ? getCombatPower() : (state?.atk ? state.atk * 10 : 0); },
-        configurable: true
-    },
-    ThoNguyen: {
-        get() { return typeof state !== 'undefined' ? (state.lifespan || 100) : 100; },
-        configurable: true
-    }
-});
-_targetGS.deductLinhThach = function(amount) {
-    if ((this.LinhThach || 0) < amount) return false;
-    this.LinhThach -= amount;
-    this.updateUI();
-    if (typeof saveGameState === 'function') saveGameState();
-    return true;
-};
-_targetGS.deductTienNgoc = function(amount) {
-    if ((this.TienNgoc || 0) < amount) return false;
-    this.TienNgoc -= amount;
-    this.updateUI();
-    if (typeof saveGameState === 'function') saveGameState();
-    return true;
-};
-_targetGS.addTuVi = function(amount) {
-    this.TuVi += amount;
-    this.updateUI();
-    if (typeof saveGameState === 'function') saveGameState();
-};
-_targetGS.updateUI = function() {
-    if (typeof syncAllUI === 'function') {
-        syncAllUI();
-    } else if (typeof updateHUD === 'function') {
-        updateHUD();
-    }
-    const elStones = document.getElementById('top-spirit-stones');
-    if (elStones) elStones.textContent = Number(this.LinhThach || 0).toLocaleString('vi-VN');
-    const elJade = document.getElementById('top-immortal-jade');
-    if (elJade) elJade.textContent = Number(this.TienNgoc || 0).toLocaleString('vi-VN');
-    const elCp = document.getElementById('combat-power-text');
-    if (elCp) elCp.textContent = Number(this.ChienLuc || 0).toLocaleString('vi-VN');
-    const elExpDesktop = document.getElementById('exp-text-desktop');
-    if (elExpDesktop && typeof REALMS !== 'undefined' && typeof state !== 'undefined') {
-        const maxExp = REALMS[state.realmIndex]?.maxExp || 100;
-        elExpDesktop.textContent = `${Number(this.TuVi || 0).toLocaleString('vi-VN')} / ${Number(maxExp).toLocaleString('vi-VN')}`;
-        const pct = Math.min(100, Math.round(((this.TuVi || 0) / maxExp) * 100));
-        const bar = document.getElementById('exp-bar-desktop');
-        if (bar) bar.style.width = `${pct}%`;
-    }
-};
+attachUnifiedGameStateHelpers(_targetGS);
 if (typeof window !== 'undefined') {
     window.GameState = _targetGS;
-    window.updateUI = () => window.GameState.updateUI();
+    window.updateUI = () => {
+        if (window.GameState && typeof window.GameState.updateUI === 'function') {
+            return window.GameState.updateUI();
+        }
+        if (typeof syncAllUI === 'function') return syncAllUI();
+        if (typeof updateHUD === 'function') return updateHUD();
+    };
 }
 
 /**
@@ -4846,6 +4963,14 @@ function switchPage(pageId) {
         }
     }
     if (pageId === 'page-achievement' || pageId === 'achievement' || pageId === 'thanh-tuu' || pageId === 'character-achievement') {
+        const el = document.getElementById('page-achievement');
+        if (el) {
+            showPopupEl(el);
+            if (typeof renderAchievementHub === 'function') {
+                renderAchievementHub(document.getElementById('achievement-page-content'));
+            }
+            return;
+        }
         openHubModal('character', 'achievement');
         return;
     }
@@ -7459,6 +7584,85 @@ function upgradeArtifact(artId) {
 }
 window.upgradeArtifact = upgradeArtifact;
 
+function upgradeSwordFormation() {
+    ensureArtifactsInit();
+    if (!state.swordFormation || typeof state.swordFormation !== 'object') {
+        state.swordFormation = { level: 0 };
+    }
+    const curLvl = Math.max(0, Math.min(20, Number(state.swordFormation.level) || 0));
+    if (curLvl >= 20) {
+        if (typeof showGameToast === 'function') showGameToast('👑 Bản Mệnh Kiếm Trận đã đạt Nhị Thập Trọng Cực Cảnh tối thượng (+20)!', 'info');
+        return;
+    }
+
+    const nextLvl = curLvl + 1;
+    const costStones = nextLvl * 400;
+    const costOre = nextLvl * 2;
+    const playerStones = Number(state.stones || (typeof GameState !== 'undefined' ? GameState.stones : 0)) || 0;
+    const playerOre = getArtifactOre('huyenThiet');
+
+    if (playerStones < costStones) {
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${costStones.toLocaleString('vi-VN')} Linh Thạch để tế luyện Kiếm Trận!`, 'warning');
+        if (typeof addLog === 'function') addLog(`⚠️ Thiếu ${costStones.toLocaleString('vi-VN')} Linh Thạch để tế luyện Bản Mệnh Kiếm Trận Lv.${nextLvl}.`, 'text-rose-400');
+        return;
+    }
+    if (playerOre < costOre) {
+        if (typeof showGameToast === 'function') showGameToast(`Thiếu ${costOre} Huyền Thiết Khoáng!`, 'warning');
+        if (typeof addLog === 'function') addLog(`⚠️ Thiếu ${costOre} Huyền Thiết Khoáng để tế luyện Bản Mệnh Kiếm Trận Lv.${nextLvl}.`, 'text-rose-400');
+        return;
+    }
+
+    state.stones = playerStones - costStones;
+    deductArtifactOre('huyenThiet', costOre);
+    state.swordFormation.level = nextLvl;
+    if (typeof GameState !== 'undefined') {
+        GameState.stones = state.stones;
+        GameState.swordFormation = state.swordFormation;
+    }
+
+    const prevCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
+    if (typeof window.recalculatePlayerStats === 'function') window.recalculatePlayerStats();
+    const newCp = typeof getCombatPower === 'function' ? getCombatPower() : 0;
+    const cpGain = Math.max(120, newCp - prevCp);
+
+    if (typeof window.triggerShockwaveRing === 'function') window.triggerShockwaveRing(null, null, '#38bdf8');
+    if (typeof spawnFloatingText === 'function') {
+        spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2 - 60, `Kiếm Trận Lv.${nextLvl}! (+${cpGain.toLocaleString('vi-VN')} CP)`, 'text-cyan-300 font-bold');
+    }
+    const bonus = typeof window.getSwordFormationBonus === 'function' ? window.getSwordFormationBonus(state) : { atk: nextLvl * 45, critPct: nextLvl * 0.6, towerOpeningDmgPercent: nextLvl * 5 };
+    if (typeof showGameToast === 'function') {
+        showGameToast(`⚔️ Bản Mệnh Kiếm Trận đột phá Tầng ${nextLvl}/20! (+${bonus.atk.toLocaleString('vi-VN')} Công, +${bonus.critPct}% Bạo, +${bonus.towerOpeningDmgPercent}% Khai Chiến Tháp)`, 'success');
+    }
+    if (typeof addLog === 'function') {
+        addLog(`⚔️ <b class="text-cyan-300">[Bản Mệnh Kiếm Trận]</b> Tế luyện thành công đạt <b>Tầng ${nextLvl}/20</b>! Công +${bonus.atk.toLocaleString('vi-VN')}, Bạo Kích +${bonus.critPct}%, Khai Chiến Trấn Yêu Tháp +${bonus.towerOpeningDmgPercent}% sát thương đầu trận!`, 'text-cyan-300');
+    }
+
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
+    else if (typeof saveGameState === 'function') saveGameState();
+
+    const artPage = document.getElementById('artifact-page-content');
+    if (artPage) renderArtifactHub(artPage);
+    const hubContent = document.getElementById('hub-modal-content');
+    if (hubContent && document.getElementById('hub-modal')?.classList.contains('active')) renderArtifactHub(hubContent);
+}
+window.upgradeSwordFormation = upgradeSwordFormation;
+
+function openSwordFormationModal() {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('page-artifact');
+    } else if (typeof openGameModal === 'function') {
+        openGameModal('page-artifact');
+    }
+    setTimeout(() => {
+        const panel = document.getElementById('sword-formation-panel');
+        if (panel && typeof panel.scrollIntoView === 'function') {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 60);
+}
+window.openSwordFormationModal = openSwordFormationModal;
+
 function renderArtifactHub(content) {
     if (!content) return;
     ensureArtifactsInit();
@@ -7483,9 +7687,47 @@ function renderArtifactHub(content) {
 
     const huyenThietTotal = getArtifactOre('huyenThiet');
     const tuTinhTotal = getArtifactOre('tuTinh');
+    const sfLvl = Math.max(0, Math.min(20, Number(state.swordFormation?.level) || 0));
+    const sfBonus = typeof window.getSwordFormationBonus === 'function'
+        ? window.getSwordFormationBonus(state)
+        : { level: sfLvl, atk: sfLvl * 45 * tier, critPct: Number((sfLvl * 0.6).toFixed(1)), towerOpeningDmgPercent: sfLvl * 5, bonusSwords: sfLvl >= 15 ? 8 : (sfLvl >= 8 ? 6 : (sfLvl >= 3 ? 4 : 2)) };
+    const sfIsMax = sfLvl >= 20;
+    const sfNextLvl = sfLvl + 1;
+    const sfCostStones = sfNextLvl * 400;
+    const sfCostOre = sfNextLvl * 2;
+    const sfCanAfford = !sfIsMax && Number(state.stones || 0) >= sfCostStones && huyenThietTotal >= sfCostOre;
 
     content.innerHTML = `
         <div class="space-y-4 select-none">
+            <!-- BẢN MỆNH KIẾM TRẬN (LV 1 - 20) -->
+            <section id="sword-formation-panel" class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/60 via-slate-900/95 to-indigo-950/60 border border-cyan-400/45 shadow-[0_0_24px_rgba(34,211,238,0.16)] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="space-y-1.5 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-[11px] font-mono font-bold">Tầng ${sfLvl} / 20</span>
+                        <h3 class="text-base sm:text-lg font-bold text-cyan-200 font-serif">⚔️ Bản Mệnh Kiếm Trận (Hộ Thể Phi Kiếm)</h3>
+                    </div>
+                    <p class="text-xs text-slate-300">Tiêu hao <b>Huyền Thiết Khoáng</b> + <b>Linh Thạch</b> tế luyện Kiếm Trận: cộng thẳng Công Kích, Tỷ Lệ Bạo Kích, khai mở Phi Kiếm xoay quanh bản thể & tung kiếm thế phủ đầu trong Trấn Yêu Tháp.</p>
+                    <div class="flex flex-wrap gap-2 pt-1 text-[11px] font-mono">
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-950/85 border border-rose-500/35 text-rose-300">⚔️ Công: +${(sfBonus.atk || 0).toLocaleString('vi-VN')}</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-950/85 border border-amber-500/35 text-amber-300">💥 Bạo Kích: +${sfBonus.critPct || 0}%</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-950/85 border border-purple-500/35 text-purple-300">🗡️ Khai Chiến Tháp: +${sfBonus.towerOpeningDmgPercent || 0}% ATK</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-950/85 border border-cyan-500/35 text-cyan-300">✨ Phi Kiếm Màn Chính: ${Math.max(tier >= 4 ? 8 : tier === 3 ? 6 : tier === 2 ? 4 : 2, sfBonus.bonusSwords || 2)} thanh</span>
+                    </div>
+                </div>
+                <div class="shrink-0 flex flex-col items-stretch sm:items-end gap-2 min-w-[230px]">
+                    ${sfIsMax ? `
+                        <button disabled class="px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-200 text-xs font-bold">👑 Đã Đạt Kiếm Trận Viên Mãn (20/20)</button>
+                    ` : `
+                        <div class="text-[11px] font-mono text-right">
+                            Tầng ${sfNextLvl}: <span class="${Number(state.stones || 0) >= sfCostStones ? 'text-amber-300' : 'text-rose-400'}">${sfCostStones.toLocaleString('vi-VN')} LT</span> • <span class="${huyenThietTotal >= sfCostOre ? 'text-cyan-300' : 'text-rose-400'}">${sfCostOre} Huyền Thiết</span>
+                        </div>
+                        <button type="button" id="btn-upgrade-sword-formation" onclick="upgradeSwordFormation()" class="px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${sfCanAfford ? 'bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-slate-950 shadow-[0_0_16px_rgba(34,211,238,0.4)]' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Tế Luyện Kiếm Trận (+1)
+                        </button>
+                    `}
+                </div>
+            </section>
+
             <!-- HEADER TAM ĐẠI BẢN MỆNH PHÁP BẢO -->
             <header class="p-4 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-indigo-950/70 border border-amber-500/40 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
@@ -13107,7 +13349,8 @@ function openCelestialOmenModal() {
     }
     backdrop.classList.remove('hidden');
     backdrop.classList.add('flex', 'active');
-    backdrop.style.display = 'flex';
+    backdrop.style.setProperty('display', 'flex', 'important');
+    backdrop.style.setProperty('pointer-events', 'auto', 'important');
     renderCelestialOmenModal();
 }
 window.openCelestialOmenModal = openCelestialOmenModal;
@@ -13642,7 +13885,8 @@ function startMinorBreakthrough() {
                 if (state.level !== undefined) state.level++;
                 else state.level = state.realmIndex + 1;
                 if (typeof triggerLevelUpAura === 'function') triggerLevelUpAura();
-            if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
+                if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
+                if (typeof window.triggerShockwaveRing === 'function') window.triggerShockwaveRing(null, null, '#facc15');
                 state.exp = Math.max(0, state.exp - prevRealm.maxExp);
                 applyRealmBaseStats(REALMS[state.realmIndex]);
                 const newlyReached = REALMS[state.realmIndex];
@@ -14835,6 +15079,8 @@ function finishTribulationCutscene(survived = true) {
 
         const completedRealm = REALMS[state.realmIndex];
         state.realmIndex++;
+        if (typeof triggerBreakthroughImpactVFX === 'function') triggerBreakthroughImpactVFX();
+        if (typeof window.triggerShockwaveRing === 'function') window.triggerShockwaveRing(null, null, '#c084fc');
         if (window.GameState) window.GameState.realmIndex = state.realmIndex;
         state.exp = Math.max(0, state.exp - completedRealm.maxExp);
         if (window.GameState) window.GameState.exp = state.exp;
@@ -18046,6 +18292,9 @@ function upgradeElementPillar(elKey, count = 1) {
     if (typeof triggerRootElementVFX === 'function') {
         triggerRootElementVFX(elKey, statGains[elKey] || `+${upgraded} Cấp!`);
     }
+    if (typeof window.triggerShockwaveRing === 'function') {
+        window.triggerShockwaveRing(null, null, cfg?.color || '#34d399');
+    }
 
     recalculateAllStats();
     if (typeof recalculatePlayerStats === 'function') recalculatePlayerStats();
@@ -18491,8 +18740,10 @@ let currentAchievementFilter = 'all';
 
 function switchAchievementFilter(filter) {
     currentAchievementFilter = filter;
-    const container = document.getElementById('hub-modal-content');
-    if (container) renderAchievementHub(container);
+    const pageContainer = document.getElementById('achievement-page-content');
+    if (pageContainer) renderAchievementHub(pageContainer);
+    const hubContainer = document.getElementById('hub-modal-content');
+    if (hubContainer) renderAchievementHub(hubContainer);
 }
 window.switchAchievementFilter = switchAchievementFilter;
 
@@ -18573,8 +18824,17 @@ window.hasClaimableAchievement = hasClaimableAchievement;
 
 function openAchievementModal() {
     if (typeof closeAllDropups === 'function') closeAllDropups();
-    if (typeof openHubModal === 'function') {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('page-achievement');
+    } else if (typeof openGameModal === 'function') {
+        openGameModal('page-achievement');
+    } else if (typeof openHubModal === 'function') {
         openHubModal('character', 'achievement');
+        return;
+    }
+    const pageContent = document.getElementById('achievement-page-content');
+    if (pageContent && typeof renderAchievementHub === 'function') {
+        renderAchievementHub(pageContent);
     }
 }
 window.openAchievementModal = openAchievementModal;
@@ -18629,6 +18889,8 @@ function claimAchievement(achId) {
     if (typeof window.syncAllUI === 'function') window.syncAllUI();
     if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
     else saveGameState();
+    const achPageContainer = document.getElementById('achievement-page-content');
+    if (achPageContainer) renderAchievementHub(achPageContainer);
     const container = document.getElementById('hub-modal-content') || document.getElementById('char-subtab-container');
     if (container) renderAchievementHub(container);
 }
@@ -18652,6 +18914,8 @@ function equipTitle(title) {
     if (typeof window.syncAllUI === 'function') window.syncAllUI();
     if (typeof window.forceSaveNow === 'function') window.forceSaveNow();
     else saveGameState();
+    const achPageContainer = document.getElementById('achievement-page-content');
+    if (achPageContainer) renderAchievementHub(achPageContainer);
     const container = document.getElementById('hub-modal-content') || document.getElementById('char-subtab-container');
     if (container) renderAchievementHub(container);
 }

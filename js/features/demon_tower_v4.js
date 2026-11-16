@@ -125,6 +125,8 @@
                     towerState.hero.critResist = data.hero.critResist || 0;
                     if (data.hero.element) towerState.hero.element = String(data.hero.element);
                     if (data.hero.swordCount) towerState.hero.swordCount = Number(data.hero.swordCount);
+                    if (data.hero.swordFormationLevel !== undefined) towerState.hero.swordFormationLevel = Number(data.hero.swordFormationLevel) || 0;
+                    if (data.hero.swordFormationOpeningPct !== undefined) towerState.hero.swordFormationOpeningPct = Number(data.hero.swordFormationOpeningPct) || 0;
                 }
 
                 const heroName = data.characterName || data.playerName;
@@ -4573,6 +4575,13 @@
 
             towerState.liveBossHp = fObj.hp;
             towerState.liveBossMaxHp = fObj.hp;
+            const sfLevel = Number(towerState.hero?.swordFormationLevel ?? window.getSwordFormationBonus?.()?.level ?? 0) || 0;
+            const sfOpenPct = Number(towerState.hero?.swordFormationOpeningPct ?? window.getSwordFormationBonus?.()?.towerOpeningDmgPercent ?? 0) || 0;
+            let sfOpenDmg = 0;
+            if (sfLevel > 0 && sfOpenPct > 0 && towerState.liveBossHp > 1) {
+                sfOpenDmg = Math.max(1, Math.round((Number(towerState.hero?.atk) || 28) * (sfOpenPct / 100)));
+                towerState.liveBossHp = Math.max(1, towerState.liveBossHp - sfOpenDmg);
+            }
             towerState.liveBossMp = 0;
             towerState.liveBossToughness = 100;
             towerState.liveBossBrokenTurns = 0;
@@ -4585,7 +4594,7 @@
 
             updateArenaHUD(fObj);
             updateFightButtonUI(true);
-            updateBarsUI(towerState.hero.hp, towerState.hero.maxHp, towerState.hero.mp, fObj.hp, fObj.hp, 0, 100, false);
+            updateBarsUI(towerState.hero.hp, towerState.hero.maxHp, towerState.hero.mp, towerState.liveBossHp, towerState.liveBossMaxHp, 0, 100, false);
             updateArtifactButtonsUI();
             updateActiveSkillsUI();
             updateCombatModeUI();
@@ -4595,6 +4604,9 @@
 
             const battleTitle = towerState.customBattle ? (towerState.customBattle.titleBadge || towerState.customBattle.name) : `Tầng ${fObj.floor}`;
             addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến: ${battleTitle}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
+            if (sfOpenDmg > 0) {
+                addLog(`<span class="text-cyan-300 font-bold">⚔️ [Bản Mệnh Kiếm Trận Lv.${sfLevel}]</span> Vạn kiếm quy tông khai chiến, phủ đầu trảm gây <strong>-${fmt(sfOpenDmg)}</strong> sát thương!`, 'text-cyan-300');
+            }
 
             const runTick = async () => {
                 if (combatTurnBusy || !towerState.inCombat || nextCombatTurn !== runTick) return;

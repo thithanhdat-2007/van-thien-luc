@@ -272,6 +272,7 @@
         const eva = Math.min(100, finite(effStats.dodge ?? s.dodge, 5));
         const cp = finite(effStats.combatPower ?? effStats.cp ?? s.combatPower ?? window.GameState?.ChienLuc, Math.round(atk * 2 + def * 1.5 + maxHp * 0.1));
 
+        const sfBonus = effStats.swordFormation || (typeof window.getSwordFormationBonus === 'function' ? window.getSwordFormationBonus(s) : { level: 0, towerOpeningDmgPercent: 0 });
         return {
             characterName: s.player?.name || s.playerName || s.characterName || s.name || "Tiêu Dao Tử",
             playerName: s.player?.name || s.playerName || s.characterName || s.name || "Tiêu Dao Tử",
@@ -300,6 +301,8 @@
                 critResist: finite(effStats.critResist ?? s.critResist),
                 element: elem,
                 hasForgedArtifact: hasForgedArtifact,
+                swordFormationLevel: Number(sfBonus.level) || 0,
+                swordFormationOpeningPct: Number(sfBonus.towerOpeningDmgPercent) || 0,
                 swordCount: Number(savedTower.swordCount) || Math.min(36, Math.max(6, 6 + Math.floor((s.realmIndex || 0) * 1.5)))
             },
             activeManualId: savedTower.activeManualId || "thanh_lien_kiem_dien",

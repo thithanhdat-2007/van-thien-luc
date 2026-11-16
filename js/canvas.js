@@ -92,45 +92,52 @@ let cachedDantianX = null;
 let cachedDantianY = null;
 let lastDantianCheck = 0;
 
+function isBoostedCultivationActive() {
+    const s = (typeof window !== 'undefined' && (window.GameState || window.state)) || (typeof state !== 'undefined' ? state : null);
+    if (!s) return false;
+    const beQuanActive = Boolean(s.beQuanTuQua?.active && (Date.now() - (Number(s.beQuanTuQua.startTime) || 0) < 60000));
+    const tinhTuActive = Number(s.focusMeditationUntil || 0) > Date.now();
+    return beQuanActive || tinhTuActive;
+}
+
 function getDantianCoords() {
     const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
     // Cache ngắn 40ms để bám sát chuyển động lơ lửng 60FPS của nhân vật
     if (now - lastDantianCheck > 40 || cachedDantianX === null) {
         lastDantianCheck = now;
         const charImg = document.getElementById('char-main-img');
-        const tranEl = document.getElementById('tu-linh-tran-3d');
-        if (tranEl && canvas) {
-            const rect = tranEl.getBoundingClientRect();
-            const canvasRect = canvas.getBoundingClientRect();
-            // Tọa độ đích đặt chính giữa đĩa Tụ Linh Trận dưới chân nhân vật
-            cachedDantianX = (rect.left + rect.width * 0.5) - canvasRect.left;
-            cachedDantianY = (rect.top + rect.height * 0.55) - canvasRect.top;
-        } else if (charImg && canvas) {
+        const baguaEl = document.getElementById('bagua-formation-3d') || document.getElementById('tu-linh-tran-3d');
+        if (charImg && canvas) {
             const imgRect = charImg.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
-            // Đáy ảnh nhân vật / đệm ngồi dưới chân, tuyệt đối không chạm trán hay mặt
+            // Tâm Đan Điền (bụng dưới nhân vật, ~66% chiều cao ảnh, tránh hoàn toàn vùng mặt/trán)
             cachedDantianX = (imgRect.left + imgRect.width * 0.5) - canvasRect.left;
-            cachedDantianY = (imgRect.bottom - 12) - canvasRect.top;
+            cachedDantianY = (imgRect.top + imgRect.height * 0.66) - canvasRect.top;
+        } else if (baguaEl && canvas) {
+            const rect = baguaEl.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            cachedDantianX = (rect.left + rect.width * 0.5) - canvasRect.left;
+            cachedDantianY = (rect.top + rect.height * 0.45) - canvasRect.top;
         } else {
             cachedDantianX = canvas ? canvas.width / 2 : 400;
-            cachedDantianY = canvas ? canvas.height * 0.65 : 450;
+            cachedDantianY = canvas ? canvas.height * 0.58 : 420;
         }
     }
     return { x: cachedDantianX, y: cachedDantianY };
 }
 
 function getFormationDiskCoords() {
-    const tranEl = document.getElementById('tu-linh-tran-3d');
+    const baguaEl = document.getElementById('bagua-formation-3d') || document.getElementById('tu-linh-tran-3d');
     const charImg = document.getElementById('char-main-img');
     const dantian = getDantianCoords();
-    if (tranEl && canvas) {
-        const rect = tranEl.getBoundingClientRect();
+    if (baguaEl && canvas) {
+        const rect = baguaEl.getBoundingClientRect();
         const canvasRect = canvas.getBoundingClientRect();
         return {
             x: (rect.left + rect.width / 2) - canvasRect.left,
-            y: (rect.top + rect.height * 0.55) - canvasRect.top,
-            radiusX: rect.width * 0.46,
-            radiusY: rect.height * 0.2
+            y: (rect.top + rect.height * 0.52) - canvasRect.top,
+            radiusX: Math.max(140, rect.width * 0.46),
+            radiusY: Math.max(48, rect.height * 0.2)
         };
     } else if (charImg && canvas) {
         const rect = charImg.getBoundingClientRect();
@@ -155,64 +162,89 @@ class QiParticle {
         this.reset();
     }
     reset() {
-        // Hạt linh khí: 100% bay nhẹ tự nhiên theo gió nền toàn màn hình
-        this.isWind = true;
-        this.x = Math.random() * (canvas ? canvas.width : 800);
-        this.y = Math.random() * (canvas ? canvas.height : 600);
-        this.vx = 0.35 + Math.random() * 0.65; // Gió thổi ngang nhẹ nhàng
-        this.vy = (Math.random() - 0.5) * 0.35;
-
+        const w = canvas ? canvas.width : 800;
+        const h = canvas ? canvas.height : 600;
+        // Xuất phát từ 4 góc màn hình rồi hội tụ nhẹ về Đan Điền & Pháp Trận
+        const corner = Math.floor(Math.random() * 4);
+        const padX = w * (0.04 + Math.random() * 0.22);
+        const padY = h * (0.06 + Math.random() * 0.24);
+        this.x = (corner === 0 || corner === 2) ? padX : (w - padX);
+        this.y = (corner === 0 || corner === 1) ? padY : (h - padY);
         this.prevX = this.x;
         this.prevY = this.y;
-        this.size = 1.0 + Math.random() * 1.5;
-        this.speed = 0.45 + Math.random() * 0.55;
-        this.alpha = 0.2 + Math.random() * 0.35;
-        this.isGold = Math.random() > 0.5;
-        // Chuẩn hóa màu Linh Khí: Xanh ngọc (#22d3ee, #2dd4bf) và Vàng kim (#facc15, #fbbf24)
-        this.color = this.isGold 
-            ? (Math.random() > 0.4 ? '#facc15' : '#fbbf24') 
+        this.size = 1.1 + Math.random() * 1.4;
+        this.speed = 0.014 + Math.random() * 0.012;
+        this.alpha = 0.28 + Math.random() * 0.36;
+        this.swirlFactor = (Math.random() > 0.5 ? 1 : -1) * (0.25 + Math.random() * 0.35);
+        this.isGold = Math.random() > 0.45;
+        this.color = this.isGold
+            ? (Math.random() > 0.4 ? '#facc15' : '#fbbf24')
             : (Math.random() > 0.4 ? '#22d3ee' : '#2dd4bf');
-        this.swirlFactor = 0;
         this.isBurst = false;
     }
     update() {
         this.prevX = this.x;
         this.prevY = this.y;
+        const boosted = isBoostedCultivationActive();
+        const target = getDantianCoords();
 
-        // TUYỆT ĐỐI BẢO VỆ VÙNG MẶT VÀ TRÁN NHÂN VẬT:
-        // Đẩy toàn bộ hạt chệch ra xa vùng trán và khuôn mặt
+        if (this.isBurst) {
+            this.alpha *= 0.94;
+            this.x += (target.x - this.x) * 0.06;
+            this.y += (target.y - this.y) * 0.06;
+            if (this.alpha < 0.05) this.reset();
+            return;
+        }
+
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 24) {
+            this.reset();
+            return;
+        }
+
+        // Hướng hội tụ cong nhẹ về Đan Điền (bụng dưới) & Bát Quái
+        const pull = this.speed * (boosted ? 2.0 : 1.0);
+        const nx = dx / Math.max(1, dist);
+        const ny = dy / Math.max(1, dist);
+        const tangentX = -ny * this.swirlFactor;
+        const tangentY = nx * this.swirlFactor;
+        const step = Math.max(1.4, Math.min(8.5, dist * pull));
+        this.x += (nx + tangentX * 0.42) * step;
+        this.y += (ny + tangentY * 0.42) * step;
+
+        // TUYỆT ĐỐI BẢO VỆ VÙNG MẶT VÀ TRÁN NHÂN VẬT: đẩy dạt khỏi vùng đầu/mặt
         const charImg = document.getElementById('char-main-img');
         if (charImg && canvas) {
             const imgRect = charImg.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
             const headCenterX = (imgRect.left + imgRect.width * 0.5) - canvasRect.left;
-            const headCenterY = (imgRect.top + imgRect.height * 0.3) - canvasRect.top;
+            const headCenterY = (imgRect.top + imgRect.height * 0.28) - canvasRect.top;
             const distHead = Math.hypot(this.x - headCenterX, this.y - headCenterY);
-            if (distHead < 95) {
-                // Đẩy dạt sang 2 bên và hướng xuống dưới
-                this.x += (this.x >= headCenterX ? 2.5 : -2.5);
-                this.y += 1.5;
+            if (distHead < 88) {
+                this.x += (this.x >= headCenterX ? 3.0 : -3.0);
+                this.y += 2.2;
             }
         }
 
-        // Chuyển động gió ngang êm dịu toàn màn hình
-        this.x += this.vx * this.speed;
-        this.y += this.vy * this.speed;
-
-        if (canvas && (this.x > canvas.width + 30 || this.x < -30 || this.y > canvas.height + 30 || this.y < -30)) {
-            this.reset();
+        if (boosted) {
+            this.activeColor = (Math.random() > 0.3) ? '#facc15' : '#fef08a';
+        } else {
+            this.activeColor = this.color;
         }
     }
     draw() {
         if (!ctx) return;
+        const drawColor = this.activeColor || this.color;
         ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.strokeStyle = this.color;
-        ctx.fillStyle = this.color;
+        ctx.globalAlpha = isBoostedCultivationActive() ? Math.min(0.95, this.alpha * 1.45) : this.alpha;
+        ctx.strokeStyle = drawColor;
+        ctx.fillStyle = drawColor;
         ctx.lineWidth = this.size;
         ctx.lineCap = 'round';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
+        ctx.shadowBlur = isBoostedCultivationActive() ? 14 : 9;
+        ctx.shadowColor = drawColor;
 
         ctx.beginPath();
         ctx.moveTo(this.prevX, this.prevY);
@@ -220,50 +252,64 @@ class QiParticle {
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * 0.7, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.size * 0.72, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     }
 }
 
 // ==========================================================================
-// DẢI HẠT LINH KHÍ BEZIER HỘI TỤ TẠI ĐĨA TRẬN PHÁP DƯỚI CHÂN (FORMATION DISK)
+// DẢI HẠT LINH KHÍ BEZIER HỘI TỤ TỪ 4 GÓC VÀO ĐAN ĐIỀN & BÁT QUÁI TRẬN
 // Tuyệt đối không bay vào mặt/đầu nhân vật
 // ==========================================================================
 class QiBezierStream {
     constructor() {
+        this.reset();
+    }
+    reset() {
+        const w = canvas ? canvas.width : 800;
+        const h = canvas ? canvas.height : 600;
+        const target = getDantianCoords();
         const disk = getFormationDiskCoords();
-        const target = getDantianCoords(); // Đáy đĩa chân trận pháp #tu-linh-tran-3d
 
-        // Xuất phát từ rìa ngoài đĩa tụ linh dưới chân
-        const angle = Math.random() * Math.PI * 2;
-        const radScale = 0.75 + Math.random() * 0.55;
-        const startX = disk.x + Math.cos(angle) * disk.radiusX * radScale;
-        const startY = disk.y + Math.sin(angle) * disk.radiusY * radScale;
+        // Xen kẽ từ 4 góc màn hình hoặc rìa Pháp Trận dưới chân
+        const fromCorner = Math.random() < 0.7;
+        let startX, startY;
+        if (fromCorner) {
+            const c = Math.floor(Math.random() * 4);
+            startX = (c === 0 || c === 2) ? (w * (0.03 + Math.random() * 0.14)) : (w * (0.83 + Math.random() * 0.14));
+            startY = (c === 0 || c === 1) ? (h * (0.08 + Math.random() * 0.16)) : (h * (0.76 + Math.random() * 0.18));
+        } else {
+            const angle = Math.random() * Math.PI * 2;
+            const radScale = 0.8 + Math.random() * 0.45;
+            startX = disk.x + Math.cos(angle) * disk.radiusX * radScale;
+            startY = disk.y + Math.sin(angle) * disk.radiusY * radScale;
+        }
 
         this.p0 = { x: startX, y: startY };
         this.p3 = { x: target.x, y: target.y };
 
-        // Điểm uốn cong nằm hoàn toàn ở đĩa năng lượng chân trận pháp
-        const midX = (startX + target.x) / 2 + (Math.random() - 0.5) * 25;
-        const midY = (startY + target.y) / 2 + (Math.random() - 0.5) * 12;
+        // Điểm uốn vòng qua hông xuống Đan Điền, né hoàn toàn mặt/trán nhân vật
+        const sideOffset = (startX < target.x ? -1 : 1) * (40 + Math.random() * 65);
+        const midX = (startX + target.x) / 2 + sideOffset * 0.35;
+        const midY = Math.max(target.y - 35, (startY + target.y) / 2 + 25);
 
         this.p1 = { x: midX, y: midY };
-        this.p2 = { x: (midX + target.x) / 2, y: (midY + target.y) / 2 };
+        this.p2 = { x: target.x + sideOffset * 0.25, y: target.y + 18 };
 
-        this.t = 0;
-        this.baseSpeed = 0.01 + Math.random() * 0.009;
-        this.trailLength = 0.16 + Math.random() * 0.08;
+        this.t = Math.random() * 0.35;
+        this.baseSpeed = 0.008 + Math.random() * 0.008;
+        this.trailLength = 0.14 + Math.random() * 0.08;
         this.finished = false;
 
-        // Bảng màu linh khí: Ngọc bích và Hoàng kim chuẩn Tiên Hiệp
         const JADE_PALETTE = ['#2dd4bf', '#22d3ee', '#14b8a6', '#5eead4'];
         const GOLD_PALETTE = ['#facc15', '#fbbf24', '#f59e0b', '#fef08a'];
         const isJade = Math.random() < 0.55;
-        this.color = isJade 
+        this.baseColor = isJade
             ? JADE_PALETTE[Math.floor(Math.random() * JADE_PALETTE.length)]
             : GOLD_PALETTE[Math.floor(Math.random() * GOLD_PALETTE.length)];
-        this.width = 1.5 + Math.random() * 1.3;
+        this.color = isBoostedCultivationActive() ? '#facc15' : this.baseColor;
+        this.width = 1.4 + Math.random() * 1.2;
     }
 
     getBezierPoint(u) {
@@ -283,15 +329,14 @@ class QiBezierStream {
         const curTarget = getDantianCoords();
         this.p3.x = curTarget.x;
         this.p3.y = curTarget.y;
+        const boosted = isBoostedCultivationActive();
+        this.color = boosted ? '#facc15' : this.baseColor;
 
-        const accel = 1 + this.t * 1.1;
+        const accel = (1 + this.t * 1.1) * (boosted ? 2.0 : 1.0);
         this.t += this.baseSpeed * accel;
 
         if (this.t >= 1.0) {
-            this.finished = true;
-            if (typeof triggerTuViRipple === 'function') {
-                triggerTuViRipple(this.p3.x, this.p3.y, this.color);
-            }
+            this.reset();
         }
     }
 
@@ -708,33 +753,51 @@ function triggerBreakthroughBurst(x = (canvas ? canvas.width : 800) / 2, y = (ca
             shockwaves.push(new Shockwave(x, y, i % 2 === 0 ? "#fde047" : "#2dd4bf"));
         }, i * 160);
     }
-    for (let j = 0; j < 35; j++) {
+    for (let j = 0; j < 14; j++) {
+        if (particles.length >= 44) break;
         const p = new QiParticle();
-        p.x = x;
-        p.y = y;
-        p.speed = 3.5 + Math.random() * 5.5;
-        p.size = 2.0 + Math.random() * 3.0;
+        p.isBurst = true;
+        p.x = x + (Math.random() - 0.5) * 40;
+        p.y = y + (Math.random() - 0.5) * 40;
+        p.speed = 3.2 + Math.random() * 4.5;
+        p.size = 2.0 + Math.random() * 2.5;
+        p.alpha = 0.85;
         particles.push(p);
     }
 }
 
 if (typeof window !== 'undefined') {
-    // Click rune trên canvas đã chuyển sang hệ thống click effect DOM căn giữa tuyệt đối
-    // window.addEventListener('pointerdown', ...);
+    window.triggerShockwaveRing = function(x, y, color = '#facc15') {
+        if (!canvas || !ctx) return;
+        const coords = getDantianCoords();
+        const tx = (typeof x === 'number' && !isNaN(x)) ? x : coords.x;
+        const ty = (typeof y === 'number' && !isNaN(y)) ? y : coords.y;
+        const ring1 = new Shockwave(tx, ty, color);
+        ring1.maxRadius = 150;
+        shockwaves.push(ring1);
+        setTimeout(() => {
+            if (!ctx) return;
+            const ring2 = new Shockwave(tx, ty, '#38bdf8');
+            ring2.maxRadius = 190;
+            shockwaves.push(ring2);
+        }, 140);
+    };
 }
 
 if (canvas && ctx) {
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 22; i++) {
         particles.push(new QiParticle());
     }
-
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 12; i++) {
+        qiBeams.push(new QiBezierStream());
+    }
+    for (let i = 0; i < 10; i++) {
         fireflies.push(new AmbientFirefly());
     }
 }
 
 function animateCanvas() {
-    if (document.body?.classList.contains('tower-v4-active')) {
+    if (window.__vfxPaused || document.body?.classList.contains('has-active-modal') || document.body?.classList.contains('tower-v4-active')) {
         requestAnimationFrame(animateCanvas);
         return;
     }
@@ -743,17 +806,23 @@ function animateCanvas() {
         return;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Vẽ đom đóm tiên cảnh
     fireflies.forEach(f => {
         f.update();
         f.draw();
     });
 
-    // Vẽ hạt linh khí
+    // Vẽ hạt linh khí hội tụ từ 4 góc
     particles.forEach(p => {
         p.update();
         p.draw();
+    });
+
+    // Vẽ dải tia linh khí Bezier hội tụ vào Đan Điền & Pháp Trận Bát Quái
+    qiBeams.forEach(b => {
+        b.update();
+        b.draw();
     });
 
     // Vẽ sóng xung kích (nếu có click)
@@ -1133,8 +1202,9 @@ function triggerQiBurst(x, y) {
         shockwaves.push(new Shockwave(localX, localY, '#38bdf8'));
     }
 
-    const burstCount = 24;
+    const burstCount = 12;
     for (let i = 0; i < burstCount; i++) {
+        if (particles.length >= 46) break;
         const p = new QiParticle();
         p.isBurst = true;
         const angle = (Math.PI * 2 / burstCount) * i + (Math.random() - 0.5) * 0.4;
@@ -1151,8 +1221,8 @@ function triggerQiBurst(x, y) {
         particles.push(p);
     }
 
-    if (particles.length > 120) {
-        particles = particles.filter(p => !p.isBurst || p.alpha > 0.05);
+    if (particles.length > 46) {
+        particles = particles.filter(p => !p.isBurst || p.alpha > 0.1).slice(0, 46);
     }
 }
 

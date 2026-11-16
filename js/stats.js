@@ -169,6 +169,32 @@ function calculateDamage(attacker, defender) {
     };
 }
 
+function getSwordFormationBonus(sourceState) {
+    const raw = sourceState || (typeof GameState !== 'undefined' ? GameState : (typeof state !== 'undefined' ? state : {}));
+    const s = raw?._rawState ? raw._rawState : (raw || {});
+    const level = Math.max(0, Math.min(20, Number(s?.swordFormation?.level) || 0));
+    const realmIdx = Number(s?.realmIndex) || 0;
+    const realmsList = (typeof REALMS !== 'undefined' && Array.isArray(REALMS))
+        ? REALMS
+        : ((typeof REALMS_DATA !== 'undefined' && Array.isArray(REALMS_DATA)) ? REALMS_DATA : []);
+    const realmObj = realmsList[realmIdx];
+    const majorIdx = realmObj?.majorIndex !== undefined ? Number(realmObj.majorIndex) : Math.floor(realmIdx / 4);
+    const tier = normalizeRealmTier(realmObj?.realmTier ?? (majorIdx + 1));
+    const atkBonus = Math.round(level * 45 * tier);
+    const critPct = Number((level * 0.6).toFixed(1));
+    const towerOpeningDmgPercent = level * 5;
+    const bonusSwords = level >= 15 ? 8 : (level >= 8 ? 6 : (level >= 3 ? 4 : (level >= 1 ? 2 : 0)));
+    return {
+        level,
+        maxLevel: 20,
+        tier,
+        atk: atkBonus,
+        critPct,
+        towerOpeningDmgPercent,
+        bonusSwords
+    };
+}
+
 /**
  * TRỤ CỘT 2: THUẬT TOÁN ĐỒNG BỘ CHIẾN LỰC (calculateTotalStats)
  * Công thức:
@@ -340,16 +366,18 @@ function calculateTotalStats(sourceState) {
     skillDefMult += gearDefPercent;
     skillHpMult += gearHpPercent;
 
-    // 4. TỔNG CHỈ SỐ (TOTAL STATS) = (Base + Gear) * (1 + Skill Multiplier)
+    // 4. TỔNG CHỈ SỐ (TOTAL STATS) = (Base + Gear + SwordFormation) * (1 + Skill Multiplier)
     const roots = getRootStatBonuses(s);
     const alignState = (typeof computeDaoAlignmentState === 'function') ? computeDaoAlignmentState(s) : null;
     const achBonus = (typeof getClaimedAchievementBonuses === 'function') ? getClaimedAchievementBonuses(s) : { atk: 0, def: 0, hp: 0, crit: 0, atkPercent: 0, defPercent: 0, hpPercent: 0, allStatsPercent: 0 };
+    const swordBonus = getSwordFormationBonus(s);
     const rootMult = 1 + roots.resonance;
-    let totalAtk = Math.floor((baseAtk + achBonus.atk + roots.atk + gearAtk) * (1 + skillAtkMult + (alignState?.atkPercent || 0) + achBonus.atkPercent + achBonus.allStatsPercent) * rootMult);
+    let totalAtk = Math.floor((baseAtk + achBonus.atk + roots.atk + gearAtk + swordBonus.atk) * (1 + skillAtkMult + (alignState?.atkPercent || 0) + achBonus.atkPercent + achBonus.allStatsPercent) * rootMult);
     let totalDef = Math.floor((baseDef + achBonus.def + roots.def + gearDef) * (1 + skillDefMult + (alignState?.defPercent || 0) + achBonus.defPercent + achBonus.allStatsPercent) * rootMult);
     let totalHp = Math.floor((baseHp + achBonus.hp + roots.hp + gearHp) * (1 + skillHpMult + achBonus.hpPercent + achBonus.allStatsPercent) * rootMult);
     let totalMp = CultivationMathEngine.manaCap((baseMp + roots.mp + gearMp) * (1 + skillMpMult + achBonus.allStatsPercent) * rootMult, realmObj);
-    const totalCrit = Math.min(100, Number(((Number(s.crit) || 10) + gearCrit + roots.crit + (alignState?.critBonus || 0) + achBonus.crit).toFixed(1)));
+    const baseCritVal = Number(originBase.crit ?? 5) || 5;
+    const totalCrit = Math.min(100, Number((baseCritVal + gearCrit + roots.crit + (alignState?.critBonus || 0) + achBonus.crit + swordBonus.critPct).toFixed(1)));
 
     // Tự động giải trừ Trọng Thương ảo trước khi áp dụng hình phạt chỉ số
     if (typeof reconcileHeavyInjuryState === 'function') {
@@ -398,6 +426,7 @@ function calculateTotalStats(sourceState) {
         baseStats: baseStatsObj,
         gear: gearStatsObj,
         gearStats: gearStatsObj,
+        swordFormation: swordBonus,
         skillMultiplier: {
             atk: Number(skillAtkMult.toFixed(4)),
             def: Number(skillDefMult.toFixed(4)),
@@ -743,6 +772,7 @@ function recalculatePlayerStats(sourceState) {
     const achBonus = (typeof getClaimedAchievementBonuses === 'function')
         ? getClaimedAchievementBonuses(s)
         : { atk: 0, def: 0, hp: 0, crit: 0, atkPercent: 0, defPercent: 0, hpPercent: 0, allStatsPercent: 0, cultivationRate: 0 };
+    const swordBonus = getSwordFormationBonus(s);
 
     const effectiveBaseAtk = baseAtk + achBonus.atk;
     const effectiveBaseDef = baseDef + achBonus.def;
@@ -753,7 +783,7 @@ function recalculatePlayerStats(sourceState) {
     const totalDefMult = (1 + skillDefMult + destinyDefMult + alignState.defPercent + achBonus.defPercent + achBonus.allStatsPercent) * resonanceMult;
     const totalHpMult = (1 + skillHpMult + destinyHpMult + achBonus.hpPercent + achBonus.allStatsPercent) * resonanceMult;
 
-    const totalAtk = Math.max(1, Math.floor((effectiveBaseAtk + gearAtk + rootAtk + rareAtk + companionAtk + soulAtk + permAtk + petAtk + artifactAtk) * totalAtkMult));
+    const totalAtk = Math.max(1, Math.floor((effectiveBaseAtk + gearAtk + rootAtk + rareAtk + companionAtk + soulAtk + permAtk + petAtk + artifactAtk + swordBonus.atk) * totalAtkMult));
     const totalDef = Math.max(0, Math.floor((effectiveBaseDef + gearDef + rootDef + rareDef + physiqueDef + companionDef + soulDef + permDef + petDef + artifactDef) * totalDefMult));
     const totalHp = Math.max(10, Math.floor((effectiveBaseHp + gearHp + rootHp + rareHp + physiqueHp + companionHp + soulHp + permHp + petHp + artifactHp) * totalHpMult));
     const totalMp = Math.max(10, Math.floor((baseMp + gearMp + rootMp) * resonanceMult));
@@ -761,7 +791,7 @@ function recalculatePlayerStats(sourceState) {
     const baseSpd = 100 + tier * 15;
     const basePen = 0;
     const baseDodge = 3;
-    const totalCrit = Math.min(100, Number((baseCrit + gearCrit + rootCrit + rareCrit + destinyCrit + companionCrit + petCrit + alignState.critBonus + achBonus.crit).toFixed(1)));
+    const totalCrit = Math.min(100, Number((baseCrit + gearCrit + rootCrit + rareCrit + destinyCrit + companionCrit + petCrit + alignState.critBonus + achBonus.crit + swordBonus.critPct).toFixed(1)));
     const totalSpd = Math.max(10, Math.round(baseSpd + rootSpd + rareSpd + petSpd));
     const totalPen = Math.min(75, Number((basePen + gearPen + rootPen + petPen).toFixed(1)));
     const totalDodge = Math.min(50, Number((baseDodge + gearDodge + rareDodge + destinyDodge + petDodge).toFixed(1)));
@@ -808,9 +838,14 @@ function recalculatePlayerStats(sourceState) {
         tierMultiplier,
         base: { hp: effectiveBaseHp, atk: effectiveBaseAtk, def: effectiveBaseDef, mp: baseMp },
         gear: { hp: gearHp, atk: gearAtk, def: gearDef, crit: gearCrit, equippedCount },
-        roots: { hp: rootHp, atk: rootAtk, def: rootDef, crit: rootCrit, resonance: rootResonance },
+        roots: { hp: rootHp + rareHp, atk: rootAtk + rareAtk, def: rootDef + rareDef, crit: rootCrit + rareCrit, resonance: rootResonance },
         companion: { hp: companionHp, atk: companionAtk, def: companionDef, crit: companionCrit },
+        pet: { hp: petHp, atk: petAtk, def: petDef, crit: petCrit },
+        artifacts: { hp: artifactHp, atk: artifactAtk, def: artifactDef },
+        swordFormation: swordBonus,
         souls: { hp: soulHp, atk: soulAtk, def: soulDef },
+        skills: { atkPct: Math.round(skillAtkMult * 100), defPct: Math.round(skillDefMult * 100), hpPct: Math.round(skillHpMult * 100) },
+        multipliers: { totalAtkMult, totalDefMult, totalHpMult, resonanceMult },
         alignment: alignState,
         achievementBonuses: achBonus,
         total: { hp: totalHp, maxHp: totalHp, atk: totalAtk, def: totalDef, mp: totalMp, maxMp: totalMp, crit: totalCrit, spd: totalSpd, pen: totalPen, dodge: totalDodge, lifesteal: alignState.lifestealPercent || 0 },
@@ -954,6 +989,20 @@ function syncLeftPanelStatsUI(stats, s) {
     if (uiStatPen) uiStatPen.textContent = `${stats.total.pen}%`;
     const uiStatDodge = document.getElementById('ui-stat-dodge') || document.getElementById('ui-stat-eva');
     if (uiStatDodge) uiStatDodge.textContent = `${stats.total.dodge}%`;
+
+    if (document.body && document.body.dataset) {
+        const tierNum = Number(stats.tier) || 1;
+        const realmSwords = tierNum >= 4 ? 8 : (tierNum === 3 ? 6 : (tierNum === 2 ? 4 : 2));
+        const extraSwords = Number(stats.swordFormation?.bonusSwords) || 0;
+        const nextSwordCount = String(Math.max(realmSwords, extraSwords));
+        if (document.body.dataset.swordCount !== nextSwordCount) {
+            document.body.dataset.swordCount = nextSwordCount;
+        }
+    }
+    if (typeof window !== 'undefined' && typeof window.updateCombatPowerPopover === 'function') {
+        const cpPop = document.getElementById('cp-breakdown-popover');
+        if (cpPop && !cpPop.classList.contains('hidden')) window.updateCombatPowerPopover();
+    }
 }
 
 function sendStatsToDemonTowerIframe(stats, s) {
@@ -1259,10 +1308,12 @@ if (typeof window !== 'undefined') {
     window.isHeavyInjuryActive = isHeavyInjuryActive;
     window.computeDaoAlignmentState = computeDaoAlignmentState;
     window.getClaimedAchievementBonuses = getClaimedAchievementBonuses;
+    window.getSwordFormationBonus = getSwordFormationBonus;
     window.formatCompactNumber = formatCompactNumber;
 }
 if (typeof globalThis !== 'undefined') {
     globalThis.formatCompactNumber = formatCompactNumber;
+    globalThis.getSwordFormationBonus = getSwordFormationBonus;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1284,6 +1335,7 @@ if (typeof module !== 'undefined' && module.exports) {
         isHeavyInjuryActive,
         computeDaoAlignmentState,
         getClaimedAchievementBonuses,
+        getSwordFormationBonus,
         formatCompactNumber
     };
 }

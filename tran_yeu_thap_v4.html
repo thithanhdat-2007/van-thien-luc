@@ -1128,6 +1128,8 @@
                     gameState.hero.critResist = data.hero.critResist || 0;
                     if (data.hero.element) gameState.hero.element = String(data.hero.element);
                     if (data.hero.swordCount) gameState.hero.swordCount = Number(data.hero.swordCount);
+                    if (data.hero.swordFormationLevel !== undefined) gameState.hero.swordFormationLevel = Number(data.hero.swordFormationLevel) || 0;
+                    if (data.hero.swordFormationOpeningPct !== undefined) gameState.hero.swordFormationOpeningPct = Number(data.hero.swordFormationOpeningPct) || 0;
                 }
 
                 const heroName = data.characterName || data.playerName;
@@ -5583,6 +5585,18 @@
 
             gameState.liveBossHp = fObj.hp;
             gameState.liveBossMaxHp = fObj.hp;
+            let sfOpenDmg = 0;
+            let sfOpenLvl = Number(gameState.hero?.swordFormationLevel || 0);
+            let sfOpenPct = Number(gameState.hero?.swordFormationOpeningPct || 0);
+            if (!sfOpenLvl && typeof window.parent?.getSwordFormationBonus === 'function') {
+                const b = window.parent.getSwordFormationBonus();
+                sfOpenLvl = Number(b?.level) || 0;
+                sfOpenPct = Number(b?.towerOpeningDmgPercent) || 0;
+            }
+            if (sfOpenLvl > 0 && sfOpenPct > 0 && gameState.liveBossHp > 1) {
+                sfOpenDmg = Math.max(1, Math.round((Number(gameState.hero?.atk) || 28) * (sfOpenPct / 100)));
+                gameState.liveBossHp = Math.max(1, gameState.liveBossHp - sfOpenDmg);
+            }
             gameState.liveBossMp = 0;
             gameState.liveBossToughness = 100;
             gameState.liveBossBrokenTurns = 0;
@@ -5595,7 +5609,7 @@
 
             updateArenaHUD(fObj);
             updateFightButtonUI(true);
-            updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, fObj.hp, fObj.hp, 0, 100, false);
+            updateBarsUI(gameState.hero.hp, gameState.hero.maxHp, gameState.hero.mp, gameState.liveBossHp, gameState.liveBossMaxHp, 0, 100, false);
             updateArtifactButtonsUI();
             updateActiveSkillsUI();
             updateCombatModeUI();
@@ -5605,6 +5619,9 @@
 
             const battleTitle = gameState.customBattle ? (gameState.customBattle.titleBadge || gameState.customBattle.name) : `Tầng ${fObj.floor}`;
             addLog(`<span class="text-amber-300 font-bold">🗡️ [Khai Chiến: ${battleTitle}]</span> Tiêu Dao Tử vận chuyển <strong>${heroElem.name}</strong> đối quyết <strong>${fObj.name}</strong>! ${isElementAdvantage ? '<span class="text-emerald-400 font-bold">(Khắc Hệ +35% Sát Thương!)</span>' : ''}`);
+            if (sfOpenDmg > 0) {
+                addLog(`<span class="text-cyan-300 font-bold">⚔️ [Bản Mệnh Kiếm Trận Lv.${sfOpenLvl}]</span> Vạn kiếm quy tông khai chiến, phủ đầu trảm gây <strong>-${fmt(sfOpenDmg)}</strong> sát thương!`);
+            }
 
             const runTick = async () => {
                 if (combatTurnBusy || !gameState.inCombat || nextCombatTurn !== runTick) return;

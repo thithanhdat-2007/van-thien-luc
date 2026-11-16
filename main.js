@@ -120,7 +120,7 @@
             '#modal-gia-vien, #modal-luyen-dan, #modal-luyen-khi, #modal-khue-phong, #modal-tran-yeu-thap, #demon-tower-modal, #modal-do-kiep, ' +
             '#profile-login-modal, #profile-account-modal, #modal-breakthrough, #modal-breakthrough-minor, #modal-offline-rewards, #modal-setting, ' +
             '#modal-be-quan-offline, #modal-game-settings, ' +
-            '#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet, #page-sect, #page-world-market'
+            '#page-inventory, #page-skills, #page-root, #page-artifact, #page-pet, #page-achievement, #page-sect, #page-world-market'
         );
         allModals.forEach((el) => {
             el.classList.remove('active', 'is-open', 'is-active', 'flex');
@@ -1255,6 +1255,44 @@
     globalThis.openFeature = openFeature;
     globalThis.closeAllFeaturePopups = closeAllModals;
 })();
+
+// Tạm dừng hiệu ứng hạt nền (#tsparticles, #qi-canvas, #global-vfx-canvas) khi mở modal toàn màn hình / Trấn Yêu Tháp
+function syncBackgroundVfxPause() {
+    if (typeof document === 'undefined') return;
+    const hasOpenOverlay = !!document.querySelector(
+        '[id^="page-"]:not(.hidden), [id^="modal-"]:not(.hidden), #hub-modal-backdrop:not(.hidden), #daily-blessing-modal, #celestial-omen-modal:not(.hidden), .modal-overlay.active, .modal-overlay:not(.hidden)'
+    );
+    const vfxIds = ['tsparticles', 'qi-canvas', 'global-vfx-canvas'];
+    vfxIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (hasOpenOverlay) {
+            if (el.dataset.vfxPaused !== '1') {
+                el.dataset.vfxPaused = '1';
+                el.style.visibility = 'hidden';
+                el.style.pointerEvents = 'none';
+            }
+        } else if (el.dataset.vfxPaused === '1') {
+            el.dataset.vfxPaused = '0';
+            el.style.visibility = '';
+            el.style.pointerEvents = '';
+        }
+    });
+}
+if (typeof window !== 'undefined') {
+    window.syncBackgroundVfxPause = syncBackgroundVfxPause;
+    if (typeof MutationObserver !== 'undefined' && document.body) {
+        let vfxRaf = 0;
+        const obs = new MutationObserver(() => {
+            if (vfxRaf) return;
+            vfxRaf = requestAnimationFrame(() => {
+                vfxRaf = 0;
+                syncBackgroundVfxPause();
+            });
+        });
+        obs.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    }
+}
 
 // =========================================================================
 // BỘ ĐIỀU PHỐI CHUẨN KIẾN TRÚC FRONTEND & THOÁT BẤT TỬ (PRINCIPAL ARCHITECT)
@@ -2567,7 +2605,8 @@ document.addEventListener('keydown', (e) => {
         }
     };
 
-    // 3B. Thưởng Điểm Danh / Thiên Đạo Ban Phúc Hàng Ngày
+    // 3B. Thưởng Điểm Danh / Thiên Đạo Ban Phúc Hàng Ngày (chỉ dùng fallback nếu module 7 ngày chưa nạp)
+    if (typeof window.openDailyBlessingModal !== 'function') {
     window.openDailyBlessingModal = function () {
         let modal = document.getElementById('daily-blessing-modal');
         if (modal) modal.remove();
@@ -2620,7 +2659,9 @@ document.addEventListener('keydown', (e) => {
         if (closeBtn) closeBtn.onclick = handleClose;
         if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(true);
     };
+    }
 
+    if (typeof window.claimDailyBlessing !== 'function') {
     window.claimDailyBlessing = function () {
         const gs = window.GameState || window.state;
         if (!gs) return;
@@ -2643,6 +2684,7 @@ document.addEventListener('keydown', (e) => {
         document.getElementById('daily-blessing-modal')?.remove();
         if (typeof window.setOverlayVFXPause === 'function') window.setOverlayVFXPause(false);
     };
+    }
 
     // Tự động gắn nút Phân Giải vào #page-inventory khi mở
     setInterval(() => {
